@@ -1,344 +1,357 @@
-import { Head } from '@inertiajs/react';
-import { dashboard } from '@/routes';
-import { Search, Bell, Mail, MoreVertical, Plus, Edit3, Image as ImageIcon, Smile, LayoutGrid, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Home, Calendar, Folder, Users, FileText, Clock, Settings } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import { connect as tiktokConnect } from '@/routes/social-accounts';
+import { schedule } from '@/routes';
+import { store as scheduleStore } from '@/routes/schedule';
+import {
+    Search, MoreVertical, Plus, Image as ImageIcon,
+    LayoutGrid, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
-export default function Schedule() {
+interface ScheduleItem {
+    id: number;
+    status: string;
+    publish_at: string;
+    content_project: { id: number; title: string; video_url: string | null };
+    social_account: { id: number; handle: string; provider: string; avatar: string | null };
+}
+
+interface SocialAccountOption {
+    id: number;
+    handle: string;
+    provider: string;
+    avatar: string | null;
+}
+
+interface ContentProjectOption {
+    id: number;
+    title: string;
+    type: string;
+    video_url: string | null;
+}
+
+interface Props {
+    schedulesByDay: Record<string, ScheduleItem[]>;
+    socialAccounts: SocialAccountOption[];
+    contentProjects: ContentProjectOption[];
+    month: number;
+    year: number;
+    statuses: string[];
+}
+
+const MONTH_NAMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+function TikTokIcon({ className }: { className?: string }) {
     return (
-        <div className="min-h-screen bg-[#F8F9FB] text-neutral-900 font-sans flex flex-col md:flex-row overflow-hidden">
-            <Head title="Schedule" />
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.72a8.19 8.19 0 004.79 1.53V6.78a4.85 4.85 0 01-1.02-.09z" />
+        </svg>
+    );
+}
 
-            {/* Sidebar Lateral Menu */}
-            <aside className="hidden md:flex flex-col items-center py-6 w-20 bg-white border-r border-gray-100 flex-shrink-0 z-10">
-                <div className="mb-10 text-orange-500">
-                    {/* Logo Placeholder */}
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sun">
-                        <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-                    </svg>
+export default function Schedule({ schedulesByDay, socialAccounts, contentProjects, month, year }: Props) {
+    const [view, setView] = useState<'calendar' | 'grid' | 'list'>('calendar');
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        content_project_id: contentProjects[0]?.id?.toString() ?? '',
+        social_account_id: socialAccounts[0]?.id?.toString() ?? '',
+        publish_at: '',
+    });
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() + 1 === month && today.getFullYear() === year;
+    const todayDay = isCurrentMonth ? today.getDate() : null;
+
+    const totalCells = Math.ceil((firstDayOfWeek + daysInMonth) / 7) * 7;
+    const cells = Array.from({ length: totalCells }, (_, i) => {
+        const day = i - firstDayOfWeek + 1;
+        return day >= 1 && day <= daysInMonth ? day : null;
+    });
+
+    const navigate = (delta: number) => {
+        const d = new Date(year, month - 1 + delta, 1);
+        router.get(schedule.url(), { month: d.getMonth() + 1, year: d.getFullYear() }, {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const goToday = () => {
+        router.get(schedule.url(), { month: today.getMonth() + 1, year: today.getFullYear() }, {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(scheduleStore.url(), {
+            preserveScroll: true,
+            onSuccess: () => reset(),
+        });
+    };
+
+    const selectedProject = contentProjects.find((p) => p.id.toString() === data.content_project_id);
+    const selectedAccount = socialAccounts.find((a) => a.id.toString() === data.social_account_id);
+
+    return (
+        <>
+            <Head title="Agenda" />
+
+            <div className="p-6">
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">Agenda</h1>
+                        <p className="text-sm text-gray-500">Gerencie e acompanhe suas publicações agendadas no TikTok</p>
+                    </div>
+                    <div className="relative w-64">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Input placeholder="Buscar ..." className="pl-9 bg-white border-gray-200 rounded-lg focus-visible:ring-[#FF5722]" />
+                    </div>
                 </div>
-                
-                <nav className="flex flex-col gap-6 w-full items-center">
-                    <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
-                        <Home className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 text-white bg-[#FF5722] rounded-xl shadow-sm shadow-orange-200 transition-colors">
-                        <Calendar className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
-                        <Folder className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
-                        <Users className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
-                        <FileText className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">
-                        <Clock className="w-5 h-5" />
-                    </button>
-                </nav>
-            </aside>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-                
-                {/* Top Nav */}
-                <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0 z-10">
-                    <div className="flex-1"></div>
-                    
-                    {/* Center Pill Nav */}
-                    <div className="hidden lg:flex items-center bg-gray-50/80 rounded-full px-1 py-1 border border-gray-100">
-                        <button className="px-6 py-2 text-sm font-medium text-gray-900 bg-white rounded-full shadow-sm">Project</button>
-                        <button className="px-6 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Task</button>
-                        <button className="px-6 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Tools</button>
-                        <button className="px-6 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Team</button>
-                        <button className="px-6 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Analytics</button>
-                    </div>
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-                    <div className="flex-1 flex justify-end items-center gap-4">
-                        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full border border-gray-200">
-                            <Mail className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full border border-gray-200 relative">
-                            <Bell className="w-4 h-4" />
-                            <span className="absolute top-1.5 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                        </button>
-                        <Avatar className="w-8 h-8 cursor-pointer ring-2 ring-gray-100">
-                            <AvatarImage src="https://i.pravatar.cc/150?img=47" />
-                            <AvatarFallback>JD</AvatarFallback>
-                        </Avatar>
-                    </div>
-                </header>
-
-                {/* Page Content */}
-                <main className="flex-1 overflow-y-auto p-8">
-                    
-                    {/* Page Header */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-                        <div>
-                            <h1 className="text-3xl font-semibold text-gray-900 mb-1">Schedule</h1>
-                            <p className="text-gray-500 text-sm">Manage and track your scheduled uploads to ensure everything goes as planned</p>
+                    {/* Left Panel: Create Schedule */}
+                    <form onSubmit={submit} className="w-full lg:w-[380px] bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex-shrink-0">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-base font-semibold text-gray-900">Criar Agendamento</h2>
+                            <button type="button" className="text-gray-400 hover:text-gray-600">
+                                <MoreVertical className="w-4 h-4" />
+                            </button>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="relative w-64">
-                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <Input placeholder="Search ..." className="pl-9 bg-white border-gray-200 rounded-lg focus-visible:ring-[#FF5722]" />
-                            </div>
-                            <Button className="bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-lg flex items-center gap-2">
-                                <Settings className="w-4 h-4" />
-                                Post Setting
-                            </Button>
-                        </div>
-                    </div>
 
-                    <div className="flex flex-col lg:flex-row gap-6 items-start">
-                        
-                        {/* Left Panel: Create Schedule */}
-                        <div className="w-full lg:w-[400px] bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex-shrink-0">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-lg font-semibold text-gray-900">Create Schedule</h2>
-                                <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-5 h-5" /></button>
+                        {/* TikTok Account Selector */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black flex-shrink-0">
+                                <TikTokIcon className="w-4 h-4 text-white" />
                             </div>
 
-                            {/* Account Selector */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                                    <Avatar className="w-6 h-6">
-                                        <AvatarImage src="https://i.pravatar.cc/150?img=33" />
-                                        <AvatarFallback>AT</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-medium text-gray-700">@AnjasTravel</span>
-                                    <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">in</button>
-                                    <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">ig</button>
-                                    <button className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">fb</button>
-                                    <button className="w-7 h-7 rounded-full border border-orange-200 text-orange-500 flex items-center justify-center hover:bg-orange-50">
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Tabs */}
-                            <div className="flex border-b border-gray-100 mb-5">
-                                <button className="flex-1 pb-3 text-sm font-medium text-[#FF5722] border-b-2 border-[#FF5722]">Post</button>
-                                <button className="flex-1 pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Story</button>
-                                <button className="flex-1 pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Reel</button>
-                            </div>
-
-                            {/* Media Preview */}
-                            <div className="relative rounded-xl overflow-hidden mb-5 bg-gray-100 aspect-video">
-                                <img src="https://images.unsplash.com/photo-1541625602330-2277a4c46182?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Mountain Biking" className="w-full h-full object-cover" />
-                            </div>
-
-                            {/* Caption Textarea */}
-                            <div className="mb-4">
-                                <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                                    Experience the ultimate thrill of mountain biking as you conquer rugged trails, enjoy breathtaking scenery, and tackle adrenaline-pumping descents. Challenge yourself, push your limits, and embrace the excitement of outdoor adventure on two wheels!
-                                </p>
-                                <p className="text-sm text-[#FF5722]">#MountainBiking #OutdoorAdventure #TrailRiding #AdrenalineRush</p>
-                            </div>
-
-                            {/* AI Actions */}
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-2">
-                                    <button className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#FF5722] text-[#FF5722] text-sm font-medium hover:bg-orange-50 transition-colors">
-                                        <Edit3 className="w-4 h-4" />
-                                        Rewrite With AI
-                                    </button>
-                                    <button className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors">
-                                        <ImageIcon className="w-4 h-4" />
-                                        Continue
-                                    </button>
-                                </div>
-                                <button className="text-gray-400 hover:text-gray-600"><Smile className="w-5 h-5" /></button>
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
-                                    <Clock className="w-4 h-4 text-gray-400" />
-                                    Sept 17, 12:22 PM
-                                    <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
+                            {socialAccounts.length === 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => { window.location.href = tiktokConnect.url('tiktok'); }}
+                                    className="flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" /> Conectar TikTok
                                 </button>
-                                <div className="flex">
-                                    <Button className="bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-r-none pr-3">
-                                        Schedule
-                                    </Button>
-                                    <Button className="bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-l-none border-l border-orange-400/30 px-2">
-                                        <ChevronRight className="w-4 h-4 rotate-90" />
-                                    </Button>
+                            ) : (
+                                <select
+                                    value={data.social_account_id}
+                                    onChange={(e) => setData('social_account_id', e.target.value)}
+                                    className="flex-1 bg-gray-50 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF5722]"
+                                >
+                                    {socialAccounts.map((a) => (
+                                        <option key={a.id} value={a.id}>@{a.handle}</option>
+                                    ))}
+                                </select>
+                            )}
+
+                            {selectedAccount && (
+                                <Avatar className="w-7 h-7 flex-shrink-0">
+                                    <AvatarImage src={selectedAccount.avatar ?? undefined} />
+                                    <AvatarFallback>{selectedAccount.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                            )}
+                        </div>
+
+                        {/* Content Type Label */}
+                        <div className="border-b border-gray-100 mb-5">
+                            <span className="inline-block pb-3 text-sm font-medium text-[#FF5722] border-b-2 border-[#FF5722]">
+                                Vídeo
+                            </span>
+                        </div>
+
+                        {/* Content Project Selector */}
+                        {contentProjects.length === 0 ? (
+                            <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 mb-5 flex flex-col items-center justify-center gap-2 text-center">
+                                <ImageIcon className="w-8 h-8 text-gray-300" />
+                                <p className="text-sm text-gray-500">Nenhum projeto de conteúdo ainda</p>
+                                <p className="text-xs text-gray-400">Crie um projeto de conteúdo para agendá-lo</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="relative rounded-xl overflow-hidden mb-3 bg-gray-100 aspect-video">
+                                    {selectedProject?.video_url ? (
+                                        <img
+                                            src={selectedProject.video_url}
+                                            alt={selectedProject.title}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <ImageIcon className="w-10 h-10 text-gray-300" />
+                                        </div>
+                                    )}
                                 </div>
+
+                                <select
+                                    value={data.content_project_id}
+                                    onChange={(e) => setData('content_project_id', e.target.value)}
+                                    className="w-full mb-4 px-3 py-2 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#FF5722]"
+                                >
+                                    {contentProjects.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.title}</option>
+                                    ))}
+                                </select>
+                                {errors.content_project_id && (
+                                    <p className="text-xs text-red-500 mb-3">{errors.content_project_id}</p>
+                                )}
+                            </>
+                        )}
+
+                        {/* Footer: Date picker + Submit */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <input
+                                        type="datetime-local"
+                                        value={data.publish_at}
+                                        onChange={(e) => setData('publish_at', e.target.value)}
+                                        min={new Date().toISOString().slice(0, 16)}
+                                        className="text-sm text-gray-700 bg-transparent border-none outline-none focus:ring-0 cursor-pointer"
+                                    />
+                                </div>
+                                {errors.publish_at && (
+                                    <p className="text-xs text-red-500 mt-1 ml-6">{errors.publish_at}</p>
+                                )}
+                            </div>
+                            <div className="flex">
+                                <Button
+                                    type="submit"
+                                    disabled={processing || socialAccounts.length === 0 || contentProjects.length === 0}
+                                    className="bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-r-none pr-3 disabled:opacity-50"
+                                >
+                                    {processing ? 'Agendando...' : 'Agendar'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={processing}
+                                    className="bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-l-none border-l border-orange-400/30 px-2 disabled:opacity-50"
+                                >
+                                    <ChevronRight className="w-4 h-4 rotate-90" />
+                                </Button>
+                            </div>
+                        </div>
+                    </form>
+
+                    {/* Right Panel: Calendar */}
+                    <div className="flex-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 w-full overflow-hidden">
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
+                            <h2 className="text-base font-semibold text-gray-900">Sua Agenda</h2>
+                            <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                                <button onClick={() => navigate(-1)} className="p-1 hover:bg-gray-100 rounded">
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button onClick={goToday} className="text-gray-500 hover:text-gray-900 transition-colors">Hoje</button>
+                                <span className="text-gray-300">›</span>
+                                <span className="min-w-[130px] text-center">{MONTH_NAMES[month - 1]} {year}</span>
+                                <button onClick={() => navigate(1)} className="p-1 hover:bg-gray-100 rounded">
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
 
-                        {/* Right Panel: Calendar */}
-                        <div className="flex-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 w-full overflow-hidden">
-                            
-                            {/* Calendar Header */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                                <h2 className="text-lg font-semibold text-gray-900">Your Schedule</h2>
-                                <div className="flex items-center gap-4 text-sm font-medium text-gray-700">
-                                    <button className="p-1 hover:bg-gray-100 rounded"><ChevronLeft className="w-4 h-4" /></button>
-                                    <span className="min-w-[120px] text-center">Today <span className="text-gray-400 mx-1">›</span> 19 Sept 2024</span>
-                                    <button className="p-1 hover:bg-gray-100 rounded"><ChevronRight className="w-4 h-4" /></button>
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600">
+                                    <TikTokIcon className="w-3.5 h-3.5" />
+                                    TikTok
                                 </div>
+                                <select className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#FF5722]">
+                                    <option value="">Todos os status</option>
+                                    <option value="pending">Pendente</option>
+                                    <option value="publishing">Publicando</option>
+                                    <option value="published">Publicado</option>
+                                    <option value="failed">Falhou</option>
+                                </select>
                             </div>
-
-                            {/* Calendar Filters */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-6">
-                                    <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-                                        Social Account <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
-                                    </button>
-                                    <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-                                        Post Status <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
-                                    </button>
-                                </div>
-                                <div className="flex items-center gap-1 text-gray-400">
-                                    <button className="p-1.5 text-gray-900 bg-gray-50 rounded"><CalendarIcon className="w-4 h-4" /></button>
-                                    <button className="p-1.5 hover:text-gray-900 hover:bg-gray-50 rounded"><LayoutGrid className="w-4 h-4" /></button>
-                                    <button className="p-1.5 hover:text-gray-900 hover:bg-gray-50 rounded"><List className="w-4 h-4" /></button>
-                                </div>
+                            <div className="flex items-center gap-1 text-gray-400">
+                                <button onClick={() => setView('calendar')} className={`p-1.5 rounded transition-colors ${view === 'calendar' ? 'text-gray-900 bg-gray-100' : 'hover:text-gray-900 hover:bg-gray-50'}`}>
+                                    <CalendarIcon className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setView('grid')} className={`p-1.5 rounded transition-colors ${view === 'grid' ? 'text-gray-900 bg-gray-100' : 'hover:text-gray-900 hover:bg-gray-50'}`}>
+                                    <LayoutGrid className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setView('list')} className={`p-1.5 rounded transition-colors ${view === 'list' ? 'text-gray-900 bg-gray-100' : 'hover:text-gray-900 hover:bg-gray-50'}`}>
+                                    <List className="w-4 h-4" />
+                                </button>
                             </div>
+                        </div>
 
-                            {/* Calendar Grid */}
-                            <div className="grid grid-cols-7 border-t border-gray-100 pt-4">
-                                {/* Days of Week */}
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                                    <div key={day} className="text-xs font-medium text-gray-400 pb-4">
-                                        {day}
-                                    </div>
-                                ))}
+                        {/* Calendar Grid */}
+                        <div className="grid grid-cols-7 border-t border-gray-100 pt-4">
+                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                                <div key={day} className="text-xs font-medium text-gray-400 pb-4">{day}</div>
+                            ))}
 
-                                {/* Week 1 */}
-                                {[
-                                    { day: 1, posts: [1, 2], line: '#FF5722' },
-                                    { day: 2, posts: [], line: 'transparent' },
-                                    { day: 3, posts: [], line: 'transparent' },
-                                    { day: 4, posts: [], line: 'transparent' },
-                                    { day: 5, posts: [], line: 'transparent' },
-                                    { day: 6, posts: [1, 2, 3], line: '#FF5722' },
-                                    { day: 7, posts: [], line: 'transparent' },
-                                ].map((d, i) => (
-                                    <div key={`w1-${i}`} className="min-h-[100px] border-t border-gray-100 relative">
-                                        <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722] opacity-0" style={{ opacity: d.line !== 'transparent' ? 1 : 0 }}></div>
+                            {cells.map((day, i) => {
+                                if (day === null) {
+                                    return <div key={`empty-${i}`} className="min-h-[90px] border-t border-gray-100" />;
+                                }
+
+                                const daySchedules = schedulesByDay[String(day)] ?? [];
+                                const isToday = day === todayDay;
+                                const hasSchedules = daySchedules.length > 0;
+
+                                return (
+                                    <div
+                                        key={`day-${day}`}
+                                        className={`min-h-[90px] border-t border-gray-100 relative ${isToday ? 'bg-orange-50/40' : ''}`}
+                                    >
+                                        {hasSchedules && (
+                                            <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722]" />
+                                        )}
                                         <div className="p-2">
-                                            <span className="text-sm font-medium text-gray-900">{d.day}</span>
+                                            <span className={`text-sm font-medium ${isToday ? 'text-[#FF5722]' : 'text-gray-900'}`}>
+                                                {day}
+                                            </span>
                                             <div className="flex flex-wrap gap-1 mt-2">
-                                                {d.posts.map(p => (
-                                                    <div key={p} className="w-6 h-6 rounded bg-gray-200 overflow-hidden">
-                                                        <img src={`https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=40&q=60`} className="w-full h-full object-cover" />
+                                                {daySchedules.slice(0, 4).map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        title={`@${item.social_account.handle} · ${item.content_project.title}`}
+                                                        className="w-6 h-6 rounded bg-gray-200 overflow-hidden flex-shrink-0"
+                                                    >
+                                                        {item.content_project.video_url ? (
+                                                            <img
+                                                                src={item.content_project.video_url}
+                                                                alt={item.content_project.title}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center">
+                                                                <TikTokIcon className="w-3 h-3 text-white" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
+                                                {daySchedules.length > 4 && (
+                                                    <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-500">
+                                                        +{daySchedules.length - 4}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                ))}
-
-                                {/* Week 2 */}
-                                {[
-                                    { day: 8, posts: [], line: 'transparent' },
-                                    { day: 9, posts: [], line: 'transparent' },
-                                    { day: 10, posts: [1], line: '#FF5722' },
-                                    { day: 11, posts: [], line: 'transparent' },
-                                    { day: 12, posts: [], line: 'transparent' },
-                                    { day: 13, posts: [], line: 'transparent' },
-                                    { day: 14, posts: [], line: 'transparent' },
-                                ].map((d, i) => (
-                                    <div key={`w2-${i}`} className="min-h-[100px] border-t border-gray-100 relative">
-                                        <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722] opacity-0" style={{ opacity: d.line !== 'transparent' ? 1 : 0 }}></div>
-                                        <div className="p-2">
-                                            <span className="text-sm font-medium text-gray-900">{d.day}</span>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {d.posts.map(p => (
-                                                    <div key={p} className="w-6 h-6 rounded bg-gray-200 overflow-hidden">
-                                                        <img src={`https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=40&q=60`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Week 3 (With active day) */}
-                                {[
-                                    { day: 15, posts: [1, 2], line: '#FF5722' },
-                                    { day: 16, posts: [], line: 'transparent' },
-                                    { day: 17, posts: [], line: 'transparent' },
-                                    { day: 18, posts: [], line: 'transparent' },
-                                    { day: 19, posts: [1, 2, 3], line: '#FF5722', active: true },
-                                    { day: 20, posts: [], line: 'transparent' },
-                                    { day: 21, posts: [], line: 'transparent' },
-                                ].map((d, i) => (
-                                    <div key={`w3-${i}`} className={`min-h-[100px] border-t border-gray-100 relative ${d.active ? 'bg-orange-50/50' : ''}`}>
-                                        <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722] opacity-0" style={{ opacity: d.line !== 'transparent' ? 1 : 0 }}></div>
-                                        <div className="p-2">
-                                            <span className={`text-sm font-medium ${d.active ? 'text-[#FF5722]' : 'text-gray-900'}`}>{d.day}</span>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {d.posts.map(p => (
-                                                    <div key={p} className="w-6 h-6 rounded bg-gray-200 overflow-hidden">
-                                                        <img src={`https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=40&q=60`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Week 4 */}
-                                {[
-                                    { day: 22, posts: [], line: 'transparent' },
-                                    { day: 23, posts: [], line: 'transparent' },
-                                    { day: 24, posts: [], line: 'transparent' },
-                                    { day: 25, posts: [], line: 'transparent' },
-                                    { day: 26, posts: [], line: 'transparent' },
-                                    { day: 27, posts: [], line: 'transparent' },
-                                    { day: 28, posts: [1, 2], line: '#FF5722' },
-                                ].map((d, i) => (
-                                    <div key={`w4-${i}`} className="min-h-[100px] border-t border-gray-100 relative">
-                                        <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722] opacity-0" style={{ opacity: d.line !== 'transparent' ? 1 : 0 }}></div>
-                                        <div className="p-2">
-                                            <span className="text-sm font-medium text-gray-900">{d.day}</span>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {d.posts.map(p => (
-                                                    <div key={p} className="w-6 h-6 rounded bg-gray-200 overflow-hidden">
-                                                        <img src={`https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=40&q=60`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Week 5 */}
-                                {[
-                                    { day: 29, posts: [], line: 'transparent' },
-                                    { day: 30, posts: [], line: 'transparent' },
-                                ].map((d, i) => (
-                                    <div key={`w5-${i}`} className="min-h-[100px] border-t border-gray-100 relative">
-                                        <div className="absolute top-[-1px] left-0 right-0 h-0.5 bg-[#FF5722] opacity-0" style={{ opacity: d.line !== 'transparent' ? 1 : 0 }}></div>
-                                        <div className="p-2">
-                                            <span className="text-sm font-medium text-gray-900">{d.day}</span>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {d.posts.map(p => (
-                                                    <div key={p} className="w-6 h-6 rounded bg-gray-200 overflow-hidden">
-                                                        <img src={`https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=40&q=60`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
+                                );
+                            })}
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 }

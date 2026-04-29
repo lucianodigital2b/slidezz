@@ -1,0 +1,315 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "back": "Voltar",
+    "continue": "Continuar",
+    "loading": "Carregando...",
+    "or": "Ou",
+    "password": "Senha",
+    "email": "E-mail",
+    "name": "Nome"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar na sua conta",
+      "description": "Insira seu e-mail e senha abaixo para entrar",
+      "headTitle": "Entrar",
+      "email": "E-mail",
+      "emailPlaceholder": "email@exemplo.com",
+      "password": "Senha",
+      "passwordPlaceholder": "Senha",
+      "forgotPassword": "Esqueceu a senha?",
+      "rememberMe": "Lembrar de mim",
+      "submit": "Entrar",
+      "noAccount": "Não tem uma conta?",
+      "signUp": "Cadastre-se"
+    },
+    "register": {
+      "title": "Criar uma conta",
+      "description": "Insira seus dados abaixo para criar sua conta",
+      "headTitle": "Cadastro",
+      "name": "Nome",
+      "namePlaceholder": "Nome completo",
+      "email": "E-mail",
+      "emailPlaceholder": "email@exemplo.com",
+      "password": "Senha",
+      "passwordPlaceholder": "Senha",
+      "confirmPassword": "Confirmar senha",
+      "confirmPasswordPlaceholder": "Confirmar senha",
+      "submit": "Criar conta",
+      "haveAccount": "Já tem uma conta?",
+      "logIn": "Entrar"
+    },
+    "forgotPassword": {
+      "title": "Esqueceu a senha",
+      "description": "Insira seu e-mail para receber um link de redefinição de senha",
+      "headTitle": "Esqueceu a senha",
+      "email": "E-mail",
+      "emailPlaceholder": "email@exemplo.com",
+      "submit": "Enviar link de redefinição",
+      "returnToLogin": "Ou, volte para",
+      "logIn": "entrar"
+    },
+    "resetPassword": {
+      "title": "Redefinir senha",
+      "description": "Por favor, insira sua nova senha abaixo",
+      "headTitle": "Redefinir senha",
+      "email": "E-mail",
+      "password": "Nova senha",
+      "passwordPlaceholder": "Nova senha",
+      "confirmPassword": "Confirmar senha",
+      "confirmPasswordPlaceholder": "Confirmar senha",
+      "submit": "Redefinir senha"
+    },
+    "verifyEmail": {
+      "title": "Verificar e-mail",
+      "description": "Por favor, verifique seu endereço de e-mail clicando no link que enviamos para você.",
+      "headTitle": "Verificação de e-mail",
+      "linkSent": "Um novo link de verificação foi enviado para o endereço de e-mail que você forneceu durante o cadastro.",
+      "resend": "Reenviar e-mail de verificação",
+      "logOut": "Sair"
+    },
+    "confirmPassword": {
+      "title": "Confirmar sua senha",
+      "description": "Esta é uma área segura da aplicação. Por favor, confirme sua senha antes de continuar.",
+      "headTitle": "Confirmar senha",
+      "password": "Senha",
+      "passwordPlaceholder": "Senha",
+      "submit": "Confirmar senha"
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Gerencie seu perfil e configurações da conta",
+    "nav": {
+      "profile": "Perfil",
+      "security": "Segurança",
+      "appearance": "Aparência",
+      "billing": "Assinatura"
+    },
+    "profile": {
+      "title": "Configurações de perfil",
+      "infoTitle": "Informações do perfil",
+      "infoDescription": "Atualize seu nome e endereço de e-mail",
+      "name": "Nome",
+      "namePlaceholder": "Nome completo",
+      "email": "E-mail",
+      "emailPlaceholder": "E-mail",
+      "emailUnverified": "Seu endereço de e-mail não está verificado.",
+      "resendVerification": "Clique aqui para reenviar o e-mail de verificação.",
+      "verificationSent": "Um novo link de verificação foi enviado para o seu endereço de e-mail.",
+      "save": "Salvar",
+      "connectedAccounts": {
+        "title": "Contas Conectadas",
+        "description": "Conecte suas contas de redes sociais para agendar publicações",
+        "connect": "Adicionar {{platform}}",
+        "disconnect": "Desconectar",
+        "confirmDisconnect": "Desconectar @{{handle}}?"
+      }
+    },
+    "security": {
+      "title": "Configurações de segurança",
+      "passwordTitle": "Atualizar senha",
+      "passwordDescription": "Certifique-se de usar uma senha longa e aleatória para manter sua conta segura",
+      "currentPassword": "Senha atual",
+      "currentPasswordPlaceholder": "Senha atual",
+      "newPassword": "Nova senha",
+      "newPasswordPlaceholder": "Nova senha",
+      "confirmPassword": "Confirmar senha",
+      "confirmPasswordPlaceholder": "Confirmar senha",
+      "savePassword": "Salvar senha",
+      "twoFactorTitle": "Autenticação em dois fatores",
+      "twoFactorDescription": "Gerencie suas configurações de autenticação em dois fatores",
+      "twoFactorEnabledInfo": "Você será solicitado a inserir um PIN seguro e aleatório durante o login, que pode ser obtido no aplicativo compatível com TOTP no seu telefone.",
+      "twoFactorDisabledInfo": "Ao habilitar a autenticação em dois fatores, você será solicitado a inserir um PIN seguro durante o login. Este PIN pode ser obtido em um aplicativo compatível com TOTP no seu telefone.",
+      "disable2FA": "Desativar 2FA",
+      "enable2FA": "Ativar 2FA",
+      "continueSetup": "Continuar configuração",
+      "2fa": {
+        "enabledTitle": "Autenticação em dois fatores ativada",
+        "enabledDescription": "A autenticação em dois fatores está ativa. Escaneie o QR code ou insira a chave de configuração no seu aplicativo autenticador.",
+        "verifyTitle": "Verificar código de autenticação",
+        "verifyDescription": "Insira o código de 6 dígitos do seu aplicativo autenticador",
+        "setupTitle": "Ativar autenticação em dois fatores",
+        "setupDescription": "Para concluir a ativação, escaneie o QR code ou insira a chave de configuração no seu aplicativo autenticador",
+        "close": "Fechar",
+        "continue": "Continuar",
+        "confirm": "Confirmar",
+        "orEnterManually": "Ou insira o código manualmente"
+      },
+      "recoveryCodes": {
+        "title": "Códigos de recuperação 2FA",
+        "description": "Os códigos de recuperação permitem recuperar o acesso caso você perca seu dispositivo 2FA. Guarde-os em um gerenciador de senhas seguro.",
+        "view": "Ver códigos de recuperação",
+        "hide": "Ocultar códigos de recuperação",
+        "regenerate": "Regenerar códigos",
+        "loading": "Carregando códigos de recuperação",
+        "warning": "Cada código de recuperação pode ser usado uma vez para acessar sua conta e será removido após o uso. Se precisar de mais, clique em Regenerar códigos acima."
+      }
+    },
+    "appearance": {
+      "title": "Configurações de aparência",
+      "description": "Atualize as configurações de aparência da sua conta"
+    },
+    "deleteAccount": {
+      "title": "Excluir conta",
+      "description": "Exclua sua conta e todos os seus recursos",
+      "warning": "Aviso",
+      "warningText": "Por favor, proceda com cautela, isso não pode ser desfeito.",
+      "deleteButton": "Excluir conta",
+      "dialogTitle": "Tem certeza que deseja excluir sua conta?",
+      "dialogDescription": "Uma vez que sua conta for excluída, todos os seus recursos e dados também serão excluídos permanentemente. Por favor, insira sua senha para confirmar que deseja excluir permanentemente sua conta.",
+      "passwordLabel": "Senha",
+      "passwordPlaceholder": "Senha",
+      "cancelButton": "Cancelar",
+      "confirmButton": "Excluir conta"
+    }
+  },
+  "sidebar": {
+    "newAutomation": "Nova Automação",
+    "home": "Início",
+    "library": "Biblioteca",
+    "analytics": "Analytics",
+    "schedule": "Agenda",
+    "slideshows": "Slideshows",
+    "automations": "Automações",
+    "slideshowEditor": "Editor de Slideshow",
+    "imageCollections": "Coleções de Imagens",
+    "database": "Banco de Dados"
+  },
+  "dashboard": {
+    "title": "Início",
+    "question": "O que você está criando hoje?",
+    "slideshowDatabase": "Banco de Dados de Slideshow",
+    "tabSlideshows": "Slideshows ({{count}})",
+    "tabUgc": "Vídeos UGC ({{count}})",
+    "pageInfo": "Página {{current}} de {{total}}",
+    "empty": "Você ainda não tem vídeos. Crie seu primeiro vídeo para começar!"
+  },
+  "schedule": {
+    "title": "Agenda",
+    "subtitle": "Gerencie e acompanhe suas publicações agendadas no TikTok",
+    "searchPlaceholder": "Buscar ...",
+    "createSchedule": "Criar Agendamento",
+    "connectTikTok": "Conectar TikTok",
+    "video": "Vídeo",
+    "noProjects": "Nenhum projeto de conteúdo ainda",
+    "noProjectsHint": "Crie um projeto de conteúdo para agendá-lo",
+    "scheduling": "Agendando...",
+    "scheduleButton": "Agendar",
+    "yourSchedule": "Sua Agenda",
+    "today": "Hoje",
+    "allStatuses": "Todos os status",
+    "statusPending": "Pendente",
+    "statusPublishing": "Publicando",
+    "statusPublished": "Publicado",
+    "statusFailed": "Falhou",
+    "weekDays": ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+    "months": [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ]
+  },
+  "analytics": {
+    "title": "Visão Geral de Analytics",
+    "subtitle": "Acompanhe suas métricas de desempenho e engajamento",
+    "sync": "Atualizar",
+    "tableView": "Tabela",
+    "gridView": "Grade",
+    "totalViews": "Total de Views",
+    "totalLikes": "Total de Curtidas",
+    "totalComments": "Total de Comentários",
+    "avgEngagement": "Engajamento Médio",
+    "colAccount": "Conta",
+    "colViews": "Views",
+    "colLikes": "Curtidas",
+    "colComments": "Comentários",
+    "colShares": "Compartilhamentos",
+    "colBookmarks": "Salvamentos",
+    "colEngagement": "Taxa de Engajamento",
+    "colPublished": "Publicado",
+    "colActions": "Ações",
+    "emptyTitle": "Você ainda não tem publicações pelo Slidezz.",
+    "emptySubtitle": "Após publicar pelo Slidezz, os dados aparecerão aqui.",
+    "period7": "7 dias",
+    "period30": "30 dias",
+    "period90": "90 dias",
+    "cardViews": "Views",
+    "cardLikes": "Curtidas",
+    "cardEngagement": "Engajamento"
+  },
+  "library": {
+    "title": "Biblioteca",
+    "subtitle": "Gerencie todos os seus vídeos e conteúdos em um só lugar",
+    "empty": "Sua biblioteca está vazia. Importe ou crie conteúdo para começar."
+  },
+  "database": {
+    "title": "Banco de Dados",
+    "subtitle": "Gerencie os dados usados nos seus slideshows e automações",
+    "newEntry": "Nova Entrada",
+    "empty": "Nenhum dado cadastrado ainda. Adicione entradas ao banco para usar nos seus slideshows."
+  },
+  "automations": {
+    "title": "Automações",
+    "subtitle": "Crie fluxos automáticos para publicar conteúdo sem esforço",
+    "newAutomation": "Nova Automação",
+    "empty": "Nenhuma automação criada ainda. Crie sua primeira automação para começar."
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Sobre sua marca",
+      "subtitle": "Como se chama sua página e em qual segmento você atua?",
+      "nameLabel": "Nome da página ou marca",
+      "namePlaceholder": "Ex: Studio Joana, Tech Lovers, etc.",
+      "segmentLabel": "Segmento"
+    },
+    "step2": {
+      "title": "Vibe & estilo",
+      "subtitle": "Qual é a personalidade do seu conteúdo?"
+    },
+    "step3": {
+      "title": "Cores da marca",
+      "subtitle": "Qual é a cor principal que representa sua marca?",
+      "hexLabel": "Cor hexadecimal",
+      "hexPlaceholder": "#E8440A",
+      "suggestion": "Ou escolha uma sugestão:"
+    },
+    "step4": {
+      "title": "Seu logo",
+      "subtitle": "Opcional — usamos no cabeçalho dos seus slideshows e artes.",
+      "clickOrDrag": "Clique ou arraste seu logo",
+      "clickToChange": "Clique para trocar",
+      "formats": "PNG, JPG ou SVG · máx 2 MB",
+      "removeLogo": "Remover logo"
+    },
+    "step5": {
+      "title": "Público & tom",
+      "subtitle": "Essas informações guiam a IA na criação dos seus roteiros e legendas.",
+      "audienceLabel": "Quem é seu público-alvo?",
+      "audiencePlaceholder": "Ex: Mulheres de 25 a 40 anos que buscam saúde e bem-estar, moram nas grandes cidades e usam TikTok para se inspirar.",
+      "toneLabel": "Tom de voz",
+      "goalLabel": "Objetivo principal",
+      "nextButton": "Ver planos"
+    },
+    "step6": {
+      "title": "Escolha seu plano",
+      "subtitle": "14 dias grátis. Sem cobrança agora. Cancele a qualquer momento.",
+      "afterTrial": "após 14 dias grátis",
+      "startFree": "Começar {{plan}} grátis",
+      "terms": "Ao assinar, você concorda com nossos termos de uso. Você pode cancelar antes do término do período gratuito sem nenhum custo."
+    },
+    "validation": {
+      "nameRequired": "Informe o nome da sua marca.",
+      "industryRequired": "Selecione um segmento.",
+      "vibeRequired": "Escolha a vibe do seu conteúdo.",
+      "colorInvalid": "Informe uma cor hexadecimal válida.",
+      "audienceRequired": "Descreva seu público-alvo.",
+      "toneRequired": "Selecione o tom de voz.",
+      "goalRequired": "Selecione seu objetivo principal."
+    },
+    "back": "Voltar",
+    "continue": "Continuar",
+    "saving": "Salvando..."
+  }
+}

@@ -1,5 +1,5 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -7,14 +7,15 @@ import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
 export default function VerifyEmail({ status }: { status?: string }) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Email verification" />
+            <Head title={t('auth.verifyEmail.headTitle')} />
 
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                    {t('auth.verifyEmail.linkSent')}
                 </div>
             )}
 
@@ -23,14 +24,11 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     <>
                         <Button disabled={processing} variant="secondary">
                             {processing && <Spinner />}
-                            Resend verification email
+                            {t('auth.verifyEmail.resend')}
                         </Button>
 
-                        <TextLink
-                            href={logout()}
-                            className="mx-auto block text-sm"
-                        >
-                            Log out
+                        <TextLink href={logout()} className="mx-auto block text-sm">
+                            {t('auth.verifyEmail.logOut')}
                         </TextLink>
                     </>
                 )}
@@ -40,7 +38,6 @@ export default function VerifyEmail({ status }: { status?: string }) {
 }
 
 VerifyEmail.layout = {
-    title: 'Verify email',
-    description:
-        'Please verify your email address by clicking on the link we just emailed to you.',
+    title: 'Verificar e-mail',
+    description: 'Por favor, verifique seu endereço de e-mail clicando no link que enviamos para você.',
 };

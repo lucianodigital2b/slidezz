@@ -10,9 +10,11 @@ use Illuminate\Support\Str;
 
 class TikTokPublisher implements SocialPublisher
 {
-    protected string $clientId;
-    protected string $clientSecret;
-    protected string $redirectUri;
+    protected ?string $clientId;
+
+    protected ?string $clientSecret;
+
+    protected ?string $redirectUri;
 
     public function __construct()
     {
@@ -29,8 +31,8 @@ class TikTokPublisher implements SocialPublisher
         $query = http_build_query([
             'client_key' => $this->clientId,
             'response_type' => 'code',
-            'scope' => 'user.info.basic,video.upload',
-            'redirect_uri' => $this->redirectUri,
+            'scope' => 'user.info.basic,user.info.profile,user.info.stats,video.list,video.upload',
+            'redirect_uri' => url($this->redirectUri),
             'state' => $csrfState,
         ]);
 
@@ -49,19 +51,19 @@ class TikTokPublisher implements SocialPublisher
             'client_secret' => $this->clientSecret,
             'code' => $data['code'],
             'grant_type' => 'authorization_code',
-            'redirect_uri' => $this->redirectUri,
+            'redirect_uri' => url($this->redirectUri),
         ]);
 
         $tokenData = $response->json();
 
         if (isset($tokenData['error'])) {
-            throw new \Exception('TikTok OAuth Error: ' . json_encode($tokenData));
+            throw new \Exception('TikTok OAuth Error: '.json_encode($tokenData));
         }
 
         // 2. Fetch User Info
         $userInfoResponse = Http::withToken($tokenData['access_token'])
             ->get('https://open.tiktokapis.com/v2/user/info/', [
-                'fields' => 'open_id,union_id,avatar_url,display_name'
+                'fields' => 'open_id,union_id,avatar_url,display_name',
             ]);
 
         $userInfo = $userInfoResponse->json()['data']['user'];
@@ -70,7 +72,7 @@ class TikTokPublisher implements SocialPublisher
         return SocialAccount::updateOrCreate(
             [
                 'provider' => 'tiktok',
-                'provider_id' => $userInfo['open_id']
+                'provider_id' => $userInfo['open_id'],
             ],
             [
                 'workspace_id' => session('current_workspace_id'), // Set in the auth flow context
@@ -87,7 +89,7 @@ class TikTokPublisher implements SocialPublisher
     {
         // To be implemented: TikTok Direct Post API
         // https://developers.tiktok.com/doc/tiktok-api-direct-post/
-        
+
         // 1. Get the Schedule and SocialAccount
         $schedule = $project->schedules()->first();
         $account = $schedule->socialAccount;
@@ -101,14 +103,19 @@ class TikTokPublisher implements SocialPublisher
         // 4. Upload video chunks
         // 5. Commit upload
 
-        return 'fake_tiktok_post_id_' . Str::random(10);
+        return 'fake_tiktok_post_id_'.Str::random(10);
     }
 
     public function getAnalytics(string $platformPostId): array
     {
+        $views = rand(100, 10000);
+
         return [
-            'views' => rand(100, 10000),
-            'likes' => rand(10, 1000),
+            'views' => $views,
+            'likes' => rand(10, (int) ($views * 0.1)),
+            'comments' => rand(0, (int) ($views * 0.02)),
+            'shares' => rand(0, (int) ($views * 0.05)),
+            'bookmarks' => rand(0, (int) ($views * 0.03)),
         ];
     }
 

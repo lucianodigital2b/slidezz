@@ -40,6 +40,9 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'trial_ends_at' => $request->user()?->trial_ends_at?->toDateString(),
+                'on_trial' => $request->user()?->onTrial(),
+                'onboarding_complete' => $request->user()?->hasCompletedOnboarding(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

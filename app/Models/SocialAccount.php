@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\SocialAccountFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SocialAccount extends Model
 {
+    /** @use HasFactory<SocialAccountFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'workspace_id',
         'provider',

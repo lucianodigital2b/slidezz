@@ -35,4 +35,9 @@ class Schedule extends Model
     {
         return $this->belongsTo(SocialAccount::class);
     }
+
+    public function postAnalytic()
+    {
+        return $this->hasOne(PostAnalytic::class);
+    }
 }

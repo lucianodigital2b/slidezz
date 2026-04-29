@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\BillingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -21,4 +22,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+
+    Route::get('settings/billing', [BillingController::class, 'edit'])->name('billing.edit');
+    Route::post('settings/billing/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
+    Route::post('settings/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+    Route::post('settings/billing/resume', [BillingController::class, 'resume'])->name('billing.resume');
+    Route::get('settings/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+    Route::get('settings/billing/invoices/{invoice}', [BillingController::class, 'downloadInvoice'])->name('billing.invoice.download');
 });

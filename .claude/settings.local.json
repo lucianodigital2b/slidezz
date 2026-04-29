@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan *)"
+      "Bash(php artisan *)",
+      "Bash(vendor/bin/pint *)",
+      "Bash(php -m)",
+      "Bash(mysql *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)"
     ]
   }
 }
