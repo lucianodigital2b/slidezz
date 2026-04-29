@@ -7,7 +7,6 @@ use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Instagram\Container\Container;
 use Instagram\Media\Insights;
@@ -179,59 +178,47 @@ class InstagramPublisher implements SocialPublisher
 
     public function getAnalytics(string $platformPostId): array
     {
-        // Analytics require a valid access_token scoped to the account that owns the post.
-        // Resolve via the most recent published schedule for this post ID.
+        // Resolve the access token via the published schedule for this post.
         $schedule = Schedule::where('platform_post_id', $platformPostId)
             ->where('status', 'published')
             ->with('socialAccount')
             ->latest()
-            ->first();
-
-        if (! $schedule) {
-            return $this->randomFallback();
-        }
+            ->firstOrFail();
 
         $account = $schedule->socialAccount;
 
-        try {
-            $insights = new Insights([
-                'access_token' => $account->access_token,
-                'graph_version' => self::GRAPH_VERSION,
-                'media_id' => $platformPostId,
-                'media_type' => Metric::MEDIA_TYPE_IMAGE,
-            ]);
+        $insights = new Insights([
+            'access_token' => $account->access_token,
+            'graph_version' => self::GRAPH_VERSION,
+            'media_id' => $platformPostId,
+            'media_type' => Metric::MEDIA_TYPE_IMAGE,
+        ]);
 
-            $response = $insights->getSelf([
-                'metric' => implode(',', [
-                    Metric::IMPRESSIONS,
-                    Metric::REACH,
-                    Metric::ENGAGEMENT,
-                    Metric::SAVED,
-                ]),
-            ]);
+        $response = $insights->getSelf([
+            'metric' => implode(',', [
+                Metric::IMPRESSIONS,
+                Metric::REACH,
+                Metric::ENGAGEMENT,
+                Metric::SAVED,
+            ]),
+        ]);
 
-            $metrics = collect($response['data'] ?? [])
-                ->keyBy('name')
-                ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
+        $metrics = collect($response['data'] ?? [])
+            ->keyBy('name')
+            ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
 
-            // Fetch like and comment counts from the media object directly
-            $mediaData = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$platformPostId}", [
-                'fields' => 'like_count,comments_count',
-                'access_token' => $account->access_token,
-            ])->json();
+        $mediaData = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$platformPostId}", [
+            'fields' => 'like_count,comments_count',
+            'access_token' => $account->access_token,
+        ])->throw()->json();
 
-            return [
-                'views' => $metrics->get(Metric::IMPRESSIONS, 0),
-                'likes' => $mediaData['like_count'] ?? 0,
-                'comments' => $mediaData['comments_count'] ?? 0,
-                'shares' => 0,
-                'bookmarks' => $metrics->get(Metric::SAVED, 0),
-            ];
-        } catch (\Throwable $e) {
-            Log::warning("Instagram analytics fetch failed for post {$platformPostId}: {$e->getMessage()}");
-
-            return $this->randomFallback();
-        }
+        return [
+            'views' => $metrics->get(Metric::IMPRESSIONS, 0),
+            'likes' => $mediaData['like_count'] ?? 0,
+            'comments' => $mediaData['comments_count'] ?? 0,
+            'shares' => 0,
+            'bookmarks' => $metrics->get(Metric::SAVED, 0),
+        ];
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
@@ -371,23 +358,5 @@ class InstagramPublisher implements SocialPublisher
         }
 
         return (string) $id;
-    }
-
-    /**
-     * Fallback analytics when the real API call cannot be made.
-     *
-     * @return array<string, int>
-     */
-    private function randomFallback(): array
-    {
-        $views = rand(100, 10000);
-
-        return [
-            'views' => $views,
-            'likes' => rand(10, (int) ($views * 0.12)),
-            'comments' => rand(0, (int) ($views * 0.03)),
-            'shares' => 0,
-            'bookmarks' => rand(0, (int) ($views * 0.05)),
-        ];
     }
 }

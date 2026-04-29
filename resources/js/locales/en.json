@@ -1,0 +1,304 @@
+{
+  "slideEditor": {
+    "pageTitle": "Slideshow Editor",
+    "toolbar": {
+      "select": "Select",
+      "text": "Text",
+      "rect": "Rectangle",
+      "circle": "Circle",
+      "image": "Image",
+      "gradient": "Gradient",
+      "background": "Background",
+      "untitled": "Untitled",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Error saving",
+      "save": "Save",
+      "exportPng": "Export PNG"
+    },
+    "slides": {
+      "panel": "SLIDES",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "formats": {
+      "post": "Post",
+      "stories": "Stories"
+    },
+    "properties": {
+      "panel": "PROPERTIES",
+      "empty": "Select an element to edit its properties"
+    },
+    "sections": {
+      "transform": "Transform",
+      "text": "Text",
+      "typography": "Typography",
+      "textStroke": "Text Outline",
+      "accentBorder": "Accent Border",
+      "fill": "Fill",
+      "border": "Border",
+      "slideBackground": "Slide Background",
+      "colorOverlay": "Color Overlay",
+      "toneColor": "Tone & Color",
+      "effects": "Effects",
+      "rgbChannels": "RGB Channels",
+      "shadow": "Shadow",
+      "gradient": "Gradient"
+    },
+    "fields": {
+      "x": "X",
+      "y": "Y",
+      "width": "Width",
+      "height": "Height",
+      "rotation": "Rotation",
+      "opacity": "Opacity",
+      "content": "Content",
+      "textColor": "Text color",
+      "font": "Font",
+      "size": "Size",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strikethrough": "Strikethrough",
+      "alignH": "Horizontal alignment",
+      "alignV": "Vertical alignment",
+      "lineHeight": "Line height",
+      "letterSpacing": "Letter spacing",
+      "padding": "Padding",
+      "lineBreak": "Line break",
+      "lineBreakWord": "By word",
+      "lineBreakChar": "By character",
+      "lineBreakNone": "No break",
+      "color": "Color",
+      "thickness": "Thickness",
+      "enableBorder": "Enable border",
+      "position": "Position",
+      "spacing": "Spacing",
+      "cornerRadius": "Corner radius",
+      "borderStyle": "Style",
+      "useAsBackground": "Use as background",
+      "bgSize": "Size",
+      "bgCover": "Cover",
+      "bgContain": "Contain",
+      "bgFill": "Stretch",
+      "focalPoint": "Focal point",
+      "positionX": "Position X",
+      "positionY": "Position Y",
+      "enableOverlay": "Enable overlay",
+      "brightness": "Brightness",
+      "contrast": "Contrast",
+      "saturation": "Saturation",
+      "hue": "Hue",
+      "luminance": "Luminance",
+      "blur": "Blur",
+      "enhance": "Enhance",
+      "noise": "Noise",
+      "pixelate": "Pixelate",
+      "grayscale": "Black & White",
+      "sepia": "Sepia",
+      "red": "Red",
+      "green": "Green",
+      "blue": "Blue",
+      "enableShadow": "Enable shadow",
+      "shadowBlur": "Blur",
+      "shadowOffsetX": "Offset X",
+      "shadowOffsetY": "Offset Y",
+      "gradientDirection": "Direction"
+    },
+    "gradientDirections": {
+      "bottom": "↓ Bottom",
+      "top": "↑ Top",
+      "left": "← Left",
+      "right": "Right →"
+    },
+    "accentSides": {
+      "left": "← Left",
+      "right": "Right →",
+      "top": "↑ Top",
+      "bottom": "↓ Bottom"
+    },
+    "deleteElement": "Delete element",
+    "searchFont": "Search font...",
+    "moreFonts": "+{{count}} fonts — refine search",
+    "noFonts": "No fonts found",
+    "ai": {
+      "generate": "AI Generate",
+      "modalTitle": "Generate Carousel with AI",
+      "topicLabel": "Topic",
+      "topicPlaceholder": "e.g. 5 tips to grow on Instagram...",
+      "styleLabel": "Style (optional)",
+      "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
+      "slideCountLabel": "Number of slides",
+      "generateBtn": "Generate",
+      "statusGenerating": "Writing your slides…",
+      "statusImages": "Generating background images…",
+      "statusDone": "Carousel ready! Check your slides panel.",
+      "doneBtn": "View slides",
+      "errorNetwork": "Network error. Please try again.",
+      "errorServer": "Server error. Please try again.",
+      "errorParsing": "Could not parse the generated content. Please try again."
+    }
+  },
+  "createCarousel": {
+    "pageTitle": "Create Carousel",
+    "back": "Back",
+    "next": "Continue",
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "steps": {
+      "input": "Content",
+      "config": "Config",
+      "generate": "Generate"
+    },
+    "step1": {
+      "title": "About your carousel",
+      "subtitle": "Define the topic and main content of the carousel.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. 5 mistakes that are stopping your Instagram growth",
+      "topicLabel": "Description / Topic",
+      "topicPlaceholder": "Describe the main content. Can be a script, key points, or the central idea...",
+      "or": "or",
+      "importBtn": "Import from a URL",
+      "formatLabel": "Format"
+    },
+    "step2": {
+      "templateTitle": "Visual Template",
+      "archetypeTitle": "Hook Archetype — Cover Slide",
+      "archetypeSubtitle": "Defines the emotional hook of the first slide.",
+      "preview": "Preview",
+      "previewEmpty": "Select a template to preview",
+      "hook": "Hook"
+    },
+    "step3": {
+      "title": "Ready to generate",
+      "subtitle": "Review your settings and click Generate to create your carousel with AI.",
+      "summaryTitle": "Content",
+      "template": "Template",
+      "archetype": "Archetype",
+      "format": "Format",
+      "saveConfigLabel": "Save as AI autopilot default",
+      "saveConfigDesc": "This template and archetype will be used automatically in future autopilot generations.",
+      "generateBtn": "Generate Carousel"
+    },
+    "import": {
+      "title": "Import Content",
+      "subtitle": "Input Parser · AI Extraction",
+      "extractBtn": "Extract with AI",
+      "extractError": "Could not extract content.",
+      "networkError": "Network error. Please try again."
+    }
+  },
+  "onboarding": {
+    "header": {
+      "subtitle": "Set up your account in 5 simple steps",
+      "step": "Step {{current}} of {{total}}"
+    },
+    "steps": {
+      "goal": "Goal",
+      "brand": "Brand",
+      "audience": "Audience",
+      "identity": "Identity",
+      "style": "Style"
+    },
+    "nav": {
+      "back": "Back",
+      "continue": "Continue",
+      "viewPlans": "View plans",
+      "saving": "Saving..."
+    },
+    "advanced": {
+      "title": "Advanced settings",
+      "description": "These details help AI create even better content, but you can fill them in later.",
+      "extraLabel": "Anything else we should know?",
+      "extraPlaceholder": "Ex: We avoid mentioning competitors, our differentiator is customer service..."
+    },
+    "step1": {
+      "title": "What is your main goal?",
+      "subtitle": "Let's start by understanding your main objective",
+      "sellProducts": "Sell more products/services",
+      "sellProductsDesc": "Increase sales and conversions",
+      "buildAuthority": "Build authority",
+      "buildAuthorityDesc": "Become the reference in your niche",
+      "increaseEngagement": "Increase engagement",
+      "increaseEngagementDesc": "Build an active community",
+      "generateLeads": "Generate qualified leads",
+      "generateLeadsDesc": "Capture potential clients"
+    },
+    "step2": {
+      "title": "Tell us about your brand",
+      "subtitle": "Basic information to personalize your content",
+      "brandNameLabel": "Brand Name",
+      "brandNamePlaceholder": "Ex: My Company",
+      "brandDescLabel": "What does the brand do?",
+      "brandDescHint": "Describe in a few sentences the business, product or service",
+      "brandDescPlaceholder": "Ex: We sell women's clothing focused on sustainable fashion..."
+    },
+    "step3": {
+      "title": "Who is your target audience?",
+      "subtitle": "Describe the people you want to reach",
+      "audienceLabel": "Who is the ideal customer?",
+      "audienceHint": "Age, gender, location, profession, lifestyle",
+      "audiencePlaceholder": "Ex: Women 25-40 years old, entrepreneurs, living in big cities, seeking practicality..."
+    },
+    "step4": {
+      "title": "What is your brand's personality?",
+      "subtitle": "How do you want people to perceive your brand?",
+      "voiceToneLabel": "Voice tone",
+      "voiceToneHint": "Select the tones that best represent your brand",
+      "tones": {
+        "casual": "Casual",
+        "professional": "Professional",
+        "inspirational": "Inspirational",
+        "educational": "Educational",
+        "fun": "Fun",
+        "welcoming": "Welcoming",
+        "direct": "Direct",
+        "sophisticated": "Sophisticated",
+        "friendly": "Friendly",
+        "motivational": "Motivational"
+      }
+    },
+    "step5": {
+      "title": "Your brand style",
+      "subtitle": "Finalize the visual identity of your content",
+      "logoTitle": "Upload logo",
+      "logoSubtitle": "PNG, JPG or WebP up to 5MB",
+      "logoHint": "SVG accepted (converted to PNG)",
+      "logoClickOrDrag": "Click or drag your logo here",
+      "logoChange": "Click to change",
+      "logoRemove": "Remove logo",
+      "paletteTitle": "Brand colors",
+      "paletteCustomize": "Customize",
+      "paletteCurrentColors": "Current colors:",
+      "palettePrimary": "Primary",
+      "paletteSecondary": "Secondary",
+      "paletteAccent": "Accent",
+      "paletteMorePalettes": "See other palettes",
+      "visualStyleTitle": "Visual style description",
+      "visualStyleHint": "Describe the visual style you want for your content.",
+      "visualStylePlaceholder": "Ex: Modern and corporate, using sans-serif typography...",
+      "refineWithAI": "Refine with AI",
+      "addVisualRef": "Add visual reference",
+      "palettes": {
+        "sunset": "Sunset",
+        "softCoral": "Soft Coral",
+        "forest": "Forest",
+        "mint": "Mint"
+      }
+    },
+    "plans": {
+      "title": "Choose your plan",
+      "subtitle": "14 days free. No charge now. Cancel at any time.",
+      "afterTrial": "after 14 days free",
+      "startFree": "Start {{plan}} free",
+      "terms": "By subscribing, you agree to our terms of use. You can cancel before the end of the free period at no cost.",
+      "logout": "Log out"
+    },
+    "errors": {
+      "goalRequired": "Please select your main goal.",
+      "brandNameRequired": "Please enter your brand name.",
+      "brandDescRequired": "Please describe what your brand does.",
+      "audienceRequired": "Please describe your target audience.",
+      "toneRequired": "Please select at least one voice tone."
+    }
+  }
+}

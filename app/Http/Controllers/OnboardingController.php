@@ -20,7 +20,7 @@ class OnboardingController extends Controller
         $workspace = Workspace::where('owner_id', $request->user()->id)->first();
 
         return Inertia::render('Onboarding', [
-            'has_profile' => $workspace?->industry !== null,
+            'has_profile' => $workspace?->profile !== null,
             'plans' => config('plans'),
         ]);
     }
@@ -28,14 +28,19 @@ class OnboardingController extends Controller
     public function saveProfile(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'workspace_name' => ['required', 'string', 'max:100'],
-            'industry' => ['required', 'string', 'max:100'],
-            'vibe' => ['required', 'string', 'max:100'],
-            'brand_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'logo' => ['nullable', 'image', 'max:2048'],
             'goal' => ['required', 'string', 'max:100'],
-            'target_audience' => ['required', 'string', 'max:300'],
-            'tone_of_voice' => ['required', 'string', 'max:100'],
+            'brand_name' => ['required', 'string', 'max:200'],
+            'brand_description' => ['required', 'string', 'max:1000'],
+            'target_audience' => ['required', 'string', 'max:1000'],
+            'tone_of_voice' => ['required', 'array', 'min:1'],
+            'tone_of_voice.*' => ['string', 'max:50'],
+            'palette' => ['required', 'array'],
+            'palette.name' => ['required', 'string', 'max:100'],
+            'palette.primary' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'palette.secondary' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'palette.accent' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'visual_style' => ['nullable', 'string', 'max:2000'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $logoPath = null;
@@ -43,17 +48,26 @@ class OnboardingController extends Controller
             $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
+        $profile = [
+            'goal' => $validated['goal'],
+            'brand_name' => $validated['brand_name'],
+            'brand_description' => $validated['brand_description'],
+            'target_audience' => $validated['target_audience'],
+            'tone_of_voice' => $validated['tone_of_voice'],
+            'palette' => $validated['palette'],
+            'visual_style' => $validated['visual_style'] ?? null,
+        ];
+
+        if ($logoPath) {
+            $profile['logo_path'] = $logoPath;
+        }
+
         Workspace::updateOrCreate(
             ['owner_id' => $request->user()->id],
             [
-                'name' => $validated['workspace_name'],
-                'industry' => $validated['industry'],
-                'vibe' => $validated['vibe'],
-                'brand_color' => $validated['brand_color'],
+                'name' => $validated['brand_name'],
                 'logo_path' => $logoPath,
-                'goal' => $validated['goal'],
-                'target_audience' => $validated['target_audience'],
-                'tone_of_voice' => $validated['tone_of_voice'],
+                'profile' => $profile,
             ]
         );
 

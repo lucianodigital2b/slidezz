@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CarouselGenerationController;
+use App\Http\Controllers\CarouselWizardController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\SlideProjectController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
@@ -25,11 +29,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::inertia('library', 'Library')->name('library');
     Route::inertia('automations', 'Automations')->name('automations');
-    Route::inertia('slideshow-editor', 'SlideEditor')->name('slideshow-editor');
+    Route::get('slideshow-editor', [SlideProjectController::class, 'create'])->name('slideshow-editor');
+    Route::get('slideshow-editor/{slideProject}', [SlideProjectController::class, 'edit'])->name('slideshow-editor.edit');
+    Route::post('slideshow-editor', [SlideProjectController::class, 'store'])->name('slideshow-editor.store');
+    Route::put('slideshow-editor/{slideProject}', [SlideProjectController::class, 'update'])->name('slideshow-editor.update');
+    Route::post('slideshow-editor/{slideProject}/duplicate', [SlideProjectController::class, 'duplicate'])->name('slideshow-editor.duplicate');
+    Route::delete('slideshow-editor/{slideProject}', [SlideProjectController::class, 'destroy'])->name('slideshow-editor.destroy');
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
     Route::inertia('database', 'Database')->name('database');
 
@@ -45,6 +54,14 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
+
+    Route::post('carousel/generate', [CarouselGenerationController::class, 'generate'])->name('carousel.generate');
+    Route::post('carousel/generate-image', [CarouselGenerationController::class, 'generateImage'])->name('carousel.generate-image');
+
+    Route::get('carousel/create', [CarouselWizardController::class, 'create'])->name('carousel.create');
+    Route::post('carousel/extract-url', [CarouselWizardController::class, 'extractUrl'])->name('carousel.extract-url');
+    Route::post('carousel/save-config', [CarouselWizardController::class, 'saveConfig'])->name('carousel.save-config');
+    Route::post('carousel', [CarouselWizardController::class, 'store'])->name('carousel.store');
 });
 
 require __DIR__.'/settings.php';

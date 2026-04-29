@@ -256,60 +256,306 @@
     "newAutomation": "Nova Automação",
     "empty": "Nenhuma automação criada ainda. Crie sua primeira automação para começar."
   },
-  "onboarding": {
+  "slideEditor": {
+    "pageTitle": "Editor de Slideshow",
+    "toolbar": {
+      "select": "Selecionar",
+      "text": "Texto",
+      "rect": "Retângulo",
+      "circle": "Círculo",
+      "image": "Imagem",
+      "gradient": "Gradiente",
+      "background": "Fundo",
+      "untitled": "Sem título",
+      "saving": "Salvando…",
+      "saved": "Salvo",
+      "saveError": "Erro ao salvar",
+      "save": "Salvar",
+      "exportPng": "Exportar PNG"
+    },
+    "slides": {
+      "panel": "SLIDES",
+      "duplicate": "Duplicar",
+      "delete": "Excluir"
+    },
+    "formats": {
+      "post": "Post",
+      "stories": "Stories"
+    },
+    "properties": {
+      "panel": "PROPRIEDADES",
+      "empty": "Selecione um elemento para editar suas propriedades"
+    },
+    "sections": {
+      "transform": "Transformação",
+      "text": "Texto",
+      "typography": "Tipografia",
+      "textStroke": "Contorno do texto",
+      "accentBorder": "Borda de destaque",
+      "fill": "Preenchimento",
+      "border": "Borda",
+      "slideBackground": "Fundo do slide",
+      "colorOverlay": "Overlay de cor",
+      "toneColor": "Tom & Cor",
+      "effects": "Efeitos",
+      "rgbChannels": "Canais RGB",
+      "shadow": "Sombra",
+      "gradient": "Gradiente"
+    },
+    "fields": {
+      "x": "X",
+      "y": "Y",
+      "width": "Largura",
+      "height": "Altura",
+      "rotation": "Rotação",
+      "opacity": "Opacidade",
+      "content": "Conteúdo",
+      "textColor": "Cor do texto",
+      "font": "Fonte",
+      "size": "Tamanho",
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "underline": "Sublinhado",
+      "strikethrough": "Tachado",
+      "alignH": "Alinhamento horizontal",
+      "alignV": "Alinhamento vertical",
+      "lineHeight": "Altura de linha",
+      "letterSpacing": "Espaçamento de letras",
+      "padding": "Padding",
+      "lineBreak": "Quebra de linha",
+      "lineBreakWord": "Por palavra",
+      "lineBreakChar": "Por caractere",
+      "lineBreakNone": "Sem quebra",
+      "color": "Cor",
+      "thickness": "Espessura",
+      "enableBorder": "Ativar borda",
+      "position": "Posição",
+      "spacing": "Espaçamento",
+      "cornerRadius": "Arredondamento",
+      "borderStyle": "Estilo",
+      "useAsBackground": "Usar como fundo",
+      "bgSize": "Tamanho",
+      "bgCover": "Cobrir",
+      "bgContain": "Conter",
+      "bgFill": "Esticar",
+      "focalPoint": "Posição focal",
+      "positionX": "Posição X",
+      "positionY": "Posição Y",
+      "enableOverlay": "Ativar overlay",
+      "brightness": "Brilho",
+      "contrast": "Contraste",
+      "saturation": "Saturação",
+      "hue": "Matiz (Hue)",
+      "luminance": "Luminosidade",
+      "blur": "Desfoque",
+      "enhance": "Realce",
+      "noise": "Ruído",
+      "pixelate": "Pixelate",
+      "grayscale": "Preto & Branco",
+      "sepia": "Sépia",
+      "red": "Vermelho",
+      "green": "Verde",
+      "blue": "Azul",
+      "enableShadow": "Ativar sombra",
+      "shadowBlur": "Desfoque",
+      "shadowOffsetX": "Deslocamento X",
+      "shadowOffsetY": "Deslocamento Y",
+      "gradientDirection": "Direção"
+    },
+    "gradientDirections": {
+      "bottom": "↓ Baixo",
+      "top": "↑ Cima",
+      "left": "← Esq",
+      "right": "Dir →"
+    },
+    "accentSides": {
+      "left": "← Esq",
+      "right": "Dir →",
+      "top": "↑ Cima",
+      "bottom": "↓ Baixo"
+    },
+    "deleteElement": "Excluir elemento",
+    "searchFont": "Buscar fonte...",
+    "moreFonts": "+{{count}} fontes — refine a busca",
+    "noFonts": "Nenhuma fonte encontrada",
+    "ai": {
+      "generate": "Gerar com IA",
+      "modalTitle": "Gerar Carrossel com IA",
+      "topicLabel": "Tema",
+      "topicPlaceholder": "ex: 5 dicas para crescer no Instagram...",
+      "styleLabel": "Estilo (opcional)",
+      "stylePlaceholder": "ex: minimalista, vibrante, corporativo...",
+      "slideCountLabel": "Número de slides",
+      "generateBtn": "Gerar",
+      "statusGenerating": "Escrevendo seus slides…",
+      "statusImages": "Gerando imagens de fundo…",
+      "statusDone": "Carrossel pronto! Confira o painel de slides.",
+      "doneBtn": "Ver slides",
+      "errorNetwork": "Erro de rede. Por favor, tente novamente.",
+      "errorServer": "Erro no servidor. Por favor, tente novamente.",
+      "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente."
+    }
+  },
+  "createCarousel": {
+    "pageTitle": "Criar Carrossel",
+    "back": "Voltar",
+    "next": "Continuar",
+    "stepIndicator": "Etapa {{current}} de {{total}}",
+    "steps": {
+      "input": "Conteúdo",
+      "config": "Config",
+      "generate": "Gerar"
+    },
     "step1": {
-      "title": "Sobre sua marca",
-      "subtitle": "Como se chama sua página e em qual segmento você atua?",
-      "nameLabel": "Nome da página ou marca",
-      "namePlaceholder": "Ex: Studio Joana, Tech Lovers, etc.",
-      "segmentLabel": "Segmento"
+      "title": "Sobre o seu carrossel",
+      "subtitle": "Defina o tema e o conteúdo principal do carrossel.",
+      "titleLabel": "Título",
+      "titlePlaceholder": "ex: 5 erros que estão te impedindo de crescer no Instagram",
+      "topicLabel": "Descrição / Tema",
+      "topicPlaceholder": "Descreva o conteúdo principal. Pode ser o roteiro, os pontos-chave ou a ideia central do carrossel...",
+      "or": "ou",
+      "importBtn": "Importar a partir de uma URL",
+      "formatLabel": "Formato"
     },
     "step2": {
-      "title": "Vibe & estilo",
-      "subtitle": "Qual é a personalidade do seu conteúdo?"
+      "templateTitle": "Template Visual",
+      "archetypeTitle": "Arquétipo de Gancho — Slide Capa",
+      "archetypeSubtitle": "Define o gancho emocional do primeiro slide.",
+      "preview": "Preview",
+      "previewEmpty": "Selecione um template para visualizar",
+      "hook": "Gancho"
     },
     "step3": {
-      "title": "Cores da marca",
-      "subtitle": "Qual é a cor principal que representa sua marca?",
-      "hexLabel": "Cor hexadecimal",
-      "hexPlaceholder": "#E8440A",
-      "suggestion": "Ou escolha uma sugestão:"
+      "title": "Tudo pronto para gerar",
+      "subtitle": "Revise as configurações e clique em Gerar para criar seu carrossel com IA.",
+      "summaryTitle": "Conteúdo",
+      "template": "Template",
+      "archetype": "Arquétipo",
+      "format": "Formato",
+      "saveConfigLabel": "Salvar como padrão do autopiloto IA",
+      "saveConfigDesc": "Este template e arquétipo serão usados automaticamente nas próximas gerações do autopiloto.",
+      "generateBtn": "Gerar Carrossel"
+    },
+    "import": {
+      "title": "Importar Conteúdo",
+      "subtitle": "Input Parser · AI Extraction",
+      "extractBtn": "Extrair com IA",
+      "extractError": "Não foi possível extrair o conteúdo.",
+      "networkError": "Erro de rede. Tente novamente."
+    }
+  },
+  "onboarding": {
+    "header": {
+      "subtitle": "Configure sua conta em 5 passos simples",
+      "step": "Passo {{current}} de {{total}}"
+    },
+    "steps": {
+      "goal": "Objetivo",
+      "brand": "Marca",
+      "audience": "Público",
+      "identity": "Identidade",
+      "style": "Estilo"
+    },
+    "nav": {
+      "back": "Voltar",
+      "continue": "Continuar",
+      "viewPlans": "Ver planos",
+      "saving": "Salvando..."
+    },
+    "advanced": {
+      "title": "Configurações avançadas",
+      "description": "Esses detalhes ajudam a IA a criar conteúdo ainda melhor, mas você pode preencher depois.",
+      "extraLabel": "Algo mais que devemos saber?",
+      "extraPlaceholder": "Ex: Evitamos falar sobre concorrentes, nosso diferencial é o atendimento..."
+    },
+    "step1": {
+      "title": "Qual seu principal objetivo?",
+      "subtitle": "Vamos começar entendendo sua meta principal",
+      "sellProducts": "Vender mais produtos/serviços",
+      "sellProductsDesc": "Aumentar vendas e conversões",
+      "buildAuthority": "Construir autoridade",
+      "buildAuthorityDesc": "Se tornar referência no seu nicho",
+      "increaseEngagement": "Aumentar engajamento",
+      "increaseEngagementDesc": "Criar comunidade ativa",
+      "generateLeads": "Gerar leads qualificados",
+      "generateLeadsDesc": "Captar potenciais clientes"
+    },
+    "step2": {
+      "title": "Conte sobre sua marca",
+      "subtitle": "Informações básicas para personalizarmos seu conteúdo",
+      "brandNameLabel": "Nome da Marca",
+      "brandNamePlaceholder": "Ex: Minha Empresa",
+      "brandDescLabel": "O que a marca faz?",
+      "brandDescHint": "Descreva em poucas frases o negócio, produto ou serviço",
+      "brandDescPlaceholder": "Ex: Vendemos roupas femininas focadas em moda sustentável..."
+    },
+    "step3": {
+      "title": "Quem é seu público-alvo?",
+      "subtitle": "Descreva as pessoas que você quer alcançar",
+      "audienceLabel": "Quem é o cliente ideal?",
+      "audienceHint": "Idade, gênero, localização, profissão, estilo de vida",
+      "audiencePlaceholder": "Ex: Mulheres de 25-40 anos, empreendedoras, moram em grandes cidades, buscam praticidade..."
     },
     "step4": {
-      "title": "Seu logo",
-      "subtitle": "Opcional — usamos no cabeçalho dos seus slideshows e artes.",
-      "clickOrDrag": "Clique ou arraste seu logo",
-      "clickToChange": "Clique para trocar",
-      "formats": "PNG, JPG ou SVG · máx 2 MB",
-      "removeLogo": "Remover logo"
+      "title": "Qual a personalidade da sua marca?",
+      "subtitle": "Como você quer que as pessoas percebam sua marca?",
+      "voiceToneLabel": "Tom de voz",
+      "voiceToneHint": "Selecione os tons que melhor representam sua marca",
+      "tones": {
+        "casual": "Descontraído",
+        "professional": "Profissional",
+        "inspirational": "Inspirador",
+        "educational": "Educativo",
+        "fun": "Divertido",
+        "welcoming": "Acolhedor",
+        "direct": "Direto",
+        "sophisticated": "Sofisticado",
+        "friendly": "Amigável",
+        "motivational": "Motivacional"
+      }
     },
     "step5": {
-      "title": "Público & tom",
-      "subtitle": "Essas informações guiam a IA na criação dos seus roteiros e legendas.",
-      "audienceLabel": "Quem é seu público-alvo?",
-      "audiencePlaceholder": "Ex: Mulheres de 25 a 40 anos que buscam saúde e bem-estar, moram nas grandes cidades e usam TikTok para se inspirar.",
-      "toneLabel": "Tom de voz",
-      "goalLabel": "Objetivo principal",
-      "nextButton": "Ver planos"
+      "title": "Estilo da sua marca",
+      "subtitle": "Finalize a identidade visual do seu conteúdo",
+      "logoTitle": "Enviar logo",
+      "logoSubtitle": "PNG, JPG ou WebP até 5MB",
+      "logoHint": "SVG aceito (convertido para PNG)",
+      "logoClickOrDrag": "Clique ou arraste seu logo aqui",
+      "logoChange": "Clique para trocar",
+      "logoRemove": "Remover logo",
+      "paletteTitle": "Cores da marca",
+      "paletteCustomize": "Personalizar",
+      "paletteCurrentColors": "Cores atuais:",
+      "palettePrimary": "Primária",
+      "paletteSecondary": "Secundária",
+      "paletteAccent": "Destaque",
+      "paletteMorePalettes": "Ver outras paletas",
+      "visualStyleTitle": "Descrição do estilo visual",
+      "visualStyleHint": "Descreva o estilo visual que você quer para seu conteúdo.",
+      "visualStylePlaceholder": "Ex: Estilo corporativo e contemporâneo, usando tipografia sans-serif...",
+      "refineWithAI": "Refinar com IA",
+      "addVisualRef": "Adicionar referência visual",
+      "palettes": {
+        "sunset": "Pôr do Sol",
+        "softCoral": "Coral Suave",
+        "forest": "Floresta",
+        "mint": "Menta"
+      }
     },
-    "step6": {
+    "plans": {
       "title": "Escolha seu plano",
       "subtitle": "14 dias grátis. Sem cobrança agora. Cancele a qualquer momento.",
       "afterTrial": "após 14 dias grátis",
       "startFree": "Começar {{plan}} grátis",
-      "terms": "Ao assinar, você concorda com nossos termos de uso. Você pode cancelar antes do término do período gratuito sem nenhum custo."
+      "terms": "Ao assinar, você concorda com nossos termos de uso. Você pode cancelar antes do término do período gratuito sem nenhum custo.",
+      "logout": "Sair da conta"
     },
-    "validation": {
-      "nameRequired": "Informe o nome da sua marca.",
-      "industryRequired": "Selecione um segmento.",
-      "vibeRequired": "Escolha a vibe do seu conteúdo.",
-      "colorInvalid": "Informe uma cor hexadecimal válida.",
+    "errors": {
+      "goalRequired": "Selecione seu objetivo principal.",
+      "brandNameRequired": "Informe o nome da sua marca.",
+      "brandDescRequired": "Descreva o que sua marca faz.",
       "audienceRequired": "Descreva seu público-alvo.",
-      "toneRequired": "Selecione o tom de voz.",
-      "goalRequired": "Selecione seu objetivo principal."
-    },
-    "back": "Voltar",
-    "continue": "Continuar",
-    "saving": "Salvando..."
+      "toneRequired": "Selecione pelo menos um tom de voz."
+    }
   }
 }

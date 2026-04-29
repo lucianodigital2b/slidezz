@@ -21,6 +21,11 @@ class Workspace extends Model
         'goal',
         'target_audience',
         'tone_of_voice',
+        'profile',
+    ];
+
+    protected $casts = [
+        'profile' => 'array',
     ];
 
     public function owner()

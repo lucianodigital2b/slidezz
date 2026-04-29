@@ -34,10 +34,10 @@ class OnboardingControllerTest extends TestCase
             );
     }
 
-    public function test_has_profile_is_true_when_workspace_brand_data_exists(): void
+    public function test_has_profile_is_true_when_workspace_profile_json_exists(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
-        Workspace::factory()->create(['owner_id' => $user->id, 'industry' => 'tecnologia']);
+        Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
@@ -66,38 +66,48 @@ class OnboardingControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('onboarding.profile'), [])
-            ->assertSessionHasErrors(['workspace_name', 'industry', 'vibe', 'brand_color', 'goal', 'target_audience', 'tone_of_voice']);
+            ->assertSessionHasErrors(['goal', 'brand_name', 'brand_description', 'target_audience', 'tone_of_voice', 'palette']);
     }
 
-    public function test_save_profile_validates_brand_color_format(): void
+    public function test_save_profile_validates_palette_color_format(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
 
         $this->actingAs($user)
-            ->post(route('onboarding.profile'), $this->validProfilePayload(['brand_color' => 'not-a-color']))
-            ->assertSessionHasErrors('brand_color');
+            ->post(route('onboarding.profile'), $this->validProfilePayload([
+                'palette' => ['name' => 'sunset', 'primary' => 'not-a-color', 'secondary' => '#FDE68A', 'accent' => '#D97706'],
+            ]))
+            ->assertSessionHasErrors('palette.primary');
     }
 
-    public function test_save_profile_creates_workspace_and_redirects_to_onboarding(): void
+    public function test_save_profile_validates_tone_of_voice_is_array(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload(['tone_of_voice' => 'professional']))
+            ->assertSessionHasErrors('tone_of_voice');
+    }
+
+    public function test_save_profile_creates_workspace_and_stores_profile_json(): void
     {
         Storage::fake('public');
         $user = User::factory()->create(['onboarding_completed_at' => null]);
 
         $this->actingAs($user)
             ->post(route('onboarding.profile'), $this->validProfilePayload([
-                'workspace_name' => 'Minha Marca',
-                'industry' => 'tecnologia',
-                'vibe' => 'profissional',
-                'brand_color' => '#3B82F6',
+                'brand_name' => 'Minha Marca',
+                'goal' => 'sell_products',
+                'tone_of_voice' => ['professional', 'motivational'],
             ]))
             ->assertRedirect(route('onboarding'));
 
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $this->assertNotNull($workspace);
         $this->assertSame('Minha Marca', $workspace->name);
-        $this->assertSame('tecnologia', $workspace->industry);
-        $this->assertSame('profissional', $workspace->vibe);
-        $this->assertSame('#3B82F6', $workspace->brand_color);
+        $this->assertNotNull($workspace->profile);
+        $this->assertSame('sell_products', $workspace->profile['goal']);
+        $this->assertSame(['professional', 'motivational'], $workspace->profile['tone_of_voice']);
     }
 
     public function test_save_profile_does_not_complete_onboarding(): void
@@ -110,7 +120,7 @@ class OnboardingControllerTest extends TestCase
         $this->assertNull($user->fresh()->onboarding_completed_at);
     }
 
-    public function test_save_profile_stores_logo_when_provided(): void
+    public function test_save_profile_stores_logo_and_references_in_profile(): void
     {
         Storage::fake('public');
         $user = User::factory()->create(['onboarding_completed_at' => null]);
@@ -121,7 +131,22 @@ class OnboardingControllerTest extends TestCase
 
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $this->assertNotNull($workspace->logo_path);
+        $this->assertSame($workspace->logo_path, $workspace->profile['logo_path']);
         Storage::disk('public')->assertExists($workspace->logo_path);
+    }
+
+    public function test_save_profile_stores_palette_in_profile_json(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $palette = ['name' => 'forest', 'primary' => '#065F46', 'secondary' => '#A7F3D0', 'accent' => '#059669'];
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload(['palette' => $palette]));
+
+        $workspace = Workspace::where('owner_id', $user->id)->first();
+        $this->assertEquals($palette, $workspace->profile['palette']);
     }
 
     // ─── subscribe ───────────────────────────────────────────────────────────
@@ -205,7 +230,7 @@ class OnboardingControllerTest extends TestCase
     public function test_returning_user_without_subscription_sees_plans_step(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
-        Workspace::factory()->create(['owner_id' => $user->id, 'industry' => 'tecnologia']);
+        Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
@@ -217,16 +242,25 @@ class OnboardingControllerTest extends TestCase
 
     // ─── helpers ─────────────────────────────────────────────────────────────
 
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
     private function validProfilePayload(array $overrides = []): array
     {
         return array_merge([
-            'workspace_name' => 'Minha Marca',
-            'industry' => 'tecnologia',
-            'vibe' => 'profissional',
-            'brand_color' => '#E8440A',
-            'goal' => 'crescer_seguidores',
+            'goal' => 'sell_products',
+            'brand_name' => 'Minha Marca',
+            'brand_description' => 'Vendemos produtos digitais para empreendedores.',
             'target_audience' => 'Jovens de 18 a 30 anos interessados em tecnologia.',
-            'tone_of_voice' => 'casual',
+            'tone_of_voice' => ['professional'],
+            'palette' => [
+                'name' => 'sunset',
+                'primary' => '#F97316',
+                'secondary' => '#FDE68A',
+                'accent' => '#D97706',
+            ],
+            'visual_style' => null,
         ], $overrides);
     }
 }
