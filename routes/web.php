@@ -33,7 +33,8 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::inertia('library', 'Library')->name('library');
     Route::inertia('automations', 'Automations')->name('automations');
-    Route::get('slideshow-editor', [SlideProjectController::class, 'create'])->name('slideshow-editor');
+    Route::get('slideshow-editor', [SlideProjectController::class, 'index'])->name('slideshow-editor.index');
+    Route::get('slideshow-editor/create', [SlideProjectController::class, 'create'])->name('slideshow-editor.create');
     Route::get('slideshow-editor/{slideProject}', [SlideProjectController::class, 'edit'])->name('slideshow-editor.edit');
     Route::post('slideshow-editor', [SlideProjectController::class, 'store'])->name('slideshow-editor.store');
     Route::put('slideshow-editor/{slideProject}', [SlideProjectController::class, 'update'])->name('slideshow-editor.update');

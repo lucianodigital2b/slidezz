@@ -45,9 +45,8 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#444440]">
                             <a href="#diferencial" className="hover:text-[#1A1A1A] transition-colors">Como funciona</a>
+                            <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Preços</a>
                             <a href="#prova" className="hover:text-[#1A1A1A] transition-colors">Resultados</a>
-                            <a href="#cta" className="hover:text-[#1A1A1A] transition-colors">Começar</a>
-                            <Link href="/en" className="hover:text-[#1A1A1A] transition-colors">🇺🇸 EN</Link>
                         </nav>
 
                         <Link
@@ -55,7 +54,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             className="inline-flex items-center gap-2 bg-[#1A1A1A] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
                             style={{ border: '1px solid #1A1A1A' }}
                         >
-                            {auth.user ? 'Ir para o app' : 'Criar conta grátis'}
+                            {auth.user ? 'Ir para o app' : 'Parar de perder tempo'}
                             <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                     </div>
@@ -376,6 +375,169 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                     </div>
                 </section>
 
+                {/* ── PRICING ── */}
+                <section id="pricing" className="mx-auto max-w-6xl px-6 pb-24">
+                    <div className="text-center mb-12">
+                        <h2 className="text-[40px] font-extrabold tracking-tight text-[#1A1A1A] mb-3">
+                            Simple, the way it should be
+                        </h2>
+                        <p className="text-[#666660] font-medium">
+                            No gotchas. Cancel whenever you want.
+                        </p>
+                    </div>
+
+                    {/* Toggle */}
+                    <div className="flex justify-center mb-12">
+                        <div className="flex items-center gap-3 bg-white rounded-full p-1 border border-[#E8E7E2] shadow-sm">
+                            <button className="px-6 py-2 text-sm font-bold text-[#666660] rounded-full hover:text-[#1A1A1A] transition-colors">
+                                Monthly
+                            </button>
+                            <button className="px-6 py-2 text-sm font-bold bg-[#E8440A] text-white rounded-full flex items-center gap-2">
+                                Annual
+                                <span className="bg-[#A3E635] text-[#1A1A1A] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                    up to 50% OFF
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6 items-stretch">
+                        {/* Starter */}
+                        <div className="bg-white rounded-[24px] p-8 border border-[#E8E7E2] flex flex-col shadow-sm relative">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Starter</h3>
+                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                    20% OFF
+                                </span>
+                            </div>
+                            <div className="mb-6">
+                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$36/mo</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
+                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                                <Check className="w-4 h-4 text-[#E8440A]" />
+                                10 carousels per month
+                            </div>
+
+                            <div className="text-xs font-bold text-[#888880] mb-4">Basic features:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Unlimited post suggestions',
+                                    'Carousel generation',
+                                    'Instagram integration',
+                                    'AutoFeed (100% automatic)'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                        <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Try it now <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        {/* Pro */}
+                        <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative transform md:-translate-y-4">
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+                                Most popular
+                            </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Pro</h3>
+                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                    35% OFF
+                                </span>
+                            </div>
+                            <div className="mb-6">
+                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$120/mo</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
+                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                                <Check className="w-4 h-4 text-[#E8440A]" />
+                                30 carousels per month
+                            </div>
+
+                            <div className="text-xs font-bold text-[#888880] mb-4">Everything in Starter, plus:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Turn news into posts',
+                                    'Your photos in content',
+                                    'Team management',
+                                    'WhatsApp assistant (coming soon)'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                        <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Try it now <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        {/* Enterprise */}
+                        <div className="bg-[#1A1A1A] rounded-[24px] p-8 border border-[#333330] flex flex-col shadow-lg relative">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-white">Enterprise</h3>
+                            </div>
+                            <div className="mb-6">
+                                <div className="text-sm text-[#AAAAAA] font-semibold mb-1">Custom pricing</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-white leading-none">Custom</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
+                                <Check className="w-4 h-4 text-[#FCD34D]" />
+                                On-demand content
+                            </div>
+
+                            <div className="text-xs font-bold text-[#AAAAAA] mb-4">Everything in Pro, plus:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Multiple projects',
+                                    'API access',
+                                    'Client area & approval',
+                                    'Team training'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#DDDDCC]">
+                                        <Check className="w-4 h-4 text-[#FCD34D] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Contact us <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── FOOTER ── */}
                 <footer style={{ borderTop: '1px solid #1A1A1A', background: '#1A1A1A' }}>
                     <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -388,6 +550,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         <div className="flex items-center gap-8 text-sm font-semibold text-[#555550]">
                             <a href="#diferencial" className="hover:text-white transition-colors">Como funciona</a>
                             <a href="#prova" className="hover:text-white transition-colors">Resultados</a>
+                            <a href="#pricing" className="hover:text-white transition-colors">Preços</a>
                             <a href="#cta" className="hover:text-white transition-colors">Começar</a>
                         </div>
                         <p className="text-xs text-[#444440] font-medium">© 2025 Slidezz. Todos os direitos reservados.</p>

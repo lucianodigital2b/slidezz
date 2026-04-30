@@ -300,5 +300,39 @@
       "audienceRequired": "Please describe your target audience.",
       "toneRequired": "Please select at least one voice tone."
     }
+  },
+  "sidebar": {
+    "schedule": "Schedule",
+    "automations": "Automations",
+    "slideshowEditor": "Slideshow Editor",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "pageTitle": "Dashboard",
+    "promptLabel": "Prompt",
+    "copy": "Copy",
+    "open": "Open",
+    "duplicate": "Duplicate",
+    "prev": "Prev",
+    "next": "Next",
+    "recentLabel": "Recent Projects",
+    "empty": "You don't have any projects yet. Create your first carousel to get started!",
+    "actions": {
+      "createAi": {
+        "title": "Create with AI",
+        "description": "Generate a complete carousel from a topic or text.",
+        "button": "Create with AI"
+      },
+      "train": {
+        "title": "Train AI",
+        "description": "Create automations to publish content effortlessly.",
+        "button": "Train AI"
+      },
+      "scratch": {
+        "title": "Start from scratch",
+        "description": "Use the editor to design your slides manually.",
+        "button": "Start from scratch"
+      }
+    }
   }
 }

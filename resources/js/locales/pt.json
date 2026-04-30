@@ -176,7 +176,8 @@
     "automations": "Automações",
     "slideshowEditor": "Editor de Slideshow",
     "imageCollections": "Coleções de Imagens",
-    "database": "Banco de Dados"
+    "database": "Banco de Dados",
+    "settings": "Configurações"
   },
   "dashboard": {
     "title": "Início",
@@ -185,7 +186,32 @@
     "tabSlideshows": "Slideshows ({{count}})",
     "tabUgc": "Vídeos UGC ({{count}})",
     "pageInfo": "Página {{current}} de {{total}}",
-    "empty": "Você ainda não tem vídeos. Crie seu primeiro vídeo para começar!"
+    "empty": "Você ainda não tem projetos. Crie seu primeiro carrossel para começar!",
+    "pageTitle": "Dashboard",
+    "promptLabel": "Prompt",
+    "copy": "Copiar",
+    "open": "Abrir",
+    "duplicate": "Duplicar",
+    "prev": "Ant",
+    "next": "Próx",
+    "recentLabel": "Projetos Recentes",
+    "actions": {
+      "createAi": {
+        "title": "Criar com IA",
+        "description": "Gere um carrossel completo a partir de um tema ou texto.",
+        "button": "Criar com IA"
+      },
+      "train": {
+        "title": "Treinar IA",
+        "description": "Crie automações para publicar conteúdo sem esforço.",
+        "button": "Treinar IA"
+      },
+      "scratch": {
+        "title": "Começar do zero",
+        "description": "Use o editor para criar seus slides manualmente.",
+        "button": "Começar do zero"
+      }
+    }
   },
   "schedule": {
     "title": "Agenda",

@@ -57,6 +57,18 @@ class ScheduleController extends Controller
             ->latest()
             ->get(['id', 'title', 'type', 'video_url']);
 
+        $counts = [
+            'queue' => Schedule::whereHas('socialAccount', fn ($q) => $q->whereIn('workspace_id', $workspaceIds))
+                ->whereIn('status', [ScheduleStatus::Pending->value, ScheduleStatus::Publishing->value])
+                ->count(),
+            'drafts' => ContentProject::whereIn('workspace_id', $workspaceIds)
+                ->where('status', 'drafting')
+                ->count(),
+            'sent' => Schedule::whereHas('socialAccount', fn ($q) => $q->whereIn('workspace_id', $workspaceIds))
+                ->where('status', ScheduleStatus::Published->value)
+                ->count(),
+        ];
+
         return Inertia::render('Schedule', [
             'schedulesByDay' => $schedulesByDay,
             'socialAccounts' => $socialAccounts,
@@ -64,6 +76,7 @@ class ScheduleController extends Controller
             'month' => $month,
             'year' => $year,
             'statuses' => array_column(ScheduleStatus::cases(), 'value'),
+            'counts' => $counts,
         ]);
     }
 

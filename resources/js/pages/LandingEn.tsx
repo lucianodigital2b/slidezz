@@ -41,58 +41,6 @@ const comparisonItems = [
     { label: 'Freelance Copywriter (scripts)', price: '$150.00/mo' },
 ];
 
-const plans = [
-    {
-        key: 'weekly',
-        label: 'Weekly Trial',
-        price: '$9.90',
-        period: '/week',
-        badge: null,
-        features: [
-            'Unlimited Carousels',
-            'Viral Factor AI Images',
-            'AI Persuasive Copy',
-            'Premium Intuitive Editor',
-            'Full Drag & Drop Editor',
-            'Unlimited Full HD Export',
-            'Creator Community',
-        ],
-    },
-    {
-        key: 'monthly',
-        label: 'Monthly',
-        price: '$17.90',
-        period: '/month',
-        badge: null,
-        features: [
-            'Unlimited Carousels',
-            'Viral Factor AI Images',
-            'AI Persuasive Copy',
-            'Premium Intuitive Editor',
-            'Full Drag & Drop Editor',
-            'Unlimited Full HD Export',
-            'Creator Community',
-        ],
-    },
-    {
-        key: 'annual',
-        label: 'Annual',
-        price: '$49.90',
-        period: '/year',
-        badge: 'Most Popular',
-        note: '≈ $4.16/month',
-        features: [
-            'Unlimited Carousels',
-            'Viral Factor AI Images',
-            'AI Persuasive Copy',
-            'Premium Intuitive Editor',
-            'Full Drag & Drop Editor',
-            'Unlimited Full HD Export',
-            'Creator Community',
-        ],
-    },
-];
-
 const testimonials = [
     {
         name: 'Camila Alves',
@@ -240,14 +188,13 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <a href="#how-it-works" className="hover:text-[#1A1A1A] transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-[#1A1A1A] transition-colors">Results</a>
-                            <Link href="/" className="hover:text-[#1A1A1A] transition-colors">🇧🇷 PT</Link>
                         </nav>
 
                         <Link
                             href={ctaHref}
                             className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
                         >
-                            {auth.user ? 'Go to app' : 'Start for free'}
+                            {auth.user ? 'Go to app' : 'Stop wasting time'}
                             <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                     </div>
@@ -460,64 +407,164 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                 {/* ── PRICING ── */}
                 <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
-                    <div className="text-center mb-16">
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">Pricing</p>
-                        <h2 className="text-4xl font-extrabold tracking-tight">Choose the best option to get started</h2>
+                    <div className="text-center mb-12">
+                        <h2 className="text-[40px] font-extrabold tracking-tight text-[#1A1A1A] mb-3">
+                            Simple, the way it should be
+                        </h2>
+                        <p className="text-[#666660] font-medium">
+                            No gotchas. Cancel whenever you want.
+                        </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-5">
-                        {plans.map((plan) => (
-                            <div
-                                key={plan.key}
-                                className="rounded-2xl p-7 flex flex-col relative bg-white"
-                                style={{
-                                    border: plan.badge ? '2px solid #1A1A1A' : '1px solid #E8E7E2',
-                                    boxShadow: plan.badge ? '0 8px 32px rgba(0,0,0,0.08)' : 'none',
-                                }}
-                            >
-                                {plan.badge && (
-                                    <div
-                                        className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-xs font-extrabold px-4 py-1 rounded-full"
-                                        style={{ background: '#1A1A1A', color: '#fff' }}
-                                    >
-                                        {plan.badge}
-                                    </div>
-                                )}
-                                <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-4">{plan.label}</p>
-                                <div className="flex items-end gap-1 mb-1">
-                                    <span className="text-4xl font-extrabold">{plan.price}</span>
-                                    <span className="text-sm font-semibold text-[#888880] mb-1">{plan.period}</span>
-                                </div>
-                                {plan.note && (
-                                    <p className="text-xs font-semibold text-[#E8440A] mb-5">{plan.note}</p>
-                                )}
-                                <ul className="flex flex-col gap-2.5 my-6 flex-1">
-                                    {plan.features.map((f) => (
-                                        <li key={f} className="flex items-center gap-2.5 text-sm font-semibold">
-                                            <span
-                                                className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                                                style={{ background: '#1A1A1A' }}
-                                            >
-                                                <Check className="w-2.5 h-2.5 text-white" />
-                                            </span>
-                                            {f}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <Link
-                                    href={ctaHref}
-                                    className="inline-flex items-center justify-center gap-2 text-sm font-bold py-3.5 rounded-full transition-opacity hover:opacity-80 mt-auto"
-                                    style={
-                                        plan.badge
-                                            ? { background: '#E8440A', color: '#fff', border: '1px solid #E8440A' }
-                                            : { background: '#1A1A1A', color: '#fff', border: '1px solid #1A1A1A' }
-                                    }
-                                >
-                                    Get started
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                </Link>
+                    {/* Toggle */}
+                    <div className="flex justify-center mb-12">
+                        <div className="flex items-center gap-3 bg-white rounded-full p-1 border border-[#E8E7E2] shadow-sm">
+                            <button className="px-6 py-2 text-sm font-bold text-[#666660] rounded-full hover:text-[#1A1A1A] transition-colors">
+                                Monthly
+                            </button>
+                            <button className="px-6 py-2 text-sm font-bold bg-[#E8440A] text-white rounded-full flex items-center gap-2">
+                                Annual
+                                <span className="bg-[#A3E635] text-[#1A1A1A] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                    up to 50% OFF
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6 items-stretch">
+                        {/* Starter */}
+                        <div className="bg-white rounded-[24px] p-8 border border-[#E8E7E2] flex flex-col shadow-sm relative">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Starter</h3>
+                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                    20% OFF
+                                </span>
                             </div>
-                        ))}
+                            <div className="mb-6">
+                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$36/mo</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
+                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                                <Check className="w-4 h-4 text-[#E8440A]" />
+                                10 carousels per month
+                            </div>
+
+                            <div className="text-xs font-bold text-[#888880] mb-4">Basic features:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Unlimited post suggestions',
+                                    'Carousel generation',
+                                    'Instagram integration',
+                                    'AutoFeed (100% automatic)'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                        <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Try it now <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        {/* Pro */}
+                        <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative transform md:-translate-y-4">
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+                                Most popular
+                            </div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Pro</h3>
+                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                    35% OFF
+                                </span>
+                            </div>
+                            <div className="mb-6">
+                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$120/mo</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
+                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                                <Check className="w-4 h-4 text-[#E8440A]" />
+                                30 carousels per month
+                            </div>
+
+                            <div className="text-xs font-bold text-[#888880] mb-4">Everything in Starter, plus:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Turn news into posts',
+                                    'Your photos in content',
+                                    'Team management',
+                                    'WhatsApp assistant (coming soon)'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                        <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Try it now <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        {/* Enterprise */}
+                        <div className="bg-[#1A1A1A] rounded-[24px] p-8 border border-[#333330] flex flex-col shadow-lg relative">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-extrabold text-white">Enterprise</h3>
+                            </div>
+                            <div className="mb-6">
+                                <div className="text-sm text-[#AAAAAA] font-semibold mb-1">Custom pricing</div>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[40px] font-extrabold text-white leading-none">Custom</span>
+                                </div>
+                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
+                                <Check className="w-4 h-4 text-[#FCD34D]" />
+                                On-demand content
+                            </div>
+
+                            <div className="text-xs font-bold text-[#AAAAAA] mb-4">Everything in Pro, plus:</div>
+                            <ul className="flex flex-col gap-3 mb-8 flex-1">
+                                {[
+                                    'Multiple projects',
+                                    'API access',
+                                    'Client area & approval',
+                                    'Team training'
+                                ].map((feature) => (
+                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#DDDDCC]">
+                                        <Check className="w-4 h-4 text-[#FCD34D] flex-shrink-0 mt-0.5" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                Contact us <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
                     </div>
                 </section>
 
@@ -622,9 +669,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-white transition-colors">Results</a>
-                            <Link href="/" className="hover:text-white transition-colors">🇧🇷 Português</Link>
                         </div>
-                        <p className="text-xs text-[#444440] font-medium">© 2025 Slidezz. All rights reserved.</p>
+                        <p className="text-xs text-[#444440] font-medium">© 2026 Slidezz. All rights reserved.</p>
                     </div>
                 </footer>
             </div>

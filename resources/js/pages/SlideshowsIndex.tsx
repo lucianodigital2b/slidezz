@@ -7,7 +7,7 @@ import {
     Copy,
     ExternalLink,
     Files,
-    PenLine,
+    Plus,
     Sparkles,
     Trash2,
 } from 'lucide-react';
@@ -33,34 +33,6 @@ interface PaginatedProjects {
     last_page: number;
     per_page: number;
     total: number;
-}
-
-// ─── ActionCard ───────────────────────────────────────────────────────────────
-
-function ActionCard({
-    icon, title, description, buttonLabel, onClick, primary,
-}: {
-    icon: React.ReactNode; title: string; description: string;
-    buttonLabel: string; onClick: () => void; primary?: boolean;
-}) {
-    return (
-        <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 hover:border-gray-300 transition-colors shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100">{icon}</div>
-            <div className="flex-1">
-                <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-                <p className="mt-1 text-sm text-gray-500 leading-relaxed">{description}</p>
-            </div>
-            <button
-                type="button"
-                onClick={onClick}
-                className={`flex items-center gap-2 self-start rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    primary ? 'bg-black text-white hover:bg-gray-800' : 'border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-            >
-                {buttonLabel} <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-            </button>
-        </div>
-    );
 }
 
 // ─── CarouselCard ─────────────────────────────────────────────────────────────
@@ -95,8 +67,9 @@ function CarouselCard({ project }: { project: Project }) {
         <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
             {/* Thumbnail */}
             <div
-                className="relative flex-none overflow-hidden"
+                className="relative flex-none overflow-hidden cursor-pointer"
                 style={{ aspectRatio: project.format === 'stories' ? '9/16' : '1/1', background: project.cover_color }}
+                onClick={() => router.visit(SlideProjectController.edit(project.id).url)}
             >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 backdrop-blur-sm">
@@ -116,7 +89,7 @@ function CarouselCard({ project }: { project: Project }) {
             {/* Info */}
             <div className="flex flex-col gap-3 p-4">
                 <div>
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-1">{project.title}</p>
+                    <p className="text-sm font-semibold text-gray-900 line-clamp-1 cursor-pointer" onClick={() => router.visit(SlideProjectController.edit(project.id).url)}>{project.title}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                         <Clock className="h-3 w-3 text-gray-400" />
                         <span className="text-[11px] text-gray-500">{project.created_at}</span>
@@ -208,47 +181,33 @@ function Pagination({ current, last }: { current: number; last: number }) {
     );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ─── SlideshowsIndex ──────────────────────────────────────────────────────────
 
-export default function Dashboard({ projects }: { projects: PaginatedProjects }) {
+export default function SlideshowsIndex({ projects }: { projects: PaginatedProjects }) {
     const { t } = useTranslation();
 
     return (
         <>
-            <Head title={t('dashboard.pageTitle')} />
+            <Head title={t('sidebar.slideshowEditor')} />
             <div className="flex-1 p-6">
-
-                {/* Action cards */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-10">
-                    <ActionCard primary
-                        icon={<Sparkles className="h-5 w-5 text-gray-900" />}
-                        title={t('dashboard.actions.createAi.title')}
-                        description={t('dashboard.actions.createAi.description')}
-                        buttonLabel={t('dashboard.actions.createAi.button')}
-                        onClick={() => router.visit('/carousel/create')}
-                    />
-                    <ActionCard
-                        icon={<BookOpen className="h-5 w-5 text-gray-500" />}
-                        title={t('dashboard.actions.train.title')}
-                        description={t('dashboard.actions.train.description')}
-                        buttonLabel={t('dashboard.actions.train.button')}
-                        onClick={() => router.visit('/automations')}
-                    />
-                    <ActionCard
-                        icon={<PenLine className="h-5 w-5 text-gray-500" />}
-                        title={t('dashboard.actions.scratch.title')}
-                        description={t('dashboard.actions.scratch.description')}
-                        buttonLabel={t('dashboard.actions.scratch.button')}
+                
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('sidebar.slideshowEditor')}</h1>
+                        <p className="text-sm text-gray-500 mt-1">Manage and edit your slideshow projects.</p>
+                    </div>
+                    <button
                         onClick={() => router.visit('/slideshow-editor/create')}
-                    />
+                        className="flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Create New
+                    </button>
                 </div>
 
                 {/* Projects grid */}
                 {projects.data.length > 0 ? (
                     <>
-                        <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                            {t('dashboard.recentLabel')}
-                        </p>
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                             {projects.data.map((project) => (
                                 <CarouselCard key={project.id} project={project} />
@@ -257,7 +216,7 @@ export default function Dashboard({ projects }: { projects: PaginatedProjects })
                         <Pagination current={projects.current_page} last={projects.last_page} />
                     </>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-28 gap-3">
+                    <div className="flex flex-col items-center justify-center py-28 gap-3 border border-dashed border-gray-200 rounded-2xl">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
                             <Sparkles className="h-6 w-6 text-gray-400" />
                         </div>
