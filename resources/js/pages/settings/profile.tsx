@@ -1,4 +1,5 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import { LogOut, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
@@ -9,9 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { edit } from '@/routes/profile';
-import { send } from '@/routes/verification';
 import { connect, destroy } from '@/routes/social-accounts';
-import { LogOut, Plus } from 'lucide-react';
+import { send } from '@/routes/verification';
 
 interface SocialAccount {
     id: number;
@@ -97,7 +97,7 @@ function PlatformRow({ provider, accounts }: { provider: Provider; accounts: Soc
                             onClick={() => handleDisconnect(account)}
                         >
                             <LogOut className="h-3.5 w-3.5" />
-                            {t('settings.profile.connectedAccounts.disconnect')}
+                            {t('settings.profile.connectedAccounts.disconnect')} (@{account.handle})
                         </Button>
                     </div>
                 ))}
@@ -116,7 +116,13 @@ function PlatformRow({ provider, accounts }: { provider: Provider; accounts: Soc
             <Button
                 size="sm"
                 className={`gap-1.5 rounded-full text-white ${config.connectBg}`}
-                onClick={() => { window.location.href = connect.url(provider); }}
+                onClick={() => {
+                    if (provider === 'instagram') {
+                        window.location.href = 'https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=2607166723018659&redirect_uri=https://slidezz.test/social-accounts/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights';
+                    } else {
+                        window.location.href = connect.url(provider);
+                    }
+                }}
             >
                 <Plus className="h-3.5 w-3.5" />
                 {t('settings.profile.connectedAccounts.connect', { platform: config.label })}

@@ -3,21 +3,23 @@ import { ArrowRight, Sprout, Check, X } from 'lucide-react';
 import { dashboard, login, register } from '@/routes';
 
 export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
-    const { auth } = usePage().props;
+    const { auth } = usePage().props as any;
     const ctaHref = auth.user ? dashboard() : canRegister ? register() : login();
+
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
     return (
         <>
             <Head title="Slidezz — Transforme o TikTok em uma Máquina de Vendas">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
-                    href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700,800"
+                    href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800"
                     rel="stylesheet"
                 />
             </Head>
 
             <div
-                className="min-h-screen font-[Instrument_Sans,sans-serif]"
+                className="min-h-screen font-[Outfit,sans-serif]"
                 style={{
                     background: '#F3EEE8',
                     backgroundImage:
@@ -40,10 +42,10 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
                                 <Sprout className="w-4 h-4 text-white" />
                             </div>
-                            <span className="text-lg font-extrabold tracking-tight">Slidezz</span>
+                            <span className="text-2xl font-[Bebas_Neue] tracking-wide mt-1">Slidezz</span>
                         </div>
 
-                        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#444440]">
+                        <nav className="hidden md:flex items-center gap-8 text-lg font-semibold text-[#444440]">
                             <a href="#diferencial" className="hover:text-[#1A1A1A] transition-colors">Como funciona</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Preços</a>
                             <a href="#prova" className="hover:text-[#1A1A1A] transition-colors">Resultados</a>
@@ -51,8 +53,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 bg-[#1A1A1A] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
-                            style={{ border: '1px solid #1A1A1A' }}
+                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
                         >
                             {auth.user ? 'Ir para o app' : 'Parar de perder tempo'}
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -65,19 +66,19 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                     {/* Left */}
                     <div>
                         <div
-                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-8"
+                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
                             style={{ border: '1px solid #1A1A1A', background: '#fff' }}
                         >
-                            <svg className="w-3.5 h-3.5 fill-[#1A1A1A]" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" /></svg>
+                            <svg className="w-3.5 h-3.5 fill-[#E8440A]" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" /></svg>
                             Automação para TikTok
                         </div>
 
-                        <h1 className="text-[52px] lg:text-[60px] leading-[1.03] font-extrabold tracking-tight mb-6">
+                        <h1 className="text-[64px] lg:text-[76px] leading-[0.95] font-[Bebas_Neue] tracking-normal mb-6">
                             Transforme o TikTok em uma máquina de tráfego e vendas —
-                            <span className="text-[#E8440A]"> sem criar conteúdo e sem contratar UGC.</span>
+                            <span className="text-[#E8440A]"> sem criar conteúdo.</span>
                         </h1>
 
-                        <p className="text-[#555550] text-lg font-medium leading-relaxed mb-6 max-w-lg">
+                        <p className="text-[#555550] text-xl font-medium leading-relaxed mb-6 max-w-lg">
                             Geramos e publicamos carrosséis virais automaticamente todos os dias para você atrair leads, seguidores e clientes — enquanto você foca no seu negócio.
                         </p>
 
@@ -102,8 +103,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         <div className="flex items-center gap-5">
                             <Link
                                 href={ctaHref}
-                                className="inline-flex items-center gap-2 bg-[#1A1A1A] text-white text-sm font-bold px-6 py-3.5 rounded-full transition-opacity hover:opacity-80"
-                                style={{ border: '1px solid #1A1A1A' }}
+                                className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
                             >
                                 Criar minha máquina de conteúdo
                                 <ArrowRight className="w-4 h-4" />
@@ -237,7 +237,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 className="rounded-2xl p-8"
                                 style={{ border: '1px solid #333330', background: '#222220' }}
                             >
-                                <p className="text-xs font-bold uppercase tracking-widest text-[#666660] mb-6">
+                                <p className="font-bold uppercase tracking-widest text-[#666660] mb-6">
                                     Enquanto outros dependem de criadores…
                                 </p>
                                 <ul className="flex flex-col gap-4">
@@ -248,12 +248,12 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                         'Ficam reféns de atrasos e desculpas',
                                         'Dependem de humanos para escalar',
                                     ].map((item) => (
-                                        <li key={item} className="flex items-start gap-3 text-sm font-semibold text-[#888880]">
+                                        <li key={item} className="flex items-start gap-3 text-lg font-semibold text-[#888880]">
                                             <span
-                                                className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                                                 style={{ border: '1px solid #444440', background: '#333330' }}
                                             >
-                                                <X className="w-2.5 h-2.5 text-[#666660]" />
+                                                <X className="w-3 h-3 text-[#666660]" />
                                             </span>
                                             {item}
                                         </li>
@@ -267,7 +267,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 style={{ border: '1px solid #E8440A', background: '#1E0A00' }}
                             >
                                 <div>
-                                    <p className="text-xs font-bold uppercase tracking-widest text-[#E8440A] mb-6">
+                                    <p className="font-bold uppercase tracking-widest text-[#E8440A] mb-6">
                                         Você tem um sistema que trabalha 24/7.
                                     </p>
                                     <div className="flex flex-col gap-5 mb-8">
@@ -278,14 +278,14 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                         ].map((item) => (
                                             <div key={item.label} className="flex items-start gap-3">
                                                 <span
-                                                    className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                                                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                                                     style={{ border: '1px solid #E8440A', background: '#E8440A' }}
                                                 >
-                                                    <Check className="w-2.5 h-2.5 text-white" />
+                                                    <Check className="w-3 h-3 text-white" />
                                                 </span>
                                                 <div>
-                                                    <span className="text-sm font-extrabold text-white">{item.label}</span>
-                                                    <span className="text-sm font-medium text-[#888880]"> {item.desc}</span>
+                                                    <span className="text-lg font-extrabold text-white">{item.label}</span>
+                                                    <span className="text-lg font-medium text-[#888880]"> {item.desc}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -293,7 +293,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 </div>
                                 <Link
                                     href={ctaHref}
-                                    className="inline-flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-full transition-opacity hover:opacity-80"
+                                    className="inline-flex items-center justify-center gap-2 text-lg font-bold py-3.5 rounded-full transition-opacity hover:opacity-80"
                                     style={{ border: '1px solid #E8440A', background: '#E8440A', color: '#fff' }}
                                 >
                                     Criar minha máquina de conteúdo
@@ -307,8 +307,8 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                 {/* ── PROVA ── */}
                 <section id="prova" className="mx-auto max-w-6xl px-6 py-24">
                     <div className="text-center mb-14">
-                        <p className="text-sm font-bold uppercase tracking-widest text-[#888880] mb-3">Resultados</p>
-                        <h2 className="text-4xl font-extrabold tracking-tight">
+                        <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Resultados</p>
+                        <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">
                             Números que falam<br />por si sós
                         </h2>
                     </div>
@@ -332,13 +332,13 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                         em breve
                                     </span>
                                 )}
-                                <div className="text-5xl font-extrabold mb-3 text-[#CCCCCC]">{s.value}</div>
-                                <div className="text-sm font-semibold text-[#888880]">{s.label}</div>
+                                <div className="text-6xl font-[Bebas_Neue] mb-3 text-[#CCCCCC]">{s.value}</div>
+                                <div className="text-lg font-semibold text-[#888880]">{s.label}</div>
                             </div>
                         ))}
                     </div>
 
-                    <p className="text-center text-xs text-[#AAAAAA] font-medium mt-6">
+                    <p className="text-center text-lg text-[#AAAAAA] font-medium mt-6">
                         Você precisa disso. Dados reais em breve.
                     </p>
                 </section>
@@ -350,52 +350,64 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         style={{ border: '1px solid #1A1A1A', background: '#1A1A1A' }}
                     >
                         <div
-                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-8"
+                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
                             style={{ border: '1px solid #333330', background: '#222220', color: '#888880' }}
                         >
                             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" /></svg>
                             TikTok · Automação com IA
                         </div>
 
-                        <h2 className="text-4xl font-extrabold text-white tracking-tight mb-4">
+                        <h2 className="text-6xl lg:text-[80px] font-[Bebas_Neue] leading-[0.95] tracking-normal text-white mb-4">
                             Comece a automatizar<br />seu TikTok hoje.
                         </h2>
-                        <p className="text-[#666660] font-medium mb-10 max-w-sm mx-auto text-sm leading-relaxed">
+                        <p className="text-[#666660] font-medium mb-10 max-w-sm mx-auto text-lg leading-relaxed">
                             Pare de depender de criadores. Tenha um sistema que gera e publica conteúdo viral todos os dias — no piloto automático.
                         </p>
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 text-sm font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
+                            className="inline-flex items-center gap-2 text-lg font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
                             style={{ border: '1px solid #E8440A', background: '#E8440A', color: '#fff' }}
                         >
                             Criar minha máquina de conteúdo
                             <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <p className="text-xs text-[#444440] font-medium mt-5">Sem cartão de crédito. Cancele quando quiser.</p>
+                        <p className="text-[#444440] font-medium mt-5">Sem cartão de crédito. Cancele quando quiser.</p>
                     </div>
                 </section>
 
                 {/* ── PRICING ── */}
                 <section id="pricing" className="mx-auto max-w-6xl px-6 pb-24">
                     <div className="text-center mb-12">
-                        <h2 className="text-[40px] font-extrabold tracking-tight text-[#1A1A1A] mb-3">
-                            Simple, the way it should be
+                        <h2 className="text-6xl font-[Bebas_Neue] tracking-normal text-[#1A1A1A] mb-3">
+                            Simples, como deve ser
                         </h2>
-                        <p className="text-[#666660] font-medium">
-                            No gotchas. Cancel whenever you want.
+                        <p className="text-lg text-[#666660] font-medium">
+                            Sem surpresas. Cancele quando quiser.
                         </p>
                     </div>
 
                     {/* Toggle */}
                     <div className="flex justify-center mb-12">
                         <div className="flex items-center gap-3 bg-white rounded-full p-1 border border-[#E8E7E2] shadow-sm">
-                            <button className="px-6 py-2 text-sm font-bold text-[#666660] rounded-full hover:text-[#1A1A1A] transition-colors">
-                                Monthly
+                            <button
+                                onClick={() => setBillingCycle('monthly')}
+                                className={`px-6 py-2 text-lg font-bold rounded-full transition-colors ${
+                                    billingCycle === 'monthly' ? 'bg-[#E8440A] text-white' : 'text-[#666660] hover:text-[#1A1A1A]'
+                                }`}
+                            >
+                                Mensal
                             </button>
-                            <button className="px-6 py-2 text-sm font-bold bg-[#E8440A] text-white rounded-full flex items-center gap-2">
-                                Annual
-                                <span className="bg-[#A3E635] text-[#1A1A1A] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                                    up to 50% OFF
+                            <button
+                                onClick={() => setBillingCycle('annual')}
+                                className={`px-6 py-2 text-lg font-bold rounded-full flex items-center gap-2 transition-colors ${
+                                    billingCycle === 'annual' ? 'bg-[#E8440A] text-white' : 'text-[#666660] hover:text-[#1A1A1A]'
+                                }`}
+                            >
+                                Anual
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                                    billingCycle === 'annual' ? 'bg-[#A3E635] text-[#1A1A1A]' : 'bg-[#E8F5E9] text-[#28CA41]'
+                                }`}>
+                                    até 50% OFF
                                 </span>
                             </button>
                         </div>
@@ -405,34 +417,49 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         {/* Starter */}
                         <div className="bg-white rounded-[24px] p-8 border border-[#E8E7E2] flex flex-col shadow-sm relative">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Starter</h3>
-                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                    20% OFF
-                                </span>
+                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">Starter</h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="bg-[#E8F5E9] text-[#28CA41] text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                        20% OFF
+                                    </span>
+                                )}
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$36/mo</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
-                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
-                                </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="text-lg text-[#888880] font-semibold line-through mb-1">$36/mês</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mês</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">cobrado anualmente</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-lg text-transparent font-semibold mb-1 select-none">&nbsp;</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$36</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mês</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">cobrado mensalmente</div>
+                                    </>
+                                )}
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
                                 <Check className="w-4 h-4 text-[#E8440A]" />
-                                10 carousels per month
+                                10 carrosséis por mês
                             </div>
 
-                            <div className="text-xs font-bold text-[#888880] mb-4">Basic features:</div>
+                            <div className="text-sm font-bold text-[#888880] mb-4">Recursos básicos:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
-                                    'Unlimited post suggestions',
-                                    'Carousel generation',
-                                    'Instagram integration',
-                                    'AutoFeed (100% automatic)'
+                                    'Sugestões ilimitadas de posts',
+                                    'Geração de carrossel',
+                                    'Integração com Instagram',
+                                    'AutoFeed (100% automático)'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#555550]">
                                         <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -441,46 +468,61 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
-                                Try it now <ArrowRight className="w-4 h-4" />
+                                Testar agora <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
 
                         {/* Pro */}
                         <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative transform md:-translate-y-4">
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
-                                Most popular
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+                                Mais popular
                             </div>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Pro</h3>
-                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                    35% OFF
-                                </span>
+                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">Pro</h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="bg-[#E8F5E9] text-[#28CA41] text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                        35% OFF
+                                    </span>
+                                )}
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$120/mo</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
-                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
-                                </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="text-lg text-[#888880] font-semibold line-through mb-1">$120/mês</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mês</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">cobrado anualmente</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-lg text-transparent font-semibold mb-1 select-none">&nbsp;</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$120</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mês</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">cobrado mensalmente</div>
+                                    </>
+                                )}
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
                                 <Check className="w-4 h-4 text-[#E8440A]" />
-                                30 carousels per month
+                                30 carrosséis por mês
                             </div>
 
-                            <div className="text-xs font-bold text-[#888880] mb-4">Everything in Starter, plus:</div>
+                            <div className="text-sm font-bold text-[#888880] mb-4">Tudo no Starter, mais:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
-                                    'Turn news into posts',
-                                    'Your photos in content',
-                                    'Team management',
-                                    'WhatsApp assistant (coming soon)'
+                                    'Transformar notícias em posts',
+                                    'Suas fotos no conteúdo',
+                                    'Gestão de equipe',
+                                    'Assistente WhatsApp (em breve)'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#555550]">
                                         <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -489,39 +531,39 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
-                                Try it now <ArrowRight className="w-4 h-4" />
+                                Testar agora <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
 
                         {/* Enterprise */}
                         <div className="bg-[#1A1A1A] rounded-[24px] p-8 border border-[#333330] flex flex-col shadow-lg relative">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-white">Enterprise</h3>
+                                <h3 className="text-2xl font-extrabold text-white">Enterprise</h3>
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#AAAAAA] font-semibold mb-1">Custom pricing</div>
+                                <div className="text-lg text-[#AAAAAA] font-semibold mb-1">Preço sob consulta</div>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] font-extrabold text-white leading-none">Custom</span>
+                                    <span className="text-5xl font-extrabold text-white leading-none">Custom</span>
                                 </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                <div className="text-sm text-[#888880] mt-2 font-medium">cobrado anualmente</div>
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
                                 <Check className="w-4 h-4 text-[#FCD34D]" />
-                                On-demand content
+                                Conteúdo sob demanda
                             </div>
 
-                            <div className="text-xs font-bold text-[#AAAAAA] mb-4">Everything in Pro, plus:</div>
+                            <div className="text-sm font-bold text-[#AAAAAA] mb-4">Tudo no Pro, mais:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
-                                    'Multiple projects',
-                                    'API access',
-                                    'Client area & approval',
-                                    'Team training'
+                                    'Múltiplos projetos',
+                                    'Acesso à API',
+                                    'Área de cliente e aprovação',
+                                    'Treinamento da equipe'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#DDDDCC]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]">
                                         <Check className="w-4 h-4 text-[#FCD34D] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -530,9 +572,9 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
-                                Contact us <ArrowRight className="w-4 h-4" />
+                                Fale conosco <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
                     </div>
@@ -545,15 +587,15 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
                                 <Sprout className="w-3.5 h-3.5 text-[#1A1A1A]" />
                             </div>
-                            <span className="text-base font-extrabold text-white">Slidezz</span>
+                            <span className="text-2xl font-[Bebas_Neue] tracking-wide text-white mt-1">Slidezz</span>
                         </div>
-                        <div className="flex items-center gap-8 text-sm font-semibold text-[#555550]">
+                        <div className="flex items-center gap-8 text-lg font-semibold text-[#555550]">
                             <a href="#diferencial" className="hover:text-white transition-colors">Como funciona</a>
                             <a href="#prova" className="hover:text-white transition-colors">Resultados</a>
                             <a href="#pricing" className="hover:text-white transition-colors">Preços</a>
                             <a href="#cta" className="hover:text-white transition-colors">Começar</a>
                         </div>
-                        <p className="text-xs text-[#444440] font-medium">© 2025 Slidezz. Todos os direitos reservados.</p>
+                        <p className="text-[#444440] font-medium">© 2026 Slidezz. Todos os direitos reservados.</p>
                     </div>
                 </footer>
             </div>

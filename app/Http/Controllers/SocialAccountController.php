@@ -7,21 +7,12 @@ use App\Models\Workspace;
 use App\Services\Social\SocialPublisherFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class SocialAccountController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): RedirectResponse
     {
-        $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
-
-        $accounts = SocialAccount::whereIn('workspace_id', $workspaceIds)
-            ->get(['id', 'workspace_id', 'provider', 'handle', 'avatar', 'expires_at', 'created_at']);
-
-        return Inertia::render('SocialAccounts/Index', [
-            'accounts' => $accounts,
-        ]);
+        return redirect()->route('profile.edit');
     }
 
     public function connect(Request $request, string $provider): RedirectResponse
@@ -42,7 +33,7 @@ class SocialAccountController extends Controller
     public function callback(Request $request, string $provider): RedirectResponse
     {
         if ($request->has('error')) {
-            return redirect()->route('social-accounts.index')
+            return redirect()->route('profile.edit')
                 ->with('error', $request->input('error_description', 'OAuth authorization was denied.'));
         }
 
@@ -50,11 +41,11 @@ class SocialAccountController extends Controller
             $publisher = SocialPublisherFactory::make($provider);
             $publisher->handleCallback($request->all());
         } catch (\Throwable $e) {
-            return redirect()->route('social-accounts.index')
+            return redirect()->route('profile.edit')
                 ->with('error', 'Failed to connect account: '.$e->getMessage());
         }
 
-        return redirect()->route('social-accounts.index')
+        return redirect()->route('profile.edit')
             ->with('success', ucfirst($provider).' account connected successfully.');
     }
 
@@ -68,7 +59,7 @@ class SocialAccountController extends Controller
 
         $socialAccount->delete();
 
-        return redirect()->route('social-accounts.index')
+        return redirect()->route('profile.edit')
             ->with('success', 'Account disconnected.');
     }
 }

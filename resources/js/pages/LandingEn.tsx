@@ -118,14 +118,14 @@ function FaqItem({ q, a }: { q: string; a: string }) {
             onClick={() => setOpen((v) => !v)}
         >
             <div className="flex items-center justify-between gap-4 py-5">
-                <span className="text-sm font-bold">{q}</span>
+                <span className="text-lg font-bold">{q}</span>
                 <ChevronDown
                     className="w-4 h-4 flex-shrink-0 text-[#888880] transition-transform duration-200"
                     style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
             </div>
             {open && (
-                <p className="text-sm text-[#555550] font-medium pb-5 leading-relaxed">{a}</p>
+                <p className="text-lg text-[#555550] font-medium pb-5 leading-relaxed">{a}</p>
             )}
         </div>
     );
@@ -137,6 +137,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
     const { auth } = usePage().props as any;
     const ctaHref = auth.user ? dashboard() : canRegister ? register() : login();
 
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+
     const totalComparison = '$527.97/month';
 
     return (
@@ -144,13 +146,13 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
             <Head title="Slidezz — Generate Viral Carousels in Under 1 Minute">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
-                    href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700,800"
+                    href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800"
                     rel="stylesheet"
                 />
             </Head>
 
             <div
-                className="min-h-screen font-[Instrument_Sans,sans-serif]"
+                className="min-h-screen font-[Outfit,sans-serif]"
                 style={{
                     background: '#F3EEE8',
                     backgroundImage:
@@ -161,7 +163,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
             >
                 {/* ── TOP BAR ── */}
                 <div
-                    className="text-center py-2.5 text-xs font-bold tracking-wide"
+                    className="text-center py-2.5 font-bold tracking-wide"
                     style={{ background: '#1A1A1A', color: '#E8440A' }}
                 >
                     ⚡ Limited spots — access may close at any moment
@@ -181,10 +183,10 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
                                 <Sprout className="w-4 h-4 text-white" />
                             </div>
-                            <span className="text-lg font-extrabold tracking-tight">Slidezz</span>
+                            <span className="text-2xl font-[Bebas_Neue] tracking-wide mt-1">Slidezz</span>
                         </div>
 
-                        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#444440]">
+                        <nav className="hidden md:flex items-center gap-8 text-lg font-semibold text-[#444440]">
                             <a href="#how-it-works" className="hover:text-[#1A1A1A] transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-[#1A1A1A] transition-colors">Results</a>
@@ -192,7 +194,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
+                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
                         >
                             {auth.user ? 'Go to app' : 'Stop wasting time'}
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -203,14 +205,14 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 {/* ── HERO ── */}
                 <section className="mx-auto max-w-6xl px-6 pt-24 pb-20 text-center">
                     <div
-                        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-8"
+                        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
                         style={{ border: '1px solid #1A1A1A', background: '#fff' }}
                     >
                         <Zap className="w-3.5 h-3.5 fill-[#E8440A] text-[#E8440A]" />
                         AI-powered content at scale
                     </div>
 
-                    <h1 className="text-[52px] lg:text-[68px] leading-[1.03] font-extrabold tracking-tight mb-6 max-w-4xl mx-auto">
+                    <h1 className="text-[64px] lg:text-[88px] leading-[0.95] font-[Bebas_Neue] tracking-normal mb-6 max-w-4xl mx-auto">
                         Generate viral carousels{' '}
                         <span className="text-[#E8440A]">in less than 1 minute.</span>
                     </h1>
@@ -218,7 +220,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     <p className="text-[#555550] text-xl font-medium leading-relaxed mb-4 max-w-2xl mx-auto">
                         AI does everything for you: persuasive text, professional design, and posts ready to publish.
                     </p>
-                    <p className="text-[#888880] text-base font-semibold mb-10">
+                    <p className="text-[#888880] text-lg font-semibold mb-10">
                         <span className="line-through">No Canva.</span>{' '}
                         <span className="line-through">No designer.</span>{' '}
                         <span className="line-through">No wasted hours.</span>
@@ -227,14 +229,14 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-base font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
+                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
                         >
                             I Want to Create Viral Carousels
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
 
-                    <p className="text-sm text-[#888880] font-semibold">
+                    <p className="text-lg text-[#888880] font-semibold">
                         Used by <strong className="text-[#1A1A1A]">creators and professionals</strong> who publish consistently.
                     </p>
                 </section>
@@ -244,18 +246,18 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     style={{ borderTop: '1px solid #1A1A1A', borderBottom: '1px solid #1A1A1A', background: '#1A1A1A' }}
                 >
                     <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#E8440A] mb-4">The truth no one tells you</p>
-                        <h2 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-8">
+                        <p className="font-bold uppercase tracking-widest text-[#E8440A] mb-4">The truth no one tells you</p>
+                        <h2 className="text-5xl lg:text-7xl font-[Bebas_Neue] leading-[0.95] tracking-normal text-white mb-8">
                             Here's the brutal truth about Instagram in 2026
                         </h2>
                         <div className="text-left space-y-5 max-w-2xl mx-auto">
-                            <p className="text-[#AAAAAA] text-base font-medium leading-relaxed">
+                            <p className="text-[#AAAAAA] text-lg font-medium leading-relaxed">
                                 The <strong className="text-white">CEO of Instagram</strong> himself confirmed: the algorithm prioritizes carousels above any other format. Those who don't post carousels <strong className="text-white">simply don't appear.</strong>
                             </p>
-                            <p className="text-[#AAAAAA] text-base font-medium leading-relaxed">
+                            <p className="text-[#AAAAAA] text-lg font-medium leading-relaxed">
                                 While you spend <strong className="text-white">2–3 hours on Canva</strong> trying to make a pretty post, your competitors are using AI to create 10 viral carousels in the time it takes you to make 1.
                             </p>
-                            <p className="text-[#AAAAAA] text-base font-medium leading-relaxed">
+                            <p className="text-[#AAAAAA] text-lg font-medium leading-relaxed">
                                 The difference between those who sell on Instagram and those who just post pretty pictures?{' '}
                                 <strong className="text-white">Speed + Consistency.</strong> And that's exactly what Slidezz delivers.
                             </p>
@@ -263,7 +265,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                         <div className="mt-10">
                             <Link
                                 href={ctaHref}
-                                className="inline-flex items-center gap-2 text-sm font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
+                                className="inline-flex items-center gap-2 text-lg font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
                                 style={{ border: '1px solid #E8440A', background: '#E8440A', color: '#fff' }}
                             >
                                 I Want to Stop Wasting Time
@@ -276,8 +278,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 {/* ── HOW IT WORKS ── */}
                 <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
                     <div className="text-center mb-16">
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">In 3 steps</p>
-                        <h2 className="text-4xl font-extrabold tracking-tight">So simple it feels like magic</h2>
+                        <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">In 3 steps</p>
+                        <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">So simple it feels like magic</h2>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6">
@@ -304,13 +306,13 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                 style={{ border: '1px solid #1A1A1A' }}
                             >
                                 <div
-                                    className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-extrabold mb-6"
+                                    className="inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-extrabold mb-6"
                                     style={{ border: '1px solid #1A1A1A', background: '#1A1A1A', color: '#fff' }}
                                 >
                                     {step}
                                 </div>
-                                <h3 className="text-lg font-extrabold mb-3">{title}</h3>
-                                <p className="text-sm text-[#555550] font-medium leading-relaxed">{body}</p>
+                                <h3 className="text-xl font-extrabold mb-3">{title}</h3>
+                                <p className="text-lg text-[#555550] font-medium leading-relaxed">{body}</p>
                             </div>
                         ))}
                     </div>
@@ -318,7 +320,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     <div className="text-center mt-12">
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 text-sm font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
+                            className="inline-flex items-center gap-2 text-lg font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
                             style={{ border: '1px solid #1A1A1A', background: '#1A1A1A', color: '#fff' }}
                         >
                             I Want to Create My First Carousel
@@ -333,11 +335,11 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 >
                     <div className="mx-auto max-w-6xl px-6 py-24">
                         <div className="text-center mb-16">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">What's inside</p>
-                            <h2 className="text-4xl font-extrabold tracking-tight">
+                            <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">What's inside</p>
+                            <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">
                                 AI trained to grab attention
                             </h2>
-                            <p className="text-[#555550] font-medium mt-3 max-w-lg mx-auto text-sm leading-relaxed">
+                            <p className="text-[#555550] font-medium mt-3 max-w-lg mx-auto text-lg leading-relaxed">
                                 You don't need a mega prompt from other AIs: the entire flow is already calibrated to go viral and stand out in the feed.
                             </p>
                         </div>
@@ -355,8 +357,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                     >
                                         <Check className="w-4 h-4 text-white" />
                                     </div>
-                                    <h3 className="text-sm font-extrabold mb-2">{title}</h3>
-                                    <p className="text-xs text-[#555550] font-medium leading-relaxed">{body}</p>
+                                    <h3 className="text-lg font-extrabold mb-2">{title}</h3>
+                                    <p className="text-lg text-[#555550] font-medium leading-relaxed">{body}</p>
                                 </div>
                             ))}
                         </div>
@@ -367,8 +369,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 <section style={{ borderTop: '1px solid #1A1A1A', borderBottom: '1px solid #1A1A1A', background: '#1A1A1A' }}>
                     <div className="mx-auto max-w-3xl px-6 py-24">
                         <div className="text-center mb-12">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">Do the math</p>
-                            <h2 className="text-4xl font-extrabold text-white tracking-tight">
+                            <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Do the math</p>
+                            <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-[0.95] text-white">
                                 How much would you pay<br />for all this separately?
                             </h2>
                         </div>
@@ -385,21 +387,21 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                 >
                                     <div className="flex items-center gap-3">
                                         <X className="w-3.5 h-3.5 text-[#555550] flex-shrink-0" />
-                                        <span className="text-sm font-semibold text-[#AAAAAA]">{label}</span>
+                                        <span className="text-lg font-semibold text-[#AAAAAA]">{label}</span>
                                     </div>
-                                    <span className="text-sm font-bold text-[#666660]">{price}</span>
+                                    <span className="text-lg font-bold text-[#666660]">{price}</span>
                                 </div>
                             ))}
                             <div
                                 className="flex items-center justify-between px-6 py-5"
                                 style={{ background: '#2A0E00', borderTop: '1px solid #E8440A' }}
                             >
-                                <span className="text-sm font-extrabold text-white">Total (if bought separately)</span>
-                                <span className="text-base font-extrabold text-[#E8440A]">{totalComparison}</span>
+                                <span className="text-lg font-extrabold text-white">Total (if bought separately)</span>
+                                <span className="text-xl font-extrabold text-[#E8440A]">{totalComparison}</span>
                             </div>
                         </div>
 
-                        <p className="text-center text-sm text-[#666660] font-medium mt-6 leading-relaxed">
+                        <p className="text-center text-lg text-[#666660] font-medium mt-6 leading-relaxed">
                             That's what you <em>could</em> spend. With Slidezz, everything is in one place — for a fraction of the cost.
                         </p>
                     </div>
@@ -408,10 +410,10 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 {/* ── PRICING ── */}
                 <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
                     <div className="text-center mb-12">
-                        <h2 className="text-[40px] font-extrabold tracking-tight text-[#1A1A1A] mb-3">
+                        <h2 className="text-6xl font-[Bebas_Neue] tracking-normal text-[#1A1A1A] mb-3">
                             Simple, the way it should be
                         </h2>
-                        <p className="text-[#666660] font-medium">
+                        <p className="text-lg text-[#666660] font-medium">
                             No gotchas. Cancel whenever you want.
                         </p>
                     </div>
@@ -419,12 +421,24 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     {/* Toggle */}
                     <div className="flex justify-center mb-12">
                         <div className="flex items-center gap-3 bg-white rounded-full p-1 border border-[#E8E7E2] shadow-sm">
-                            <button className="px-6 py-2 text-sm font-bold text-[#666660] rounded-full hover:text-[#1A1A1A] transition-colors">
+                            <button
+                                onClick={() => setBillingCycle('monthly')}
+                                className={`px-6 py-2 text-lg font-bold rounded-full transition-colors ${
+                                    billingCycle === 'monthly' ? 'bg-[#E8440A] text-white' : 'text-[#666660] hover:text-[#1A1A1A]'
+                                }`}
+                            >
                                 Monthly
                             </button>
-                            <button className="px-6 py-2 text-sm font-bold bg-[#E8440A] text-white rounded-full flex items-center gap-2">
+                            <button
+                                onClick={() => setBillingCycle('annual')}
+                                className={`px-6 py-2 text-lg font-bold rounded-full flex items-center gap-2 transition-colors ${
+                                    billingCycle === 'annual' ? 'bg-[#E8440A] text-white' : 'text-[#666660] hover:text-[#1A1A1A]'
+                                }`}
+                            >
                                 Annual
-                                <span className="bg-[#A3E635] text-[#1A1A1A] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                                    billingCycle === 'annual' ? 'bg-[#A3E635] text-[#1A1A1A]' : 'bg-[#E8F5E9] text-[#28CA41]'
+                                }`}>
                                     up to 50% OFF
                                 </span>
                             </button>
@@ -435,26 +449,41 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                         {/* Starter */}
                         <div className="bg-white rounded-[24px] p-8 border border-[#E8E7E2] flex flex-col shadow-sm relative">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Starter</h3>
-                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                    20% OFF
-                                </span>
+                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">Starter</h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="bg-[#E8F5E9] text-[#28CA41] text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                        20% OFF
+                                    </span>
+                                )}
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$36/mo</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
-                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
-                                </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="text-lg text-[#888880] font-semibold line-through mb-1">$36/mo</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$29</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mo</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">billed annually</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-lg text-transparent font-semibold mb-1 select-none">&nbsp;</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$36</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mo</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">billed monthly</div>
+                                    </>
+                                )}
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
                                 <Check className="w-4 h-4 text-[#E8440A]" />
                                 10 carousels per month
                             </div>
 
-                            <div className="text-xs font-bold text-[#888880] mb-4">Basic features:</div>
+                            <div className="text-sm font-bold text-[#888880] mb-4">Basic features:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
                                     'Unlimited post suggestions',
@@ -462,7 +491,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                     'Instagram integration',
                                     'AutoFeed (100% automatic)'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#555550]">
                                         <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -471,7 +500,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#1A1A1A] hover:bg-[#333] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
                                 Try it now <ArrowRight className="w-4 h-4" />
                             </Link>
@@ -479,30 +508,45 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                         {/* Pro */}
                         <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative transform md:-translate-y-4">
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
                                 Most popular
                             </div>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-[#1A1A1A]">Pro</h3>
-                                <span className="bg-[#E8F5E9] text-[#28CA41] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                    35% OFF
-                                </span>
+                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">Pro</h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="bg-[#E8F5E9] text-[#28CA41] text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                        35% OFF
+                                    </span>
+                                )}
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#888880] font-semibold line-through mb-1">$120/mo</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
-                                    <span className="text-[#666660] font-medium text-sm">/mo</span>
-                                </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="text-lg text-[#888880] font-semibold line-through mb-1">$120/mo</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$79</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mo</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">billed annually</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-lg text-transparent font-semibold mb-1 select-none">&nbsp;</div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] font-extrabold text-[#1A1A1A] leading-none">$120</span>
+                                            <span className="text-[#666660] font-medium text-lg">/mo</span>
+                                        </div>
+                                        <div className="text-sm text-[#888880] mt-2 font-medium">billed monthly</div>
+                                    </>
+                                )}
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#1A1A1A] mb-6 pb-6 border-b border-[#E8E7E2]">
                                 <Check className="w-4 h-4 text-[#E8440A]" />
                                 30 carousels per month
                             </div>
 
-                            <div className="text-xs font-bold text-[#888880] mb-4">Everything in Starter, plus:</div>
+                            <div className="text-sm font-bold text-[#888880] mb-4">Everything in Starter, plus:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
                                     'Turn news into posts',
@@ -510,7 +554,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                     'Team management',
                                     'WhatsApp assistant (coming soon)'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#555550]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#555550]">
                                         <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -519,7 +563,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
                                 Try it now <ArrowRight className="w-4 h-4" />
                             </Link>
@@ -528,22 +572,22 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                         {/* Enterprise */}
                         <div className="bg-[#1A1A1A] rounded-[24px] p-8 border border-[#333330] flex flex-col shadow-lg relative">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-extrabold text-white">Enterprise</h3>
+                                <h3 className="text-2xl font-extrabold text-white">Enterprise</h3>
                             </div>
                             <div className="mb-6">
-                                <div className="text-sm text-[#AAAAAA] font-semibold mb-1">Custom pricing</div>
+                                <div className="text-lg text-[#AAAAAA] font-semibold mb-1">Custom pricing</div>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-[40px] font-extrabold text-white leading-none">Custom</span>
                                 </div>
-                                <div className="text-xs text-[#888880] mt-2 font-medium">billed annually</div>
+                                <div className="text-sm text-[#888880] mt-2 font-medium">billed annually</div>
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
+                            <div className="flex items-center gap-3 text-lg font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
                                 <Check className="w-4 h-4 text-[#FCD34D]" />
                                 On-demand content
                             </div>
 
-                            <div className="text-xs font-bold text-[#AAAAAA] mb-4">Everything in Pro, plus:</div>
+                            <div className="text-sm font-bold text-[#AAAAAA] mb-4">Everything in Pro, plus:</div>
                             <ul className="flex flex-col gap-3 mb-8 flex-1">
                                 {[
                                     'Multiple projects',
@@ -551,7 +595,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                     'Client area & approval',
                                     'Team training'
                                 ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-sm font-medium text-[#DDDDCC]">
+                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]">
                                         <Check className="w-4 h-4 text-[#FCD34D] flex-shrink-0 mt-0.5" />
                                         {feature}
                                     </li>
@@ -560,7 +604,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
                             <Link
                                 href={ctaHref}
-                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
                             >
                                 Contact us <ArrowRight className="w-4 h-4" />
                             </Link>
@@ -575,8 +619,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 >
                     <div className="mx-auto max-w-6xl px-6 py-24">
                         <div className="text-center mb-16">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">Results from those who publish</p>
-                            <h2 className="text-4xl font-extrabold tracking-tight">See what our clients say</h2>
+                            <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Results from those who publish</p>
+                            <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">See what our clients say</h2>
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -586,19 +630,19 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                                     className="rounded-2xl p-6 bg-white flex flex-col gap-4"
                                     style={{ border: '1px solid #E8E7E2' }}
                                 >
-                                    <p className="text-sm font-medium text-[#333330] leading-relaxed flex-1">
+                                    <p className="text-lg font-medium text-[#333330] leading-relaxed flex-1">
                                         "{quote}"
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <div
-                                            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0"
+                                            className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white flex-shrink-0"
                                             style={{ background: '#1A1A1A' }}
                                         >
                                             {initials}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-extrabold">{name}</p>
-                                            <p className="text-xs text-[#888880] font-semibold">{role}</p>
+                                            <p className="text-lg font-extrabold">{name}</p>
+                                            <p className="text-sm text-[#888880] font-semibold">{role}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -610,8 +654,8 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 {/* ── FAQ ── */}
                 <section className="mx-auto max-w-3xl px-6 py-24">
                     <div className="text-center mb-14">
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#888880] mb-3">FAQ</p>
-                        <h2 className="text-4xl font-extrabold tracking-tight">Frequently asked questions</h2>
+                        <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">FAQ</p>
+                        <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">Frequently asked questions</h2>
                     </div>
 
                     <div
@@ -631,28 +675,28 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                         style={{ border: '1px solid #1A1A1A', background: '#1A1A1A' }}
                     >
                         <div
-                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold mb-8"
+                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
                             style={{ border: '1px solid #333330', background: '#222220', color: '#E8440A' }}
                         >
                             <Zap className="w-3.5 h-3.5 fill-[#E8440A]" />
                             AI-powered carousel generator
                         </div>
 
-                        <h2 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-4">
+                        <h2 className="text-6xl lg:text-[80px] font-[Bebas_Neue] leading-[0.95] tracking-normal text-white mb-4">
                             Start going viral today.
                         </h2>
-                        <p className="text-[#666660] font-medium mb-10 max-w-sm mx-auto text-sm leading-relaxed">
+                        <p className="text-[#666660] font-medium mb-10 max-w-sm mx-auto text-lg leading-relaxed">
                             Scale and go viral automatically with AI. No Canva. No designer. No wasted hours.
                         </p>
                         <Link
                             href={ctaHref}
-                            className="inline-flex items-center gap-2 text-sm font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
+                            className="inline-flex items-center gap-2 text-lg font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
                             style={{ border: '1px solid #E8440A', background: '#E8440A', color: '#fff' }}
                         >
                             I Want to Create Viral Carousels
                             <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <p className="text-xs text-[#444440] font-medium mt-5">No credit card required. Cancel anytime.</p>
+                        <p className="text-[#444440] font-medium mt-5">No credit card required. Cancel anytime.</p>
                     </div>
                 </section>
 
@@ -663,14 +707,14 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
                                 <Sprout className="w-3.5 h-3.5 text-[#1A1A1A]" />
                             </div>
-                            <span className="text-base font-extrabold text-white">Slidezz</span>
+                            <span className="text-2xl font-[Bebas_Neue] tracking-wide text-white mt-1">Slidezz</span>
                         </div>
-                        <div className="flex items-center gap-8 text-sm font-semibold text-[#555550]">
+                        <div className="flex items-center gap-8 text-lg font-semibold text-[#555550]">
                             <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-white transition-colors">Results</a>
                         </div>
-                        <p className="text-xs text-[#444440] font-medium">© 2026 Slidezz. All rights reserved.</p>
+                        <p className="text-[#444440] font-medium">© 2026 Slidezz. All rights reserved.</p>
                     </div>
                 </footer>
             </div>

@@ -13,13 +13,13 @@ use App\Http\Middleware\RedirectBasedOnCountry;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome', [
+Route::inertia('/', 'LandingEn', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->middleware(RedirectBasedOnCountry::class)->name('home');
 
-Route::inertia('/en', 'LandingEn', [
+Route::inertia('/br', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
-])->name('home.en');
+])->name('home.br');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
@@ -46,7 +46,6 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
     Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
 
-    Route::get('social-accounts', [SocialAccountController::class, 'index'])->name('social-accounts.index');
     Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
     Route::get('social-accounts/{provider}/callback', [SocialAccountController::class, 'callback'])->name('social-accounts.callback');
     // Alias matching the redirect URIs registered in the TikTok Developer Portal
