@@ -59,6 +59,21 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            // Remove the bucket name from the endpoint if the user accidentally included it
+            'endpoint' => preg_replace('#/'.env('R2_BUCKET').'/?$#', '', env('R2_ENDPOINT')),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', true),
+            'throw' => false,
+            'report' => false,
+            'visibility' => 'public',
+        ],
 
     ],
 

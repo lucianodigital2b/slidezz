@@ -1,972 +1,50 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
-import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
+
 import Konva from 'konva';
 import {
-    AlignCenter,
-    AlignLeft,
-    AlignRight,
-    Bold,
-    ChevronDown,
-    ChevronRight,
     Circle,
     Download,
     Image as ImageIcon,
-    Italic,
     Loader2,
     MousePointer,
     Plus,
     Save,
-    Search,
     Sparkles,
     Square,
-    Strikethrough,
     Trash2,
     Type,
-    Underline,
+    Undo2,
+    Redo2,
     X,
+    ChevronRight,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GOOGLE_FONTS, loadGoogleFont } from '@/utils/google-fonts';
+import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
+import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
+import { loadGoogleFont } from '@/utils/google-fonts';
 import {
     Circle as KonvaCircle,
-    Group,
-    Image as KonvaImage,
     Layer,
     Rect,
     Stage,
-    Text,
     Transformer,
 } from 'react-konva';
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const SLIDE_W = 1080;
-const PANEL_LEFT = 160;
-const PANEL_RIGHT = 300;
-
-const FORMATS = {
-    post:    { w: 1080, h: 1080, ratio: '1:1' },
-    stories: { w: 1080, h: 1920, ratio: '9:16' },
-} as const;
-
-type Format = keyof typeof FORMATS;
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type Tool = 'select' | 'text' | 'rect' | 'circle' | 'image';
-type Align = 'left' | 'center' | 'right' | 'justify';
-type VAlign = 'top' | 'middle' | 'bottom';
-type Wrap = 'word' | 'char' | 'none';
-type BorderStyle = 'solid' | 'dashed' | 'dotted';
-type AccentSide = 'left' | 'right' | 'top' | 'bottom';
-type GradientDirection = 'bottom' | 'top' | 'left' | 'right';
-
-interface ShadowProps {
-    shadowEnabled: boolean;
-    shadowColor: string;
-    shadowBlur: number;
-    shadowOffsetX: number;
-    shadowOffsetY: number;
-    shadowOpacity: number;
-}
-
-interface BaseEl extends ShadowProps {
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    rotation: number;
-    opacity: number;
-}
-
-interface TextEl extends BaseEl {
-    type: 'text';
-    text: string;
-    fontSize: number;
-    fontFamily: string;
-    fill: string;
-    fontStyle: string;
-    align: Align;
-    verticalAlign: VAlign;
-    lineHeight: number;
-    letterSpacing: number;
-    textDecoration: string;
-    stroke: string;
-    strokeWidth: number;
-    padding: number;
-    wrap: Wrap;
-    accentEnabled: boolean;
-    accentColor: string;
-    accentThickness: number;
-    accentSide: AccentSide;
-    accentGap: number;
-}
-
-interface ShapeEl extends BaseEl {
-    type: 'rect' | 'circle';
-    fill: string;
-    stroke: string;
-    strokeWidth: number;
-    cornerRadius: number;
-    borderStyle: BorderStyle;
-    dashEnabled: boolean;
-}
-
-type BgSize = 'cover' | 'contain' | 'fill';
-
-interface ImageEl extends BaseEl {
-    type: 'image';
-    src: string;
-    brightness: number;
-    contrast: number;
-    blurRadius: number;
-    grayscale: boolean;
-    sepia: boolean;
-    hue: number;
-    saturation: number;
-    luminance: number;
-    pixelSize: number;
-    noise: number;
-    enhance: number;
-    red: number;
-    green: number;
-    blue: number;
-    // overlay
-    overlayEnabled: boolean;
-    overlayColor: string;
-    overlayOpacity: number;
-    // background
-    isBackground: boolean;
-    bgSize: BgSize;
-    bgPositionX: number; // 0-100
-    bgPositionY: number; // 0-100
-}
-
-interface GradientEl extends BaseEl {
-    type: 'gradient';
-    color: string;
-    direction: GradientDirection;
-}
-
-type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl;
-
-interface Slide {
-    id: string;
-    background: string;
-    elements: SlideEl[];
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function uid() { return Math.random().toString(36).slice(2, 10); }
-function makeSlide(background = '#ffffff'): Slide { return { id: uid(), background, elements: [] }; }
-
-const SHADOW_DEFAULTS: ShadowProps = {
-    shadowEnabled: false,
-    shadowColor: '#000000',
-    shadowBlur: 10,
-    shadowOffsetX: 4,
-    shadowOffsetY: 4,
-    shadowOpacity: 0.5,
-};
-
-function hexToRgba(hex: string, alpha: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-}
-
-function gradientLinearProps(el: GradientEl) {
-    const solid = hexToRgba(el.color, 1);
-    const clear = hexToRgba(el.color, 0);
-    switch (el.direction) {
-        case 'bottom': return { start: { x: 0, y: 0 },       end: { x: 0, y: el.height }, stops: [0, clear, 1, solid] };
-        case 'top':    return { start: { x: 0, y: 0 },       end: { x: 0, y: el.height }, stops: [0, solid, 1, clear] };
-        case 'left':   return { start: { x: 0, y: 0 },       end: { x: el.width, y: 0 },  stops: [0, solid, 1, clear] };
-        case 'right':  return { start: { x: el.width, y: 0 }, end: { x: 0, y: 0 },         stops: [0, solid, 1, clear] };
-    }
-}
-
-function borderStyleToDash(style: BorderStyle, width: number): number[] {
-    if (style === 'dashed') return [width * 4, width * 2];
-    if (style === 'dotted') return [width, width];
-    return [];
-}
-
-// ─── useLoadImage ─────────────────────────────────────────────────────────────
-
-function useLoadImage(src: string): HTMLImageElement | null {
-    const [img, setImg] = useState<HTMLImageElement | null>(null);
-    useEffect(() => {
-        if (!src) return;
-        const image = new window.Image();
-        image.crossOrigin = 'Anonymous';
-        image.src = src;
-        image.onload = () => setImg(image);
-    }, [src]);
-    return img;
-}
-
-// ─── KonvaTextEl ──────────────────────────────────────────────────────────────
-
-interface KonvaTextElProps {
-    el: TextEl;
-    hidden: boolean;
-    draggable: boolean;
-    onSelect: () => void;
-    onDblClick: () => void;
-    onChange: (patch: Partial<TextEl>) => void;
-}
-
-function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onChange }: KonvaTextElProps) {
-    const textRef = useRef<Konva.Text>(null);
-    const [textH, setTextH] = useState(80);
-
-    // Read the live text height after every render so the accent bar tracks wrapping
-    useEffect(() => {
-        if (textRef.current) {
-            const h = textRef.current.height();
-            if (h !== textH) setTextH(h);
-        }
-    });
-
-    const { t, gap } = { t: el.accentThickness, gap: el.accentGap };
-    const accentProps = el.accentEnabled ? (() => {
-        switch (el.accentSide) {
-            case 'left':   return { x: -(t + gap), y: 0,             width: t,        height: textH };
-            case 'right':  return { x: el.width + gap, y: 0,         width: t,        height: textH };
-            case 'top':    return { x: 0, y: -(t + gap),             width: el.width, height: t     };
-            case 'bottom': return { x: 0, y: textH + gap,            width: el.width, height: t     };
-        }
-    })() : null;
-
-    return (
-        <Group
-            id={el.id}
-            x={el.x} y={el.y} rotation={el.rotation} opacity={el.opacity}
-            draggable={draggable}
-            onClick={onSelect} onTap={onSelect}
-            onDblClick={onDblClick}
-            shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
-            shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
-            shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
-            onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => onChange({ x: e.target.x(), y: e.target.y() })}
-            onTransformEnd={(e: Konva.KonvaEventObject<Event>) => {
-                const node = e.target;
-                onChange({
-                    x: node.x(), y: node.y(),
-                    width: Math.max(20, el.width * node.scaleX()),
-                    rotation: node.rotation(),
-                });
-                node.scaleX(1); node.scaleY(1);
-            }}
-        >
-            {accentProps && (
-                <Rect {...accentProps} fill={el.accentColor} listening={false} />
-            )}
-            <Text
-                ref={textRef}
-                x={0} y={0}
-                width={el.width}
-                text={hidden ? '' : el.text}
-                fontSize={el.fontSize} fontFamily={el.fontFamily} fill={el.fill}
-                fontStyle={el.fontStyle} align={el.align} verticalAlign={el.verticalAlign}
-                lineHeight={el.lineHeight} letterSpacing={el.letterSpacing}
-                textDecoration={el.textDecoration}
-                stroke={el.strokeWidth > 0 ? el.stroke : undefined}
-                strokeWidth={el.strokeWidth}
-                padding={el.padding} wrap={el.wrap}
-            />
-        </Group>
-    );
-}
-
-// ─── KonvaImageEl ─────────────────────────────────────────────────────────────
-
-/** Compute Konva crop props to emulate CSS background-size: cover */
-function coverCrop(
-    imgW: number, imgH: number,
-    canvasW: number, canvasH: number,
-    posX: number, posY: number,
-): { cropX: number; cropY: number; cropWidth: number; cropHeight: number } {
-    const imgAspect = imgW / imgH;
-    const canvasAspect = canvasW / canvasH;
-    if (imgAspect > canvasAspect) {
-        const cropH = imgH;
-        const cropW = imgH * canvasAspect;
-        return { cropX: (imgW - cropW) * (posX / 100), cropY: 0, cropWidth: cropW, cropHeight: cropH };
-    }
-    const cropW = imgW;
-    const cropH = imgW / canvasAspect;
-    return { cropX: 0, cropY: (imgH - cropH) * (posY / 100), cropWidth: cropW, cropHeight: cropH };
-}
-
-/** Compute Konva crop props to emulate CSS background-size: contain */
-function containCrop(
-    imgW: number, imgH: number,
-    canvasW: number, canvasH: number,
-): { cropX: number; cropY: number; cropWidth: number; cropHeight: number } {
-    return { cropX: 0, cropY: 0, cropWidth: imgW, cropHeight: imgH };
-}
-
-interface KonvaImageElProps {
-    el: ImageEl;
-    slideW: number;
-    slideH: number;
-    draggable: boolean;
-    onSelect: () => void;
-    onChange: (patch: Partial<ImageEl>) => void;
-}
-
-function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onChange }: KonvaImageElProps) {
-    const img = useLoadImage(el.src);
-    const imgRef = useRef<Konva.Image>(null);
-
-    // Dimensions for background mode
-    const dispW = el.isBackground ? slideW : el.width;
-    const dispH = el.isBackground ? slideH : el.height;
-    const dispX = el.isBackground ? 0 : el.x;
-    const dispY = el.isBackground ? 0 : el.y;
-
-    // Crop for background-size modes
-    const crop = img && el.isBackground
-        ? el.bgSize === 'cover'
-            ? coverCrop(img.naturalWidth, img.naturalHeight, slideW, slideH, el.bgPositionX, el.bgPositionY)
-            : el.bgSize === 'contain'
-                ? containCrop(img.naturalWidth, img.naturalHeight, slideW, slideH)
-                : undefined
-        : undefined;
-
-    useEffect(() => {
-        if (!imgRef.current || !img) return;
-        const node = imgRef.current;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const n = node as any;
-        const filters: unknown[] = [];
-        if (el.brightness !== 0) filters.push(Konva.Filters.Brighten);
-        if (el.contrast !== 0) filters.push(Konva.Filters.Contrast);
-        if (el.blurRadius > 0) filters.push(Konva.Filters.Blur);
-        if (el.grayscale) filters.push(Konva.Filters.Grayscale);
-        if (el.sepia) filters.push(Konva.Filters.Sepia);
-        if (el.hue !== 0 || el.saturation !== 0 || el.luminance !== 0) filters.push(Konva.Filters.HSL);
-        if (el.pixelSize > 1) filters.push(Konva.Filters.Pixelate);
-        if (el.noise > 0) filters.push(Konva.Filters.Noise);
-        if (el.enhance !== 0) filters.push(Konva.Filters.Enhance);
-        if (el.red !== 255 || el.green !== 255 || el.blue !== 255) filters.push(Konva.Filters.RGB);
-        n.filters(filters);
-        n.brightness(el.brightness);
-        n.contrast(el.contrast);
-        n.blurRadius(el.blurRadius);
-        n.hue(el.hue);
-        n.saturation(el.saturation);
-        n.luminance(el.luminance);
-        n.pixelSize(Math.max(1, el.pixelSize));
-        n.noise(el.noise);
-        n.enhance(el.enhance);
-        n.red(el.red);
-        n.green(el.green);
-        n.blue(el.blue);
-        if (filters.length > 0) {
-            node.cache();
-        } else {
-            node.clearCache();
-        }
-    }, [
-        img, el.brightness, el.contrast, el.blurRadius, el.grayscale, el.sepia,
-        el.hue, el.saturation, el.luminance, el.pixelSize, el.noise, el.enhance,
-        el.red, el.green, el.blue,
-        el.isBackground, el.width, el.height,
-    ]);
-
-    if (!img) return null;
-
-    return (
-        <Group
-            id={el.id}
-            x={dispX} y={dispY}
-            rotation={el.isBackground ? 0 : el.rotation}
-            opacity={el.opacity}
-            draggable={draggable && !el.isBackground}
-            onClick={onSelect} onTap={onSelect}
-            shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
-            shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
-            shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
-            onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => onChange({ x: e.target.x(), y: e.target.y() })}
-            onTransformEnd={(e: Konva.KonvaEventObject<Event>) => {
-                const node = e.target;
-                const newW = Math.max(20, dispW * node.scaleX());
-                const newH = Math.max(20, dispH * node.scaleY());
-                if (imgRef.current) {
-                    imgRef.current.width(newW);
-                    imgRef.current.height(newH);
-                }
-                node.scaleX(1); node.scaleY(1);
-                onChange({ x: node.x(), y: node.y(), width: newW, height: newH, rotation: node.rotation() });
-            }}
-        >
-            <KonvaImage
-                ref={imgRef}
-                image={img}
-                width={dispW} height={dispH}
-                {...(crop ? { cropX: crop.cropX, cropY: crop.cropY, cropWidth: crop.cropWidth, cropHeight: crop.cropHeight } : {})}
-            />
-            {el.overlayEnabled && (
-                <Rect
-                    x={0} y={0} width={dispW} height={dispH}
-                    fill={el.overlayColor}
-                    opacity={el.overlayOpacity}
-                    listening={false}
-                />
-            )}
-        </Group>
-    );
-}
-
-// ─── Primitive controls ───────────────────────────────────────────────────────
-
-/** Elementor-style: slider + inline editable number input */
-function SliderField({
-    value, onChange, min, max, step = 1, unit = '',
-}: {
-    value: number; onChange: (v: number) => void;
-    min: number; max: number; step?: number; unit?: string;
-}) {
-    return (
-        <div className="flex items-center gap-2">
-            <input
-                type="range" value={value} min={min} max={max} step={step}
-                onChange={(e) => onChange(parseFloat(e.target.value))}
-                className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-[#E8440A] bg-gray-200"
-            />
-            <div className="flex items-center gap-0.5 shrink-0">
-                <input
-                    type="number" value={value} min={min} max={max} step={step}
-                    onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
-                    }}
-                    className="w-12 text-center text-[11px] border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
-                />
-                {unit && <span className="text-[10px] text-gray-400">{unit}</span>}
-            </div>
-        </div>
-    );
-}
-
-/** Color swatch + hex input */
-function ColorField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    return (
-        <div className="flex items-center gap-2">
-            <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-                className="w-7 h-7 cursor-pointer rounded border border-gray-200 shrink-0 p-0.5" />
-            <input
-                type="text" value={value}
-                onChange={(e) => { if (/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value)) onChange(e.target.value); }}
-                className="flex-1 text-[11px] border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
-                maxLength={7}
-            />
-        </div>
-    );
-}
-
-/** Toggle switch */
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-    return (
-        <button
-            type="button"
-            onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors ${checked ? 'bg-[#E8440A]' : 'bg-gray-300'}`}
-        >
-            <span className={`inline-block h-3 w-3 mt-0.5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-        </button>
-    );
-}
-
-/** Collapsible section */
-function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-    const [open, setOpen] = useState(defaultOpen);
-    return (
-        <div>
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center justify-between py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors"
-            >
-                {title}
-                {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            </button>
-            {open && <div className="flex flex-col gap-3 pb-3">{children}</div>}
-        </div>
-    );
-}
-
-/** Label row */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</label>
-            {children}
-        </div>
-    );
-}
-
-/** Label + toggle on same row */
-function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-    return (
-        <div className="flex items-center justify-between">
-            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</span>
-            <Toggle checked={checked} onChange={onChange} />
-        </div>
-    );
-}
-
-// ─── FontPicker ───────────────────────────────────────────────────────────────
-
-const VISIBLE_LIMIT = 80;
-
-function FontPicker({ value, onChange }: { value: string; onChange: (family: string) => void }) {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
-    const [query, setQuery] = useState('');
-    const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
-    const containerRef = useRef<HTMLDivElement>(null);
-    const searchRef = useRef<HTMLInputElement>(null);
-
-    const filtered = query.trim()
-        ? GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(query.toLowerCase()))
-        : GOOGLE_FONTS;
-    const visible = filtered.slice(0, VISIBLE_LIMIT);
-
-    useEffect(() => {
-        if (!open) return;
-        visible.forEach((family) => {
-            if (!loadedFonts.has(family)) {
-                loadGoogleFont(family).then(() => setLoadedFonts((prev) => new Set(prev).add(family)));
-            }
-        });
-    }, [open, query]);
-
-    useEffect(() => { loadGoogleFont(value); }, [value]);
-
-    useEffect(() => {
-        if (!open) return;
-        const handler = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [open]);
-
-    useEffect(() => { if (open) setTimeout(() => searchRef.current?.focus(), 50); }, [open]);
-
-    function select(family: string) {
-        loadGoogleFont(family).then(() => onChange(family));
-        setOpen(false);
-        setQuery('');
-    }
-
-    return (
-        <div ref={containerRef} className="relative w-full">
-            <button
-                type="button" onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center justify-between rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A] hover:border-gray-300 bg-white"
-                style={{ fontFamily: value }}
-            >
-                <span className="truncate">{value}</span>
-                <ChevronDown className="w-3 h-3 text-gray-400 shrink-0 ml-1" />
-            </button>
-
-            {open && (
-                <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden flex flex-col" style={{ maxHeight: 260 }}>
-                    <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-gray-100">
-                        <Search className="w-3 h-3 text-gray-400 shrink-0" />
-                        <input ref={searchRef} value={query} onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('slideEditor.searchFont')} className="flex-1 text-xs focus:outline-none" />
-                        {query && <button onClick={() => setQuery('')} className="text-gray-400 hover:text-gray-600"><X className="w-3 h-3" /></button>}
-                    </div>
-                    <div className="overflow-y-auto flex-1">
-                        {visible.map((family) => (
-                            <button key={family} type="button" onClick={() => select(family)}
-                                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${family === value ? 'bg-[#E8440A]/5 text-[#E8440A]' : 'text-gray-700'}`}
-                                style={{ fontFamily: loadedFonts.has(family) ? family : 'inherit' }}>
-                                {family}
-                            </button>
-                        ))}
-                        {filtered.length > VISIBLE_LIMIT && (
-                            <p className="px-3 py-2 text-[10px] text-gray-400 text-center border-t border-gray-100">
-                                {t('slideEditor.moreFonts', { count: filtered.length - VISIBLE_LIMIT })}
-                            </p>
-                        )}
-                        {filtered.length === 0 && <p className="px-3 py-4 text-xs text-gray-400 text-center">{t('slideEditor.noFonts')}</p>}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ─── PositionGrid (Elementor 3×3 focal-point picker) ─────────────────────────
-
-const POSITIONS = [
-    { x: 0,   y: 0,   label: '↖' }, { x: 50,  y: 0,   label: '↑' }, { x: 100, y: 0,   label: '↗' },
-    { x: 0,   y: 50,  label: '←' }, { x: 50,  y: 50,  label: '●' }, { x: 100, y: 50,  label: '→' },
-    { x: 0,   y: 100, label: '↙' }, { x: 50,  y: 100, label: '↓' }, { x: 100, y: 100, label: '↘' },
-];
-
-function PositionGrid({ x, y, onChange }: { x: number; y: number; onChange: (x: number, y: number) => void }) {
-    return (
-        <div className="grid grid-cols-3 gap-1">
-            {POSITIONS.map((p) => {
-                const active = p.x === x && p.y === y;
-                return (
-                    <button key={`${p.x}-${p.y}`} type="button" onClick={() => onChange(p.x, p.y)}
-                        className={`h-8 rounded border text-sm font-medium transition-colors ${active ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}>
-                        {p.label}
-                    </button>
-                );
-            })}
-        </div>
-    );
-}
-
-// ─── ShadowSection ────────────────────────────────────────────────────────────
-
-function ShadowSection({ el, onChange }: { el: BaseEl; onChange: (p: Partial<BaseEl>) => void }) {
-    const { t } = useTranslation();
-    return (
-        <Section title={t('slideEditor.sections.shadow')} defaultOpen={false}>
-            <ToggleField label={t('slideEditor.fields.enableShadow')} checked={el.shadowEnabled} onChange={(v) => onChange({ shadowEnabled: v })} />
-            {el.shadowEnabled && (
-                <>
-                    <Field label={t('slideEditor.fields.color')}><ColorField value={el.shadowColor} onChange={(v) => onChange({ shadowColor: v })} /></Field>
-                    <Field label={t('slideEditor.fields.shadowBlur')}><SliderField value={el.shadowBlur} onChange={(v) => onChange({ shadowBlur: v })} min={0} max={100} /></Field>
-                    <Field label={t('slideEditor.fields.shadowOffsetX')}><SliderField value={el.shadowOffsetX} onChange={(v) => onChange({ shadowOffsetX: v })} min={-100} max={100} /></Field>
-                    <Field label={t('slideEditor.fields.shadowOffsetY')}><SliderField value={el.shadowOffsetY} onChange={(v) => onChange({ shadowOffsetY: v })} min={-100} max={100} /></Field>
-                    <Field label={t('slideEditor.fields.opacity')}><SliderField value={el.shadowOpacity} onChange={(v) => onChange({ shadowOpacity: v })} min={0} max={1} step={0.01} /></Field>
-                </>
-            )}
-        </Section>
-    );
-}
-
-// ─── PropertiesPanel ──────────────────────────────────────────────────────────
-
-interface PropertiesPanelProps {
-    el: SlideEl | null;
-    onChange: (patch: Partial<SlideEl>) => void;
-    onDelete: () => void;
-}
-
-function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps) {
-    const { t } = useTranslation();
-
-    if (!el) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full text-xs text-gray-400 gap-2 px-4 text-center">
-                <MousePointer className="w-5 h-5 text-gray-300" />
-                {t('slideEditor.properties.empty')}
-            </div>
-        );
-    }
-
-    const ch = <T,>(patch: Partial<T>) => onChange(patch as Partial<SlideEl>);
-
-    const iconBtn = (active: boolean, onClick: () => void, icon: React.ReactNode, title: string) => (
-        <button type="button" title={title} onClick={onClick}
-            className={`p-1.5 rounded border transition-colors ${active ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {icon}
-        </button>
-    );
-
-    return (
-        <div className="flex flex-col overflow-y-auto h-full divide-y divide-gray-100">
-            <div className="px-4 py-1 flex flex-col">
-
-                {/* ── Transform ─────────────────────────────────────────────── */}
-                <Section title={t('slideEditor.sections.transform')}>
-                    <div className="grid grid-cols-2 gap-2">
-                        {(['x', 'y', 'width', 'height'] as const).map((k) => (
-                            <Field key={k} label={t(`slideEditor.fields.${k}`)}>
-                                <input type="number" value={Math.round(el[k])}
-                                    onChange={(e) => onChange({ [k]: parseFloat(e.target.value) || 0 } as Partial<SlideEl>)}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A]" />
-                            </Field>
-                        ))}
-                    </div>
-                    <Field label={t('slideEditor.fields.rotation')}>
-                        <SliderField value={Math.round(el.rotation)} onChange={(v) => onChange({ rotation: v } as Partial<SlideEl>)} min={-180} max={180} unit="°" />
-                    </Field>
-                    <Field label={t('slideEditor.fields.opacity')}>
-                        <SliderField value={el.opacity} onChange={(v) => onChange({ opacity: v } as Partial<SlideEl>)} min={0} max={1} step={0.01} unit="%" />
-                    </Field>
-                </Section>
-
-                {/* ── Text ──────────────────────────────────────────────────── */}
-                {el.type === 'text' && (
-                    <>
-                        <Section title={t('slideEditor.sections.text')}>
-                            <Field label={t('slideEditor.fields.content')}>
-                                <textarea value={el.text} rows={3}
-                                    onChange={(e) => ch<TextEl>({ text: e.target.value })}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E8440A]" />
-                            </Field>
-                            <Field label={t('slideEditor.fields.textColor')}><ColorField value={el.fill} onChange={(v) => ch<TextEl>({ fill: v })} /></Field>
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.typography')}>
-                            <Field label={t('slideEditor.fields.font')}><FontPicker value={el.fontFamily} onChange={(v) => ch<TextEl>({ fontFamily: v })} /></Field>
-                            <Field label={t('slideEditor.fields.size')}>
-                                <SliderField value={el.fontSize} onChange={(v) => ch<TextEl>({ fontSize: v })} min={8} max={300} unit="px" />
-                            </Field>
-                            <div className="flex gap-1.5 flex-wrap">
-                                {iconBtn(el.fontStyle.includes('bold'), () => ch<TextEl>({ fontStyle: el.fontStyle.includes('bold') ? el.fontStyle.replace('bold', '').trim() : `${el.fontStyle} bold`.trim() }), <Bold className="w-3.5 h-3.5" />, t('slideEditor.fields.bold'))}
-                                {iconBtn(el.fontStyle.includes('italic'), () => ch<TextEl>({ fontStyle: el.fontStyle.includes('italic') ? el.fontStyle.replace('italic', '').trim() : `${el.fontStyle} italic`.trim() }), <Italic className="w-3.5 h-3.5" />, t('slideEditor.fields.italic'))}
-                                {iconBtn(el.textDecoration.includes('underline'), () => ch<TextEl>({ textDecoration: el.textDecoration.includes('underline') ? el.textDecoration.replace('underline', '').trim() : `${el.textDecoration} underline`.trim() }), <Underline className="w-3.5 h-3.5" />, t('slideEditor.fields.underline'))}
-                                {iconBtn(el.textDecoration.includes('line-through'), () => ch<TextEl>({ textDecoration: el.textDecoration.includes('line-through') ? el.textDecoration.replace('line-through', '').trim() : `${el.textDecoration} line-through`.trim() }), <Strikethrough className="w-3.5 h-3.5" />, t('slideEditor.fields.strikethrough'))}
-                            </div>
-                            <Field label={t('slideEditor.fields.alignH')}>
-                                <div className="flex gap-1">
-                                    {(['left', 'center', 'right', 'justify'] as Align[]).map((a) => {
-                                        const Icon = a === 'left' ? AlignLeft : a === 'center' ? AlignCenter : a === 'right' ? AlignRight : AlignLeft;
-                                        return iconBtn(el.align === a, () => ch<TextEl>({ align: a }), <Icon className="w-3.5 h-3.5" />, a);
-                                    })}
-                                </div>
-                            </Field>
-                            <Field label={t('slideEditor.fields.alignV')}>
-                                <div className="flex gap-1">
-                                    {(['top', 'middle', 'bottom'] as VAlign[]).map((v) => iconBtn(el.verticalAlign === v, () => ch<TextEl>({ verticalAlign: v }), <span className="text-[10px] font-bold uppercase">{v[0]}</span>, v))}
-                                </div>
-                            </Field>
-                            <Field label={t('slideEditor.fields.lineHeight')}>
-                                <SliderField value={el.lineHeight} onChange={(v) => ch<TextEl>({ lineHeight: v })} min={0.5} max={4} step={0.1} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.letterSpacing')}>
-                                <SliderField value={el.letterSpacing} onChange={(v) => ch<TextEl>({ letterSpacing: v })} min={-10} max={100} step={0.5} unit="px" />
-                            </Field>
-                            <Field label={t('slideEditor.fields.padding')}>
-                                <SliderField value={el.padding} onChange={(v) => ch<TextEl>({ padding: v })} min={0} max={100} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.lineBreak')}>
-                                <select value={el.wrap} onChange={(e) => ch<TextEl>({ wrap: e.target.value as Wrap })}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A]">
-                                    <option value="word">{t('slideEditor.fields.lineBreakWord')}</option>
-                                    <option value="char">{t('slideEditor.fields.lineBreakChar')}</option>
-                                    <option value="none">{t('slideEditor.fields.lineBreakNone')}</option>
-                                </select>
-                            </Field>
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.textStroke')} defaultOpen={false}>
-                            <Field label={t('slideEditor.fields.color')}><ColorField value={el.stroke} onChange={(v) => ch<TextEl>({ stroke: v })} /></Field>
-                            <Field label={t('slideEditor.fields.thickness')}>
-                                <SliderField value={el.strokeWidth} onChange={(v) => ch<TextEl>({ strokeWidth: v })} min={0} max={20} step={0.5} unit="px" />
-                            </Field>
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.accentBorder')} defaultOpen={false}>
-                            <ToggleField label={t('slideEditor.fields.enableBorder')} checked={el.accentEnabled} onChange={(v) => ch<TextEl>({ accentEnabled: v })} />
-                            {el.accentEnabled && (
-                                <>
-                                    <Field label={t('slideEditor.fields.position')}>
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {(['left', 'right', 'top', 'bottom'] as AccentSide[]).map((side) => (
-                                                <button key={side} type="button"
-                                                    onClick={() => ch<TextEl>({ accentSide: side })}
-                                                    className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.accentSide === side ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                                                    {t(`slideEditor.accentSides.${side}`)}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Field>
-                                    <Field label={t('slideEditor.fields.color')}><ColorField value={el.accentColor} onChange={(v) => ch<TextEl>({ accentColor: v })} /></Field>
-                                    <Field label={t('slideEditor.fields.thickness')}>
-                                        <SliderField value={el.accentThickness} onChange={(v) => ch<TextEl>({ accentThickness: v })} min={1} max={60} unit="px" />
-                                    </Field>
-                                    <Field label={t('slideEditor.fields.spacing')}>
-                                        <SliderField value={el.accentGap} onChange={(v) => ch<TextEl>({ accentGap: v })} min={0} max={60} unit="px" />
-                                    </Field>
-                                </>
-                            )}
-                        </Section>
-                    </>
-                )}
-
-                {/* ── Shape ─────────────────────────────────────────────────── */}
-                {(el.type === 'rect' || el.type === 'circle') && (
-                    <>
-                        <Section title={t('slideEditor.sections.fill')}>
-                            <Field label={t('slideEditor.fields.color')}><ColorField value={el.fill} onChange={(v) => ch<ShapeEl>({ fill: v })} /></Field>
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.border')}>
-                            <Field label={t('slideEditor.fields.color')}><ColorField value={el.stroke} onChange={(v) => ch<ShapeEl>({ stroke: v })} /></Field>
-                            <Field label={t('slideEditor.fields.thickness')}>
-                                <SliderField value={el.strokeWidth} onChange={(v) => ch<ShapeEl>({ strokeWidth: v })} min={0} max={60} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.borderStyle')}>
-                                <div className="flex gap-1">
-                                    {(['solid', 'dashed', 'dotted'] as BorderStyle[]).map((s) =>
-                                        iconBtn(el.borderStyle === s, () => ch<ShapeEl>({ borderStyle: s, dashEnabled: s !== 'solid' }),
-                                            <span className="text-[9px] font-bold uppercase">{s[0]}</span>, s)
-                                    )}
-                                </div>
-                            </Field>
-                            {el.type === 'rect' && (
-                                <Field label={t('slideEditor.fields.cornerRadius')}>
-                                    <SliderField value={el.cornerRadius} onChange={(v) => ch<ShapeEl>({ cornerRadius: v })} min={0} max={500} />
-                                </Field>
-                            )}
-                        </Section>
-                    </>
-                )}
-
-                {/* ── Image ─────────────────────────────────────────────────── */}
-                {el.type === 'image' && (
-                    <>
-                        {/* Background */}
-                        <Section title={t('slideEditor.sections.slideBackground')}>
-                            <ToggleField
-                                label={t('slideEditor.fields.useAsBackground')}
-                                checked={el.isBackground}
-                                onChange={(v) => ch<ImageEl>({ isBackground: v, ...(v ? { x: 0, y: 0 } : {}) })}
-                            />
-                            {el.isBackground && (
-                                <>
-                                    <Field label={t('slideEditor.fields.bgSize')}>
-                                        <div className="flex gap-1">
-                                            {(['cover', 'contain', 'fill'] as BgSize[]).map((s) => (
-                                                <button key={s} type="button"
-                                                    onClick={() => ch<ImageEl>({ bgSize: s })}
-                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium uppercase tracking-wide transition-colors ${el.bgSize === s ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                                                    {t(`slideEditor.fields.bg${s.charAt(0).toUpperCase() + s.slice(1)}` as never)}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Field>
-                                    {el.bgSize !== 'fill' && (
-                                        <Field label={t('slideEditor.fields.focalPoint')}>
-                                            <PositionGrid
-                                                x={el.bgPositionX} y={el.bgPositionY}
-                                                onChange={(x, y) => ch<ImageEl>({ bgPositionX: x, bgPositionY: y })}
-                                            />
-                                        </Field>
-                                    )}
-                                    {el.bgSize === 'fill' && (
-                                        <>
-                                            <Field label={t('slideEditor.fields.positionX')}>
-                                                <SliderField value={el.bgPositionX} onChange={(v) => ch<ImageEl>({ bgPositionX: v })} min={0} max={100} unit="%" />
-                                            </Field>
-                                            <Field label={t('slideEditor.fields.positionY')}>
-                                                <SliderField value={el.bgPositionY} onChange={(v) => ch<ImageEl>({ bgPositionY: v })} min={0} max={100} unit="%" />
-                                            </Field>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </Section>
-
-                        {/* Overlay */}
-                        <Section title={t('slideEditor.sections.colorOverlay')}>
-                            <ToggleField label={t('slideEditor.fields.enableOverlay')} checked={el.overlayEnabled} onChange={(v) => ch<ImageEl>({ overlayEnabled: v })} />
-                            {el.overlayEnabled && (
-                                <>
-                                    <Field label={t('slideEditor.fields.color')}><ColorField value={el.overlayColor} onChange={(v) => ch<ImageEl>({ overlayColor: v })} /></Field>
-                                    <Field label={t('slideEditor.fields.opacity')}>
-                                        <SliderField value={el.overlayOpacity} onChange={(v) => ch<ImageEl>({ overlayOpacity: v })} min={0} max={1} step={0.01} />
-                                    </Field>
-                                </>
-                            )}
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.toneColor')}>
-                            <Field label={t('slideEditor.fields.brightness')}>
-                                <SliderField value={el.brightness} onChange={(v) => ch<ImageEl>({ brightness: v })} min={-1} max={1} step={0.01} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.contrast')}>
-                                <SliderField value={el.contrast} onChange={(v) => ch<ImageEl>({ contrast: v })} min={-100} max={100} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.saturation')}>
-                                <SliderField value={el.saturation} onChange={(v) => ch<ImageEl>({ saturation: v })} min={-2} max={2} step={0.01} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.hue')}>
-                                <SliderField value={el.hue} onChange={(v) => ch<ImageEl>({ hue: v })} min={0} max={359} unit="°" />
-                            </Field>
-                            <Field label={t('slideEditor.fields.luminance')}>
-                                <SliderField value={el.luminance} onChange={(v) => ch<ImageEl>({ luminance: v })} min={-1} max={1} step={0.01} />
-                            </Field>
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.effects')} defaultOpen={false}>
-                            <Field label={t('slideEditor.fields.blur')}>
-                                <SliderField value={el.blurRadius} onChange={(v) => ch<ImageEl>({ blurRadius: v })} min={0} max={40} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.enhance')}>
-                                <SliderField value={el.enhance} onChange={(v) => ch<ImageEl>({ enhance: v })} min={-1} max={1} step={0.01} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.noise')}>
-                                <SliderField value={el.noise} onChange={(v) => ch<ImageEl>({ noise: v })} min={0} max={1} step={0.01} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.pixelate')}>
-                                <SliderField value={el.pixelSize} onChange={(v) => ch<ImageEl>({ pixelSize: v })} min={1} max={50} />
-                            </Field>
-                            <ToggleField label={t('slideEditor.fields.grayscale')} checked={el.grayscale} onChange={(v) => ch<ImageEl>({ grayscale: v })} />
-                            <ToggleField label={t('slideEditor.fields.sepia')} checked={el.sepia} onChange={(v) => ch<ImageEl>({ sepia: v })} />
-                        </Section>
-
-                        <Section title={t('slideEditor.sections.rgbChannels')} defaultOpen={false}>
-                            <Field label={t('slideEditor.fields.red')}>
-                                <SliderField value={el.red} onChange={(v) => ch<ImageEl>({ red: v })} min={0} max={255} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.green')}>
-                                <SliderField value={el.green} onChange={(v) => ch<ImageEl>({ green: v })} min={0} max={255} />
-                            </Field>
-                            <Field label={t('slideEditor.fields.blue')}>
-                                <SliderField value={el.blue} onChange={(v) => ch<ImageEl>({ blue: v })} min={0} max={255} />
-                            </Field>
-                        </Section>
-                    </>
-                )}
-
-                {/* ── Gradient ──────────────────────────────────────────────── */}
-                {el.type === 'gradient' && (
-                    <Section title={t('slideEditor.sections.gradient')}>
-                        <Field label={t('slideEditor.fields.color')}>
-                            <ColorField value={el.color} onChange={(v) => ch<GradientEl>({ color: v })} />
-                        </Field>
-                        <Field label={t('slideEditor.fields.gradientDirection')}>
-                            <div className="grid grid-cols-4 gap-1">
-                                {(['bottom', 'top', 'left', 'right'] as GradientDirection[]).map((dir) => (
-                                    <button key={dir} type="button"
-                                        onClick={() => ch<GradientEl>({ direction: dir })}
-                                        className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.direction === dir ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                                        {t(`slideEditor.gradientDirections.${dir}`)}
-                                    </button>
-                                ))}
-                            </div>
-                        </Field>
-                    </Section>
-                )}
-
-                {/* ── Shadow (all types) ────────────────────────────────────── */}
-                <ShadowSection el={el} onChange={(p) => onChange(p as Partial<SlideEl>)} />
-
-            </div>
-
-            {/* ── Delete ────────────────────────────────────────────────────── */}
-            <div className="px-4 py-3 shrink-0">
-                <button onClick={onDelete}
-                    className="flex items-center gap-2 text-red-500 hover:text-red-600 text-xs font-medium transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {t('slideEditor.deleteElement')}
-                </button>
-            </div>
-        </div>
-    );
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+import { format as formatFns } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+
+import {
+    SLIDE_W, PANEL_LEFT, PANEL_RIGHT, FORMATS, Format, Tool,
+    SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl
+} from '@/components/SlideEditor/types';
+import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps } from '@/components/SlideEditor/utils';
+import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElements';
+import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
+import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -995,10 +73,80 @@ function loadSavedState(): { slides: Slide[]; currentIdx: number; format: Format
 }
 
 export default function SlideEditor() {
-    const { slideProject, wizardConfig } = usePage<{ slideProject: SlideProjectProp | null; wizardConfig?: WizardConfig | null }>().props;
+    interface InstagramAccount {
+        id: number;
+        provider: string;
+        handle: string | null;
+        avatar: string | null;
+        expires_at: string | null;
+    }
+
+    const { slideProject, wizardConfig, instagramAccounts } = usePage<{
+        slideProject: SlideProjectProp | null;
+        wizardConfig?: WizardConfig | null;
+        instagramAccounts: InstagramAccount[];
+    }>().props;
 
     const saved = slideProject ?? loadSavedState();
-    const [slides, setSlides] = useState<Slide[]>(saved?.slides ?? [makeSlide()]);
+    const [slides, _setSlides] = useState<Slide[]>(saved?.slides ?? [makeSlide()]);
+
+    // ── Undo / Redo ─────────────────────────────────────────────────────────
+    const [past, setPast] = useState<Slide[][]>([]);
+    const [future, setFuture] = useState<Slide[][]>([]);
+    const historyTimer = useRef<NodeJS.Timeout | null>(null);
+
+    const setSlides = useCallback((action: React.SetStateAction<Slide[]>) => {
+        _setSlides((prev) => {
+            const next = typeof action === 'function' ? (action as (prevState: Slide[]) => Slide[])(prev) : action;
+            if (prev !== next) {
+                if (!historyTimer.current) {
+                    setPast(p => [...p, prev].slice(-50));
+                    setFuture([]);
+                } else {
+                    clearTimeout(historyTimer.current);
+                }
+                historyTimer.current = setTimeout(() => {
+                    historyTimer.current = null;
+                }, 500);
+            }
+            return next;
+        });
+    }, []);
+
+    const undo = useCallback(() => {
+        setPast(p => {
+            if (p.length === 0) return p;
+            const newPast = [...p];
+            const prev = newPast.pop()!;
+            _setSlides(current => {
+                setFuture(f => [current, ...f]);
+                return prev;
+            });
+            if (historyTimer.current) {
+                clearTimeout(historyTimer.current);
+                historyTimer.current = null;
+            }
+            return newPast;
+        });
+    }, []);
+
+    const redo = useCallback(() => {
+        setFuture(f => {
+            if (f.length === 0) return f;
+            const newFuture = [...f];
+            const next = newFuture.shift()!;
+            _setSlides(current => {
+                setPast(p => [...p, current]);
+                return next;
+            });
+            if (historyTimer.current) {
+                clearTimeout(historyTimer.current);
+                historyTimer.current = null;
+            }
+            return newFuture;
+        });
+    }, []);
+
     const [currentIdx, setCurrentIdx] = useState(0);
     const [tool, setTool] = useState<Tool>('select');
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1008,6 +156,9 @@ export default function SlideEditor() {
     const [title, setTitle] = useState(slideProject?.title ?? t('slideEditor.toolbar.untitled'));
     const [projectId, setProjectId] = useState<number | null>(slideProject?.id ?? null);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+    const [igAccountId, setIgAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
+    const [igPosting, setIgPosting] = useState(false);
+    const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
 
     // ── AI carousel generation ──────────────────────────────────────────────
     const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -1062,14 +213,29 @@ export default function SlideEditor() {
                 setSelectedId(null);
             }
             if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); }
+            
+            // Undo/Redo shortcuts
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key.toLowerCase() === 'z') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        redo();
+                    } else {
+                        undo();
+                    }
+                } else if (e.key.toLowerCase() === 'y') {
+                    e.preventDefault();
+                    redo();
+                }
+            }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [selectedId, editingId, slide]);
+    }, [selectedId, editingId, slide, undo, redo]);
 
     // ─── Save ───────────────────────────────────────────────────────────────
 
-    async function saveProject() {
+    async function saveProject(): Promise<number | null> {
         setSaveStatus('saving');
         const body = { title, format, slides };
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
@@ -1080,6 +246,8 @@ export default function SlideEditor() {
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify(body),
                 });
+                setSaveStatus('saved');
+                return projectId;
             } else {
                 const res = await fetch(SlideProjectController.store().url, {
                     method: 'POST',
@@ -1089,10 +257,12 @@ export default function SlideEditor() {
                 const data = await res.json();
                 setProjectId(data.id);
                 router.visit(SlideProjectController.edit(data.id).url, { replace: true, preserveState: true });
+                setSaveStatus('saved');
+                return data.id ?? null;
             }
-            setSaveStatus('saved');
         } catch {
             setSaveStatus('error');
+            return null;
         }
     }
 
@@ -1473,6 +643,84 @@ export default function SlideEditor() {
         }, 50);
     }
 
+    async function exportAllSlidesJpeg(): Promise<Blob[]> {
+        if (!stageRef.current) return [];
+        const prevIdx = currentIdx;
+        setSelectedId(null);
+
+        const blobs: Blob[] = [];
+
+        for (let i = 0; i < slides.length; i++) {
+            setCurrentIdx(i);
+            await new Promise((r) => setTimeout(r, 120));
+            const dataUrl = stageRef.current.toDataURL({
+                pixelRatio: SLIDE_W / displayW,
+                mimeType: 'image/jpeg',
+                quality: 0.92,
+            });
+            const blob = await fetch(dataUrl).then((res) => res.blob());
+            blobs.push(blob);
+        }
+
+        setCurrentIdx(prevIdx);
+        return blobs;
+    }
+
+    async function publishCarouselToInstagram() {
+        if (!igAccountId) return;
+        if (slides.length < 2 || slides.length > 10) return;
+        if (format !== 'post') {
+            window.alert('Switch format to Post (1:1) to publish a carousel to Instagram.');
+            return;
+        }
+        setIgPosting(true);
+        try {
+            const id = (await saveProject()) ?? projectId;
+            if (!id) throw new Error('Could not save slideshow before publishing.');
+
+            const caption = window.prompt('Caption', '') ?? '';
+            const blobs = await exportAllSlidesJpeg();
+            if (blobs.length !== slides.length) throw new Error('Failed to export slides.');
+
+            const form = new FormData();
+            form.append('social_account_id', String(igAccountId));
+            form.append('caption', caption);
+            if (publishAt) {
+                form.append('publish_at', publishAt.toISOString());
+            }
+            blobs.forEach((blob, idx) => {
+                form.append('images[]', blob, `slide-${idx + 1}.jpg`);
+            });
+
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+            const res = await fetch(`/slideshow-editor/${id}/publish/instagram`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: form,
+            });
+
+            let data: any = {};
+            try {
+                data = await res.json();
+            } catch (e) {
+                // Not JSON
+            }
+
+            if (!res.ok) {
+                console.error("Publish failed with status:", res.status, data);
+                throw new Error(data?.message || `Server error: ${res.status} ${res.statusText}`);
+            }
+
+            window.alert(data?.message || 'Posted to Instagram.');
+            setPublishAt(undefined);
+        } catch (e) {
+            console.error("Publish Exception:", e);
+            window.alert(e instanceof Error ? e.message : 'Failed to publish to Instagram.');
+        } finally {
+            setIgPosting(false);
+        }
+    }
+
     // ─── Render ──────────────────────────────────────────────────────────────
 
     const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
@@ -1497,6 +745,25 @@ export default function SlideEditor() {
                         {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
                         {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
                         {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
+                    </div>
+                    <div className="w-px h-6 bg-gray-200 mx-1" />
+                    <div className="flex items-center gap-1">
+                        <button
+                            title="Undo (Ctrl+Z)"
+                            onClick={undo}
+                            disabled={past.length === 0}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                        >
+                            <Undo2 className="w-4 h-4" />
+                        </button>
+                        <button
+                            title="Redo (Ctrl+Y)"
+                            onClick={redo}
+                            disabled={future.length === 0}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                        >
+                            <Redo2 className="w-4 h-4" />
+                        </button>
                     </div>
                     <div className="w-px h-6 bg-gray-200 mx-1" />
                     <button title={t('slideEditor.toolbar.image')} onClick={() => fileInputRef.current?.click()}
@@ -1545,10 +812,10 @@ export default function SlideEditor() {
                     </button>
 
                     {/* AI Generate button */}
-                    <button onClick={openAiModal}
+                    {/* <button onClick={openAiModal}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 transition-all shadow-sm">
                         <Sparkles className="w-4 h-4" /> {t('slideEditor.ai.generate')}
-                    </button>
+                    </button> */}
 
                     {/* Format switcher */}
                     <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5">
@@ -1572,6 +839,92 @@ export default function SlideEditor() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#E8440A] text-white hover:bg-[#D13D09] transition-colors">
                         <Download className="w-4 h-4" /> {t('slideEditor.toolbar.exportPng')}
                     </button>
+
+                    {instagramAccounts.length > 0 && (
+                        <>
+                            <div className="w-px h-6 bg-gray-200 mx-1" />
+                            <select
+                                value={igAccountId ?? ''}
+                                onChange={(e) => setIgAccountId(Number(e.target.value))}
+                                className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-600"
+                            >
+                                {instagramAccounts.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.handle ? `@${a.handle}` : `Instagram #${a.id}`}
+                                    </option>
+                                ))}
+                            </select>
+                            <TooltipProvider delayDuration={200}>
+                                <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5 bg-white">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${publishAt ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                                                <CalendarIcon className="w-3.5 h-3.5" />
+                                                {publishAt ? formatFns(publishAt, 'MMM d, h:mm a') : 'Schedule'}
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <Calendar
+                                                mode="single"
+                                                selected={publishAt}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        // preserve time if we already had a date, or set to a default future time
+                                                        const newDate = new Date(date);
+                                                        if (publishAt) {
+                                                            newDate.setHours(publishAt.getHours());
+                                                            newDate.setMinutes(publishAt.getMinutes());
+                                                        } else {
+                                                            newDate.setHours(new Date().getHours() + 1);
+                                                            newDate.setMinutes(0);
+                                                        }
+                                                        setPublishAt(newDate);
+                                                    } else {
+                                                        setPublishAt(undefined);
+                                                    }
+                                                }}
+                                                initialFocus
+                                                disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))}
+                                            />
+                                            {publishAt && (
+                                                <div className="p-3 border-t border-gray-100 flex items-center justify-between">
+                                                    <span className="text-xs text-gray-500">Time</span>
+                                                    <input
+                                                        type="time"
+                                                        value={formatFns(publishAt, 'HH:mm')}
+                                                        onChange={(e) => {
+                                                            const [h, m] = e.target.value.split(':');
+                                                            const newDate = new Date(publishAt);
+                                                            newDate.setHours(parseInt(h), parseInt(m));
+                                                            setPublishAt(newDate);
+                                                        }}
+                                                        className="text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-indigo-500"
+                                                    />
+                                                </div>
+                                            )}
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={publishCarouselToInstagram}
+                                                disabled={igPosting || slides.length < 2 || slides.length > 10}
+                                                className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium text-white bg-[#E8440A] hover:bg-[#D13D09] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {igPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                                {publishAt ? 'Schedule IG' : 'Post to IG'}
+                                            </button>
+                                        </TooltipTrigger>
+                                        {(slides.length < 2 || slides.length > 10) && (
+                                            <TooltipContent>
+                                                <p>Instagram carousels require between 2 and 10 slides.</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                </div>
+                            </TooltipProvider>
+                        </>
+                    )}
                 </div>
 
                 {/* ── Body ─────────────────────────────────────────────────── */}
@@ -1586,10 +939,11 @@ export default function SlideEditor() {
                         <div className="flex flex-col gap-2 p-2">
                             {slides.map((s, idx) => (
                                 <div key={s.id} onClick={() => { setCurrentIdx(idx); setSelectedId(null); }}
-                                    className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200'}`}
-                                    style={{ aspectRatio: '1 / 1', background: s.background }}>
-                                    <span className="absolute top-1 left-1 text-[9px] font-bold text-white bg-black/40 rounded px-1 leading-4">{idx + 1}</span>
-                                    <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                                    className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200 bg-gray-100'}`}
+                                    >
+                                    <SlideThumbnail slide={s} format={format} />
+                                    <span className="absolute top-1 left-1 text-[9px] font-bold text-white bg-black/40 rounded px-1 leading-4 z-10">{idx + 1}</span>
+                                    <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5 z-10">
                                         <button onClick={(e) => { e.stopPropagation(); duplicateSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-black/60" title={t('slideEditor.slides.duplicate')}><Plus className="w-2.5 h-2.5" /></button>
                                         {slides.length > 1 && <button onClick={(e) => { e.stopPropagation(); deleteSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-red-500" title={t('slideEditor.slides.delete')}><X className="w-2.5 h-2.5" /></button>}
                                     </div>

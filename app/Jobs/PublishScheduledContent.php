@@ -27,7 +27,7 @@ class PublishScheduledContent implements ShouldQueue
             $publisher = SocialPublisherFactory::make($provider);
 
             // 3. Publish the video draft
-            $platformPostId = $publisher->publish($this->schedule->contentProject);
+            $platformPostId = $publisher->publish($this->schedule->contentProject, $this->schedule);
 
             // 4. Mark as success
             $this->schedule->update([

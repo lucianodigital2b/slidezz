@@ -6,6 +6,7 @@ use App\Contracts\SocialPublisher;
 use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
+use App\Services\Social\Instagram\InstagramSdk;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -19,19 +20,20 @@ class InstagramPublisher implements SocialPublisher
 
     private const GRAPH_VERSION = 'v21.0';
 
-    private const GRAPH_BASE = 'https://graph.instagram.com/';
-
     /** Seconds to wait between container status polls. */
     private const POLL_INTERVAL = 5;
 
     /** Maximum number of status polls before giving up. */
     private const POLL_MAX_ATTEMPTS = 24;
 
+    private InstagramSdk $sdk;
+
     public function __construct()
     {
         $this->appId = config('services.instagram.client_id');
         $this->appSecret = config('services.instagram.client_secret');
         $this->redirectUri = config('services.instagram.redirect');
+        $this->sdk = new InstagramSdk(self::GRAPH_VERSION);
     }
 
     public function authenticate(): string
@@ -84,40 +86,28 @@ class InstagramPublisher implements SocialPublisher
         $expiresIn = $longLivedResponse['expires_in'] ?? 5_184_000;
 
         // 3. Get Instagram account details
-        $igDetails = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}", [
-            'fields' => 'id,username,name,profile_picture_url',
-            'access_token' => $userToken,
-        ])->throw()->json();
+        $igDetails = $this->sdk->getMedia($userToken, (string) $igUserId, 'id,username,name,profile_picture_url');
 
-        \Log::error(print_r($igDetails, true));
-        \Log::error(print_r($longLivedResponse, true));
+        $workspaceId = session('current_workspace_id');
 
-        try {
-            $workspaceId = session('current_workspace_id');
-            \Log::error("Current workspace ID: " . ($workspaceId ?? 'NULL'));
-            
-            $account = SocialAccount::updateOrCreate(
-                [
-                    'provider' => 'instagram',
-                    'provider_id' => (string) $igUserId,
-                ],
-                [
-                    'workspace_id' => $workspaceId,
-                    'handle' => $igDetails['username'] ?? ($igDetails['name'] ?? null),
-                    'avatar' => $igDetails['profile_picture_url'] ?? null,
-                    'access_token' => $userToken,
-                    'refresh_token' => $userToken,
-                    'expires_at' => now()->addSeconds($expiresIn),
-                ]
-            );
-
-            \Log::error("Successfully saved account with ID: " . $account->id);
-            return $account;
-        } catch (\Exception $e) {
-            \Log::error("Error in updateOrCreate: " . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-            throw $e;
+        if (! $workspaceId) {
+            throw new \RuntimeException('No workspace in session when connecting Instagram account.');
         }
+
+        return SocialAccount::updateOrCreate(
+            [
+                'provider' => 'instagram',
+                'provider_id' => (string) $igUserId,
+            ],
+            [
+                'workspace_id' => $workspaceId,
+                'handle' => $igDetails['username'] ?? ($igDetails['name'] ?? null),
+                'avatar' => $igDetails['profile_picture_url'] ?? null,
+                'access_token' => $userToken,
+                'refresh_token' => $userToken,
+                'expires_at' => now()->addSeconds($expiresIn),
+            ]
+        );
     }
 
     /**
@@ -128,15 +118,8 @@ class InstagramPublisher implements SocialPublisher
      *   - type = 'carousel' → carousel album   (script_data.image_urls[] + script_data.caption)
      *   - type = 'video'    → single video / reel (video_url + script_data.caption)
      */
-    public function publish(ContentProject $project): string
+    public function publish(ContentProject $project, \App\Models\Schedule $schedule): string
     {
-        // Resolve the social account via the pending schedule
-        $schedule = $project->schedules()
-            ->where('status', 'publishing')
-            ->with('socialAccount')
-            ->latest()
-            ->firstOrFail();
-
         $account = $schedule->socialAccount;
         $igUserId = $account->provider_id;
         $accessToken = $account->access_token;
@@ -166,19 +149,13 @@ class InstagramPublisher implements SocialPublisher
 
         $account = $schedule->socialAccount;
 
-        $response = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$platformPostId}/insights", [
-            'metric' => 'impressions,reach,engagement,saved',
-            'access_token' => $account->access_token,
-        ])->throw()->json();
+        $response = $this->sdk->getMediaInsights($account->access_token, $platformPostId, 'impressions,reach,engagement,saved');
 
         $metrics = collect($response['data'] ?? [])
             ->keyBy('name')
             ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
 
-        $mediaData = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$platformPostId}", [
-            'fields' => 'like_count,comments_count',
-            'access_token' => $account->access_token,
-        ])->throw()->json();
+        $mediaData = $this->sdk->getMedia($account->access_token, $platformPostId, 'like_count,comments_count');
 
         return [
             'views' => $metrics->get('impressions', 0),
@@ -196,13 +173,7 @@ class InstagramPublisher implements SocialPublisher
      */
     private function createImageContainer(string $accessToken, string $igUserId, string $imageUrl, string $caption): string
     {
-        $response = Http::asForm()->post(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}/media", [
-            'image_url' => $imageUrl,
-            'caption' => $caption,
-            'access_token' => $accessToken,
-        ])->throw()->json();
-
-        return $this->extractId($response, 'image container');
+        return $this->sdk->createImageContainer($accessToken, $igUserId, $imageUrl, $caption);
     }
 
     /**
@@ -210,14 +181,7 @@ class InstagramPublisher implements SocialPublisher
      */
     private function createVideoContainer(string $accessToken, string $igUserId, string $videoUrl, string $caption): string
     {
-        $response = Http::asForm()->post(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}/media", [
-            'video_url' => $videoUrl,
-            'media_type' => 'REELS',
-            'caption' => $caption,
-            'access_token' => $accessToken,
-        ])->throw()->json();
-
-        return $this->extractId($response, 'video container');
+        return $this->sdk->createVideoContainer($accessToken, $igUserId, $videoUrl, $caption, 'REELS');
     }
 
     /**
@@ -240,24 +204,11 @@ class InstagramPublisher implements SocialPublisher
         $childIds = [];
 
         foreach ($imageUrls as $imageUrl) {
-            $response = Http::asForm()->post(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}/media", [
-                'image_url' => $imageUrl,
-                'is_carousel_item' => 'true',
-                'access_token' => $accessToken,
-            ])->throw()->json();
-
-            $childIds[] = $this->extractId($response, 'carousel child container');
+            $childIds[] = $this->sdk->createCarouselItemImageContainer($accessToken, $igUserId, $imageUrl);
         }
 
         // 2. Create the parent CAROUSEL_ALBUM container
-        $response = Http::asForm()->post(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}/media", [
-            'children' => implode(',', $childIds),
-            'media_type' => 'CAROUSEL',
-            'caption' => $caption,
-            'access_token' => $accessToken,
-        ])->throw()->json();
-
-        return $this->extractId($response, 'carousel container');
+        return $this->sdk->createCarouselContainer($accessToken, $igUserId, $childIds, $caption);
     }
 
     /**
@@ -266,12 +217,7 @@ class InstagramPublisher implements SocialPublisher
     private function waitForContainer(string $accessToken, string $containerId): void
     {
         for ($attempt = 0; $attempt < self::POLL_MAX_ATTEMPTS; $attempt++) {
-            $response = Http::get(self::GRAPH_BASE.self::GRAPH_VERSION."/{$containerId}", [
-                'fields' => 'status_code',
-                'access_token' => $accessToken,
-            ])->throw()->json();
-            
-            $statusCode = $response['status_code'] ?? '';
+            $statusCode = $this->sdk->getContainerStatus($accessToken, $containerId);
 
             if ($statusCode === 'FINISHED') {
                 return;
@@ -292,33 +238,6 @@ class InstagramPublisher implements SocialPublisher
      */
     private function publishContainer(string $accessToken, string $igUserId, string $containerId): string
     {
-        $response = Http::asForm()->post(self::GRAPH_BASE.self::GRAPH_VERSION."/{$igUserId}/media_publish", [
-            'creation_id' => $containerId,
-            'access_token' => $accessToken,
-        ])->throw()->json();
-
-        return $this->extractId($response, 'published post');
-    }
-
-    /**
-     * Extract the 'id' field from an API response or throw on failure.
-     *
-     * @param  array<string, mixed>  $response
-     */
-    private function extractId(array $response, string $context): string
-    {
-        if (isset($response['error'])) {
-            throw new \RuntimeException(
-                "Instagram API error creating {$context}: ".($response['error']['message'] ?? json_encode($response['error']))
-            );
-        }
-
-        $id = $response['id'] ?? null;
-
-        if (! $id) {
-            throw new \RuntimeException("Instagram API did not return an ID for {$context}. Response: ".json_encode($response));
-        }
-
-        return (string) $id;
+        return $this->sdk->publishContainer($accessToken, $igUserId, $containerId);
     }
 }

@@ -14,6 +14,7 @@ class EnsureOnboardingComplete
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user() && $request->user()->onboarding_completed_at === null) {
+            
             return redirect()->route('onboarding');
         }
 

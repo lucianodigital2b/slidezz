@@ -31,22 +31,32 @@ class ScheduleController extends Controller
             ->whereMonth('publish_at', $month)
             ->get()
             ->groupBy(fn (Schedule $s) => $s->publish_at->day)
-            ->map(fn ($group) => $group->map(fn (Schedule $s) => [
-                'id' => $s->id,
-                'status' => $s->status->value,
-                'publish_at' => $s->publish_at->toISOString(),
-                'content_project' => [
-                    'id' => $s->contentProject->id,
-                    'title' => $s->contentProject->title,
-                    'video_url' => $s->contentProject->video_url,
-                ],
-                'social_account' => [
-                    'id' => $s->socialAccount->id,
-                    'handle' => $s->socialAccount->handle,
-                    'provider' => $s->socialAccount->provider,
-                    'avatar' => $s->socialAccount->avatar,
-                ],
-            ])->values());
+            ->map(fn ($group) => $group->map(function (Schedule $s) {
+                $title = $s->contentProject->title;
+                if (empty($title) || $title === 'Untitled') {
+                    $title = $s->contentProject->script_data['caption'] ?? 'Untitled';
+                    if (empty($title)) {
+                        $title = 'Untitled';
+                    }
+                }
+                
+                return [
+                    'id' => $s->id,
+                    'status' => $s->status->value,
+                    'publish_at' => $s->publish_at->toISOString(),
+                    'content_project' => [
+                        'id' => $s->contentProject->id,
+                        'title' => \Illuminate\Support\Str::limit($title, 100),
+                        'video_url' => $s->contentProject->video_url,
+                    ],
+                    'social_account' => [
+                        'id' => $s->socialAccount->id,
+                        'handle' => $s->socialAccount->handle,
+                        'provider' => $s->socialAccount->provider,
+                        'avatar' => $s->socialAccount->avatar,
+                    ],
+                ];
+            })->values());
 
         $socialAccounts = SocialAccount::whereIn('workspace_id', $workspaceIds)
             ->where('provider', 'tiktok')
@@ -55,7 +65,23 @@ class ScheduleController extends Controller
         $contentProjects = ContentProject::whereIn('workspace_id', $workspaceIds)
             ->whereIn('status', ['ready', 'drafting'])
             ->latest()
-            ->get(['id', 'title', 'type', 'video_url']);
+            ->get(['id', 'title', 'type', 'video_url', 'script_data'])
+            ->map(function ($cp) {
+                $title = $cp->title;
+                if (empty($title) || $title === 'Untitled') {
+                    $title = $cp->script_data['caption'] ?? 'Untitled';
+                    if (empty($title)) {
+                        $title = 'Untitled';
+                    }
+                }
+                
+                return [
+                    'id' => $cp->id,
+                    'title' => \Illuminate\Support\Str::limit($title, 100),
+                    'type' => $cp->type,
+                    'video_url' => $cp->video_url,
+                ];
+            });
 
         $counts = [
             'queue' => Schedule::whereHas('socialAccount', fn ($q) => $q->whereIn('workspace_id', $workspaceIds))

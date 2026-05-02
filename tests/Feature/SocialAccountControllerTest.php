@@ -23,11 +23,7 @@ class SocialAccountControllerTest extends TestCase
 
         $this->actingAs($user)
             ->get('/social-accounts')
-            ->assertStatus(200)
-            ->assertInertia(fn ($page) => $page
-                ->component('SocialAccounts/Index')
-                ->has('accounts')
-            );
+            ->assertRedirect('/settings/profile');
     }
 
     public function test_only_accounts_from_users_workspaces_are_returned(): void
@@ -40,10 +36,10 @@ class SocialAccountControllerTest extends TestCase
         SocialAccount::factory()->create(['workspace_id' => $otherWorkspace->id]);
 
         $this->actingAs($user)
-            ->get('/social-accounts')
+            ->get('/settings/profile')
             ->assertInertia(fn ($page) => $page
-                ->has('accounts', 1)
-                ->where('accounts.0.id', $ownAccount->id)
+                ->has('socialAccounts', 1)
+                ->where('socialAccounts.0.id', $ownAccount->id)
             );
     }
 
@@ -73,7 +69,7 @@ class SocialAccountControllerTest extends TestCase
 
         $this->actingAs($user)
             ->delete("/social-accounts/{$account->id}")
-            ->assertRedirect('/social-accounts');
+            ->assertRedirect('/settings/profile');
 
         $this->assertDatabaseMissing('social_accounts', ['id' => $account->id]);
     }

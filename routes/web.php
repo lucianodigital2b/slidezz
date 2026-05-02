@@ -39,6 +39,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('slideshow-editor', [SlideProjectController::class, 'store'])->name('slideshow-editor.store');
     Route::put('slideshow-editor/{slideProject}', [SlideProjectController::class, 'update'])->name('slideshow-editor.update');
     Route::post('slideshow-editor/{slideProject}/duplicate', [SlideProjectController::class, 'duplicate'])->name('slideshow-editor.duplicate');
+    Route::post('slideshow-editor/{slideProject}/publish/instagram', [SlideProjectController::class, 'publishInstagram'])->name('slideshow-editor.publish.instagram');
     Route::delete('slideshow-editor/{slideProject}', [SlideProjectController::class, 'destroy'])->name('slideshow-editor.destroy');
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
     Route::inertia('database', 'Database')->name('database');
@@ -46,6 +47,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
     Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
 
+    Route::redirect('social-accounts', '/settings/profile');
     Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
     Route::get('social-accounts/{provider}/callback', [SocialAccountController::class, 'callback'])->name('social-accounts.callback');
     // Alias matching the redirect URIs registered in the TikTok Developer Portal

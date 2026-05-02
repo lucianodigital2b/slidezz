@@ -18,10 +18,10 @@ interface SocialPublisher
     public function handleCallback(array $data): SocialAccount;
 
     /**
-     * Publish the given content project.
+     * Publish the given content project for a specific schedule.
      * Returns the platform's specific Post ID.
      */
-    public function publish(ContentProject $project): string;
+    public function publish(ContentProject $project, \App\Models\Schedule $schedule): string;
 
     /**
      * Fetch the latest analytics for a given post.

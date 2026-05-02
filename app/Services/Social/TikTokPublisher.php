@@ -85,13 +85,11 @@ class TikTokPublisher implements SocialPublisher
         );
     }
 
-    public function publish(ContentProject $project): string
+    public function publish(ContentProject $project, \App\Models\Schedule $schedule): string
     {
         // To be implemented: TikTok Direct Post API
         // https://developers.tiktok.com/doc/tiktok-api-direct-post/
 
-        // 1. Get the Schedule and SocialAccount
-        $schedule = $project->schedules()->first();
         $account = $schedule->socialAccount;
 
         // 2. Refresh token if expired
