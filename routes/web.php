@@ -10,6 +10,7 @@ use App\Http\Controllers\SlideProjectController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
+use App\Models\SlideProject;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -64,6 +65,16 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('carousel/extract-url', [CarouselWizardController::class, 'extractUrl'])->name('carousel.extract-url');
     Route::post('carousel/save-config', [CarouselWizardController::class, 'saveConfig'])->name('carousel.save-config');
     Route::post('carousel', [CarouselWizardController::class, 'store'])->name('carousel.store');
+
+    if (app()->isLocal()) {
+        Route::get('dev/test-wizard/{slideProject}', function (SlideProject $slideProject) {
+            return redirect()
+                ->route('slideshow-editor.edit', $slideProject)
+                ->with('wizardTopic', 'How to grow on Instagram in 2025')
+                ->with('wizardStyle', 'dark gradient overlay, ALL CAPS typography, documentary motivational style. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
+                ->with('wizardSlideCount', 5);
+        })->name('dev.test-wizard');
+    }
 });
 
 require __DIR__.'/settings.php';

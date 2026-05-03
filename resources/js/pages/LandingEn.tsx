@@ -175,7 +175,6 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                     style={{
                         background: 'rgba(243,238,232,0.92)',
                         backdropFilter: 'blur(12px)',
-                        borderBottom: '1px solid #1A1A1A',
                     }}
                 >
                     <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">

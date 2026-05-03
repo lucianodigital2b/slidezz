@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { schedule } from '@/routes';
 import {
     Calendar as CalendarIcon, ChevronLeft, ChevronRight, List, Grid,
-    Plus, ChevronDown, MessageSquare, Tag, Globe, CheckCircle2, AlertCircle
+    Plus, ChevronDown, MessageSquare, Tag, Globe, CheckCircle2, AlertCircle, XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,11 +14,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ScheduleItem {
     id: number;
     status: string;
     publish_at: string;
+    error_log: string | null;
     content_project: { id: number; title: string; video_url: string | null };
     social_account: { id: number; handle: string; provider: string; avatar: string | null };
 }
@@ -233,11 +240,23 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                                         </span>
                                                         <button 
                                                             onClick={() => {
-                                                                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00`;
-                                                                setData('publish_at', dateStr);
+                                                                // Don't allow clicking past dates
+                                                                const clickDate = new Date(year, month - 1, day, 12, 0);
+                                                                if (clickDate < new Date() && !isToday) return;
+
+                                                                // Pre-fill next hour for today, or 12:00 for future dates
+                                                                const defaultTime = isToday 
+                                                                    ? new Date(new Date().getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)
+                                                                    : `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00`;
+
+                                                                setData('publish_at', defaultTime);
                                                                 setIsModalOpen(true);
                                                             }}
-                                                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-[#FF5722] transition-opacity"
+                                                            className={`p-1 transition-opacity ${
+                                                                (new Date(year, month - 1, day, 23, 59) < new Date() && !isToday)
+                                                                ? 'opacity-0 cursor-not-allowed'
+                                                                : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-[#FF5722]'
+                                                            }`}
                                                         >
                                                             <Plus className="w-4 h-4" />
                                                         </button>
@@ -253,9 +272,24 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                                                 }
                                                             >
                                                                 {schedule.status === 'failed' && (
-                                                                    <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full z-10 shadow-sm border border-red-100">
-                                                                        <AlertCircle className="w-3.5 h-3.5 text-red-500" fill="currentColor" stroke="white" />
-                                                                    </div>
+                                                                    <TooltipProvider delayDuration={100}>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full z-10 shadow-sm border border-red-100 cursor-help">
+                                                                                    <AlertCircle className="w-3.5 h-3.5 text-red-500" fill="currentColor" stroke="white" />
+                                                                                </div>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent className="max-w-[250px] break-words text-xs bg-red-50 border-red-200 text-red-900 shadow-md">
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                                                                                    <div className="flex flex-col gap-1">
+                                                                                        <p className="font-semibold">Publishing Failed</p>
+                                                                                        <p className="text-red-800/90">{schedule.error_log || "An unknown error occurred while publishing to the platform."}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
                                                                 )}
                                                                 {schedule.social_account.provider === 'tiktok' && (
                                                                     <span className="font-bold text-black bg-white rounded-sm px-0.5 text-[10px]">♪</span>
@@ -401,6 +435,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                     type="datetime-local"
                                     id="publish_at"
                                     value={data.publish_at}
+                                    min={new Date().toISOString().slice(0, 16)}
                                     onChange={(e) => setData('publish_at', e.target.value)}
                                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     required

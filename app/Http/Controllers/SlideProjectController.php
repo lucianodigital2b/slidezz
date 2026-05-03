@@ -6,17 +6,19 @@ use App\Enums\ScheduleStatus;
 use App\Models\Asset;
 use App\Models\ContentProject;
 use App\Models\Schedule;
-use App\Models\SocialAccount;
 use App\Models\SlideProject;
+use App\Models\SocialAccount;
 use App\Models\Workspace;
+use App\Services\Social\SocialPublisherFactory;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Services\Social\SocialPublisherFactory;
 
 class SlideProjectController extends Controller
 {
@@ -74,6 +76,7 @@ class SlideProjectController extends Controller
         $wizardConfig = session('wizardTopic') ? [
             'topic' => session('wizardTopic'),
             'style' => session('wizardStyle'),
+            'slideCount' => session('wizardSlideCount', 3),
         ] : null;
 
         return Inertia::render('SlideEditor', [
@@ -188,7 +191,7 @@ class SlideProjectController extends Controller
             ],
         ]);
 
-        $publishAt = empty($validated['publish_at']) ? null : \Carbon\Carbon::parse($validated['publish_at']);
+        $publishAt = empty($validated['publish_at']) ? null : Carbon::parse($validated['publish_at']);
         $isScheduled = $publishAt && $publishAt->isFuture();
 
         $schedule = Schedule::create([
@@ -205,7 +208,7 @@ class SlideProjectController extends Controller
             ]);
         }
 
-        \Illuminate\Support\Facades\Log::info('Instagram Image URLs being sent:', ['urls' => $imageUrls]);
+        Log::info('Instagram Image URLs being sent:', ['urls' => $imageUrls]);
 
         try {
             $publisher = SocialPublisherFactory::make('instagram');

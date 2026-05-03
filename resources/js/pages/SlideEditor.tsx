@@ -58,6 +58,7 @@ interface SlideProjectProp {
 interface WizardConfig {
     topic: string;
     style: string;
+    slideCount: number;
 }
 
 const STORAGE_KEY = 'slidezz_editor_v1';
@@ -176,7 +177,12 @@ export default function SlideEditor() {
     const [displayW, setDisplayW] = useState(600);
     const [displayH, setDisplayH] = useState(600);
 
-    const slide = slides[currentIdx];
+    const safeIdx = Math.max(0, Math.min(currentIdx, slides.length - 1));
+    useEffect(() => {
+        if (currentIdx !== safeIdx) setCurrentIdx(safeIdx);
+    }, [currentIdx, safeIdx]);
+
+    const slide = slides[safeIdx] || makeSlide();
     const slideH = FORMATS[format].h;
     const scale = displayW / SLIDE_W;
 
@@ -281,7 +287,9 @@ export default function SlideEditor() {
         if (!wizardConfig) return;
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
+        setAiSlideCount(wizardConfig.slideCount);
         setAiModalOpen(true);
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -361,8 +369,12 @@ export default function SlideEditor() {
         return { id: uid(), background: '#1a1a2e', elements };
     }
 
-    async function generateCarousel() {
-        if (!aiTopic.trim()) return;
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number) {
+        const topic = topicOverride ?? aiTopic;
+        const style = styleOverride ?? aiStyle;
+        const slideCount = slideCountOverride ?? aiSlideCount;
+        if (!topic.trim()) return;
+        const newSlideStartIdx = slides.length;
         setAiStatus('generating');
         setAiProgress([]);
         setAiError('');
@@ -375,7 +387,7 @@ export default function SlideEditor() {
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
-                body: JSON.stringify({ topic: aiTopic, style: aiStyle || undefined, slide_count: aiSlideCount }),
+                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount }),
             });
         } catch {
             setAiStatus('error');
@@ -406,8 +418,9 @@ export default function SlideEditor() {
             for (const line of lines) {
                 if (!line.startsWith('data: ')) continue;
                 try {
-                    const payload = JSON.parse(line.slice(6)) as { text?: string };
-                    if (typeof payload.text === 'string') assembled += payload.text;
+                    const payload = JSON.parse(line.slice(6)) as { delta?: string; text?: string };
+                    const chunk = payload.delta ?? payload.text ?? '';
+                    if (chunk) assembled += chunk;
                 } catch { /* ignore malformed SSE lines */ }
             }
         }
@@ -457,9 +470,11 @@ export default function SlideEditor() {
         });
 
         setSlides((prev) => [...prev, ...newSlides]);
-        setCurrentIdx(slides.length);
+        setCurrentIdx(newSlideStartIdx);
+        setSelectedId(null);
         loadGoogleFont('Poppins');
-        setAiStatus('done');
+        setAiModalOpen(false);
+        setAiStatus('idle');
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -871,6 +886,7 @@ export default function SlideEditor() {
                                                     if (date) {
                                                         // preserve time if we already had a date, or set to a default future time
                                                         const newDate = new Date(date);
+                                                        
                                                         if (publishAt) {
                                                             newDate.setHours(publishAt.getHours());
                                                             newDate.setMinutes(publishAt.getMinutes());
@@ -878,6 +894,7 @@ export default function SlideEditor() {
                                                             newDate.setHours(new Date().getHours() + 1);
                                                             newDate.setMinutes(0);
                                                         }
+
                                                         setPublishAt(newDate);
                                                     } else {
                                                         setPublishAt(undefined);
@@ -1083,8 +1100,42 @@ export default function SlideEditor() {
                 </div>
             </div>
 
-            {/* ── AI Carousel Modal ─────────────────────────────────────────── */}
-            {aiModalOpen && (
+            {/* ── Full-screen generation loader ─────────────────────────────── */}
+            {aiModalOpen && (aiStatus === 'generating' || aiStatus === 'imaging') && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-950/95 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-8 max-w-sm w-full text-center px-6">
+                        <div className="relative flex items-center justify-center">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-2xl">
+                                <Sparkles className="w-10 h-10 text-white" />
+                            </div>
+                            <div className="absolute inset-0 rounded-2xl border-2 border-violet-400/40 animate-ping" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-white mb-2">
+                                {aiStatus === 'generating' ? t('slideEditor.ai.statusGenerating') : t('slideEditor.ai.statusImages')}
+                            </h2>
+                            <p className="text-sm text-gray-400">
+                                {aiStatus === 'generating' ? t('slideEditor.ai.statusGeneratingHint') : t('slideEditor.ai.statusImagesHint')}
+                            </p>
+                        </div>
+                        {aiStatus === 'imaging' && aiProgress.length > 0 ? (
+                            <div className="w-full space-y-2">
+                                {aiProgress.map((slideTitle, i) => (
+                                    <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg px-4 py-2.5">
+                                        <div className="w-2 h-2 rounded-full bg-violet-400 shrink-0 animate-pulse" />
+                                        <span className="text-sm text-gray-300 truncate">{slideTitle}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── AI Carousel Modal (idle / error) ──────────────────────────── */}
+            {aiModalOpen && (aiStatus === 'idle' || aiStatus === 'error') && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-indigo-50">
@@ -1096,82 +1147,46 @@ export default function SlideEditor() {
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-
                         <div className="px-6 py-5 space-y-4">
-                            {aiStatus === 'idle' || aiStatus === 'error' ? (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.topicLabel')}</label>
-                                        <textarea
-                                            value={aiTopic}
-                                            onChange={(e) => setAiTopic(e.target.value)}
-                                            placeholder={t('slideEditor.ai.topicPlaceholder')}
-                                            rows={3}
-                                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.styleLabel')}</label>
-                                        <input
-                                            value={aiStyle}
-                                            onChange={(e) => setAiStyle(e.target.value)}
-                                            placeholder={t('slideEditor.ai.stylePlaceholder')}
-                                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.slideCountLabel')}</label>
-                                        <div className="flex items-center gap-3">
-                                            <input
-                                                type="range" min={2} max={10} value={aiSlideCount}
-                                                onChange={(e) => setAiSlideCount(Number(e.target.value))}
-                                                className="flex-1 accent-violet-600"
-                                            />
-                                            <span className="text-sm font-semibold text-violet-700 w-6 text-center">{aiSlideCount}</span>
-                                        </div>
-                                    </div>
-                                    {aiStatus === 'error' && (
-                                        <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>
-                                    )}
-                                    <button
-                                        onClick={generateCarousel}
-                                        disabled={!aiTopic.trim()}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-medium hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                                        <Sparkles className="w-4 h-4" /> {t('slideEditor.ai.generateBtn')}
-                                    </button>
-                                </>
-                            ) : aiStatus === 'generating' ? (
-                                <div className="flex flex-col items-center gap-4 py-6">
-                                    <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
-                                    <p className="text-sm text-gray-600">{t('slideEditor.ai.statusGenerating')}</p>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.topicLabel')}</label>
+                                <textarea
+                                    value={aiTopic}
+                                    onChange={(e) => setAiTopic(e.target.value)}
+                                    placeholder={t('slideEditor.ai.topicPlaceholder')}
+                                    rows={3}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.styleLabel')}</label>
+                                <input
+                                    value={aiStyle}
+                                    onChange={(e) => setAiStyle(e.target.value)}
+                                    placeholder={t('slideEditor.ai.stylePlaceholder')}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.slideCountLabel')}</label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="range" min={2} max={10} value={aiSlideCount}
+                                        onChange={(e) => setAiSlideCount(Number(e.target.value))}
+                                        className="flex-1 accent-violet-600"
+                                    />
+                                    <span className="text-sm font-semibold text-violet-700 w-6 text-center">{aiSlideCount}</span>
                                 </div>
-                            ) : aiStatus === 'imaging' ? (
-                                <div className="flex flex-col items-center gap-4 py-4">
-                                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                                    <p className="text-sm text-gray-600">{t('slideEditor.ai.statusImages')}</p>
-                                    {aiProgress.length > 0 && (
-                                        <ul className="w-full space-y-1">
-                                            {aiProgress.map((title_, i) => (
-                                                <li key={i} className="flex items-center gap-2 text-xs text-gray-500">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                                                    {title_}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center gap-4 py-6">
-                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                                        <Sparkles className="w-6 h-6 text-green-600" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-700">{t('slideEditor.ai.statusDone')}</p>
-                                    <button onClick={closeAiModal}
-                                        className="px-6 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-medium hover:from-violet-700 hover:to-indigo-700 transition-all">
-                                        {t('slideEditor.ai.doneBtn')}
-                                    </button>
-                                </div>
+                            </div>
+                            {aiStatus === 'error' && (
+                                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>
                             )}
+                            <button
+                                onClick={() => generateCarousel()}
+                                disabled={!aiTopic.trim()}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-medium hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                <Sparkles className="w-4 h-4" /> {t('slideEditor.ai.generateBtn')}
+                            </button>
                         </div>
                     </div>
                 </div>

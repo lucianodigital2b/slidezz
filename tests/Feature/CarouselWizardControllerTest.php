@@ -266,4 +266,58 @@ class CarouselWizardControllerTest extends TestCase
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $this->assertNull(data_get($workspace->profile, 'carousel'));
     }
+
+    public function test_store_flashes_slide_count_to_session(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+                'slide_count' => 7,
+            ])
+            ->assertSessionHas('wizardSlideCount', 7);
+    }
+
+    public function test_store_flashes_default_slide_count_when_not_provided(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+            ])
+            ->assertSessionHas('wizardSlideCount', 3);
+    }
+
+    public function test_store_validates_slide_count_bounds(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+                'slide_count' => 1,
+            ])
+            ->assertSessionHasErrors(['slide_count']);
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+                'slide_count' => 11,
+            ])
+            ->assertSessionHasErrors(['slide_count']);
+    }
 }

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { CalendarDays, Layers, Zap, Settings } from 'lucide-react';
+import { CalendarDays, Layers, Zap, Settings, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
 import { NavUser } from '@/components/nav-user';
@@ -41,7 +41,7 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="pt-4">
+            <SidebarContent className="pt-4 flex flex-col justify-between">
                 <SidebarGroup className="px-2 py-0">
                     <SidebarMenu>
                         {navItems.map((item) => (
@@ -58,6 +58,23 @@ export function AppSidebar() {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+
+                <SidebarGroup className="px-2 mt-auto">
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton
+                                asChild
+                                tooltip={{ children: 'Support' }}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                                <a href="https://wa.me/5527997798070" target="_blank" rel="noopener noreferrer">
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span>Support</span>
+                                </a>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>

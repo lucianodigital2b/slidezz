@@ -9,6 +9,7 @@ use App\Models\SocialAccount;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,14 +40,15 @@ class ScheduleController extends Controller
                         $title = 'Untitled';
                     }
                 }
-                
+
                 return [
                     'id' => $s->id,
                     'status' => $s->status->value,
                     'publish_at' => $s->publish_at->toISOString(),
+                    'error_log' => $s->error_log,
                     'content_project' => [
                         'id' => $s->contentProject->id,
-                        'title' => \Illuminate\Support\Str::limit($title, 100),
+                        'title' => Str::limit($title, 100),
                         'video_url' => $s->contentProject->video_url,
                     ],
                     'social_account' => [
@@ -74,10 +76,10 @@ class ScheduleController extends Controller
                         $title = 'Untitled';
                     }
                 }
-                
+
                 return [
                     'id' => $cp->id,
-                    'title' => \Illuminate\Support\Str::limit($title, 100),
+                    'title' => Str::limit($title, 100),
                     'type' => $cp->type,
                     'video_url' => $cp->video_url,
                 ];

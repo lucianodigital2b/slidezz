@@ -219,6 +219,7 @@ export default function CreateCarousel() {
     const [customPrompt, setCustomPrompt]   = useState('');
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
+    const [slideCount, setSlideCount]       = useState(3);
     const [saveConfig, setSaveConfig]       = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
     const [importOpen, setImportOpen]       = useState(false);
@@ -254,7 +255,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, save_config: saveConfig, format, custom_prompt: customPrompt },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -468,6 +469,24 @@ export default function CreateCarousel() {
                                     <div>
                                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.format')}</p>
                                         <p className="text-sm font-semibold text-gray-800 mt-1 capitalize">{format}</p>
+                                    </div>
+                                </div>
+                                <div className="px-5 py-4 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.slideCountLabel')}</p>
+                                        <span className="text-sm font-bold text-[#E8440A] w-6 text-center">{slideCount}</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={2}
+                                        max={10}
+                                        value={slideCount}
+                                        onChange={(e) => setSlideCount(Number(e.target.value))}
+                                        className="w-full accent-[#E8440A]"
+                                    />
+                                    <div className="flex justify-between text-[10px] text-gray-300 mt-0.5">
+                                        <span>2</span>
+                                        <span>10</span>
                                     </div>
                                 </div>
                             </div>

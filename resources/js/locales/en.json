@@ -131,7 +131,9 @@
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
       "statusGenerating": "Writing your slides…",
+      "statusGeneratingHint": "Creating each slide's content with AI",
       "statusImages": "Generating background images…",
+      "statusImagesHint": "This may take a moment",
       "statusDone": "Carousel ready! Check your slides panel.",
       "doneBtn": "View slides",
       "errorNetwork": "Network error. Please try again.",
@@ -175,6 +177,7 @@
       "template": "Template",
       "archetype": "Archetype",
       "format": "Format",
+      "slideCountLabel": "Number of slides",
       "saveConfigLabel": "Save as AI autopilot default",
       "saveConfigDesc": "This template and archetype will be used automatically in future autopilot generations.",
       "generateBtn": "Generate Carousel"

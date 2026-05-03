@@ -414,7 +414,9 @@
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
       "statusGenerating": "Escrevendo seus slides…",
+      "statusGeneratingHint": "Criando o conteúdo de cada slide com IA",
       "statusImages": "Gerando imagens de fundo…",
+      "statusImagesHint": "Isso pode levar alguns instantes",
       "statusDone": "Carrossel pronto! Confira o painel de slides.",
       "doneBtn": "Ver slides",
       "errorNetwork": "Erro de rede. Por favor, tente novamente.",
@@ -458,6 +460,7 @@
       "template": "Template",
       "archetype": "Arquétipo",
       "format": "Formato",
+      "slideCountLabel": "Número de slides",
       "saveConfigLabel": "Salvar como padrão do autopiloto IA",
       "saveConfigDesc": "Este template e arquétipo serão usados automaticamente nas próximas gerações do autopiloto.",
       "generateBtn": "Gerar Carrossel"
