@@ -242,11 +242,22 @@ export async function loadGoogleFont(family: string): Promise<void> {
         link.id = id;
         link.rel = 'stylesheet';
         link.href = `https://fonts.googleapis.com/css2?family=${key}:ital,wght@0,400;0,700;1,400&display=swap`;
-        document.head.appendChild(link);
+
+        // Wait for the stylesheet to be parsed so FontFace objects are registered
+        // before calling document.fonts.load() — otherwise it resolves immediately
+        // with an empty array and the font won't be ready for canvas rendering.
+        await new Promise<void>((resolve) => {
+            link.addEventListener('load', resolve, { once: true });
+            link.addEventListener('error', resolve, { once: true });
+            document.head.appendChild(link);
+        });
     }
 
     try {
-        await document.fonts.load(`16px "${family}"`);
+        await Promise.all([
+            document.fonts.load(`400 16px "${family}"`),
+            document.fonts.load(`700 16px "${family}"`),
+        ]);
     } catch {
         // silently fall back if the font fails
     }

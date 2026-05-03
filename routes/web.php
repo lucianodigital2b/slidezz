@@ -70,7 +70,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
         Route::get('dev/test-wizard/{slideProject}', function (SlideProject $slideProject) {
             return redirect()
                 ->route('slideshow-editor.edit', $slideProject)
-                ->with('wizardTopic', 'How to grow on Instagram in 2025')
+                ->with('wizardTopic', "AI\'s Economics Don't Make Sense")
                 ->with('wizardStyle', 'dark gradient overlay, ALL CAPS typography, documentary motivational style. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
                 ->with('wizardSlideCount', 5);
         })->name('dev.test-wizard');

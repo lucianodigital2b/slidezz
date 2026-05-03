@@ -469,10 +469,10 @@ export default function SlideEditor() {
             return buildSlideFromData(s, base64);
         });
 
+        await loadGoogleFont('Poppins');
         setSlides((prev) => [...prev, ...newSlides]);
         setCurrentIdx(newSlideStartIdx);
         setSelectedId(null);
-        loadGoogleFont('Poppins');
         setAiModalOpen(false);
         setAiStatus('idle');
     }
