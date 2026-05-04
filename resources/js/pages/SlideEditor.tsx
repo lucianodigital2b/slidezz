@@ -19,12 +19,13 @@ import {
     Redo2,
     X,
     ChevronRight,
+    ChevronLeft,
     ChevronUp,
     ChevronDown,
     ChevronsUp,
     ChevronsDown,
 } from 'lucide-react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
@@ -49,7 +50,7 @@ import {
     SLIDE_W, PANEL_LEFT, PANEL_RIGHT, FORMATS, Format, Tool,
     SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl, PathEl, RichSpan
 } from '@/components/SlideEditor/types';
-import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
+import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps, preserveSingleHighlightRichText, getSafeAreaBounds, getSafeAreaPadding } from '@/components/SlideEditor/utils';
 import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElements';
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
@@ -66,6 +67,7 @@ import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/
 interface SlideProjectProp {
     id: number;
     title: string;
+    caption?: string | null;
     format: Format;
     slides: Slide[];
 }
@@ -117,6 +119,7 @@ export default function SlideEditor() {
     const [leftPanelMode, setLeftPanelMode] = useState<'slides' | 'templates'>('slides');
     const { t } = useTranslation();
     const [title, setTitle] = useState(slideProject?.title ?? t('slideEditor.toolbar.untitled'));
+    const [caption, setCaption] = useState(slideProject?.caption ?? '');
     const [projectId, setProjectId] = useState<number | null>(slideProject?.id ?? null);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
     const [igAccountId, setIgAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
@@ -142,6 +145,7 @@ export default function SlideEditor() {
     const containerRef = useRef<HTMLDivElement>(null);
     const [displayW, setDisplayW] = useState(600);
     const [displayH, setDisplayH] = useState(600);
+    const [showSafeAreaGuide, setShowSafeAreaGuide] = useState(false);
 
     const safeIdx = Math.max(0, Math.min(currentIdx, slides.length - 1));
     useEffect(() => {
@@ -165,6 +169,8 @@ export default function SlideEditor() {
 
     const slideH = FORMATS[format].h;
     const scale = displayW / SLIDE_W;
+    const safeAreaBounds = useMemo(() => getSafeAreaBounds(format), [format]);
+    const safeAreaPadding = useMemo(() => getSafeAreaPadding(format), [format]);
 
     useEffect(() => {
         const recalc = () => {
@@ -223,7 +229,7 @@ export default function SlideEditor() {
 
     async function saveProject(): Promise<number | null> {
         setSaveStatus('saving');
-        const body = { title, format, slides };
+        const body = { title, caption, format, slides };
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         try {
             if (projectId) {
@@ -332,7 +338,7 @@ export default function SlideEditor() {
                 text: 'Texto', fontSize: 48, fontFamily: 'Poppins', fill: '#111111',
                 fontStyle: '', align: 'left', verticalAlign: 'top',
                 lineHeight: 1.2, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-                strokeWidth: 0, padding: 0, wrap: 'word',
+                strokeWidth: 0, padding: 12, wrap: 'word',
                 accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
                 ...SHADOW_DEFAULTS,
             });
@@ -352,6 +358,18 @@ export default function SlideEditor() {
                 ...SHADOW_DEFAULTS,
             });
         }
+    }
+
+    function handleStageDragStart(e: Konva.KonvaEventObject<DragEvent>) {
+        const target = e.target;
+        const targetId = target.id();
+        const parentId = target.parent?.id?.() ?? '';
+        const isElementDrag = slide.elements.some((el) => el.id === targetId || el.id === parentId);
+        setShowSafeAreaGuide(isElementDrag);
+    }
+
+    function handleStageDragEnd() {
+        setShowSafeAreaGuide(false);
     }
 
     // ─── Add gradient ────────────────────────────────────────────────────────
@@ -500,7 +518,7 @@ export default function SlideEditor() {
         if (!igAccountId) return;
         if (slides.length < 2 || slides.length > 10) return;
         if (format !== 'post') {
-            window.alert('Switch format to Post (1:1) to publish a carousel to Instagram.');
+            window.alert('Switch format to Post (3:4) to publish a carousel to Instagram.');
             return;
         }
         setIgPosting(true);
@@ -508,7 +526,6 @@ export default function SlideEditor() {
             const id = (await saveProject()) ?? projectId;
             if (!id) throw new Error('Could not save slideshow before publishing.');
 
-            const caption = window.prompt('Caption', '') ?? '';
             const blobs = await exportAllSlidesJpeg();
             if (blobs.length !== slides.length) throw new Error('Failed to export slides.');
 
@@ -554,6 +571,10 @@ export default function SlideEditor() {
     // ─── Render ──────────────────────────────────────────────────────────────
 
     const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
+    const slideTextElements = [...slide.elements]
+        .filter((el): el is TextEl => el.type === 'text')
+        .sort((a, b) => a.y - b.y || a.x - b.x);
+    const globalTitleEl = slideTextElements[0] ?? null;
 
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button title={label}
@@ -862,24 +883,55 @@ export default function SlideEditor() {
                             </div>
                         )}
 
-                        {/* Floating tool palette */}
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
-                            {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
-                            {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
-                            {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
-                            {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
-                            <div className="w-px h-4 bg-gray-200 mx-0.5" />
+                        {/* Floating navigation + tool palette */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
                             <button
-                                title="Elementos"
-                                onClick={() => setElementsOpen((o) => !o)}
-                                className={`p-2.5 rounded-xl transition-all ${elementsOpen ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                                type="button"
+                                title="Slide anterior"
+                                onClick={() => {
+                                    if (safeIdx === 0) return;
+                                    setCurrentIdx(safeIdx - 1);
+                                    setSelectedId(null);
+                                }}
+                                disabled={safeIdx === 0}
+                                className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
                             >
-                                <Shapes className="w-4 h-4" />
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <div className="flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
+                                {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
+                                {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
+                                {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
+                                {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
+                                <div className="w-px h-4 bg-gray-200 mx-0.5" />
+                                <button
+                                    title="Elementos"
+                                    onClick={() => setElementsOpen((o) => !o)}
+                                    className={`p-2.5 rounded-xl transition-all ${elementsOpen ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    <Shapes className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                title="Próximo slide"
+                                onClick={() => {
+                                    if (safeIdx >= slides.length - 1) return;
+                                    setCurrentIdx(safeIdx + 1);
+                                    setSelectedId(null);
+                                }}
+                                disabled={safeIdx >= slides.length - 1}
+                                className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
+                            >
+                                <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
                         <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: displayW, height: displayH }}>
                             <Stage ref={stageRef} width={displayW} height={displayH} scaleX={scale} scaleY={scale}
-                                onClick={handleStageClick} style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}>
+                                onClick={handleStageClick}
+                                onDragStart={handleStageDragStart}
+                                onDragEnd={handleStageDragEnd}
+                                style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}>
                                 <Layer>
                                     <Rect id="bg" x={0} y={0} width={SLIDE_W} height={slideH} fill={slide.background} listening={true} />
 
@@ -1023,6 +1075,41 @@ export default function SlideEditor() {
                                         return null;
                                     })}
 
+                                    {showSafeAreaGuide && (
+                                        <>
+                                            {safeAreaPadding.top > 0 && (
+                                                <Rect
+                                                    x={0}
+                                                    y={0}
+                                                    width={SLIDE_W}
+                                                    height={safeAreaPadding.top}
+                                                    fill="rgba(163, 230, 53, 0.14)"
+                                                    listening={false}
+                                                />
+                                            )}
+                                            {safeAreaPadding.bottom > 0 && (
+                                                <Rect
+                                                    x={0}
+                                                    y={slideH - safeAreaPadding.bottom}
+                                                    width={SLIDE_W}
+                                                    height={safeAreaPadding.bottom}
+                                                    fill="rgba(163, 230, 53, 0.14)"
+                                                    listening={false}
+                                                />
+                                            )}
+                                            <Rect
+                                                x={safeAreaBounds.x}
+                                                y={safeAreaBounds.y}
+                                                width={safeAreaBounds.width}
+                                                height={safeAreaBounds.height}
+                                                stroke="#84cc16"
+                                                strokeWidth={3}
+                                                dash={[24, 14]}
+                                                listening={false}
+                                            />
+                                        </>
+                                    )}
+
                                     <Transformer ref={trRef} rotateEnabled={true}
                                         enabledAnchors={['top-left','top-center','top-right','middle-right','middle-left','bottom-left','bottom-center','bottom-right']}
                                         boundBoxFunc={(oldBox, newBox) => (Math.abs(newBox.width) < 2 || Math.abs(newBox.height) < 2 ? oldBox : newBox)}
@@ -1041,6 +1128,14 @@ export default function SlideEditor() {
                             el={selectedEl}
                             onChange={(patch) => selectedId && updateElement(selectedId, patch as Partial<SlideEl>)}
                             onDelete={() => selectedId && deleteElement(selectedId)}
+                            projectTitle={title}
+                            onProjectTitleChange={setTitle}
+                            slideBackground={slide.background}
+                            onSlideBackgroundChange={(background) => updateSlide({ background })}
+                            globalTitle={globalTitleEl?.text ?? ''}
+                            onGlobalTitleChange={(text) => globalTitleEl && updateElement(globalTitleEl.id, { text } as Partial<TextEl>)}
+                            globalCaption={caption}
+                            onGlobalCaptionChange={setCaption}
                         />
                     </div>
                 </div>

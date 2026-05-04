@@ -1,9 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer, Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
+import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough, SmilePlus } from 'lucide-react';
 import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
 import { Section, ToggleField, Field, ColorField, SliderField, FontPicker, PositionGrid } from './PrimitiveControls';
 import { preserveSingleHighlightRichText } from './utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 // ── Word Highlight helpers ────────────────────────────────────────────────────
 
@@ -123,8 +126,9 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ShadowSection({ el, onChange }: { el: BaseEl; onChange: (p: Partial<BaseEl>) => void }) {
+export function ShadowSection({ el, onChange }: { el: BaseEl | null; onChange: (p: Partial<BaseEl>) => void }) {
     const { t } = useTranslation();
+    if (!el) return null;
     return (
         <Section title={t('slideEditor.sections.shadow')} defaultOpen={false}>
             <ToggleField label={t('slideEditor.fields.enableShadow')} checked={el.shadowEnabled} onChange={(v) => onChange({ shadowEnabled: v })} />
@@ -145,21 +149,49 @@ interface PropertiesPanelProps {
     el: SlideEl | null;
     onChange: (patch: Partial<SlideEl>) => void;
     onDelete: () => void;
+    projectTitle: string;
+    onProjectTitleChange: (value: string) => void;
+    slideBackground: string;
+    onSlideBackgroundChange: (value: string) => void;
+    globalTitle: string;
+    onGlobalTitleChange: (value: string) => void;
+    globalCaption: string;
+    onGlobalCaptionChange: (value: string) => void;
 }
 
-export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps) {
+export function PropertiesPanel({
+    el,
+    onChange,
+    onDelete,
+    projectTitle,
+    onProjectTitleChange,
+    slideBackground,
+    onSlideBackgroundChange,
+    globalTitle,
+    onGlobalTitleChange,
+    globalCaption,
+    onGlobalCaptionChange,
+}: PropertiesPanelProps) {
     const { t } = useTranslation();
-
-    if (!el) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full text-xs text-gray-400 gap-2 px-4 text-center">
-                <MousePointer className="w-5 h-5 text-gray-300" />
-                {t('slideEditor.properties.empty')}
-            </div>
-        );
-    }
+    const captionTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const ch = <T,>(patch: Partial<T>) => onChange(patch as Partial<SlideEl>);
+
+    const insertEmojiIntoCaption = (emoji: string) => {
+        const textarea = captionTextareaRef.current;
+        const start = textarea?.selectionStart ?? globalCaption.length;
+        const end = textarea?.selectionEnd ?? globalCaption.length;
+        const nextValue = `${globalCaption.slice(0, start)}${emoji}${globalCaption.slice(end)}`;
+
+        onGlobalCaptionChange(nextValue);
+
+        requestAnimationFrame(() => {
+            if (!textarea) return;
+            textarea.focus();
+            const nextCaret = start + emoji.length;
+            textarea.setSelectionRange(nextCaret, nextCaret);
+        });
+    };
 
     const iconBtn = (active: boolean, onClick: () => void, icon: React.ReactNode, title: string) => (
         <button type="button" title={title} onClick={onClick}
@@ -171,8 +203,71 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
     return (
         <div className="flex flex-col overflow-y-auto h-full divide-y divide-gray-100">
             <div className="px-4 py-1 flex flex-col">
+                <Section title="Global">
+                    <Field label="Project title">
+                        <input
+                            type="text"
+                            value={projectTitle}
+                            onChange={(e) => onProjectTitleChange(e.target.value)}
+                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                        />
+                    </Field>
+                    <Field label="Instagram caption">
+                        <div className="space-y-2">
+                            <textarea
+                                ref={captionTextareaRef}
+                                value={globalCaption}
+                                rows={4}
+                                onChange={(e) => onGlobalCaptionChange(e.target.value)}
+                                placeholder="Write the Instagram caption for this post"
+                                className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                            />
+                            <div className="flex justify-end">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8">
+                                            <SmilePlus className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-auto p-0 border-0 shadow-xl bg-transparent">
+                                        <EmojiPicker
+                                            onEmojiClick={(emojiData) => insertEmojiIntoCaption(emojiData.emoji)}
+                                            width={320}
+                                            height={380}
+                                            previewConfig={{ showPreview: false }}
+                                            searchDisabled={false}
+                                            skinTonesDisabled
+                                            lazyLoadEmojis
+                                            theme={Theme.LIGHT}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+                    </Field>
+                    <Field label="Slide background">
+                        <ColorField value={slideBackground} onChange={onSlideBackgroundChange} />
+                    </Field>
+                    <Field label="Slide title">
+                        <textarea
+                            value={globalTitle}
+                            rows={2}
+                            onChange={(e) => onGlobalTitleChange(e.target.value)}
+                            disabled={!globalTitle}
+                            placeholder="No text title found on this slide"
+                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E8440A] disabled:bg-gray-50 disabled:text-gray-400"
+                        />
+                    </Field>
+                </Section>
+
+                {!el && (
+                    <p className="px-1 py-4 text-xs text-gray-400 text-center">
+                        {t('slideEditor.properties.empty')}
+                    </p>
+                )}
 
                 {/* ── Transform ─────────────────────────────────────────────── */}
+                {el && (
                 <Section title={t('slideEditor.sections.transform')}>
                     <div className="grid grid-cols-2 gap-2">
                         {(['x', 'y', 'width', 'height'] as const).map((k) => (
@@ -190,9 +285,10 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                         <SliderField value={el.opacity} onChange={(v) => onChange({ opacity: v } as Partial<SlideEl>)} min={0} max={1} step={0.01} unit="%" />
                     </Field>
                 </Section>
+                )}
 
                 {/* ── Text ──────────────────────────────────────────────────── */}
-                {el.type === 'text' && (
+                {el?.type === 'text' && (
                     <>
                         <Section title={t('slideEditor.sections.text')}>
                             <Field label={t('slideEditor.fields.content')}>
@@ -291,7 +387,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                 )}
 
                 {/* ── Shape ─────────────────────────────────────────────────── */}
-                {(el.type === 'rect' || el.type === 'circle') && (
+                {(el?.type === 'rect' || el?.type === 'circle') && (
                     <>
                         <Section title={t('slideEditor.sections.fill')}>
                             <Field label={t('slideEditor.fields.color')}><ColorField value={el.fill} onChange={(v) => ch<ShapeEl>({ fill: v })} /></Field>
@@ -320,7 +416,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                 )}
 
                 {/* ── Path (custom shapes) ──────────────────────────────────── */}
-                {el.type === 'path' && (
+                {el?.type === 'path' && (
                     <>
                         <Section title={t('slideEditor.sections.fill')}>
                             <Field label={t('slideEditor.fields.color')}>
@@ -346,7 +442,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                 )}
 
                 {/* ── Image ─────────────────────────────────────────────────── */}
-                {el.type === 'image' && (
+                {el?.type === 'image' && (
                     <>
                         {/* Background */}
                         <Section title={t('slideEditor.sections.slideBackground')}>
@@ -453,7 +549,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                 )}
 
                 {/* ── Gradient ──────────────────────────────────────────────── */}
-                {el.type === 'gradient' && (
+                {el?.type === 'gradient' && (
                     <Section title={t('slideEditor.sections.gradient')}>
                         <Field label={t('slideEditor.fields.color')}>
                             <ColorField value={el.color} onChange={(v) => ch<GradientEl>({ color: v })} />
@@ -478,6 +574,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
             </div>
 
             {/* ── Delete ────────────────────────────────────────────────────── */}
+            {el && (
             <div className="px-4 py-3 shrink-0">
                 <button onClick={onDelete}
                     className="flex items-center gap-2 text-red-500 hover:text-red-600 text-xs font-medium transition-colors">
@@ -485,6 +582,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                     {t('slideEditor.deleteElement')}
                 </button>
             </div>
+            )}
         </div>
     );
 }

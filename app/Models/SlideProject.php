@@ -9,6 +9,7 @@ class SlideProject extends Model
     protected $fillable = [
         'workspace_id',
         'title',
+        'caption',
         'format',
         'slides',
         'prompt',

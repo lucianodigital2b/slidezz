@@ -189,6 +189,11 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <a href="#how-it-works" className="hover:text-[#1A1A1A] transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-[#1A1A1A] transition-colors">Results</a>
+                            {!auth.user && (
+                                <Link href={login()} className="hover:text-[#1A1A1A] transition-colors">
+                                    Login
+                                </Link>
+                            )}
                         </nav>
 
                         <Link

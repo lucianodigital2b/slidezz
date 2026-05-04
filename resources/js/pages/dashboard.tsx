@@ -96,7 +96,7 @@ function CarouselCard({ project }: { project: Project }) {
             {/* Thumbnail */}
             <div
                 className="relative flex-none overflow-hidden"
-                style={{ aspectRatio: project.format === 'stories' ? '9/16' : '1/1', background: project.cover_color }}
+                style={{ aspectRatio: project.format === 'stories' ? '9/16' : '3/4', background: project.cover_color }}
             >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 backdrop-blur-sm">

@@ -81,7 +81,7 @@ class SlideProjectController extends Controller
         ] : null;
 
         return Inertia::render('SlideEditor', [
-            'slideProject' => $slideProject->only('id', 'title', 'format', 'slides'),
+            'slideProject' => $slideProject->only('id', 'title', 'caption', 'format', 'slides'),
             'wizardConfig' => $wizardConfig,
             'instagramAccounts' => $instagramAccounts,
         ]);
@@ -91,6 +91,7 @@ class SlideProjectController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'caption' => ['nullable', 'string', 'max:2200'],
             'format' => ['required', 'string', 'in:post,stories'],
             'slides' => ['required', 'array'],
         ]);
@@ -100,6 +101,7 @@ class SlideProjectController extends Controller
         $project = SlideProject::create([
             'workspace_id' => $workspace->id,
             'title' => $validated['title'],
+            'caption' => $validated['caption'] ?? '',
             'format' => $validated['format'],
             'slides' => $validated['slides'],
         ]);
@@ -113,6 +115,7 @@ class SlideProjectController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'caption' => ['nullable', 'string', 'max:2200'],
             'format' => ['required', 'string', 'in:post,stories'],
             'slides' => ['required', 'array'],
         ]);

@@ -886,7 +886,7 @@ export function TemplatePreview({ id }: { id: string }) {
                     style={{ background: 'linear-gradient(155deg, #1a1a2e 0%, #0d0d0d 60%)' }}>
                     <div className="absolute inset-0"
                         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent)' }} />
-                    <div className="relative z-10 space-y-0.5">
+                    <div className="relative z-10 space-y-0.5" style={{ textAlign: 'left' }}>
                         <div className="h-0.5 w-4 rounded mb-1" style={{ background: '#E8440A' }} />
                         <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', color: '#fff', fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.title')}</div>
                         <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.45)', letterSpacing: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.subtitle')}</div>
@@ -898,10 +898,20 @@ export function TemplatePreview({ id }: { id: string }) {
                 <div className="w-full h-full flex items-center justify-center"
                     style={{ background: '#111827' }}>
                     <div className="rounded-lg overflow-hidden" style={{ width: '80%', boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
-                        <div style={{ height: 36, background: 'linear-gradient(135deg, #374151, #1f2937)' }} />
-                        <div className="p-1.5" style={{ background: '#1f2937' }}>
-                            <div className="rounded-sm mb-1" style={{ height: 6, background: '#374151', width: '90%' }} />
-                            <div className="rounded-sm" style={{ height: 4, background: '#374151', width: '60%' }} />
+                        <div className="flex items-center justify-center" style={{ height: 36, background: 'linear-gradient(135deg, #374151, #1f2937)' }}>
+                            <div className="rounded-full px-2 py-0.5" style={{ background: '#2563eb' }}>
+                                <div style={{ fontFamily: 'Inter, Arial, sans-serif', fontSize: 4.5, fontWeight: 700, color: '#eff6ff', letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'center' }}>
+                                    {t('slideEditor.elements.investigation')}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-1.5" style={{ background: '#1f2937', textAlign: 'center' }}>
+                            <div style={{ fontFamily: 'Poppins, Arial, sans-serif', fontSize: 8, fontWeight: 700, color: '#ffffff', lineHeight: 1.05 }}>
+                                {t('slideEditor.elements.title')}
+                            </div>
+                            <div style={{ fontSize: 4.5, color: 'rgba(255,255,255,0.72)', marginTop: 3, lineHeight: 1.25 }}>
+                                {t('slideEditor.elements.subtitle')}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -911,7 +921,7 @@ export function TemplatePreview({ id }: { id: string }) {
                 <div className="w-full h-full flex flex-col justify-center px-2 py-2" style={{ background: '#fff' }}>
                     <div className="flex items-stretch gap-1.5">
                         <div className="w-1 rounded-full shrink-0" style={{ background: '#E8120A' }} />
-                        <div>
+                        <div style={{ textAlign: 'left' }}>
                             <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.title')}</div>
                             <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.big')}</div>
                             <div style={{ fontSize: 5, color: '#666', marginTop: 3 }}>{t('slideEditor.elements.subtitleHere')}</div>
@@ -921,7 +931,7 @@ export function TemplatePreview({ id }: { id: string }) {
             );
         case 'twitter-x':
             return (
-                <div className="w-full h-full flex flex-col justify-center px-2.5 py-2" style={{ background: '#fff' }}>
+                <div className="w-full h-full flex flex-col justify-center px-2.5 py-2" style={{ background: '#fff', textAlign: 'left' }}>
                     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>{t('slideEditor.elements.largeText')}</div>
                     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>{t('slideEditor.elements.cleanHere')}</div>
                     <div style={{ height: 1, background: '#e5e7eb', width: '100%', margin: '5px 0' }} />
@@ -930,7 +940,7 @@ export function TemplatePreview({ id }: { id: string }) {
             );
         case 'acid-brutalist':
             return (
-                <div className="w-full h-full flex flex-col justify-center px-2" style={{ background: '#000' }}>
+                <div className="w-full h-full flex flex-col justify-center px-2" style={{ background: '#000', textAlign: 'left' }}>
                     <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: 'transparent', WebkitTextStroke: '0.5px #39FF14', textTransform: 'uppercase', lineHeight: 1 } as React.CSSProperties}>{t('slideEditor.elements.brutal')}</div>
                     <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: '#39FF14', textTransform: 'uppercase', lineHeight: 1 }}>{t('slideEditor.elements.style')}</div>
                     <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.4)', marginTop: 3, letterSpacing: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.subtitle')}</div>
@@ -941,7 +951,7 @@ export function TemplatePreview({ id }: { id: string }) {
                 <div className="relative w-full h-full flex flex-col justify-end px-2 py-2" style={{ background: '#1a1108' }}>
                     <div className="absolute inset-0 opacity-30"
                         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.02) 4px)' }} />
-                    <div className="relative z-10">
+                    <div className="relative z-10" style={{ textAlign: 'left' }}>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: '#9a8866', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>{t('slideEditor.elements.investigation')}</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 9, fontWeight: 700, color: '#f0e8d8', lineHeight: 1.2 }}>{t('slideEditor.elements.slideTitle')}</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: 'rgba(240,232,216,0.5)', marginTop: 2, fontStyle: 'italic' }}>{t('slideEditor.elements.subtitle')}</div>

@@ -3,7 +3,7 @@ export const PANEL_LEFT = 160;
 export const PANEL_RIGHT = 300;
 
 export const FORMATS = {
-    post:    { w: 1080, h: 1080, ratio: '1:1' },
+    post:    { w: 1080, h: 1440, ratio: '3:4' },
     stories: { w: 1080, h: 1920, ratio: '9:16' },
 } as const;
 

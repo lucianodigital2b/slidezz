@@ -1,4 +1,4 @@
-import { Slide, ShadowProps, GradientEl, BorderStyle, RichSpan } from './types';
+import { Slide, ShadowProps, GradientEl, BorderStyle, RichSpan, Format, FORMATS, SLIDE_W } from './types';
 
 export function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -213,6 +213,53 @@ export function preserveSingleHighlightRichText(
     return buildRichTextWithHighlightRange(nextText, targetWord.start, targetWord.end, normalColor, existingHighlight.color);
 }
 
+export interface SafeAreaPadding {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+}
+
+export type SafeAreaFormat = Format | 'carousel';
+
+export const SAFE_AREA_PADDINGS: Record<SafeAreaFormat, SafeAreaPadding> = {
+    carousel: {
+        top: 180,
+        right: 0,
+        bottom: 180,
+        left: 0,
+    },
+    post: {
+        top: 180,
+        right: 0,
+        bottom: 180,
+        left: 0,
+    },
+    stories: {
+        top: 250,
+        right: 0,
+        bottom: 250,
+        left: 0,
+    },
+};
+
+export function getSafeAreaPadding(format: SafeAreaFormat): SafeAreaPadding {
+    return SAFE_AREA_PADDINGS[format];
+}
+
+export function getSafeAreaBounds(format: SafeAreaFormat): { x: number; y: number; width: number; height: number } {
+    const baseFormat = format === 'carousel' ? 'post' : format;
+    const { w, h } = FORMATS[baseFormat];
+    const { top, right, bottom, left } = getSafeAreaPadding(format);
+
+    return {
+        x: left,
+        y: top,
+        width: Math.max(0, Math.min(SLIDE_W, w) - left - right),
+        height: Math.max(0, h - top - bottom),
+    };
+}
+
 export function gradientLinearProps(el: GradientEl) {
     const solid = hexToRgba(el.color, 1);
     const clear = hexToRgba(el.color, 0);
@@ -244,11 +291,14 @@ export function fitTextFontSize(
     lineHeight: number,
     letterSpacing: number,
     maxWidth: number,
-    maxHeight: number
+    maxHeight: number,
+    boxPadding = 0,
 ): number {
     const ctx = getMeasureCtx();
     let fontSize = initialFontSize;
     const minFontSize = 10;
+    const innerMaxWidth = Math.max(10, maxWidth - boxPadding * 2);
+    const innerMaxHeight = Math.max(10, maxHeight - boxPadding * 2);
 
     while (fontSize >= minFontSize) {
         ctx.font = `${fontStyle ? fontStyle + ' ' : ''}${fontSize}px "${fontFamily}"`;
@@ -266,7 +316,7 @@ export function fitTextFontSize(
             
             const wordWidth = ctx.measureText(word).width + (word.length * letterSpacing);
             
-            if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
+            if (currentLineWidth + wordWidth > innerMaxWidth && currentLineWidth > 0) {
                 lines++;
                 if (/^\s+$/.test(word)) {
                     currentLineWidth = 0;
@@ -280,7 +330,7 @@ export function fitTextFontSize(
         
         const totalHeight = lines * (fontSize * lineHeight);
         
-        if (totalHeight <= maxHeight) {
+        if (totalHeight <= innerMaxHeight) {
             break;
         }
         

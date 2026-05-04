@@ -41,6 +41,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
     const fs = el.fontStyle || '';
     ctx.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
     const lineH = el.fontSize * el.lineHeight;
+    const innerWidth = Math.max(10, el.width - el.padding * 2);
 
     // Tokenize spans into words/spaces/newlines
     const tokens: { text: string; color: string; highlight?: string; isSpace: boolean; isNewline: boolean }[] = [];
@@ -76,7 +77,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
     for (const token of tokens) {
         if (token.isNewline) { flushLine(); continue; }
         const tw = ctx.measureText(token.text).width + el.letterSpacing * token.text.length;
-        if (!token.isSpace && lineWidth + tw > el.width && lineTokens.length > 0) flushLine();
+        if (!token.isSpace && lineWidth + tw > innerWidth && lineTokens.length > 0) flushLine();
         lineTokens.push(token);
         lineWidth += tw;
     }
@@ -92,9 +93,10 @@ function buildLine(
     el: TextEl,
     lineH: number,
 ): LayoutLine {
-    let startX = 0;
-    if (el.align === 'center') startX = (el.width - lineWidth) / 2;
-    else if (el.align === 'right') startX = el.width - lineWidth;
+    const innerWidth = Math.max(10, el.width - el.padding * 2);
+    let startX = el.padding;
+    if (el.align === 'center') startX = el.padding + (innerWidth - lineWidth) / 2;
+    else if (el.align === 'right') startX = el.padding + innerWidth - lineWidth;
 
     let x = startX;
     const layoutTokens: LayoutToken[] = [];
@@ -161,7 +163,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
         c.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
         if ('letterSpacing' in c) (c as any).letterSpacing = `${el.letterSpacing}px`;
 
-        let curY = 0;
+        let curY = el.padding;
         for (const line of layout) {
             if (!hidden) {
                 for (const token of line.tokens) {
@@ -178,7 +180,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
         }
     }, [layout, el, hidden]);
 
-    const effectiveH = layout ? richTotalH : textH;
+    const effectiveH = layout ? richTotalH + el.padding * 2 : textH;
     const { t, gap } = { t: el.accentThickness, gap: el.accentGap };
     const accentProps = el.accentEnabled ? (() => {
         switch (el.accentSide) {
@@ -213,7 +215,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
                 <Shape
                     sceneFunc={richSceneFunc}
                     width={el.width}
-                    height={Math.max(richTotalH, el.fontSize)}
+                    height={Math.max(richTotalH + el.padding * 2, el.fontSize + el.padding * 2)}
                     hitFunc={(ctx, shape) => {
                         ctx.beginPath();
                         ctx.rect(0, 0, shape.width(), shape.height());

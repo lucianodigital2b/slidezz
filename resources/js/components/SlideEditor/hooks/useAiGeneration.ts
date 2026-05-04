@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
-import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor } from '../utils';
+import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 export interface SlideData {
@@ -81,56 +81,73 @@ export function useAiGeneration(
 
     function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
         const slideH = FORMATS[format].h;
-        const textY = Math.round(slideH * 0.5);
+        const safeBounds = getSafeAreaBounds(format);
+        const horizontalInset = 80;
+        const descriptionInset = 20;
+        const topInset = Math.round(safeBounds.height * 0.18);
+        const bottomInset = Math.round(safeBounds.height * 0.08);
+        const contentX = safeBounds.x + horizontalInset;
+        const contentWidth = Math.max(320, safeBounds.width - horizontalInset * 2);
+        const titleY = safeBounds.y + topInset;
+        const titleHeight = Math.min(format === 'stories' ? 280 : 240, Math.round(safeBounds.height * 0.24));
+        const subtitleY = titleY + titleHeight + 24;
+        const subtitleHeight = Math.min(140, Math.round(safeBounds.height * 0.12));
+        const descY = subtitleY + subtitleHeight + 28;
+        const safeBottomY = safeBounds.y + safeBounds.height - bottomInset;
+        const descriptionX = contentX + descriptionInset;
+        const descriptionWidth = Math.max(280, contentWidth - descriptionInset * 2);
+        const descMaxHeight = Math.max(116, safeBottomY - descY);
         const backgroundColor = '#1a1a2e';
         const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
         const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
+        const titlePadding = 28;
+        const subtitlePadding = 20;
+        const descriptionPadding = 16;
         const titleRichText = highlightWords.length > 0
             ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
             : undefined;
 
-        const titleFontSize = fitTextFontSize(data.title, 'Poppins', 'bold', 80, 1.15, -1, SLIDE_W - 160, 200);
+        const titleFontSize = fitTextFontSize(data.title, 'Poppins', 'bold', 80, 1.15, -1, contentWidth, titleHeight, titlePadding);
         const titleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: textY,
-            width: SLIDE_W - 160, height: 200, rotation: 0, opacity: 1,
+            id: uid(), type: 'text', x: contentX, y: titleY,
+            width: contentWidth, height: titleHeight, rotation: 0, opacity: 1,
             text: data.title, fontSize: titleFontSize, fontFamily: 'Poppins', fill: '#ffffff',
             fontStyle: 'bold', align: 'center', verticalAlign: 'top',
             lineHeight: 1.15, letterSpacing: -1, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
+            strokeWidth: 0, padding: titlePadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
             ...(titleRichText ? { richText: titleRichText } : {}),
         };
 
-        const subtitleFontSize = fitTextFontSize(data.subtitle, 'Poppins', '', 44, 1.3, 0, SLIDE_W - 160, 120);
+        const subtitleFontSize = fitTextFontSize(data.subtitle, 'Poppins', '', 44, 1.3, 0, contentWidth, subtitleHeight, subtitlePadding);
         const subtitleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: textY + 200,
-            width: SLIDE_W - 160, height: 120, rotation: 0, opacity: 1,
+            id: uid(), type: 'text', x: contentX, y: subtitleY,
+            width: contentWidth, height: subtitleHeight, rotation: 0, opacity: 1,
             text: data.subtitle, fontSize: subtitleFontSize, fontFamily: 'Poppins', fill: '#f0f0f0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
             lineHeight: 1.3, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
+            strokeWidth: 0, padding: subtitlePadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
         };
 
-        const descMaxHeight = Math.max(100, slideH - (textY + 340) - 40);
-        const descFontSize = fitTextFontSize(data.description, 'Poppins', '', 32, 1.5, 0, SLIDE_W - 200, descMaxHeight);
+        const descFontSize = fitTextFontSize(data.description, 'Poppins', '', 32, 1.5, 0, descriptionWidth, descMaxHeight, descriptionPadding);
         const descEl: TextEl = {
-            id: uid(), type: 'text', x: 100, y: textY + 340,
-            width: SLIDE_W - 200, height: descMaxHeight, rotation: 0, opacity: 1,
+            id: uid(), type: 'text', x: descriptionX, y: descY,
+            width: descriptionWidth, height: descMaxHeight, rotation: 0, opacity: 1,
             text: data.description, fontSize: descFontSize, fontFamily: 'Poppins', fill: '#e0e0e0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
             lineHeight: 1.5, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
+            strokeWidth: 0, padding: descriptionPadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS,
         };
 
         const gradientEl: GradientEl = {
             id: uid(), type: 'gradient',
-            x: 0, y: Math.round(slideH * 0.35),
-            width: SLIDE_W, height: Math.round(slideH * 0.65),
+            x: 0, y: Math.max(0, safeBounds.y - 80),
+            width: SLIDE_W, height: slideH - Math.max(0, safeBounds.y - 80),
             rotation: 0, opacity: 1,
             color: '#000000', direction: 'bottom',
             ...SHADOW_DEFAULTS,

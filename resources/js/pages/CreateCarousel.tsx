@@ -367,7 +367,7 @@ export default function CreateCarousel() {
                                                 <p className={`text-sm font-semibold ${format === f ? 'text-[#E8440A]' : 'text-gray-700'}`}>
                                                     {f === 'post' ? 'Post' : 'Stories'}
                                                 </p>
-                                                <p className="text-xs text-gray-400">{f === 'post' ? '1:1 · 1080×1080' : '9:16 · 1080×1920'}</p>
+                                                <p className="text-xs text-gray-400">{f === 'post' ? '3:4 · 1080×1440' : '9:16 · 1080×1920'}</p>
                                             </div>
                                             {format === f && <Check className="h-4 w-4 text-[#E8440A] ml-auto" />}
                                         </button>
