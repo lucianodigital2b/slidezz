@@ -139,6 +139,10 @@
       "errorNetwork": "Network error. Please try again.",
       "errorServer": "Server error. Please try again.",
       "errorParsing": "Could not parse the generated content. Please try again."
+    },
+    "templates": {
+      "panel": "TEMPLATES",
+      "apply": "Apply"
     }
   },
   "createCarousel": {

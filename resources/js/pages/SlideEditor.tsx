@@ -51,6 +51,92 @@ import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElement
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
+// ─── Slide Templates ─────────────────────────────────────────────────────────
+
+const SLIDE_TEMPLATES = [
+    { id: 'noir-manifesto',  name: 'Noir Manifesto',  background: '#0a0a0a', textColor: '#ffffff', font: 'Anton',            fontStyle: '',     letterSpacing: 1    },
+    { id: 'dark-cards',      name: 'Dark Cards',       background: '#111827', textColor: '#ffffff', font: 'Poppins',          fontStyle: 'bold', letterSpacing: 0    },
+    { id: 'pop-magazine',    name: 'Pop Magazine',     background: '#ffffff', textColor: '#111111', font: 'Anton',            fontStyle: '',     letterSpacing: 0    },
+    { id: 'twitter-x',       name: 'Twitter/X',        background: '#ffffff', textColor: '#000000', font: 'Inter',            fontStyle: 'bold', letterSpacing: -0.5 },
+    { id: 'acid-brutalist',  name: 'Acid Brutalist',   background: '#000000', textColor: '#ffffff', font: 'Montserrat',       fontStyle: 'bold', letterSpacing: -2   },
+    { id: 'documentary',     name: 'Documentary',      background: '#1a1108', textColor: '#f0e8d8', font: 'Playfair Display', fontStyle: '',     letterSpacing: 0    },
+];
+
+function TemplatePreview({ id }: { id: string }) {
+    switch (id) {
+        case 'noir-manifesto':
+            return (
+                <div className="relative w-full h-full flex flex-col justify-end p-2"
+                    style={{ background: 'linear-gradient(155deg, #1a1a2e 0%, #0d0d0d 60%)' }}>
+                    <div className="absolute inset-0"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent)' }} />
+                    <div className="relative z-10 space-y-0.5">
+                        <div className="h-0.5 w-4 rounded mb-1" style={{ background: '#E8440A' }} />
+                        <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', color: '#fff', fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>TÍTULO</div>
+                        <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.45)', letterSpacing: 1, textTransform: 'uppercase' }}>subtítulo</div>
+                    </div>
+                </div>
+            );
+        case 'dark-cards':
+            return (
+                <div className="w-full h-full flex items-center justify-center"
+                    style={{ background: '#111827' }}>
+                    <div className="rounded-lg overflow-hidden" style={{ width: '80%', boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
+                        <div style={{ height: 36, background: 'linear-gradient(135deg, #374151, #1f2937)' }} />
+                        <div className="p-1.5" style={{ background: '#1f2937' }}>
+                            <div className="rounded-sm mb-1" style={{ height: 6, background: '#374151', width: '90%' }} />
+                            <div className="rounded-sm" style={{ height: 4, background: '#374151', width: '60%' }} />
+                        </div>
+                    </div>
+                </div>
+            );
+        case 'pop-magazine':
+            return (
+                <div className="w-full h-full flex flex-col justify-center px-2 py-2" style={{ background: '#fff' }}>
+                    <div className="flex items-stretch gap-1.5">
+                        <div className="w-1 rounded-full shrink-0" style={{ background: '#E8120A' }} />
+                        <div>
+                            <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>TÍTULO</div>
+                            <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>GRANDE</div>
+                            <div style={{ fontSize: 5, color: '#666', marginTop: 3 }}>Subtítulo aqui</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        case 'twitter-x':
+            return (
+                <div className="w-full h-full flex flex-col justify-center px-2.5 py-2" style={{ background: '#fff' }}>
+                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>Texto grande</div>
+                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>e limpo aqui</div>
+                    <div style={{ height: 1, background: '#e5e7eb', width: '100%', margin: '5px 0' }} />
+                    <div style={{ fontSize: 5, color: '#9ca3af' }}>Descrição do slide</div>
+                </div>
+            );
+        case 'acid-brutalist':
+            return (
+                <div className="w-full h-full flex flex-col justify-center px-2" style={{ background: '#000' }}>
+                    <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: 'transparent', WebkitTextStroke: '0.5px #39FF14', textTransform: 'uppercase', lineHeight: 1 } as React.CSSProperties}>BRUTAL</div>
+                    <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: '#39FF14', textTransform: 'uppercase', lineHeight: 1 }}>STYLE</div>
+                    <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.4)', marginTop: 3, letterSpacing: 1, textTransform: 'uppercase' }}>subtítulo</div>
+                </div>
+            );
+        case 'documentary':
+            return (
+                <div className="relative w-full h-full flex flex-col justify-end px-2 py-2" style={{ background: '#1a1108' }}>
+                    <div className="absolute inset-0 opacity-30"
+                        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.02) 4px)' }} />
+                    <div className="relative z-10">
+                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: '#9a8866', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>INVESTIGAÇÃO</div>
+                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 9, fontWeight: 700, color: '#f0e8d8', lineHeight: 1.2 }}>Título do Slide</div>
+                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: 'rgba(240,232,216,0.5)', marginTop: 2, fontStyle: 'italic' }}>Subtítulo</div>
+                    </div>
+                </div>
+            );
+        default:
+            return <div className="w-full h-full" style={{ background: '#f3f4f6' }} />;
+    }
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface SlideProjectProp {
@@ -158,6 +244,7 @@ export default function SlideEditor() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [format, setFormat] = useState<Format>(saved?.format ?? 'post');
+    const [leftPanelMode, setLeftPanelMode] = useState<'slides' | 'templates'>('slides');
     const { t } = useTranslation();
     const [title, setTitle] = useState(slideProject?.title ?? t('slideEditor.toolbar.untitled'));
     const [projectId, setProjectId] = useState<number | null>(slideProject?.id ?? null);
@@ -371,7 +458,7 @@ export default function SlideEditor() {
                 id: uid(), type: 'image', src: bgBase64,
                 x: 0, y: 0, width: SLIDE_W, height: slideH,
                 rotation: 0, opacity: 1,
-                brightness: -0.1, contrast: 5, blurRadius: 0, grayscale: false, sepia: false,
+                brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
                 hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                 red: 255, green: 255, blue: 255,
                 overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 0,
@@ -548,6 +635,17 @@ export default function SlideEditor() {
     function deleteElement(id: string) {
         updateSlide({ elements: slide.elements.filter((el) => el.id !== id) });
         setSelectedId(null);
+    }
+
+    async function applyTemplate(tpl: (typeof SLIDE_TEMPLATES)[number]) {
+        await loadGoogleFont(tpl.font);
+        updateSlide({
+            background: tpl.background,
+            elements: slide.elements.map((el): SlideEl => {
+                if (el.type !== 'text') return el;
+                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing };
+            }),
+        });
     }
 
     // ─── Stage click ─────────────────────────────────────────────────────────
@@ -972,26 +1070,68 @@ export default function SlideEditor() {
                 {/* ── Body ─────────────────────────────────────────────────── */}
                 <div className="flex flex-1 overflow-hidden">
 
-                    {/* Left: Slides */}
-                    <div className="flex flex-col bg-white border-r border-gray-100 overflow-y-auto shrink-0" style={{ width: PANEL_LEFT }}>
-                        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-                            <span className="text-xs font-semibold text-gray-500">{t('slideEditor.slides.panel')}</span>
-                            <button onClick={addSlide} className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-500"><Plus className="w-3.5 h-3.5" /></button>
+                    {/* Left: Slides / Templates */}
+                    <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden shrink-0" style={{ width: leftPanelMode === 'templates' ? 200 : PANEL_LEFT }}>
+                        {/* Panel mode tabs */}
+                        <div className="flex shrink-0 border-b border-gray-100">
+                            <button
+                                type="button"
+                                onClick={() => setLeftPanelMode('slides')}
+                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'slides' ? 'text-[#E8440A]' : 'text-gray-400 hover:text-gray-500'}`}
+                            >
+                                {t('slideEditor.slides.panel')}
+                            </button>
+                            <div className="w-px bg-gray-100" />
+                            <button
+                                type="button"
+                                onClick={() => setLeftPanelMode('templates')}
+                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'templates' ? 'text-[#E8440A]' : 'text-gray-400 hover:text-gray-500'}`}
+                            >
+                                {t('slideEditor.templates.panel')}
+                            </button>
+                            {leftPanelMode === 'slides' && (
+                                <button onClick={addSlide} className="px-2 hover:bg-gray-100 transition-colors text-gray-500 shrink-0">
+                                    <Plus className="w-3.5 h-3.5" />
+                                </button>
+                            )}
                         </div>
-                        <div className="flex flex-col gap-2 p-2">
-                            {slides.map((s, idx) => (
-                                <div key={s.id} onClick={() => { setCurrentIdx(idx); setSelectedId(null); }}
-                                    className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200 bg-gray-100'}`}
+
+                        {/* Slides list */}
+                        {leftPanelMode === 'slides' && (
+                            <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1">
+                                {slides.map((s, idx) => (
+                                    <div key={s.id} onClick={() => { setCurrentIdx(idx); setSelectedId(null); }}
+                                        className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200 bg-gray-100'}`}
                                     >
-                                    <SlideThumbnail slide={s} format={format} />
-                                    <span className="absolute top-1 left-1 text-[9px] font-bold text-white bg-black/40 rounded px-1 leading-4 z-10">{idx + 1}</span>
-                                    <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5 z-10">
-                                        <button onClick={(e) => { e.stopPropagation(); duplicateSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-black/60" title={t('slideEditor.slides.duplicate')}><Plus className="w-2.5 h-2.5" /></button>
-                                        {slides.length > 1 && <button onClick={(e) => { e.stopPropagation(); deleteSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-red-500" title={t('slideEditor.slides.delete')}><X className="w-2.5 h-2.5" /></button>}
+                                        <SlideThumbnail slide={s} format={format} />
+                                        <span className="absolute top-1 left-1 text-[9px] font-bold text-white bg-black/40 rounded px-1 leading-4 z-10">{idx + 1}</span>
+                                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5 z-10">
+                                            <button onClick={(e) => { e.stopPropagation(); duplicateSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-black/60" title={t('slideEditor.slides.duplicate')}><Plus className="w-2.5 h-2.5" /></button>
+                                            {slides.length > 1 && <button onClick={(e) => { e.stopPropagation(); deleteSlide(idx); }} className="p-0.5 rounded bg-black/40 text-white hover:bg-red-500" title={t('slideEditor.slides.delete')}><X className="w-2.5 h-2.5" /></button>}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Templates grid */}
+                        {leftPanelMode === 'templates' && (
+                            <div className="grid grid-cols-2 gap-2 p-2 overflow-y-auto flex-1 content-start">
+                                {SLIDE_TEMPLATES.map((tpl) => (
+                                    <button
+                                        key={tpl.id}
+                                        type="button"
+                                        onClick={() => applyTemplate(tpl)}
+                                        className="flex flex-col gap-1 text-left group"
+                                    >
+                                        <div className="relative w-full aspect-square rounded-lg overflow-hidden ring-1 ring-gray-200 group-hover:ring-[#E8440A] group-hover:ring-2 transition-all">
+                                            <TemplatePreview id={tpl.id} />
+                                        </div>
+                                        <span className="text-[9px] font-semibold text-gray-600 text-center w-full leading-tight px-0.5">{tpl.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Center: Canvas */}
