@@ -77,6 +77,7 @@ class SlideProjectController extends Controller
             'topic' => session('wizardTopic'),
             'style' => session('wizardStyle'),
             'slideCount' => session('wizardSlideCount', 3),
+            'generateImages' => session('wizardGenerateImages', true),
         ] : null;
 
         return Inertia::render('SlideEditor', [

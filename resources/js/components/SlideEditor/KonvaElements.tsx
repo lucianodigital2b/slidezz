@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
 import { TextEl, ImageEl, RichSpan } from './types';
+import { getMeasureCtx } from './utils';
 
 // ─── useLoadImage ─────────────────────────────────────────────────────────────
 
@@ -32,12 +33,6 @@ interface LayoutToken {
 interface LayoutLine {
     tokens: LayoutToken[];
     height: number;
-}
-
-let _measureCanvas: HTMLCanvasElement | null = null;
-function getMeasureCtx(): CanvasRenderingContext2D {
-    if (!_measureCanvas) _measureCanvas = document.createElement('canvas');
-    return _measureCanvas.getContext('2d')!;
 }
 
 function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {

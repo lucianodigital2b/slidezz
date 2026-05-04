@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
-import { uid, SHADOW_DEFAULTS } from '../utils';
+import { uid, SHADOW_DEFAULTS, fitTextFontSize } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 export interface SlideData {
@@ -70,10 +70,11 @@ export function useAiGeneration(
             ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
             : undefined;
 
+        const titleFontSize = fitTextFontSize(data.title, 'Poppins', 'bold', 80, 1.15, -1, SLIDE_W - 160, 200);
         const titleEl: TextEl = {
             id: uid(), type: 'text', x: 80, y: textY,
             width: SLIDE_W - 160, height: 200, rotation: 0, opacity: 1,
-            text: data.title, fontSize: 80, fontFamily: 'Poppins', fill: '#ffffff',
+            text: data.title, fontSize: titleFontSize, fontFamily: 'Poppins', fill: '#ffffff',
             fontStyle: 'bold', align: 'center', verticalAlign: 'top',
             lineHeight: 1.15, letterSpacing: -1, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: 0, wrap: 'word',
@@ -81,20 +82,25 @@ export function useAiGeneration(
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
             ...(titleRichText ? { richText: titleRichText } : {}),
         };
+
+        const subtitleFontSize = fitTextFontSize(data.subtitle, 'Poppins', '', 44, 1.3, 0, SLIDE_W - 160, 120);
         const subtitleEl: TextEl = {
             id: uid(), type: 'text', x: 80, y: textY + 200,
             width: SLIDE_W - 160, height: 120, rotation: 0, opacity: 1,
-            text: data.subtitle, fontSize: 44, fontFamily: 'Poppins', fill: '#f0f0f0',
+            text: data.subtitle, fontSize: subtitleFontSize, fontFamily: 'Poppins', fill: '#f0f0f0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
             lineHeight: 1.3, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: 0, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
         };
+
+        const descMaxHeight = Math.max(100, slideH - (textY + 340) - 40);
+        const descFontSize = fitTextFontSize(data.description, 'Poppins', '', 32, 1.5, 0, SLIDE_W - 200, descMaxHeight);
         const descEl: TextEl = {
             id: uid(), type: 'text', x: 100, y: textY + 340,
-            width: SLIDE_W - 200, height: 180, rotation: 0, opacity: 1,
-            text: data.description, fontSize: 32, fontFamily: 'Poppins', fill: '#e0e0e0',
+            width: SLIDE_W - 200, height: descMaxHeight, rotation: 0, opacity: 1,
+            text: data.description, fontSize: descFontSize, fontFamily: 'Poppins', fill: '#e0e0e0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
             lineHeight: 1.5, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: 0, wrap: 'word',
@@ -135,7 +141,7 @@ export function useAiGeneration(
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
-        const shouldGenerateImages = generateImagesOverride ?? aiGenerateImages;
+        const shouldGenerateImages = generateImagesOverride !== undefined ? generateImagesOverride : aiGenerateImages;
         if (!topic.trim()) return;
         const newSlideStartIdx = slides.length;
         setAiStatus('generating');

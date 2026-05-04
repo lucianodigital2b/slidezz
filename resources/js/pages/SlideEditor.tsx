@@ -268,9 +268,11 @@ export default function SlideEditor() {
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
         setAiSlideCount(wizardConfig.slideCount);
-        setAiGenerateImages(wizardConfig.generateImages ?? true);
+        const shouldGen = wizardConfig.generateImages !== undefined ? wizardConfig.generateImages : true;
+        setAiGenerateImages(shouldGen);
         setAiModalOpen(true);
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, wizardConfig.generateImages ?? true);
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, shouldGen);
+        console.log('wizardConfig', wizardConfig)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

@@ -36,3 +36,63 @@ export function borderStyleToDash(style: BorderStyle, width: number): number[] {
     if (style === 'dotted') return [width, width];
     return [];
 }
+
+let _measureCanvas: HTMLCanvasElement | null = null;
+export function getMeasureCtx(): CanvasRenderingContext2D {
+    if (!_measureCanvas) _measureCanvas = document.createElement('canvas');
+    return _measureCanvas.getContext('2d')!;
+}
+
+export function fitTextFontSize(
+    text: string,
+    fontFamily: string,
+    fontStyle: string,
+    initialFontSize: number,
+    lineHeight: number,
+    letterSpacing: number,
+    maxWidth: number,
+    maxHeight: number
+): number {
+    const ctx = getMeasureCtx();
+    let fontSize = initialFontSize;
+    const minFontSize = 10;
+
+    while (fontSize >= minFontSize) {
+        ctx.font = `${fontStyle ? fontStyle + ' ' : ''}${fontSize}px "${fontFamily}"`;
+        
+        const words = text.split(/(\s+)/);
+        let lines = 1;
+        let currentLineWidth = 0;
+        
+        for (const word of words) {
+            if (word === '\n') {
+                lines++;
+                currentLineWidth = 0;
+                continue;
+            }
+            
+            const wordWidth = ctx.measureText(word).width + (word.length * letterSpacing);
+            
+            if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
+                lines++;
+                if (/^\s+$/.test(word)) {
+                    currentLineWidth = 0;
+                } else {
+                    currentLineWidth = wordWidth;
+                }
+            } else {
+                currentLineWidth += wordWidth;
+            }
+        }
+        
+        const totalHeight = lines * (fontSize * lineHeight);
+        
+        if (totalHeight <= maxHeight) {
+            break;
+        }
+        
+        fontSize -= 2;
+    }
+    
+    return fontSize;
+}
