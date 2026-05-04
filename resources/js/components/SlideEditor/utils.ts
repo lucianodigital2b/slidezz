@@ -1,4 +1,4 @@
-import { Slide, ShadowProps, GradientEl, BorderStyle } from './types';
+import { Slide, ShadowProps, GradientEl, BorderStyle, RichSpan } from './types';
 
 export function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -77,6 +77,140 @@ export function resolveAccessibleHighlightColor(
 
     return candidates
         .sort((a, b) => contrastRatio(b, normalizedBackground) - contrastRatio(a, normalizedBackground))[0] ?? '#FFD84D';
+}
+
+function normalizeColorForCompare(color: string | undefined | null): string | null {
+    const normalizedHex = normalizeHexColor(color);
+    if (normalizedHex) return normalizedHex;
+    return color?.trim().toLowerCase() ?? null;
+}
+
+function escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeWordToken(word: string): string {
+    return word
+        .trim()
+        .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+        .toLocaleLowerCase();
+}
+
+function tokenizeWords(text: string): Array<{ word: string; start: number; end: number; index: number; normalized: string }> {
+    const tokens: Array<{ word: string; start: number; end: number; index: number; normalized: string }> = [];
+    const regex = /\S+/g;
+    let match: RegExpExecArray | null;
+    let index = 0;
+
+    while ((match = regex.exec(text)) !== null) {
+        tokens.push({
+            word: match[0],
+            start: match.index,
+            end: match.index + match[0].length,
+            index,
+            normalized: normalizeWordToken(match[0]),
+        });
+        index++;
+    }
+
+    return tokens;
+}
+
+function buildRichTextWithHighlightRange(text: string, start: number, end: number, normalColor: string, highlightColor: string): RichSpan[] | undefined {
+    if (start >= end || start < 0 || end > text.length) return undefined;
+
+    const spans: RichSpan[] = [];
+
+    if (start > 0) spans.push({ text: text.slice(0, start), color: normalColor });
+    spans.push({ text: text.slice(start, end), color: highlightColor });
+    if (end < text.length) spans.push({ text: text.slice(end), color: normalColor });
+
+    return spans;
+}
+
+export function extractSingleHighlightWord(text: string, richText: RichSpan[] | undefined, baseColor: string): { word: string; color: string; wordIndex: number; normalizedWord: string } | null {
+    if (!richText?.length) return null;
+
+    const normalizedBaseColor = normalizeColorForCompare(baseColor);
+    const words = tokenizeWords(text);
+
+    let searchStartIndex = 0;
+    for (const span of richText) {
+        const candidateColor = normalizeColorForCompare(span.color);
+        if (!span.text.trim() || !candidateColor || candidateColor === normalizedBaseColor) continue;
+
+        const spanWords = tokenizeWords(span.text);
+        if (!spanWords.length) continue;
+
+        for (const spanWord of spanWords) {
+            const foundIndex = words.findIndex((word, idx) => idx >= searchStartIndex && word.word === spanWord.word);
+            if (foundIndex !== -1) {
+                return {
+                    word: words[foundIndex].word,
+                    color: span.color!,
+                    wordIndex: words[foundIndex].index,
+                    normalizedWord: words[foundIndex].normalized,
+                };
+            }
+
+            const normalizedIndex = words.findIndex((word, idx) => idx >= searchStartIndex && word.normalized && word.normalized === spanWord.normalized);
+            if (normalizedIndex !== -1) {
+                return {
+                    word: words[normalizedIndex].word,
+                    color: span.color!,
+                    wordIndex: words[normalizedIndex].index,
+                    normalizedWord: words[normalizedIndex].normalized,
+                };
+            }
+        }
+
+        searchStartIndex += spanWords.length;
+    }
+
+    return null;
+}
+
+export function buildRichTextWithSingleHighlight(
+    text: string,
+    highlightWord: string | undefined,
+    normalColor: string,
+    highlightColor: string
+): RichSpan[] | undefined {
+    const word = highlightWord?.trim();
+    if (!word) return undefined;
+
+    const match = new RegExp(`\\b${escapeRegex(word)}\\b`, 'i').exec(text);
+    if (!match || match.index === undefined) return undefined;
+
+    const spans: RichSpan[] = [];
+    const start = match.index;
+    const end = start + match[0].length;
+
+    if (start > 0) spans.push({ text: text.slice(0, start), color: normalColor });
+    spans.push({ text: text.slice(start, end), color: highlightColor });
+    if (end < text.length) spans.push({ text: text.slice(end), color: normalColor });
+
+    return spans;
+}
+
+export function preserveSingleHighlightRichText(
+    previousText: string,
+    nextText: string,
+    richText: RichSpan[] | undefined,
+    normalColor: string
+): RichSpan[] | undefined {
+    const existingHighlight = extractSingleHighlightWord(previousText, richText, normalColor);
+    if (!existingHighlight) return undefined;
+
+    const nextWords = tokenizeWords(nextText);
+    if (nextWords.length === 0) return undefined;
+
+    const sameWordMatches = nextWords.filter((word) => word.normalized && word.normalized === existingHighlight.normalizedWord);
+    const targetWord = sameWordMatches.length > 0
+        ? sameWordMatches.sort((a, b) => Math.abs(a.index - existingHighlight.wordIndex) - Math.abs(b.index - existingHighlight.wordIndex))[0]
+        : nextWords[Math.max(0, Math.min(existingHighlight.wordIndex, nextWords.length - 1))];
+
+    return buildRichTextWithHighlightRange(nextText, targetWord.start, targetWord.end, normalColor, existingHighlight.color);
 }
 
 export function gradientLinearProps(el: GradientEl) {

@@ -49,7 +49,7 @@ import {
     SLIDE_W, PANEL_LEFT, PANEL_RIGHT, FORMATS, Format, Tool,
     SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl, PathEl, RichSpan
 } from '@/components/SlideEditor/types';
-import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps } from '@/components/SlideEditor/utils';
+import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
 import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElements';
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
@@ -447,8 +447,14 @@ export default function SlideEditor() {
         textarea.value = el.text;
         textarea.focus();
 
-        // Clear richText when user manually edits — their custom text no longer maps to AI highlights
-        const finish = () => { updateElement(el.id, { text: textarea.value, richText: undefined } as Partial<TextEl>); document.body.removeChild(textarea); setEditingId(null); };
+        const finish = () => {
+            const nextText = textarea.value;
+            const nextRichText = preserveSingleHighlightRichText(el.text, nextText, el.richText, el.fill);
+
+            updateElement(el.id, { text: nextText, richText: nextRichText } as Partial<TextEl>);
+            document.body.removeChild(textarea);
+            setEditingId(null);
+        };
         textarea.addEventListener('blur', finish);
         textarea.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { document.body.removeChild(textarea); setEditingId(null); } });
     }

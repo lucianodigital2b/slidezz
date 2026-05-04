@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MousePointer, Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
 import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
 import { Section, ToggleField, Field, ColorField, SliderField, FontPicker, PositionGrid } from './PrimitiveControls';
+import { preserveSingleHighlightRichText } from './utils';
 
 // ── Word Highlight helpers ────────────────────────────────────────────────────
 
@@ -71,8 +72,8 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
     const applyColor = (c: string) => { setHlColor(c); setHexInput(c); };
 
     const toggleWord = (wordIndex: number) => {
-        const next = new Map(highlights);
-        if (next.has(wordIndex)) { next.delete(wordIndex); } else { next.set(wordIndex, hlColor); }
+        const next = new Map<number, string>();
+        if (!highlights.has(wordIndex)) next.set(wordIndex, hlColor);
         onChange({ richText: buildRichTextFromHighlights(el.text, next) });
     };
 
@@ -196,7 +197,12 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                         <Section title={t('slideEditor.sections.text')}>
                             <Field label={t('slideEditor.fields.content')}>
                                 <textarea value={el.text} rows={3}
-                                    onChange={(e) => ch<TextEl>({ text: e.target.value, richText: undefined })}
+                                    onChange={(e) => {
+                                        const nextText = e.target.value;
+                                        const nextRichText = preserveSingleHighlightRichText(el.text, nextText, el.richText, el.fill);
+
+                                        ch<TextEl>({ text: nextText, richText: nextRichText });
+                                    }}
                                     className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E8440A]" />
                             </Field>
                             <Field label={t('slideEditor.fields.textColor')}><ColorField value={el.fill} onChange={(v) => ch<TextEl>({ fill: v })} /></Field>
