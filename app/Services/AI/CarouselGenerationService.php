@@ -27,7 +27,7 @@ Output exactly {$slideCount} lines. No extra text, no markdown, no code blocks. 
 PROMPT;
 
         return Prism::text()
-            ->using(Provider::OpenAI, 'gpt-4o-mini')
+            ->using(Provider::DeepSeek, 'deepseek-chat')
             ->withSystemPrompt($systemPrompt)
             ->withPrompt("Create a {$slideCount}-slide Instagram carousel about: {$topic}")
             ->asEventStreamResponse();

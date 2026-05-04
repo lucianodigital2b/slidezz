@@ -220,6 +220,7 @@ export default function CreateCarousel() {
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
+    const [generateImages, setGenerateImages] = useState(true);
     const [saveConfig, setSaveConfig]       = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
     const [importOpen, setImportOpen]       = useState(false);
@@ -255,7 +256,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt, generate_images: generateImages },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -505,6 +506,25 @@ export default function CreateCarousel() {
                                     className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#E8440A] focus:border-transparent"
                                 />
                             </div>
+
+                            {/* Generate Images Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => setGenerateImages((v) => !v)}
+                                className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                                    generateImages ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                                    generateImages ? 'border-[#E8440A] bg-[#E8440A]' : 'border-gray-300'
+                                }`}>
+                                    {generateImages && <Check className="h-3 w-3 text-white" />}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-800">Gerar imagens de fundo com IA</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Criar imagens automáticas baseadas no conteúdo dos slides.</p>
+                                </div>
+                            </button>
 
                             {/* Save as workspace default */}
                             <button

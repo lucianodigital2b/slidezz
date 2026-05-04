@@ -54,159 +54,12 @@ import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElement
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
-// ─── Elements Shape Library ───────────────────────────────────────────────────
+import { useUndoRedo } from '@/components/SlideEditor/hooks/useUndoRedo';
+import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager';
+import { useAiGeneration } from '@/components/SlideEditor/hooks/useAiGeneration';
 
-interface ShapeDef {
-    id: string;
-    data: string;
-    dataW: number;
-    dataH: number;
-    initW: number;
-    initH: number;
-    fill: string;
-    stroke: string;
-    strokeWidth: number;
-    dashEnabled?: boolean;
-    // button preview mode: 'fill' | 'stroke'
-    preview: 'fill' | 'stroke';
-}
-
-const SHAPE_CATEGORIES: { label: string; shapes: ShapeDef[] }[] = [
-    {
-        label: 'Formas Básicas',
-        shapes: [
-            { id: 'triangle',  data: 'M 50 0 L 100 100 L 0 100 Z', dataW: 100, dataH: 100, initW: 200, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'diamond',   data: 'M 50 0 L 100 50 L 50 100 L 0 50 Z', dataW: 100, dataH: 100, initW: 160, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'pentagon',  data: 'M 50 0 L 100 38 L 81 100 L 19 100 L 0 38 Z', dataW: 100, dataH: 100, initW: 180, initH: 180, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'hexagon',   data: 'M 50 0 L 100 25 L 100 75 L 50 100 L 0 75 L 0 25 Z', dataW: 100, dataH: 100, initW: 200, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-        ],
-    },
-    {
-        label: 'Linhas',
-        shapes: [
-            { id: 'line',         data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: false, preview: 'stroke' },
-            { id: 'line_dotted',  data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: true,  preview: 'stroke' },
-            { id: 'line_dashed',  data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: true,  preview: 'stroke' },
-        ],
-    },
-    {
-        label: 'Setas',
-        shapes: [
-            { id: 'arrow_r',   data: 'M 0 30 L 55 30 L 55 0 L 100 50 L 55 100 L 55 70 L 0 70 Z', dataW: 100, dataH: 100, initW: 200, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'arrow_l',   data: 'M 100 30 L 45 30 L 45 0 L 0 50 L 45 100 L 45 70 L 100 70 Z', dataW: 100, dataH: 100, initW: 200, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'arrow_u',   data: 'M 30 100 L 30 45 L 0 45 L 50 0 L 100 45 L 70 45 L 70 100 Z', dataW: 100, dataH: 100, initW: 160, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'arrow_d',   data: 'M 30 0 L 30 55 L 0 55 L 50 100 L 100 55 L 70 55 L 70 0 Z', dataW: 100, dataH: 100, initW: 160, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'arrow_lr',  data: 'M 0 50 L 30 0 L 30 25 L 70 25 L 70 0 L 100 50 L 70 100 L 70 75 L 30 75 L 30 100 Z', dataW: 100, dataH: 100, initW: 240, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'arrow_ret', data: 'M 5 60 C 5 20 95 20 90 60 L 78 46 M 90 60 L 100 44', dataW: 100, dataH: 72, initW: 200, initH: 120, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, preview: 'stroke' },
-        ],
-    },
-    {
-        label: 'Decorativos',
-        shapes: [
-            { id: 'star',      data: 'M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z', dataW: 100, dataH: 91, initW: 200, initH: 182, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'heart',     data: 'M 50 85 C 22 68 0 50 0 28 C 0 12 12 0 27 0 C 39 0 47 9 50 18 C 53 9 61 0 73 0 C 88 0 100 12 100 28 C 100 50 78 68 50 85 Z', dataW: 100, dataH: 85, initW: 200, initH: 170, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'lightning', data: 'M 58 0 L 15 55 L 45 55 L 42 100 L 85 45 L 55 45 Z', dataW: 100, dataH: 100, initW: 140, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'shield',    data: 'M 50 0 L 100 20 L 100 55 C 100 78 75 95 50 100 C 25 95 0 78 0 55 L 0 20 Z', dataW: 100, dataH: 100, initW: 180, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'plus',      data: 'M 35 0 L 65 0 L 65 35 L 100 35 L 100 65 L 65 65 L 65 100 L 35 100 L 35 65 L 0 65 L 0 35 L 35 35 Z', dataW: 100, dataH: 100, initW: 160, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'cloud',     data: 'M 20 72 C 8 72 0 62 0 52 C 0 40 10 34 22 36 C 24 22 35 14 50 14 C 63 14 73 22 76 34 C 82 28 92 30 97 38 C 104 48 100 64 89 68 C 83 71 74 72 65 72 Z', dataW: 104, dataH: 72, initW: 240, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'drop',      data: 'M 50 0 C 30 20 0 50 0 68 C 0 85 23 100 50 100 C 77 100 100 85 100 68 C 100 50 70 20 50 0 Z', dataW: 100, dataH: 100, initW: 140, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'check',     data: 'M 0 52 L 35 88 L 100 8', dataW: 100, dataH: 88, initW: 200, initH: 160, fill: 'none', stroke: '#1a1a1a', strokeWidth: 12, preview: 'stroke' },
-        ],
-    },
-    {
-        label: 'Balões',
-        shapes: [
-            { id: 'speech',  data: 'M 10 0 Q 0 0 0 10 L 0 62 Q 0 72 10 72 L 25 72 L 10 100 L 40 72 L 90 72 Q 100 72 100 62 L 100 10 Q 100 0 90 0 Z', dataW: 100, dataH: 100, initW: 240, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-            { id: 'message', data: 'M 10 0 Q 0 0 0 10 L 0 62 Q 0 72 10 72 L 43 72 L 50 94 L 57 72 L 90 72 Q 100 72 100 62 L 100 10 Q 100 0 90 0 Z', dataW: 100, dataH: 94, initW: 240, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
-        ],
-    },
-];
-
-// ─── Slide Templates ─────────────────────────────────────────────────────────
-
-const SLIDE_TEMPLATES = [
-    { id: 'noir-manifesto',  name: 'Noir Manifesto',  background: '#0a0a0a', textColor: '#ffffff', font: 'Anton',            fontStyle: '',     letterSpacing: 1,    align: 'center' },
-    { id: 'dark-cards',      name: 'Dark Cards',       background: '#111827', textColor: '#ffffff', font: 'Poppins',          fontStyle: 'bold', letterSpacing: 0,    align: 'center' },
-    { id: 'pop-magazine',    name: 'Pop Magazine',     background: '#ffffff', textColor: '#111111', font: 'Anton',            fontStyle: '',     letterSpacing: 0,    align: 'left'   },
-    { id: 'twitter-x',       name: 'Twitter/X',        background: '#ffffff', textColor: '#000000', font: 'Inter',            fontStyle: 'bold', letterSpacing: -0.5, align: 'left'   },
-    { id: 'acid-brutalist',  name: 'Acid Brutalist',   background: '#000000', textColor: '#ffffff', font: 'Montserrat',       fontStyle: 'bold', letterSpacing: -2,   align: 'left'   },
-    { id: 'documentary',     name: 'Documentary',      background: '#1a1108', textColor: '#f0e8d8', font: 'Playfair Display', fontStyle: '',     letterSpacing: 0,    align: 'left'   },
-];
-
-function TemplatePreview({ id }: { id: string }) {
-    switch (id) {
-        case 'noir-manifesto':
-            return (
-                <div className="relative w-full h-full flex flex-col justify-end p-2"
-                    style={{ background: 'linear-gradient(155deg, #1a1a2e 0%, #0d0d0d 60%)' }}>
-                    <div className="absolute inset-0"
-                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent)' }} />
-                    <div className="relative z-10 space-y-0.5">
-                        <div className="h-0.5 w-4 rounded mb-1" style={{ background: '#E8440A' }} />
-                        <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', color: '#fff', fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>TÍTULO</div>
-                        <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.45)', letterSpacing: 1, textTransform: 'uppercase' }}>subtítulo</div>
-                    </div>
-                </div>
-            );
-        case 'dark-cards':
-            return (
-                <div className="w-full h-full flex items-center justify-center"
-                    style={{ background: '#111827' }}>
-                    <div className="rounded-lg overflow-hidden" style={{ width: '80%', boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
-                        <div style={{ height: 36, background: 'linear-gradient(135deg, #374151, #1f2937)' }} />
-                        <div className="p-1.5" style={{ background: '#1f2937' }}>
-                            <div className="rounded-sm mb-1" style={{ height: 6, background: '#374151', width: '90%' }} />
-                            <div className="rounded-sm" style={{ height: 4, background: '#374151', width: '60%' }} />
-                        </div>
-                    </div>
-                </div>
-            );
-        case 'pop-magazine':
-            return (
-                <div className="w-full h-full flex flex-col justify-center px-2 py-2" style={{ background: '#fff' }}>
-                    <div className="flex items-stretch gap-1.5">
-                        <div className="w-1 rounded-full shrink-0" style={{ background: '#E8120A' }} />
-                        <div>
-                            <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>TÍTULO</div>
-                            <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: 12, fontWeight: 900, color: '#000', lineHeight: 1, textTransform: 'uppercase' }}>GRANDE</div>
-                            <div style={{ fontSize: 5, color: '#666', marginTop: 3 }}>Subtítulo aqui</div>
-                        </div>
-                    </div>
-                </div>
-            );
-        case 'twitter-x':
-            return (
-                <div className="w-full h-full flex flex-col justify-center px-2.5 py-2" style={{ background: '#fff' }}>
-                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>Texto grande</div>
-                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>e limpo aqui</div>
-                    <div style={{ height: 1, background: '#e5e7eb', width: '100%', margin: '5px 0' }} />
-                    <div style={{ fontSize: 5, color: '#9ca3af' }}>Descrição do slide</div>
-                </div>
-            );
-        case 'acid-brutalist':
-            return (
-                <div className="w-full h-full flex flex-col justify-center px-2" style={{ background: '#000' }}>
-                    <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: 'transparent', WebkitTextStroke: '0.5px #39FF14', textTransform: 'uppercase', lineHeight: 1 } as React.CSSProperties}>BRUTAL</div>
-                    <div style={{ fontFamily: 'Arial Black, Impact, sans-serif', fontSize: 11, fontWeight: 900, color: '#39FF14', textTransform: 'uppercase', lineHeight: 1 }}>STYLE</div>
-                    <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.4)', marginTop: 3, letterSpacing: 1, textTransform: 'uppercase' }}>subtítulo</div>
-                </div>
-            );
-        case 'documentary':
-            return (
-                <div className="relative w-full h-full flex flex-col justify-end px-2 py-2" style={{ background: '#1a1108' }}>
-                    <div className="absolute inset-0 opacity-30"
-                        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.02) 4px)' }} />
-                    <div className="relative z-10">
-                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: '#9a8866', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>INVESTIGAÇÃO</div>
-                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 9, fontWeight: 700, color: '#f0e8d8', lineHeight: 1.2 }}>Título do Slide</div>
-                        <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: 'rgba(240,232,216,0.5)', marginTop: 2, fontStyle: 'italic' }}>Subtítulo</div>
-                    </div>
-                </div>
-            );
-        default:
-            return <div className="w-full h-full" style={{ background: '#f3f4f6' }} />;
-    }
-}
+import { ShapeDef, SHAPE_CATEGORIES } from '@/components/SlideEditor/shapes';
+import { SLIDE_TEMPLATES, TemplatePreview } from '@/components/SlideEditor/templates';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -221,6 +74,7 @@ interface WizardConfig {
     topic: string;
     style: string;
     slideCount: number;
+    generateImages: boolean;
 }
 
 const STORAGE_KEY = 'slidezz_editor_v1';
@@ -251,64 +105,9 @@ export default function SlideEditor() {
     }>().props;
 
     const saved = slideProject ?? loadSavedState();
-    const [slides, _setSlides] = useState<Slide[]>(saved?.slides ?? [makeSlide()]);
-
+    
     // ── Undo / Redo ─────────────────────────────────────────────────────────
-    const [past, setPast] = useState<Slide[][]>([]);
-    const [future, setFuture] = useState<Slide[][]>([]);
-    const historyTimer = useRef<NodeJS.Timeout | null>(null);
-
-    const setSlides = useCallback((action: React.SetStateAction<Slide[]>) => {
-        _setSlides((prev) => {
-            const next = typeof action === 'function' ? (action as (prevState: Slide[]) => Slide[])(prev) : action;
-            if (prev !== next) {
-                if (!historyTimer.current) {
-                    setPast(p => [...p, prev].slice(-50));
-                    setFuture([]);
-                } else {
-                    clearTimeout(historyTimer.current);
-                }
-                historyTimer.current = setTimeout(() => {
-                    historyTimer.current = null;
-                }, 500);
-            }
-            return next;
-        });
-    }, []);
-
-    const undo = useCallback(() => {
-        setPast(p => {
-            if (p.length === 0) return p;
-            const newPast = [...p];
-            const prev = newPast.pop()!;
-            _setSlides(current => {
-                setFuture(f => [current, ...f]);
-                return prev;
-            });
-            if (historyTimer.current) {
-                clearTimeout(historyTimer.current);
-                historyTimer.current = null;
-            }
-            return newPast;
-        });
-    }, []);
-
-    const redo = useCallback(() => {
-        setFuture(f => {
-            if (f.length === 0) return f;
-            const newFuture = [...f];
-            const next = newFuture.shift()!;
-            _setSlides(current => {
-                setPast(p => [...p, current]);
-                return next;
-            });
-            if (historyTimer.current) {
-                clearTimeout(historyTimer.current);
-                historyTimer.current = null;
-            }
-            return newFuture;
-        });
-    }, []);
+    const { slides, setSlides, past, future, undo, redo } = useUndoRedo(saved?.slides ?? [makeSlide()]);
 
     const [currentIdx, setCurrentIdx] = useState(0);
     const [tool, setTool] = useState<Tool>('select');
@@ -326,14 +125,17 @@ export default function SlideEditor() {
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
 
     // ── AI carousel generation ──────────────────────────────────────────────
-    const [aiModalOpen, setAiModalOpen] = useState(false);
-    const [aiTopic, setAiTopic] = useState('');
-    const [aiStyle, setAiStyle] = useState('');
-    const [aiSlideCount, setAiSlideCount] = useState(5);
-    const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
-    const [aiProgress, setAiProgress] = useState<string[]>([]);
-    const [aiError, setAiError] = useState('');
-    const esRef = useRef<EventSource | null>(null);
+    const {
+        aiModalOpen, setAiModalOpen,
+        aiTopic, setAiTopic,
+        aiStyle, setAiStyle,
+        aiSlideCount, setAiSlideCount,
+        aiGenerateImages, setAiGenerateImages,
+        aiStatus, setAiStatus,
+        aiProgress, aiError,
+        openAiModal, closeAiModal,
+        generateCarousel
+    } = useAiGeneration(slides, setSlides, setCurrentIdx, setSelectedId, format);
 
     const stageRef = useRef<Konva.Stage>(null);
     const trRef = useRef<Konva.Transformer>(null);
@@ -346,7 +148,21 @@ export default function SlideEditor() {
         if (currentIdx !== safeIdx) setCurrentIdx(safeIdx);
     }, [currentIdx, safeIdx]);
 
-    const slide = slides[safeIdx] || makeSlide();
+    const {
+        slide,
+        updateSlide,
+        addSlide,
+        deleteSlide,
+        duplicateSlide,
+        bringToFront,
+        bringForward,
+        sendBackward,
+        sendToBack,
+        addElement,
+        updateElement,
+        deleteElement
+    } = useSlideManager(slides, setSlides, safeIdx, setCurrentIdx, setSelectedId, setTool);
+
     const slideH = FORMATS[format].h;
     const scale = displayW / SLIDE_W;
 
@@ -452,294 +268,24 @@ export default function SlideEditor() {
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
         setAiSlideCount(wizardConfig.slideCount);
+        setAiGenerateImages(wizardConfig.generateImages ?? true);
         setAiModalOpen(true);
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount);
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, wizardConfig.generateImages ?? true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ─── AI Carousel Generation ─────────────────────────────────────────────
-
-    function openAiModal() {
-        setAiModalOpen(true);
-        setAiStatus('idle');
-        setAiProgress([]);
-        setAiError('');
-    }
-
-    function closeAiModal() {
-        esRef.current?.close();
-        esRef.current = null;
-        setAiModalOpen(false);
-        setAiStatus('idle');
-    }
-
-    interface SlideData {
-        title: string;
-        subtitle: string;
-        description: string;
-        imagePrompt: string;
-        highlightWords?: string[];
-        highlightColor?: string;
-    }
-
-    function buildRichText(text: string, highlightWords: string[], normalColor: string, highlightColor: string): RichSpan[] {
-        if (!highlightWords.length) return [{ text, color: normalColor }];
-        const escaped = highlightWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
-        const spans: RichSpan[] = [];
-        let lastIndex = 0;
-        for (const match of text.matchAll(pattern)) {
-            if (match.index! > lastIndex) spans.push({ text: text.slice(lastIndex, match.index), color: normalColor });
-            spans.push({ text: match[0], color: highlightColor });
-            lastIndex = match.index! + match[0].length;
-        }
-        if (lastIndex < text.length) spans.push({ text: text.slice(lastIndex), color: normalColor });
-        return spans.length > 0 ? spans : [{ text, color: normalColor }];
-    }
-
-    function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
-        const slideH = FORMATS[format].h;
-        const textY = Math.round(slideH * 0.5);
-        const highlightColor = data.highlightColor ?? '#E8440A';
-        const highlightWords = data.highlightWords ?? [];
-        const titleRichText = highlightWords.length > 0
-            ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
-            : undefined;
-
-        const titleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: textY,
-            width: SLIDE_W - 160, height: 200, rotation: 0, opacity: 1,
-            text: data.title, fontSize: 80, fontFamily: 'Poppins', fill: '#ffffff',
-            fontStyle: 'bold', align: 'center', verticalAlign: 'top',
-            lineHeight: 1.15, letterSpacing: -1, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
-            ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
-            ...(titleRichText ? { richText: titleRichText } : {}),
-        };
-        const subtitleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: textY + 200,
-            width: SLIDE_W - 160, height: 120, rotation: 0, opacity: 1,
-            text: data.subtitle, fontSize: 44, fontFamily: 'Poppins', fill: '#f0f0f0',
-            fontStyle: '', align: 'center', verticalAlign: 'top',
-            lineHeight: 1.3, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
-            ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
-        };
-        const descEl: TextEl = {
-            id: uid(), type: 'text', x: 100, y: textY + 340,
-            width: SLIDE_W - 200, height: 180, rotation: 0, opacity: 1,
-            text: data.description, fontSize: 32, fontFamily: 'Poppins', fill: '#e0e0e0',
-            fontStyle: '', align: 'center', verticalAlign: 'top',
-            lineHeight: 1.5, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: 0, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
-            ...SHADOW_DEFAULTS,
-        };
-
-        const gradientEl: GradientEl = {
-            id: uid(), type: 'gradient',
-            x: 0, y: Math.round(slideH * 0.35),
-            width: SLIDE_W, height: Math.round(slideH * 0.65),
-            rotation: 0, opacity: 1,
-            color: '#000000', direction: 'bottom',
-            ...SHADOW_DEFAULTS,
-        };
-
-        const elements: SlideEl[] = [gradientEl, titleEl, subtitleEl, descEl];
-
-        if (bgBase64) {
-            const bgEl: ImageEl = {
-                id: uid(), type: 'image', src: bgBase64,
-                x: 0, y: 0, width: SLIDE_W, height: slideH,
-                rotation: 0, opacity: 1,
-                brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
-                hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
-                red: 255, green: 255, blue: 255,
-                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 0,
-                isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
-                ...SHADOW_DEFAULTS,
-            };
-            elements.unshift(bgEl);
-        }
-
-        return { id: uid(), background: '#1a1a2e', elements };
-    }
-
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number) {
-        const topic = topicOverride ?? aiTopic;
-        const style = styleOverride ?? aiStyle;
-        const slideCount = slideCountOverride ?? aiSlideCount;
-        if (!topic.trim()) return;
-        const newSlideStartIdx = slides.length;
-        setAiStatus('generating');
-        setAiProgress([]);
-        setAiError('');
-
-        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
-
-        // POST to get an SSE stream; we use fetch + ReadableStream to handle POST+SSE
-        let response: Response;
-        try {
-            response = await fetch(CarouselGenerationController.generate().url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
-                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount }),
-            });
-        } catch {
-            setAiStatus('error');
-            setAiError(t('slideEditor.ai.errorNetwork'));
-            return;
-        }
-
-        if (!response.ok || !response.body) {
-            setAiStatus('error');
-            setAiError(t('slideEditor.ai.errorServer'));
-            return;
-        }
-
-        // Consume SSE stream, collecting all text_delta chunks into one string
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let sseBuffer = '';
-        let assembled = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            sseBuffer += decoder.decode(value, { stream: true });
-
-            const lines = sseBuffer.split('\n');
-            sseBuffer = lines.pop() ?? '';
-
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) continue;
-                try {
-                    const payload = JSON.parse(line.slice(6)) as { delta?: string; text?: string };
-                    const chunk = payload.delta ?? payload.text ?? '';
-                    if (chunk) assembled += chunk;
-                } catch { /* ignore malformed SSE lines */ }
-            }
-        }
-
-        setAiStatus('imaging');
-
-        // Parse assembled NDJSON — one JSON object per line
-        const parsedSlides: SlideData[] = [];
-        for (const rawLine of assembled.split('\n')) {
-            const trimmed = rawLine.trim();
-            // eslint-disable-next-line @stylistic/padding-line-between-statements
-            if (!trimmed.startsWith('{')) continue;
-            try {
-                const slide = JSON.parse(trimmed) as SlideData;
-                if (slide.title && slide.imagePrompt) parsedSlides.push(slide);
-            } catch { /* skip malformed lines */ }
-        }
-
-        if (parsedSlides.length === 0) {
-            setAiStatus('error');
-            setAiError(t('slideEditor.ai.errorParsing'));
-            return;
-        }
-
-        // Generate images in parallel
-        const imageResults = await Promise.allSettled(
-            parsedSlides.map(async (s) => {
-                setAiProgress((prev) => [...prev, s.title]);
-                try {
-                    const r = await fetch(CarouselGenerationController.generateImage().url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({ prompt: s.imagePrompt }),
-                    });
-                    if (!r.ok) return null;
-                    const data = await r.json() as { base64?: string };
-                    return data.base64 ?? null;
-                } catch {
-                    return null;
-                }
-            }),
-        );
-
-        const newSlides = parsedSlides.map((s, i) => {
-            const imgResult = imageResults[i];
-            const base64 = imgResult.status === 'fulfilled' ? imgResult.value : null;
-            return buildSlideFromData(s, base64);
-        });
-
-        await loadGoogleFont('Poppins');
-        setSlides((prev) => [...prev, ...newSlides]);
-        setCurrentIdx(newSlideStartIdx);
-        setSelectedId(null);
-        setAiModalOpen(false);
-        setAiStatus('idle');
-    }
+    // Logic extracted to useAiGeneration hook
 
     // ─── Helpers ────────────────────────────────────────────────────────────
-
-    function updateSlide(patch: Partial<Slide>) {
-        setSlides((prev) => prev.map((s, i) => (i === currentIdx ? { ...s, ...patch } : s)));
-    }
-
-    function addSlide() {
-        const next = makeSlide(slide.background);
-        setSlides((prev) => [...prev.slice(0, currentIdx + 1), next, ...prev.slice(currentIdx + 1)]);
-        setCurrentIdx(currentIdx + 1);
-        setSelectedId(null);
-    }
-
-    function deleteSlide(idx: number) {
-        if (slides.length === 1) return;
-        setSlides((prev) => prev.filter((_, i) => i !== idx));
-        setCurrentIdx(Math.min(idx, slides.length - 2));
-        setSelectedId(null);
-    }
-
-    function duplicateSlide(idx: number) {
-        const copy: Slide = { ...slides[idx], id: uid(), elements: slides[idx].elements.map((e) => ({ ...e, id: uid() } as unknown as SlideEl)) };
-        setSlides((prev) => [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)]);
-        setCurrentIdx(idx + 1);
-    }
-
-    function bringToFront(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [...els, el]; })() });
-    }
-
-    function bringForward(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1 || i === els.length - 1) return els; [els[i], els[i + 1]] = [els[i + 1], els[i]]; return els; })() });
-    }
-
-    function sendBackward(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i <= 0) return els; [els[i], els[i - 1]] = [els[i - 1], els[i]]; return els; })() });
-    }
-
-    function sendToBack(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [el, ...els]; })() });
-    }
-
-    function addElement(el: SlideEl) {
-        updateSlide({ elements: [...slide.elements, el] });
-        setSelectedId(el.id);
-        setTool('select');
-    }
-
-    function updateElement(id: string, patch: Partial<SlideEl>) {
-        updateSlide({ elements: slide.elements.map((el) => (el.id === id ? ({ ...el, ...patch } as unknown as SlideEl) : el)) });
-    }
-
-    function deleteElement(id: string) {
-        updateSlide({ elements: slide.elements.filter((el) => el.id !== id) });
-        setSelectedId(null);
-    }
-
+    
     async function applyTemplate(tpl: (typeof SLIDE_TEMPLATES)[number]) {
         await loadGoogleFont(tpl.font);
         updateSlide({
             background: tpl.background,
             elements: slide.elements.map((el): SlideEl => {
                 if (el.type !== 'text') return el;
-                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing, align: tpl.align };
+                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing, align: tpl.align as any };
             }),
         });
     }
@@ -1255,9 +801,9 @@ export default function SlideEditor() {
                         {/* Elements panel popup */}
                         {elementsOpen && (
                             <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-72 max-h-[65vh] overflow-y-auto">
-                                {SHAPE_CATEGORIES.map(({ label, shapes }) => (
-                                    <div key={label} className="mb-4 last:mb-0">
-                                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-2">{label}</p>
+                                {SHAPE_CATEGORIES.map(({ labelKey, shapes }) => (
+                                    <div key={labelKey} className="mb-4 last:mb-0">
+                                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-2">{t(labelKey)}</p>
                                         <div className="grid grid-cols-4 gap-1.5">
                                             {shapes.map((shape) => {
                                                 const isDotted = shape.id === 'line_dotted';
@@ -1554,6 +1100,17 @@ export default function SlideEditor() {
                                     />
                                     <span className="text-sm font-semibold text-violet-700 w-6 text-center">{aiSlideCount}</span>
                                 </div>
+                            </div>
+                            <div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={aiGenerateImages}
+                                        onChange={(e) => setAiGenerateImages(e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                                    />
+                                    <span className="text-xs font-medium text-gray-600">Gerar imagens de fundo com IA</span>
+                                </label>
                             </div>
                             {aiStatus === 'error' && (
                                 <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>

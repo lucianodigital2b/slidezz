@@ -14,7 +14,9 @@
       "saved": "Saved",
       "saveError": "Error saving",
       "save": "Save",
-      "exportPng": "Export PNG"
+      "exportPng": "Export PNG",
+      "undo": "Undo (Ctrl+Z)",
+      "redo": "Redo (Ctrl+Y)"
     },
     "slides": {
       "panel": "SLIDES",
@@ -143,6 +145,42 @@
     "templates": {
       "panel": "TEMPLATES",
       "apply": "Apply"
+    },
+    "shapes": {
+      "basic": "Basic Shapes",
+      "lines": "Lines",
+      "arrows": "Arrows",
+      "decorative": "Decorative",
+      "balloons": "Balloons"
+    },
+    "elements": {
+      "title": "TITLE",
+      "subtitle": "subtitle",
+      "largeText": "Large text",
+      "cleanHere": "and clean here",
+      "slideDescription": "Slide description",
+      "brutal": "BRUTAL",
+      "style": "STYLE",
+      "investigation": "INVESTIGATION",
+      "slideTitle": "Slide Title",
+      "text": "Text",
+      "big": "BIG",
+      "subtitleHere": "Subtitle here"
+    },
+    "actions": {
+      "bringToFront": "Bring to Front",
+      "bringForward": "Bring Forward",
+      "sendBackward": "Send Backward",
+      "sendToBack": "Send to Back",
+      "elements": "Elements"
+    },
+    "alerts": {
+      "switchFormat": "Switch format to Post (1:1) to publish a carousel to Instagram.",
+      "saveFirst": "Could not save slideshow before publishing.",
+      "exportFailed": "Failed to export slides.",
+      "published": "Posted to Instagram.",
+      "publishFailed": "Failed to publish to Instagram.",
+      "slidesCountError": "Instagram carousels require between 2 and 10 slides."
     }
   },
   "createCarousel": {

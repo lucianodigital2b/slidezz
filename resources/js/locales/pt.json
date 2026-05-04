@@ -297,7 +297,9 @@
       "saved": "Salvo",
       "saveError": "Erro ao salvar",
       "save": "Salvar",
-      "exportPng": "Exportar PNG"
+      "exportPng": "Exportar PNG",
+      "undo": "Desfazer (Ctrl+Z)",
+      "redo": "Refazer (Ctrl+Y)"
     },
     "slides": {
       "panel": "SLIDES",
@@ -426,6 +428,42 @@
     "templates": {
       "panel": "TEMPLATES",
       "apply": "Aplicar"
+    },
+    "shapes": {
+      "basic": "Formas Básicas",
+      "lines": "Linhas",
+      "arrows": "Setas",
+      "decorative": "Decorativos",
+      "balloons": "Balões"
+    },
+    "elements": {
+      "title": "TÍTULO",
+      "subtitle": "subtítulo",
+      "largeText": "Texto grande",
+      "cleanHere": "e limpo aqui",
+      "slideDescription": "Descrição do slide",
+      "brutal": "BRUTAL",
+      "style": "STYLE",
+      "investigation": "INVESTIGAÇÃO",
+      "slideTitle": "Título do Slide",
+      "text": "Texto",
+      "big": "GRANDE",
+      "subtitleHere": "Subtítulo aqui"
+    },
+    "actions": {
+      "bringToFront": "Trazer para frente",
+      "bringForward": "Avançar camada",
+      "sendBackward": "Recuar camada",
+      "sendToBack": "Enviar para trás",
+      "elements": "Elementos"
+    },
+    "alerts": {
+      "switchFormat": "Mude o formato para Post (1:1) para publicar um carrossel no Instagram.",
+      "saveFirst": "Não foi possível salvar o slideshow antes de publicar.",
+      "exportFailed": "Falha ao exportar slides.",
+      "published": "Publicado no Instagram.",
+      "publishFailed": "Falha ao publicar no Instagram.",
+      "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides."
     }
   },
   "createCarousel": {

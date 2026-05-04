@@ -65,7 +65,7 @@ class UrlContentExtractorService
         $truncated = mb_substr($plain, 0, 2000);
 
         $result = Prism::text()
-            ->using(Provider::OpenAI, 'gpt-4o-mini')
+            ->using(Provider::DeepSeek, 'deepseek-chat')
             ->withSystemPrompt('Você extrai conteúdo de páginas web para carrosséis do Instagram. Responda APENAS com JSON válido, sem markdown.')
             ->withPrompt("Extraia: título curto (max 10 palavras) e descrição resumida (max 100 palavras) para um carrossel.\n\nTítulo: {$title}\nMeta: {$metaDesc}\nTexto: {$truncated}\n\nJSON: {\"title\": \"\", \"description\": \"\", \"topic\": \"\"}")
             ->generate();

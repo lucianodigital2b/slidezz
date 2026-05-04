@@ -73,6 +73,7 @@ class CarouselWizardController extends Controller
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'save_config' => ['boolean'],
             'format' => ['nullable', 'string', 'in:post,stories'],
+            'generate_images' => ['boolean'],
         ]);
 
         $workspace = Workspace::where('owner_id', $request->user()->id)->firstOrFail();
@@ -101,6 +102,7 @@ class CarouselWizardController extends Controller
             ->route('slideshow-editor.edit', $project)
             ->with('wizardTopic', $validated['topic'])
             ->with('wizardStyle', $style)
-            ->with('wizardSlideCount', $validated['slide_count'] ?? 3);
+            ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
+            ->with('wizardGenerateImages', $request->boolean('generate_images', true));
     }
 }
