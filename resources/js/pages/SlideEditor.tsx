@@ -18,6 +18,10 @@ import {
     Redo2,
     X,
     ChevronRight,
+    ChevronUp,
+    ChevronDown,
+    ChevronsUp,
+    ChevronsDown,
 } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -319,8 +323,9 @@ export default function SlideEditor() {
 
     function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
         const slideH = FORMATS[format].h;
+        const textY = Math.round(slideH * 0.5);
         const titleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: slideH * 0.3,
+            id: uid(), type: 'text', x: 80, y: textY,
             width: SLIDE_W - 160, height: 200, rotation: 0, opacity: 1,
             text: data.title, fontSize: 80, fontFamily: 'Poppins', fill: '#ffffff',
             fontStyle: 'bold', align: 'center', verticalAlign: 'top',
@@ -330,7 +335,7 @@ export default function SlideEditor() {
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
         };
         const subtitleEl: TextEl = {
-            id: uid(), type: 'text', x: 80, y: slideH * 0.3 + 220,
+            id: uid(), type: 'text', x: 80, y: textY + 200,
             width: SLIDE_W - 160, height: 120, rotation: 0, opacity: 1,
             text: data.subtitle, fontSize: 44, fontFamily: 'Poppins', fill: '#f0f0f0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
@@ -340,7 +345,7 @@ export default function SlideEditor() {
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
         };
         const descEl: TextEl = {
-            id: uid(), type: 'text', x: 100, y: slideH * 0.3 + 380,
+            id: uid(), type: 'text', x: 100, y: textY + 340,
             width: SLIDE_W - 200, height: 180, rotation: 0, opacity: 1,
             text: data.description, fontSize: 32, fontFamily: 'Poppins', fill: '#e0e0e0',
             fontStyle: '', align: 'center', verticalAlign: 'top',
@@ -350,17 +355,26 @@ export default function SlideEditor() {
             ...SHADOW_DEFAULTS,
         };
 
-        const elements: SlideEl[] = [titleEl, subtitleEl, descEl];
+        const gradientEl: GradientEl = {
+            id: uid(), type: 'gradient',
+            x: 0, y: Math.round(slideH * 0.35),
+            width: SLIDE_W, height: Math.round(slideH * 0.65),
+            rotation: 0, opacity: 1,
+            color: '#000000', direction: 'bottom',
+            ...SHADOW_DEFAULTS,
+        };
+
+        const elements: SlideEl[] = [gradientEl, titleEl, subtitleEl, descEl];
 
         if (bgBase64) {
             const bgEl: ImageEl = {
                 id: uid(), type: 'image', src: bgBase64,
                 x: 0, y: 0, width: SLIDE_W, height: slideH,
                 rotation: 0, opacity: 1,
-                brightness: -0.2, contrast: 10, blurRadius: 0, grayscale: false, sepia: false,
+                brightness: -0.1, contrast: 5, blurRadius: 0, grayscale: false, sepia: false,
                 hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                 red: 255, green: 255, blue: 255,
-                overlayEnabled: true, overlayColor: '#000000', overlayOpacity: 0.45,
+                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 0,
                 isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
                 ...SHADOW_DEFAULTS,
             };
@@ -503,6 +517,22 @@ export default function SlideEditor() {
         const copy: Slide = { ...slides[idx], id: uid(), elements: slides[idx].elements.map((e) => ({ ...e, id: uid() } as unknown as SlideEl)) };
         setSlides((prev) => [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)]);
         setCurrentIdx(idx + 1);
+    }
+
+    function bringToFront(id: string) {
+        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [...els, el]; })() });
+    }
+
+    function bringForward(id: string) {
+        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1 || i === els.length - 1) return els; [els[i], els[i + 1]] = [els[i + 1], els[i]]; return els; })() });
+    }
+
+    function sendBackward(id: string) {
+        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i <= 0) return els; [els[i], els[i - 1]] = [els[i - 1], els[i]]; return els; })() });
+    }
+
+    function sendToBack(id: string) {
+        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [el, ...els]; })() });
     }
 
     function addElement(el: SlideEl) {
@@ -745,7 +775,7 @@ export default function SlideEditor() {
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button title={label}
             onClick={() => { setTool(tool_); if (tool_ !== 'select') setSelectedId(null); }}
-            className={`p-2 rounded-lg transition-colors ${tool === tool_ ? 'bg-[#E8440A] text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+            className={`p-2.5 rounded-xl transition-all ${tool === tool_ ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}>
             {icon}
         </button>
     );
@@ -757,13 +787,6 @@ export default function SlideEditor() {
 
                 {/* ── Toolbar ──────────────────────────────────────────────── */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-100 shrink-0">
-                    <div className="flex items-center gap-1 mr-2">
-                        {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
-                        {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
-                        {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
-                        {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
-                    </div>
-                    <div className="w-px h-6 bg-gray-200 mx-1" />
                     <div className="flex items-center gap-1">
                         <button
                             title="Undo (Ctrl+Z)"
@@ -783,6 +806,17 @@ export default function SlideEditor() {
                         </button>
                     </div>
                     <div className="w-px h-6 bg-gray-200 mx-1" />
+                    {selectedId && (
+                        <>
+                            <div className="flex items-center gap-1">
+                                <button title="Trazer para frente" onClick={() => bringToFront(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsUp className="w-4 h-4" /></button>
+                                <button title="Avançar camada" onClick={() => bringForward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronUp className="w-4 h-4" /></button>
+                                <button title="Recuar camada" onClick={() => sendBackward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronDown className="w-4 h-4" /></button>
+                                <button title="Enviar para trás" onClick={() => sendToBack(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsDown className="w-4 h-4" /></button>
+                            </div>
+                            <div className="w-px h-6 bg-gray-200 mx-1" />
+                        </>
+                    )}
                     <button title={t('slideEditor.toolbar.image')} onClick={() => fileInputRef.current?.click()}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">
                         <ImageIcon className="w-4 h-4" /> {t('slideEditor.toolbar.image')}
@@ -961,7 +995,14 @@ export default function SlideEditor() {
                     </div>
 
                     {/* Center: Canvas */}
-                    <div ref={containerRef} className="flex flex-1 items-center justify-center overflow-hidden bg-gray-100">
+                    <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-hidden bg-gray-100">
+                        {/* Floating tool palette */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
+                            {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
+                            {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
+                            {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
+                            {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
+                        </div>
                         <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: displayW, height: displayH }}>
                             <Stage ref={stageRef} width={displayW} height={displayH} scaleX={scale} scaleY={scale}
                                 onClick={handleStageClick} style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}>
