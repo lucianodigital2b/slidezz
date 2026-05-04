@@ -59,7 +59,7 @@ import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager'
 import { useAiGeneration } from '@/components/SlideEditor/hooks/useAiGeneration';
 
 import { ShapeDef, SHAPE_CATEGORIES } from '@/components/SlideEditor/shapes';
-import { SLIDE_TEMPLATES, TemplatePreview } from '@/components/SlideEditor/templates';
+import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/SlideEditor/templates';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -281,14 +281,29 @@ export default function SlideEditor() {
 
     // ─── Helpers ────────────────────────────────────────────────────────────
     
+    function getTemplateContent(): TemplateContent {
+        const textElements = [...slide.elements]
+            .filter((el): el is TextEl => el.type === 'text')
+            .sort((a, b) => a.y - b.y || a.x - b.x);
+
+        return {
+            eyebrow: textElements[2]?.text || t('slideEditor.elements.investigation'),
+            title: textElements[0]?.text || t('slideEditor.elements.title'),
+            subtitle: textElements[1]?.text || t('slideEditor.elements.subtitle'),
+            caption: textElements[3]?.text || textElements[2]?.text || t('slideEditor.elements.slideDescription'),
+        };
+    }
+
     async function applyTemplate(tpl: (typeof SLIDE_TEMPLATES)[number]) {
-        await loadGoogleFont(tpl.font);
+        await Promise.all([...new Set(tpl.fonts)].map((font) => loadGoogleFont(font)));
+        const scene = tpl.buildScene(getTemplateContent(), slideH);
+        const preservedBackgroundImages = slide.elements
+            .filter((el): el is ImageEl => el.type === 'image' && el.isBackground)
+            .map((el) => ({ ...el }));
+        setSelectedId(null);
         updateSlide({
-            background: tpl.background,
-            elements: slide.elements.map((el): SlideEl => {
-                if (el.type !== 'text') return el;
-                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing, align: tpl.align as any };
-            }),
+            background: scene.background,
+            elements: [...preservedBackgroundImages, ...scene.elements],
         });
     }
 

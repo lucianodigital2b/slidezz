@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
-import { uid, SHADOW_DEFAULTS, fitTextFontSize } from '../utils';
+import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 export interface SlideData {
@@ -61,11 +61,30 @@ export function useAiGeneration(
         return spans.length > 0 ? spans : [{ text, color: normalColor }];
     }
 
+    function pickSingleHighlightWord(title: string, highlightWords: string[] | undefined): string[] {
+        if (!highlightWords?.length) return [];
+
+        for (const candidate of highlightWords) {
+            const parts = candidate
+                .split(/\s+/)
+                .map((part) => part.trim())
+                .filter(Boolean);
+
+            for (const part of parts) {
+                const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                if (new RegExp(`\\b${escaped}\\b`, 'i').test(title)) return [part];
+            }
+        }
+
+        return [];
+    }
+
     function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
         const slideH = FORMATS[format].h;
         const textY = Math.round(slideH * 0.5);
-        const highlightColor = data.highlightColor ?? '#E8440A';
-        const highlightWords = data.highlightWords ?? [];
+        const backgroundColor = '#1a1a2e';
+        const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
+        const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
         const titleRichText = highlightWords.length > 0
             ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
             : undefined;
@@ -134,7 +153,7 @@ export function useAiGeneration(
             elements.unshift(bgEl);
         }
 
-        return { id: uid(), background: '#1a1a2e', elements };
+        return { id: uid(), background: backgroundColor, elements };
     }
 
     async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, generateImagesOverride?: boolean) {

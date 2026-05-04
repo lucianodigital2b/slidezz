@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
 import { TextEl, ImageEl, RichSpan } from './types';
 import { getMeasureCtx } from './utils';
+import { loadGoogleFont } from '@/utils/google-fonts';
 
 // ─── useLoadImage ─────────────────────────────────────────────────────────────
 
@@ -117,8 +118,24 @@ interface KonvaTextElProps {
 }
 
 export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onChange }: KonvaTextElProps) {
+    const groupRef = useRef<Konva.Group>(null);
     const textRef = useRef<Konva.Text>(null);
     const [textH, setTextH] = useState(80);
+    const [fontRevision, setFontRevision] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        loadGoogleFont(el.fontFamily).then(() => {
+            if (cancelled) return;
+            setFontRevision((rev) => rev + 1);
+            groupRef.current?.getLayer()?.batchDraw();
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [el.fontFamily]);
 
     useEffect(() => {
         if (textRef.current) {
@@ -131,7 +148,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
     const layout = useMemo(
         () => (el.richText && el.richText.length > 0 ? layoutRichText(el.richText, el) : null),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [el.richText, el.width, el.fontSize, el.fontFamily, el.fontStyle, el.fill, el.lineHeight, el.letterSpacing, el.align],
+        [el.richText, el.width, el.fontSize, el.fontFamily, el.fontStyle, el.fill, el.lineHeight, el.letterSpacing, el.align, fontRevision],
     );
     const richTotalH = layout ? layout.reduce((s, l) => s + l.height, 0) : 0;
 
@@ -191,7 +208,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
 
     if (layout) {
         return (
-            <Group {...groupProps}>
+            <Group {...groupProps} ref={groupRef}>
                 {accentProps && <Rect {...accentProps} fill={el.accentColor} listening={false} />}
                 <Shape
                     sceneFunc={richSceneFunc}
@@ -209,12 +226,13 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
     }
 
     return (
-        <Group {...groupProps}>
+        <Group {...groupProps} ref={groupRef}>
             {accentProps && (
                 <Rect {...accentProps} fill={el.accentColor} listening={false} />
             )}
             <Text
                 ref={textRef}
+                key={`${el.id}-${el.fontFamily}-${fontRevision}`}
                 x={0} y={0}
                 width={el.width}
                 text={hidden ? '' : el.text}

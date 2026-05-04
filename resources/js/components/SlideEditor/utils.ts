@@ -20,6 +20,65 @@ export function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
+export function normalizeHexColor(color: string | undefined | null): string | null {
+    if (!color) return null;
+    const value = color.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(value)) return value.toUpperCase();
+    if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+        const [, r, g, b] = value;
+        return `#${r}${r}${g}${g}${b}${b}`.toUpperCase();
+    }
+    return null;
+}
+
+function channelToLinear(channel: number): number {
+    const normalized = channel / 255;
+    return normalized <= 0.03928
+        ? normalized / 12.92
+        : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+export function relativeLuminance(hex: string): number {
+    const normalized = normalizeHexColor(hex);
+    if (!normalized) return 0;
+    const r = parseInt(normalized.slice(1, 3), 16);
+    const g = parseInt(normalized.slice(3, 5), 16);
+    const b = parseInt(normalized.slice(5, 7), 16);
+
+    return (
+        (0.2126 * channelToLinear(r)) +
+        (0.7152 * channelToLinear(g)) +
+        (0.0722 * channelToLinear(b))
+    );
+}
+
+export function contrastRatio(foreground: string, background: string): number {
+    const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+    const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+export function resolveAccessibleHighlightColor(
+    preferredColor: string | undefined | null,
+    backgroundColor: string,
+    fallbackColors: string[] = ['#FFD84D', '#FF5A36', '#39FF14', '#E8440A']
+): string {
+    const minContrast = 4.5;
+    const normalizedBackground = normalizeHexColor(backgroundColor) ?? '#000000';
+    const normalizedPreferred = normalizeHexColor(preferredColor);
+    const candidates = [
+        normalizedPreferred,
+        ...fallbackColors.map((color) => normalizeHexColor(color)),
+    ].filter((color): color is string => Boolean(color));
+
+    for (const color of candidates) {
+        if (contrastRatio(color, normalizedBackground) >= minContrast) return color;
+    }
+
+    return candidates
+        .sort((a, b) => contrastRatio(b, normalizedBackground) - contrastRatio(a, normalizedBackground))[0] ?? '#FFD84D';
+}
+
 export function gradientLinearProps(el: GradientEl) {
     const solid = hexToRgba(el.color, 1);
     const clear = hexToRgba(el.color, 0);

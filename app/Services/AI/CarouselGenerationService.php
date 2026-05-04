@@ -17,8 +17,8 @@ Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSO
 - subtitle: supporting subheadline (max 12 words)
 - description: substantive body text that deepens understanding. Slide 1 is the hook (40-50 words). Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide is a strong call-to-action or conclusion (40-50 words). Every description must feel complete and informative — never vague or generic.
 - imagePrompt: image generation prompt for a background image that fits the slide content (max 60 words)
-- highlightWords: array of 1-3 short words or phrases from the title that should be visually highlighted (bold accent color). Pick the most impactful words. Example: ["Claude", "melhor"]
-- highlightColor: hex color for the highlighted words that contrasts well with the slide style. Example: "#E8440A" for dark slides, "#FFD600" for image-heavy slides, "#FF3B30" for light slides.
+- highlightWords: array containing exactly 1 single impactful word from the title to highlight. Never return more than one item. Do not return phrases. Example: ["Claude"]
+- highlightColor: vivid hex color for the highlighted word that stays readable on dark backgrounds. Never use near-black, deep navy, charcoal, or other dark muted colors. Prefer bright accent colors like "#FFD84D", "#E8440A", "#FF5A36", or "#39FF14".
 
 Style: {$style}
 Number of slides: {$slideCount}
