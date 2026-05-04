@@ -36,6 +36,12 @@ export interface BaseEl extends ShadowProps {
     opacity: number;
 }
 
+export interface RichSpan {
+    text: string;
+    color?: string;      // undefined = inherit el.fill
+    highlight?: string;  // background highlight color
+}
+
 export interface TextEl extends BaseEl {
     type: 'text';
     text: string;
@@ -57,6 +63,7 @@ export interface TextEl extends BaseEl {
     accentThickness: number;
     accentSide: AccentSide;
     accentGap: number;
+    richText?: RichSpan[];
 }
 
 export interface ShapeEl extends BaseEl {
@@ -105,7 +112,19 @@ export interface GradientEl extends BaseEl {
     direction: GradientDirection;
 }
 
-export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl;
+export interface PathEl extends BaseEl {
+    type: 'path';
+    data: string;      // SVG path string
+    dataW: number;     // natural viewBox width of path data
+    dataH: number;     // natural viewBox height of path data
+    fill: string;      // 'none' for stroke-only shapes
+    stroke: string;
+    strokeWidth: number;
+    borderStyle: BorderStyle;
+    dashEnabled: boolean;
+}
+
+export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl | PathEl;
 
 export interface Slide {
     id: string;

@@ -212,7 +212,7 @@ class SlideProjectController extends Controller
 
         try {
             $publisher = SocialPublisherFactory::make('instagram');
-            $platformPostId = $publisher->publish($contentProject);
+            $platformPostId = $publisher->publish($contentProject, $schedule);
 
             $schedule->update([
                 'status' => ScheduleStatus::Published,

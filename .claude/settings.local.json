@@ -8,7 +8,12 @@
       "Bash(npx tsc *)",
       "Bash(npm run *)",
       "Bash(xargs grep *)",
-      "Bash(php *)"
+      "Bash(php *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(Get-ChildItem -Path \"F:\\\\www\\\\slidezz\" -Directory -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "PowerShell(Head *)",
+      "PowerShell(Get-ChildItem -Path \"F:\\\\www\\\\slidezz\\\\app\" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'i18n|translation|locale' } | Select-Object -ExpandProperty FullName)"
     ]
   }
 }

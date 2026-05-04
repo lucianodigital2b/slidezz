@@ -10,6 +10,7 @@ import {
     MousePointer,
     Plus,
     Save,
+    Shapes,
     Sparkles,
     Square,
     Trash2,
@@ -30,7 +31,9 @@ import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectC
 import { loadGoogleFont } from '@/utils/google-fonts';
 import {
     Circle as KonvaCircle,
+    Group,
     Layer,
+    Path as KonvaPath,
     Rect,
     Stage,
     Transformer,
@@ -44,22 +47,90 @@ import { Calendar } from '@/components/ui/calendar';
 
 import {
     SLIDE_W, PANEL_LEFT, PANEL_RIGHT, FORMATS, Format, Tool,
-    SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl
+    SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl, PathEl, RichSpan
 } from '@/components/SlideEditor/types';
 import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps } from '@/components/SlideEditor/utils';
 import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElements';
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
+// ─── Elements Shape Library ───────────────────────────────────────────────────
+
+interface ShapeDef {
+    id: string;
+    data: string;
+    dataW: number;
+    dataH: number;
+    initW: number;
+    initH: number;
+    fill: string;
+    stroke: string;
+    strokeWidth: number;
+    dashEnabled?: boolean;
+    // button preview mode: 'fill' | 'stroke'
+    preview: 'fill' | 'stroke';
+}
+
+const SHAPE_CATEGORIES: { label: string; shapes: ShapeDef[] }[] = [
+    {
+        label: 'Formas Básicas',
+        shapes: [
+            { id: 'triangle',  data: 'M 50 0 L 100 100 L 0 100 Z', dataW: 100, dataH: 100, initW: 200, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'diamond',   data: 'M 50 0 L 100 50 L 50 100 L 0 50 Z', dataW: 100, dataH: 100, initW: 160, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'pentagon',  data: 'M 50 0 L 100 38 L 81 100 L 19 100 L 0 38 Z', dataW: 100, dataH: 100, initW: 180, initH: 180, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'hexagon',   data: 'M 50 0 L 100 25 L 100 75 L 50 100 L 0 75 L 0 25 Z', dataW: 100, dataH: 100, initW: 200, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+        ],
+    },
+    {
+        label: 'Linhas',
+        shapes: [
+            { id: 'line',         data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: false, preview: 'stroke' },
+            { id: 'line_dotted',  data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: true,  preview: 'stroke' },
+            { id: 'line_dashed',  data: 'M 0 0 L 100 0', dataW: 100, dataH: 1, initW: 400, initH: 8, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, dashEnabled: true,  preview: 'stroke' },
+        ],
+    },
+    {
+        label: 'Setas',
+        shapes: [
+            { id: 'arrow_r',   data: 'M 0 30 L 55 30 L 55 0 L 100 50 L 55 100 L 55 70 L 0 70 Z', dataW: 100, dataH: 100, initW: 200, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'arrow_l',   data: 'M 100 30 L 45 30 L 45 0 L 0 50 L 45 100 L 45 70 L 100 70 Z', dataW: 100, dataH: 100, initW: 200, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'arrow_u',   data: 'M 30 100 L 30 45 L 0 45 L 50 0 L 100 45 L 70 45 L 70 100 Z', dataW: 100, dataH: 100, initW: 160, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'arrow_d',   data: 'M 30 0 L 30 55 L 0 55 L 50 100 L 100 55 L 70 55 L 70 0 Z', dataW: 100, dataH: 100, initW: 160, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'arrow_lr',  data: 'M 0 50 L 30 0 L 30 25 L 70 25 L 70 0 L 100 50 L 70 100 L 70 75 L 30 75 L 30 100 Z', dataW: 100, dataH: 100, initW: 240, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'arrow_ret', data: 'M 5 60 C 5 20 95 20 90 60 L 78 46 M 90 60 L 100 44', dataW: 100, dataH: 72, initW: 200, initH: 120, fill: 'none', stroke: '#1a1a1a', strokeWidth: 8, preview: 'stroke' },
+        ],
+    },
+    {
+        label: 'Decorativos',
+        shapes: [
+            { id: 'star',      data: 'M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z', dataW: 100, dataH: 91, initW: 200, initH: 182, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'heart',     data: 'M 50 85 C 22 68 0 50 0 28 C 0 12 12 0 27 0 C 39 0 47 9 50 18 C 53 9 61 0 73 0 C 88 0 100 12 100 28 C 100 50 78 68 50 85 Z', dataW: 100, dataH: 85, initW: 200, initH: 170, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'lightning', data: 'M 58 0 L 15 55 L 45 55 L 42 100 L 85 45 L 55 45 Z', dataW: 100, dataH: 100, initW: 140, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'shield',    data: 'M 50 0 L 100 20 L 100 55 C 100 78 75 95 50 100 C 25 95 0 78 0 55 L 0 20 Z', dataW: 100, dataH: 100, initW: 180, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'plus',      data: 'M 35 0 L 65 0 L 65 35 L 100 35 L 100 65 L 65 65 L 65 100 L 35 100 L 35 65 L 0 65 L 0 35 L 35 35 Z', dataW: 100, dataH: 100, initW: 160, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'cloud',     data: 'M 20 72 C 8 72 0 62 0 52 C 0 40 10 34 22 36 C 24 22 35 14 50 14 C 63 14 73 22 76 34 C 82 28 92 30 97 38 C 104 48 100 64 89 68 C 83 71 74 72 65 72 Z', dataW: 104, dataH: 72, initW: 240, initH: 160, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'drop',      data: 'M 50 0 C 30 20 0 50 0 68 C 0 85 23 100 50 100 C 77 100 100 85 100 68 C 100 50 70 20 50 0 Z', dataW: 100, dataH: 100, initW: 140, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'check',     data: 'M 0 52 L 35 88 L 100 8', dataW: 100, dataH: 88, initW: 200, initH: 160, fill: 'none', stroke: '#1a1a1a', strokeWidth: 12, preview: 'stroke' },
+        ],
+    },
+    {
+        label: 'Balões',
+        shapes: [
+            { id: 'speech',  data: 'M 10 0 Q 0 0 0 10 L 0 62 Q 0 72 10 72 L 25 72 L 10 100 L 40 72 L 90 72 Q 100 72 100 62 L 100 10 Q 100 0 90 0 Z', dataW: 100, dataH: 100, initW: 240, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+            { id: 'message', data: 'M 10 0 Q 0 0 0 10 L 0 62 Q 0 72 10 72 L 43 72 L 50 94 L 57 72 L 90 72 Q 100 72 100 62 L 100 10 Q 100 0 90 0 Z', dataW: 100, dataH: 94, initW: 240, initH: 200, fill: '#4B5563', stroke: 'none', strokeWidth: 0, preview: 'fill' },
+        ],
+    },
+];
+
 // ─── Slide Templates ─────────────────────────────────────────────────────────
 
 const SLIDE_TEMPLATES = [
-    { id: 'noir-manifesto',  name: 'Noir Manifesto',  background: '#0a0a0a', textColor: '#ffffff', font: 'Anton',            fontStyle: '',     letterSpacing: 1    },
-    { id: 'dark-cards',      name: 'Dark Cards',       background: '#111827', textColor: '#ffffff', font: 'Poppins',          fontStyle: 'bold', letterSpacing: 0    },
-    { id: 'pop-magazine',    name: 'Pop Magazine',     background: '#ffffff', textColor: '#111111', font: 'Anton',            fontStyle: '',     letterSpacing: 0    },
-    { id: 'twitter-x',       name: 'Twitter/X',        background: '#ffffff', textColor: '#000000', font: 'Inter',            fontStyle: 'bold', letterSpacing: -0.5 },
-    { id: 'acid-brutalist',  name: 'Acid Brutalist',   background: '#000000', textColor: '#ffffff', font: 'Montserrat',       fontStyle: 'bold', letterSpacing: -2   },
-    { id: 'documentary',     name: 'Documentary',      background: '#1a1108', textColor: '#f0e8d8', font: 'Playfair Display', fontStyle: '',     letterSpacing: 0    },
+    { id: 'noir-manifesto',  name: 'Noir Manifesto',  background: '#0a0a0a', textColor: '#ffffff', font: 'Anton',            fontStyle: '',     letterSpacing: 1,    align: 'center' },
+    { id: 'dark-cards',      name: 'Dark Cards',       background: '#111827', textColor: '#ffffff', font: 'Poppins',          fontStyle: 'bold', letterSpacing: 0,    align: 'center' },
+    { id: 'pop-magazine',    name: 'Pop Magazine',     background: '#ffffff', textColor: '#111111', font: 'Anton',            fontStyle: '',     letterSpacing: 0,    align: 'left'   },
+    { id: 'twitter-x',       name: 'Twitter/X',        background: '#ffffff', textColor: '#000000', font: 'Inter',            fontStyle: 'bold', letterSpacing: -0.5, align: 'left'   },
+    { id: 'acid-brutalist',  name: 'Acid Brutalist',   background: '#000000', textColor: '#ffffff', font: 'Montserrat',       fontStyle: 'bold', letterSpacing: -2,   align: 'left'   },
+    { id: 'documentary',     name: 'Documentary',      background: '#1a1108', textColor: '#f0e8d8', font: 'Playfair Display', fontStyle: '',     letterSpacing: 0,    align: 'left'   },
 ];
 
 function TemplatePreview({ id }: { id: string }) {
@@ -251,6 +322,7 @@ export default function SlideEditor() {
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
     const [igAccountId, setIgAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
     const [igPosting, setIgPosting] = useState(false);
+    const [elementsOpen, setElementsOpen] = useState(false);
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
 
     // ── AI carousel generation ──────────────────────────────────────────────
@@ -406,11 +478,34 @@ export default function SlideEditor() {
         subtitle: string;
         description: string;
         imagePrompt: string;
+        highlightWords?: string[];
+        highlightColor?: string;
+    }
+
+    function buildRichText(text: string, highlightWords: string[], normalColor: string, highlightColor: string): RichSpan[] {
+        if (!highlightWords.length) return [{ text, color: normalColor }];
+        const escaped = highlightWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+        const spans: RichSpan[] = [];
+        let lastIndex = 0;
+        for (const match of text.matchAll(pattern)) {
+            if (match.index! > lastIndex) spans.push({ text: text.slice(lastIndex, match.index), color: normalColor });
+            spans.push({ text: match[0], color: highlightColor });
+            lastIndex = match.index! + match[0].length;
+        }
+        if (lastIndex < text.length) spans.push({ text: text.slice(lastIndex), color: normalColor });
+        return spans.length > 0 ? spans : [{ text, color: normalColor }];
     }
 
     function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
         const slideH = FORMATS[format].h;
         const textY = Math.round(slideH * 0.5);
+        const highlightColor = data.highlightColor ?? '#E8440A';
+        const highlightWords = data.highlightWords ?? [];
+        const titleRichText = highlightWords.length > 0
+            ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
+            : undefined;
+
         const titleEl: TextEl = {
             id: uid(), type: 'text', x: 80, y: textY,
             width: SLIDE_W - 160, height: 200, rotation: 0, opacity: 1,
@@ -420,6 +515,7 @@ export default function SlideEditor() {
             strokeWidth: 0, padding: 0, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
+            ...(titleRichText ? { richText: titleRichText } : {}),
         };
         const subtitleEl: TextEl = {
             id: uid(), type: 'text', x: 80, y: textY + 200,
@@ -643,7 +739,7 @@ export default function SlideEditor() {
             background: tpl.background,
             elements: slide.elements.map((el): SlideEl => {
                 if (el.type !== 'text') return el;
-                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing };
+                return { ...el, fontFamily: tpl.font, fill: tpl.textColor, fontStyle: tpl.fontStyle, letterSpacing: tpl.letterSpacing, align: tpl.align };
             }),
         });
     }
@@ -651,6 +747,7 @@ export default function SlideEditor() {
     // ─── Stage click ─────────────────────────────────────────────────────────
 
     function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
+        if (elementsOpen) { setElementsOpen(false); return; }
         const target = e.target;
         const groupId = (target.parent as Konva.Node | null)?.id?.() ?? '';
         const isBackgroundImage = slide.elements.some(
@@ -706,6 +803,24 @@ export default function SlideEditor() {
             direction: 'bottom',
             ...SHADOW_DEFAULTS,
         });
+    }
+
+    // ─── Add path element from shape library ────────────────────────────────
+
+    function addPathElement(def: ShapeDef) {
+        const cx = Math.round(SLIDE_W / 2 - def.initW / 2);
+        const cy = Math.round(slideH / 2 - def.initH / 2);
+        addElement({
+            id: uid(), type: 'path',
+            x: cx, y: cy,
+            width: def.initW, height: def.initH,
+            rotation: 0, opacity: 1,
+            data: def.data, dataW: def.dataW, dataH: def.dataH,
+            fill: def.fill, stroke: def.stroke, strokeWidth: def.strokeWidth,
+            borderStyle: 'solid', dashEnabled: def.dashEnabled ?? false,
+            ...SHADOW_DEFAULTS,
+        } as PathEl);
+        setElementsOpen(false);
     }
 
     // ─── Image upload ────────────────────────────────────────────────────────
@@ -769,7 +884,8 @@ export default function SlideEditor() {
         textarea.value = el.text;
         textarea.focus();
 
-        const finish = () => { updateElement(el.id, { text: textarea.value } as Partial<TextEl>); document.body.removeChild(textarea); setEditingId(null); };
+        // Clear richText when user manually edits — their custom text no longer maps to AI highlights
+        const finish = () => { updateElement(el.id, { text: textarea.value, richText: undefined } as Partial<TextEl>); document.body.removeChild(textarea); setEditingId(null); };
         textarea.addEventListener('blur', finish);
         textarea.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { document.body.removeChild(textarea); setEditingId(null); } });
     }
@@ -1136,12 +1252,61 @@ export default function SlideEditor() {
 
                     {/* Center: Canvas */}
                     <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-hidden bg-gray-100">
+                        {/* Elements panel popup */}
+                        {elementsOpen && (
+                            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-72 max-h-[65vh] overflow-y-auto">
+                                {SHAPE_CATEGORIES.map(({ label, shapes }) => (
+                                    <div key={label} className="mb-4 last:mb-0">
+                                        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-2">{label}</p>
+                                        <div className="grid grid-cols-4 gap-1.5">
+                                            {shapes.map((shape) => {
+                                                const isDotted = shape.id === 'line_dotted';
+                                                const isDashed = shape.id === 'line_dashed';
+                                                const isCurve = shape.id === 'arrow_ret';
+                                                return (
+                                                    <button
+                                                        key={shape.id}
+                                                        onClick={() => addPathElement(shape)}
+                                                        className="aspect-square rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center p-2.5 transition-colors"
+                                                    >
+                                                        <svg
+                                                            viewBox={`0 0 ${shape.dataW} ${Math.max(shape.dataH, 1)}`}
+                                                            className="w-full h-full text-gray-700"
+                                                            fill="none"
+                                                        >
+                                                            <path
+                                                                d={shape.data}
+                                                                fill={shape.preview === 'fill' ? 'currentColor' : 'none'}
+                                                                stroke={shape.preview === 'stroke' ? 'currentColor' : 'none'}
+                                                                strokeWidth={isDotted || isDashed ? 6 : isCurve ? 6 : 5}
+                                                                strokeDasharray={isDotted ? '6 10' : isDashed ? '18 8' : undefined}
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Floating tool palette */}
                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
                             {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
                             {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
                             {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
                             {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
+                            <div className="w-px h-4 bg-gray-200 mx-0.5" />
+                            <button
+                                title="Elementos"
+                                onClick={() => setElementsOpen((o) => !o)}
+                                className={`p-2.5 rounded-xl transition-all ${elementsOpen ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                            >
+                                <Shapes className="w-4 h-4" />
+                            </button>
                         </div>
                         <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: displayW, height: displayH }}>
                             <Stage ref={stageRef} width={displayW} height={displayH} scaleX={scale} scaleY={scale}
@@ -1246,12 +1411,52 @@ export default function SlideEditor() {
                                             );
                                         }
 
+                                        if (el.type === 'path') {
+                                            // Wrap in Group (same pattern as TextEl/ImageEl) so the Transformer
+                                            // uses scaleX/scaleY=1 on the group and the path keeps its own scaling.
+                                            return (
+                                                <Group
+                                                    key={el.id}
+                                                    id={el.id}
+                                                    x={el.x} y={el.y}
+                                                    rotation={el.rotation} opacity={el.opacity}
+                                                    draggable={tool === 'select'}
+                                                    onClick={() => { if (tool === 'select') setSelectedId(el.id); }}
+                                                    onTap={() => { if (tool === 'select') setSelectedId(el.id); }}
+                                                    shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
+                                                    shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
+                                                    shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
+                                                    onDragEnd={(e) => updateElement(el.id, { x: e.target.x(), y: e.target.y() } as Partial<PathEl>)}
+                                                    onTransformEnd={(e) => {
+                                                        const node = e.target;
+                                                        updateElement(el.id, {
+                                                            x: node.x(), y: node.y(),
+                                                            width: Math.max(4, el.width * node.scaleX()),
+                                                            height: Math.max(4, el.height * node.scaleY()),
+                                                            rotation: node.rotation(),
+                                                        } as Partial<PathEl>);
+                                                        node.scaleX(1); node.scaleY(1);
+                                                    }}
+                                                >
+                                                    <KonvaPath
+                                                        data={el.data}
+                                                        scaleX={el.width / el.dataW}
+                                                        scaleY={el.height / el.dataH}
+                                                        fill={el.fill === 'none' ? undefined : el.fill}
+                                                        stroke={el.strokeWidth > 0 ? el.stroke : undefined}
+                                                        strokeWidth={el.strokeWidth}
+                                                        strokeScaleEnabled={false}
+                                                    />
+                                                </Group>
+                                            );
+                                        }
+
                                         return null;
                                     })}
 
                                     <Transformer ref={trRef} rotateEnabled={true}
                                         enabledAnchors={['top-left','top-center','top-right','middle-right','middle-left','bottom-left','bottom-center','bottom-right']}
-                                        boundBoxFunc={(oldBox, newBox) => (newBox.width < 10 || newBox.height < 10 ? oldBox : newBox)}
+                                        boundBoxFunc={(oldBox, newBox) => (Math.abs(newBox.width) < 2 || Math.abs(newBox.height) < 2 ? oldBox : newBox)}
                                         borderStroke="#E8440A" anchorStroke="#E8440A" anchorFill="#ffffff" anchorSize={8} />
                                 </Layer>
                             </Stage>

@@ -1,8 +1,126 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MousePointer, Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
-import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection } from './types';
+import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
 import { Section, ToggleField, Field, ColorField, SliderField, FontPicker, PositionGrid } from './PrimitiveControls';
+
+// ── Word Highlight helpers ────────────────────────────────────────────────────
+
+function getHighlightedWords(text: string, richText: RichSpan[] | undefined): Map<number, string> {
+    const result = new Map<number, string>();
+    if (!richText || richText.length === 0) return result;
+    const charColors: (string | null)[] = new Array(text.length).fill(null);
+    let pos = 0;
+    for (const span of richText) {
+        const color = span.color ?? null;
+        for (let i = 0; i < span.text.length && pos + i < charColors.length; i++) {
+            charColors[pos + i] = color;
+        }
+        pos += span.text.length;
+    }
+    const wordRegex = /\S+/g;
+    let wordIndex = 0;
+    let m;
+    while ((m = wordRegex.exec(text)) !== null) {
+        const color = charColors[m.index];
+        if (color) result.set(wordIndex, color);
+        wordIndex++;
+    }
+    return result;
+}
+
+function buildRichTextFromHighlights(text: string, highlights: Map<number, string>): RichSpan[] | undefined {
+    if (highlights.size === 0) return undefined;
+    const spans: RichSpan[] = [];
+    const pushPlain = (t: string) => {
+        if (!t) return;
+        const last = spans[spans.length - 1];
+        if (last && !last.color) { last.text += t; } else { spans.push({ text: t }); }
+    };
+    const wordRegex = /\S+/g;
+    let lastIndex = 0;
+    let wordIndex = 0;
+    let m;
+    while ((m = wordRegex.exec(text)) !== null) {
+        if (m.index > lastIndex) pushPlain(text.slice(lastIndex, m.index));
+        const color = highlights.get(wordIndex);
+        if (color) { spans.push({ text: m[0], color }); } else { pushPlain(m[0]); }
+        lastIndex = m.index + m[0].length;
+        wordIndex++;
+    }
+    if (lastIndex < text.length) pushPlain(text.slice(lastIndex));
+    return spans.length > 0 ? spans : undefined;
+}
+
+const HIGHLIGHT_PRESETS = ['#FFD600', '#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#5AC8FA'];
+
+function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Partial<TextEl>) => void }) {
+    const [hlColor, setHlColor] = React.useState(HIGHLIGHT_PRESETS[0]);
+    const [hexInput, setHexInput] = React.useState(HIGHLIGHT_PRESETS[0]);
+
+    const words = React.useMemo(() => {
+        const result: string[] = [];
+        const regex = /\S+/g;
+        let m;
+        while ((m = regex.exec(el.text)) !== null) result.push(m[0]);
+        return result;
+    }, [el.text]);
+
+    const highlights = React.useMemo(() => getHighlightedWords(el.text, el.richText), [el.text, el.richText]);
+
+    const applyColor = (c: string) => { setHlColor(c); setHexInput(c); };
+
+    const toggleWord = (wordIndex: number) => {
+        const next = new Map(highlights);
+        if (next.has(wordIndex)) { next.delete(wordIndex); } else { next.set(wordIndex, hlColor); }
+        onChange({ richText: buildRichTextFromHighlights(el.text, next) });
+    };
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-1.5">
+                {words.map((word, i) => {
+                    const color = highlights.get(i);
+                    return (
+                        <button key={i} type="button" onClick={() => toggleWord(i)}
+                            className="px-2.5 py-1 rounded-full text-xs font-semibold border transition-all"
+                            style={color
+                                ? { backgroundColor: color, borderColor: color, color: '#fff' }
+                                : { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', color: '#374151' }}>
+                            {word}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <button type="button" onClick={() => onChange({ richText: undefined })}
+                className="text-xs text-gray-400 hover:text-gray-600 self-start transition-colors">
+                Limpar tudo
+            </button>
+
+            <div className="grid grid-cols-4 gap-1.5">
+                {HIGHLIGHT_PRESETS.map((c) => (
+                    <button key={c} type="button" onClick={() => applyColor(c)}
+                        className="h-8 rounded transition-all"
+                        style={{ backgroundColor: c, outline: hlColor === c ? '2px solid #111' : '2px solid transparent', outlineOffset: '2px' }} />
+                ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded border border-gray-200 shrink-0" style={{ backgroundColor: hlColor }} />
+                <input type="text" value={hexInput}
+                    onChange={(e) => {
+                        const v = e.target.value;
+                        setHexInput(v);
+                        if (/^#[0-9a-fA-F]{6}$/.test(v)) setHlColor(v);
+                    }}
+                    className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A] font-mono uppercase" />
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function ShadowSection({ el, onChange }: { el: BaseEl; onChange: (p: Partial<BaseEl>) => void }) {
     const { t } = useTranslation();
@@ -78,7 +196,7 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                         <Section title={t('slideEditor.sections.text')}>
                             <Field label={t('slideEditor.fields.content')}>
                                 <textarea value={el.text} rows={3}
-                                    onChange={(e) => ch<TextEl>({ text: e.target.value })}
+                                    onChange={(e) => ch<TextEl>({ text: e.target.value, richText: undefined })}
                                     className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E8440A]" />
                             </Field>
                             <Field label={t('slideEditor.fields.textColor')}><ColorField value={el.fill} onChange={(v) => ch<TextEl>({ fill: v })} /></Field>
@@ -134,6 +252,10 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                             </Field>
                         </Section>
 
+                        <Section title="Destaque de Palavra" defaultOpen={false}>
+                            <WordHighlightSection el={el} onChange={(p) => ch<TextEl>(p)} />
+                        </Section>
+
                         <Section title={t('slideEditor.sections.accentBorder')} defaultOpen={false}>
                             <ToggleField label={t('slideEditor.fields.enableBorder')} checked={el.accentEnabled} onChange={(v) => ch<TextEl>({ accentEnabled: v })} />
                             {el.accentEnabled && (
@@ -187,6 +309,32 @@ export function PropertiesPanel({ el, onChange, onDelete }: PropertiesPanelProps
                                     <SliderField value={el.cornerRadius} onChange={(v) => ch<ShapeEl>({ cornerRadius: v })} min={0} max={500} />
                                 </Field>
                             )}
+                        </Section>
+                    </>
+                )}
+
+                {/* ── Path (custom shapes) ──────────────────────────────────── */}
+                {el.type === 'path' && (
+                    <>
+                        <Section title={t('slideEditor.sections.fill')}>
+                            <Field label={t('slideEditor.fields.color')}>
+                                <ColorField value={el.fill === 'none' ? '#000000' : el.fill} onChange={(v) => ch<PathEl>({ fill: v })} />
+                            </Field>
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.border')}>
+                            <Field label={t('slideEditor.fields.color')}><ColorField value={el.stroke === 'none' ? '#000000' : el.stroke} onChange={(v) => ch<PathEl>({ stroke: v })} /></Field>
+                            <Field label={t('slideEditor.fields.thickness')}>
+                                <SliderField value={el.strokeWidth} onChange={(v) => ch<PathEl>({ strokeWidth: v })} min={0} max={60} />
+                            </Field>
+                            <Field label={t('slideEditor.fields.borderStyle')}>
+                                <div className="flex gap-1">
+                                    {(['solid', 'dashed', 'dotted'] as BorderStyle[]).map((s) =>
+                                        iconBtn(el.borderStyle === s, () => ch<PathEl>({ borderStyle: s, dashEnabled: s !== 'solid' }),
+                                            <span className="text-[9px] font-bold uppercase">{s[0]}</span>, s)
+                                    )}
+                                </div>
+                            </Field>
                         </Section>
                     </>
                 )}

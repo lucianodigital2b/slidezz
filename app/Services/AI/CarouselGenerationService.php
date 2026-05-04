@@ -15,8 +15,10 @@ You are a social media carousel designer. Generate slide content for an Instagra
 Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
 - title: short headline (max 8 words)
 - subtitle: supporting subheadline (max 12 words)
-- description: body text (max 30 words)
+- description: substantive body text that deepens understanding. Slide 1 is the hook (40-50 words). Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide is a strong call-to-action or conclusion (40-50 words). Every description must feel complete and informative — never vague or generic.
 - imagePrompt: image generation prompt for a background image that fits the slide content (max 60 words)
+- highlightWords: array of 1-3 short words or phrases from the title that should be visually highlighted (bold accent color). Pick the most impactful words. Example: ["Claude", "melhor"]
+- highlightColor: hex color for the highlighted words that contrasts well with the slide style. Example: "#E8440A" for dark slides, "#FFD600" for image-heavy slides, "#FF3B30" for light slides.
 
 Style: {$style}
 Number of slides: {$slideCount}
