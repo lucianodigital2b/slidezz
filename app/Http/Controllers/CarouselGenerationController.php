@@ -29,7 +29,7 @@ class CarouselGenerationController extends Controller
     public function generateImage(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'prompt' => ['required', 'string', 'max:1000'],
+            'prompt' => ['required', 'string', 'max:4000'],
         ]);
 
         try {

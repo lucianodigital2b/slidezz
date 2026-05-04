@@ -16,7 +16,7 @@ Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSO
 - title: short headline (max 8 words)
 - subtitle: supporting subheadline (max 12 words)
 - description: body text (max 30 words)
-- imagePrompt: detailed image generation prompt for a background image that fits the slide content
+- imagePrompt: image generation prompt for a background image that fits the slide content (max 60 words)
 
 Style: {$style}
 Number of slides: {$slideCount}
@@ -72,6 +72,12 @@ PROMPT;
             throw new \RuntimeException('Image generation failed');
         }
 
-        return 'data:image/png;base64,'.$image->base64;
+        $base64 = $image->base64;
+
+        if (str_starts_with($base64, 'data:image')) {
+            return $base64;
+        }
+
+        return 'data:image/png;base64,'.$base64;
     }
 }

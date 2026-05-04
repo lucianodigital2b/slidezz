@@ -10,7 +10,9 @@ export function useLoadImage(src: string): HTMLImageElement | null {
     useEffect(() => {
         if (!src) return;
         const image = new window.Image();
-        image.crossOrigin = 'Anonymous';
+        if (!src.startsWith('data:')) {
+            image.crossOrigin = 'Anonymous';
+        }
         image.src = src;
         image.onload = () => setImg(image);
     }, [src]);

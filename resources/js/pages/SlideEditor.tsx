@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 import { Head, router, usePage } from '@inertiajs/react';
 
 import Konva from 'konva';
@@ -356,7 +357,7 @@ export default function SlideEditor() {
                 id: uid(), type: 'image', src: bgBase64,
                 x: 0, y: 0, width: SLIDE_W, height: slideH,
                 rotation: 0, opacity: 1,
-                brightness: -20, contrast: 10, blurRadius: 0, grayscale: false, sepia: false,
+                brightness: -0.2, contrast: 10, blurRadius: 0, grayscale: false, sepia: false,
                 hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                 red: 255, green: 255, blue: 255,
                 overlayEnabled: true, overlayColor: '#000000', overlayOpacity: 0.45,
@@ -431,6 +432,7 @@ export default function SlideEditor() {
         const parsedSlides: SlideData[] = [];
         for (const rawLine of assembled.split('\n')) {
             const trimmed = rawLine.trim();
+            // eslint-disable-next-line @stylistic/padding-line-between-statements
             if (!trimmed.startsWith('{')) continue;
             try {
                 const slide = JSON.parse(trimmed) as SlideData;
@@ -858,17 +860,6 @@ export default function SlideEditor() {
                     {instagramAccounts.length > 0 && (
                         <>
                             <div className="w-px h-6 bg-gray-200 mx-1" />
-                            <select
-                                value={igAccountId ?? ''}
-                                onChange={(e) => setIgAccountId(Number(e.target.value))}
-                                className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-600"
-                            >
-                                {instagramAccounts.map((a) => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.handle ? `@${a.handle}` : `Instagram #${a.id}`}
-                                    </option>
-                                ))}
-                            </select>
                             <TooltipProvider delayDuration={200}>
                                 <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5 bg-white">
                                     <Popover>
@@ -886,7 +877,7 @@ export default function SlideEditor() {
                                                     if (date) {
                                                         // preserve time if we already had a date, or set to a default future time
                                                         const newDate = new Date(date);
-                                                        
+
                                                         if (publishAt) {
                                                             newDate.setHours(publishAt.getHours());
                                                             newDate.setMinutes(publishAt.getMinutes());
