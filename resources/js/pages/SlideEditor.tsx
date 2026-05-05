@@ -9,6 +9,7 @@ import {
     Loader2,
     MousePointer,
     Plus,
+    RectangleHorizontal,
     Save,
     Shapes,
     Sparkles,
@@ -48,10 +49,10 @@ import { Calendar } from '@/components/ui/calendar';
 
 import {
     SLIDE_W, PANEL_LEFT, PANEL_RIGHT, FORMATS, Format, Tool,
-    SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl, PathEl, RichSpan
+    SlideEl, Slide, TextEl, ImageEl, ShapeEl, GradientEl, PathEl, ButtonEl, RichSpan
 } from '@/components/SlideEditor/types';
 import { uid, makeSlide, SHADOW_DEFAULTS, borderStyleToDash, gradientLinearProps, preserveSingleHighlightRichText, getSafeAreaBounds, getSafeAreaPadding } from '@/components/SlideEditor/utils';
-import { KonvaTextEl, KonvaImageEl } from '@/components/SlideEditor/KonvaElements';
+import { KonvaTextEl, KonvaImageEl, KonvaButtonEl } from '@/components/SlideEditor/KonvaElements';
 import { PropertiesPanel } from '@/components/SlideEditor/PropertiesPanel';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
@@ -336,7 +337,7 @@ export default function SlideEditor() {
         if (tool === 'text') {
             addElement({
                 id: uid(), type: 'text', x, y, width: 400, height: 80, rotation: 0, opacity: 1,
-                text: 'Texto', fontSize: 48, fontFamily: 'Poppins', fill: '#111111',
+                text: 'Text', fontSize: 48, fontFamily: 'Poppins', fill: '#111111',
                 fontStyle: '', align: 'left', verticalAlign: 'top',
                 lineHeight: 1.2, letterSpacing: 0, textDecoration: '', stroke: '#000000',
                 strokeWidth: 0, padding: 12, wrap: 'word',
@@ -358,6 +359,25 @@ export default function SlideEditor() {
                 cornerRadius: 0, borderStyle: 'solid', dashEnabled: false,
                 ...SHADOW_DEFAULTS,
             });
+        } else if (tool === 'button') {
+            addElement({
+                id: uid(), type: 'button',
+                x: x - 240, y: y - 52,
+                width: 480, height: 104,
+                rotation: 0, opacity: 1,
+                text: 'Follow Now',
+                fontSize: 48, fontFamily: 'Poppins', fontStyle: 'bold',
+                letterSpacing: 0,
+                fill: '#ffffff',
+                bgColor: '#E8440A', bgEnabled: true, bgOpacity: 1,
+                stroke: '#E8440A', strokeWidth: 0,
+                cornerRadius: 16, borderStyle: 'solid', dashEnabled: false,
+                paddingX: 60, paddingY: 0,
+                align: 'center',
+                iconEnabled: false, icon: '→', iconPosition: 'right',
+                ...SHADOW_DEFAULTS,
+            } as ButtonEl);
+            loadGoogleFont('Poppins');
         }
     }
 
@@ -519,7 +539,7 @@ export default function SlideEditor() {
         if (!igAccountId) return;
         if (slides.length < 2 || slides.length > 10) return;
         if (format !== 'post') {
-            window.alert('Switch format to Post (3:4) to publish a carousel to Instagram.');
+            window.alert(t('slideEditor.alerts.switchFormat'));
             return;
         }
         setIgPosting(true);
@@ -609,10 +629,10 @@ export default function SlideEditor() {
                     {selectedId && (
                         <>
                             <div className="flex items-center gap-1">
-                                <button title="Trazer para frente" onClick={() => bringToFront(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsUp className="w-4 h-4" /></button>
-                                <button title="Avançar camada" onClick={() => bringForward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronUp className="w-4 h-4" /></button>
-                                <button title="Recuar camada" onClick={() => sendBackward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronDown className="w-4 h-4" /></button>
-                                <button title="Enviar para trás" onClick={() => sendToBack(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsDown className="w-4 h-4" /></button>
+                                <button title={t('slideEditor.actions.bringToFront')} onClick={() => bringToFront(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsUp className="w-4 h-4" /></button>
+                                <button title={t('slideEditor.actions.bringForward')} onClick={() => bringForward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronUp className="w-4 h-4" /></button>
+                                <button title={t('slideEditor.actions.sendBackward')} onClick={() => sendBackward(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronDown className="w-4 h-4" /></button>
+                                <button title={t('slideEditor.actions.sendToBack')} onClick={() => sendToBack(selectedId)} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"><ChevronsDown className="w-4 h-4" /></button>
                             </div>
                             <div className="w-px h-6 bg-gray-200 mx-1" />
                         </>
@@ -883,7 +903,7 @@ export default function SlideEditor() {
                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
                             <button
                                 type="button"
-                                title="Slide anterior"
+                                title={t('slideEditor.slides.prevSlide')}
                                 onClick={() => {
                                     if (safeIdx === 0) return;
                                     setCurrentIdx(safeIdx - 1);
@@ -897,11 +917,12 @@ export default function SlideEditor() {
                             <div className="flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
                                 {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
                                 {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
+                                {toolBtn('button', <RectangleHorizontal className="w-4 h-4" />, t('slideEditor.toolbar.button'))}
                                 {toolBtn('rect', <Square className="w-4 h-4" />, t('slideEditor.toolbar.rect'))}
                                 {toolBtn('circle', <Circle className="w-4 h-4" />, t('slideEditor.toolbar.circle'))}
                                 <div className="w-px h-4 bg-gray-200 mx-0.5" />
                                 <button
-                                    title="Elementos"
+                                    title={t('slideEditor.actions.elements')}
                                     onClick={() => setElementsOpen((o) => !o)}
                                     className={`p-2.5 rounded-xl transition-all ${elementsOpen ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
                                 >
@@ -910,7 +931,7 @@ export default function SlideEditor() {
                             </div>
                             <button
                                 type="button"
-                                title="Próximo slide"
+                                title={t('slideEditor.slides.nextSlide')}
                                 onClick={() => {
                                     if (safeIdx >= slides.length - 1) return;
                                     setCurrentIdx(safeIdx + 1);
@@ -1007,6 +1028,22 @@ export default function SlideEditor() {
 
                                         if (el.type === 'image') {
                                             return <KonvaImageEl key={el.id} el={el} slideW={SLIDE_W} slideH={slideH} draggable={tool === 'select'} onSelect={() => { if (tool === 'select') setSelectedId(el.id); }} onChange={(patch) => updateElement(el.id, patch as Partial<SlideEl>)} />;
+                                        }
+
+                                        if (el.type === 'button') {
+                                            return (
+                                                <KonvaButtonEl
+                                                    key={el.id}
+                                                    el={el}
+                                                    draggable={tool === 'select'}
+                                                    onSelect={() => { if (tool === 'select') setSelectedId(el.id); }}
+                                                    onDblClick={() => {
+                                                        const textInput = prompt('Edit button text:', el.text);
+                                                        if (textInput !== null) updateElement(el.id, { text: textInput } as Partial<SlideEl>);
+                                                    }}
+                                                    onChange={(patch) => updateElement(el.id, patch as Partial<SlideEl>)}
+                                                />
+                                            );
                                         }
 
                                         if (el.type === 'gradient') {
@@ -1240,7 +1277,7 @@ export default function SlideEditor() {
                                         onChange={(e) => setAiGenerateImages(e.target.checked)}
                                         className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
                                     />
-                                    <span className="text-xs font-medium text-gray-600">Gerar imagens de fundo com IA</span>
+                                    <span className="text-xs font-medium text-gray-600">{t('slideEditor.ai.generateImagesLabel')}</span>
                                 </label>
                             </div>
                             {aiStatus === 'error' && (

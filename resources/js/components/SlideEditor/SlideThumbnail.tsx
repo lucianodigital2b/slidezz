@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Circle as KonvaCircle, Path as KonvaPath } from 'react-konva';
 import { Slide, Format, FORMATS } from './types';
-import { KonvaTextEl, KonvaImageEl } from './KonvaElements';
+import { KonvaTextEl, KonvaImageEl, KonvaButtonEl } from './KonvaElements';
 import { borderStyleToDash, gradientLinearProps } from './utils';
 
 export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format }) {
@@ -67,6 +67,9 @@ export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format
                             if (el.type === 'gradient') {
                                 const gp = gradientLinearProps(el);
                                 return <Rect {...common} x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation} opacity={el.opacity} fillLinearGradientStartPoint={gp.start} fillLinearGradientEndPoint={gp.end} fillLinearGradientColorStops={gp.stops} />;
+                            }
+                            if (el.type === 'button') {
+                                return <KonvaButtonEl key={el.id} el={el} draggable={false} onSelect={() => {}} onDblClick={() => {}} onChange={() => {}} />;
                             }
                             if (el.type === 'path') {
                                 return (

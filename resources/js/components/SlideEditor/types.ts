@@ -9,7 +9,7 @@ export const FORMATS = {
 
 export type Format = keyof typeof FORMATS;
 
-export type Tool = 'select' | 'text' | 'rect' | 'circle' | 'image';
+export type Tool = 'select' | 'text' | 'rect' | 'circle' | 'image' | 'button';
 export type Align = 'left' | 'center' | 'right' | 'justify';
 export type VAlign = 'top' | 'middle' | 'bottom';
 export type Wrap = 'word' | 'char' | 'none';
@@ -112,6 +112,39 @@ export interface GradientEl extends BaseEl {
     direction: GradientDirection;
 }
 
+export type ButtonIconPosition = 'left' | 'right';
+
+export interface ButtonEl extends BaseEl {
+    type: 'button';
+    text: string;
+    // Typography
+    fontSize: number;
+    fontFamily: string;
+    fontStyle: string;
+    letterSpacing: number;
+    // Text color
+    fill: string;
+    // Background
+    bgColor: string;
+    bgEnabled: boolean;
+    bgOpacity: number;
+    // Border
+    stroke: string;
+    strokeWidth: number;
+    cornerRadius: number;
+    borderStyle: BorderStyle;
+    dashEnabled: boolean;
+    // Padding
+    paddingX: number;
+    paddingY: number;
+    // Alignment
+    align: Align;
+    // Icon / emoji suffix or prefix
+    iconEnabled: boolean;
+    icon: string;
+    iconPosition: ButtonIconPosition;
+}
+
 export interface PathEl extends BaseEl {
     type: 'path';
     data: string;      // SVG path string
@@ -124,7 +157,7 @@ export interface PathEl extends BaseEl {
     dashEnabled: boolean;
 }
 
-export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl | PathEl;
+export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl | PathEl | ButtonEl;
 
 export interface Slide {
     id: string;

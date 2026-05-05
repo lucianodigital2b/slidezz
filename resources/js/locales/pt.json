@@ -287,6 +287,7 @@
     "toolbar": {
       "select": "Selecionar",
       "text": "Texto",
+      "button": "Botão",
       "rect": "Retângulo",
       "circle": "Círculo",
       "image": "Imagem",
@@ -304,7 +305,9 @@
     "slides": {
       "panel": "SLIDES",
       "duplicate": "Duplicar",
-      "delete": "Excluir"
+      "delete": "Excluir",
+      "prevSlide": "Slide anterior",
+      "nextSlide": "Próximo slide"
     },
     "formats": {
       "post": "Post",
@@ -328,7 +331,11 @@
       "effects": "Efeitos",
       "rgbChannels": "Canais RGB",
       "shadow": "Sombra",
-      "gradient": "Gradiente"
+      "gradient": "Gradiente",
+      "button": "Botão",
+      "buttonSpacing": "Espaçamento",
+      "buttonIcon": "Ícone",
+      "wordHighlight": "Destaque de Palavra"
     },
     "fields": {
       "x": "X",
@@ -388,7 +395,23 @@
       "shadowBlur": "Desfoque",
       "shadowOffsetX": "Deslocamento X",
       "shadowOffsetY": "Deslocamento Y",
-      "gradientDirection": "Direção"
+      "gradientDirection": "Direção",
+      "bgColor": "Cor do fundo",
+      "bgEnabled": "Ativar fundo",
+      "paddingX": "Padding horizontal",
+      "paddingY": "Padding vertical",
+      "stylePreset": "Estilo",
+      "icon": "Ícone / Emoji",
+      "iconPosition": "Posição",
+      "iconLeft": "← Esquerda",
+      "iconRight": "Direita →",
+      "enableIcon": "Ativar ícone"
+    },
+    "buttonStyles": {
+      "filled": "Preenchido",
+      "outlined": "Contornado",
+      "ghost": "Fantasma",
+      "glass": "Vidro"
     },
     "gradientDirections": {
       "bottom": "↓ Baixo",
@@ -416,6 +439,7 @@
       "stylePlaceholder": "ex: minimalista, vibrante, corporativo...",
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
+      "generateImagesLabel": "Gerar imagens de fundo com IA",
       "statusGenerating": "Escrevendo seus slides…",
       "statusGeneratingHint": "Criando o conteúdo de cada slide com IA",
       "statusImages": "Gerando imagens de fundo…",

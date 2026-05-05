@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
-import { TextEl, ImageEl, RichSpan } from './types';
-import { drawTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing } from './utils';
+import { TextEl, ImageEl, ButtonEl, RichSpan } from './types';
+import { drawTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing, borderStyleToDash, hexToRgba } from './utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 // ─── useLoadImage ─────────────────────────────────────────────────────────────
@@ -249,6 +249,97 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
                 stroke={el.strokeWidth > 0 ? el.stroke : undefined}
                 strokeWidth={el.strokeWidth}
                 padding={el.padding} wrap={el.wrap}
+            />
+        </Group>
+    );
+}
+
+// ─── KonvaButtonEl ────────────────────────────────────────────────────────────
+
+interface KonvaButtonElProps {
+    el: ButtonEl;
+    draggable: boolean;
+    onSelect: () => void;
+    onDblClick: () => void;
+    onChange: (patch: Partial<ButtonEl>) => void;
+}
+
+export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }: KonvaButtonElProps) {
+    const groupRef = useRef<Konva.Group>(null);
+    const [fontRevision, setFontRevision] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+        loadGoogleFont(el.fontFamily).then(() => {
+            if (cancelled) return;
+            setFontRevision((r) => r + 1);
+            groupRef.current?.getLayer()?.batchDraw();
+        });
+        return () => { cancelled = true; };
+    }, [el.fontFamily]);
+
+    const displayText = el.iconEnabled && el.icon
+        ? el.iconPosition === 'left' ? `${el.icon}  ${el.text}` : `${el.text}  ${el.icon}`
+        : el.text;
+
+    const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
+
+    return (
+        <Group
+            ref={groupRef}
+            id={el.id}
+            x={el.x} y={el.y}
+            rotation={el.rotation}
+            opacity={el.opacity}
+            draggable={draggable}
+            onClick={onSelect} onTap={onSelect}
+            onDblClick={onDblClick}
+            shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
+            shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
+            shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
+            onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => onChange({ x: e.target.x(), y: e.target.y() })}
+            onTransformEnd={(e: Konva.KonvaEventObject<Event>) => {
+                const node = e.target;
+                onChange({
+                    x: node.x(), y: node.y(),
+                    width: Math.max(40, el.width * node.scaleX()),
+                    height: Math.max(20, el.height * node.scaleY()),
+                    rotation: node.rotation(),
+                });
+                node.scaleX(1); node.scaleY(1);
+            }}
+        >
+            <Rect
+                x={0} y={0}
+                width={el.width} height={el.height}
+                fill={el.bgEnabled ? hexToRgba(el.bgColor, el.bgOpacity) : undefined}
+                stroke={el.strokeWidth > 0 ? el.stroke : undefined}
+                strokeWidth={el.strokeWidth}
+                cornerRadius={el.cornerRadius}
+                dash={dash.length ? dash : undefined}
+                dashEnabled={el.dashEnabled}
+                hitFunc={(ctx, shape) => {
+                    ctx.beginPath();
+                    ctx.rect(0, 0, shape.width(), shape.height());
+                    ctx.closePath();
+                    ctx.fillStrokeShape(shape);
+                }}
+            />
+            <Text
+                key={`${el.id}-${el.fontFamily}-${fontRevision}`}
+                x={el.paddingX} y={0}
+                width={Math.max(1, el.width - el.paddingX * 2)}
+                height={el.height}
+                text={displayText}
+                fontSize={el.fontSize}
+                fontFamily={el.fontFamily}
+                fontStyle={el.fontStyle}
+                fill={el.fill}
+                align={el.align}
+                verticalAlign="middle"
+                letterSpacing={el.letterSpacing}
+                wrap="none"
+                listening={false}
             />
         </Group>
     );

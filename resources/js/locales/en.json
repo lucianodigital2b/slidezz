@@ -4,6 +4,7 @@
     "toolbar": {
       "select": "Select",
       "text": "Text",
+      "button": "Button",
       "rect": "Rectangle",
       "circle": "Circle",
       "image": "Image",
@@ -21,7 +22,9 @@
     "slides": {
       "panel": "SLIDES",
       "duplicate": "Duplicate",
-      "delete": "Delete"
+      "delete": "Delete",
+      "prevSlide": "Previous slide",
+      "nextSlide": "Next slide"
     },
     "formats": {
       "post": "Post",
@@ -45,7 +48,11 @@
       "effects": "Effects",
       "rgbChannels": "RGB Channels",
       "shadow": "Shadow",
-      "gradient": "Gradient"
+      "gradient": "Gradient",
+      "button": "Button",
+      "buttonSpacing": "Spacing",
+      "buttonIcon": "Icon",
+      "wordHighlight": "Word Highlight"
     },
     "fields": {
       "x": "X",
@@ -105,7 +112,23 @@
       "shadowBlur": "Blur",
       "shadowOffsetX": "Offset X",
       "shadowOffsetY": "Offset Y",
-      "gradientDirection": "Direction"
+      "gradientDirection": "Direction",
+      "bgColor": "Background color",
+      "bgEnabled": "Enable background",
+      "paddingX": "Horizontal padding",
+      "paddingY": "Vertical padding",
+      "stylePreset": "Style",
+      "icon": "Icon / Emoji",
+      "iconPosition": "Position",
+      "iconLeft": "← Left",
+      "iconRight": "Right →",
+      "enableIcon": "Enable icon"
+    },
+    "buttonStyles": {
+      "filled": "Filled",
+      "outlined": "Outlined",
+      "ghost": "Ghost",
+      "glass": "Glass"
     },
     "gradientDirections": {
       "bottom": "↓ Bottom",
@@ -133,6 +156,7 @@
       "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
+      "generateImagesLabel": "Generate AI background images",
       "statusGenerating": "Writing your slides…",
       "statusGeneratingHint": "Creating each slide's content with AI",
       "statusImages": "Generating background images…",
@@ -177,7 +201,7 @@
       "clearAll": "Clear all"
     },
     "alerts": {
-      "switchFormat": "Switch format to Post (1:1) to publish a carousel to Instagram.",
+      "switchFormat": "Switch format to Post (3:4) to publish a carousel to Instagram.",
       "saveFirst": "Could not save slideshow before publishing.",
       "exportFailed": "Failed to export slides.",
       "published": "Posted to Instagram.",

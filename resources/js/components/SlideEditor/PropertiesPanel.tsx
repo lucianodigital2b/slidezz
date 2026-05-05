@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
-import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
+import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, ButtonEl, ButtonIconPosition, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
 import { Section, ToggleField, Field, ColorField, SliderField, FontPicker, PositionGrid } from './PrimitiveControls';
 import { preserveSingleHighlightRichText } from './utils';
 
@@ -262,7 +262,7 @@ export function PropertiesPanel({
                             </Field>
                         </Section>
 
-                        <Section title="Destaque de Palavra" defaultOpen={false}>
+                        <Section title={t('slideEditor.sections.wordHighlight')} defaultOpen={false}>
                             <WordHighlightSection el={el} onChange={(p) => ch<TextEl>(p)} />
                         </Section>
 
@@ -474,6 +474,126 @@ export function PropertiesPanel({
                             </div>
                         </Field>
                     </Section>
+                )}
+
+                {/* ── Button ───────────────────────────────────────────────── */}
+                {el?.type === 'button' && (
+                    <>
+                        <Section title={t('slideEditor.sections.button')}>
+                            <Field label={t('slideEditor.fields.content')}>
+                                <input
+                                    type="text"
+                                    value={el.text}
+                                    onChange={(e) => ch<ButtonEl>({ text: e.target.value })}
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                                />
+                            </Field>
+                            <Field label={t('slideEditor.fields.stylePreset')}>
+                                <div className="grid grid-cols-2 gap-1">
+                                    {([
+                                        { key: 'filled',   label: t('slideEditor.buttonStyles.filled'),   apply: () => ch<ButtonEl>({ bgEnabled: true,  bgOpacity: 1,    strokeWidth: 0 }) },
+                                        { key: 'outlined', label: t('slideEditor.buttonStyles.outlined'), apply: () => ch<ButtonEl>({ bgEnabled: false, bgOpacity: 1,    strokeWidth: 4 }) },
+                                        { key: 'ghost',    label: t('slideEditor.buttonStyles.ghost'),    apply: () => ch<ButtonEl>({ bgEnabled: false, bgOpacity: 1,    strokeWidth: 0 }) },
+                                        { key: 'glass',    label: t('slideEditor.buttonStyles.glass'),    apply: () => ch<ButtonEl>({ bgEnabled: true,  bgOpacity: 0.15, bgColor: '#ffffff', stroke: '#ffffff', strokeWidth: 2, cornerRadius: 16 }) },
+                                    ] as const).map(({ key, label, apply }) => (
+                                        <button key={key} type="button" onClick={apply}
+                                            className="py-1.5 rounded border text-[10px] font-semibold uppercase tracking-wide transition-colors border-gray-200 text-gray-500 hover:border-[#E8440A] hover:text-[#E8440A]">
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </Field>
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.typography')}>
+                            <Field label={t('slideEditor.fields.font')}><FontPicker value={el.fontFamily} onChange={(v) => ch<ButtonEl>({ fontFamily: v })} /></Field>
+                            <Field label={t('slideEditor.fields.size')}>
+                                <SliderField value={el.fontSize} onChange={(v) => ch<ButtonEl>({ fontSize: v })} min={12} max={200} unit="px" />
+                            </Field>
+                            <div className="flex gap-1.5">
+                                {iconBtn((el.fontStyle ?? '').includes('bold'), () => ch<ButtonEl>({ fontStyle: (el.fontStyle ?? '').includes('bold') ? (el.fontStyle ?? '').replace('bold', '').trim() : `${el.fontStyle ?? ''} bold`.trim() }), <Bold className="w-3.5 h-3.5" />, t('slideEditor.fields.bold'))}
+                                {iconBtn((el.fontStyle ?? '').includes('italic'), () => ch<ButtonEl>({ fontStyle: (el.fontStyle ?? '').includes('italic') ? (el.fontStyle ?? '').replace('italic', '').trim() : `${el.fontStyle ?? ''} italic`.trim() }), <Italic className="w-3.5 h-3.5" />, t('slideEditor.fields.italic'))}
+                            </div>
+                            <Field label={t('slideEditor.fields.alignH')}>
+                                <div className="flex gap-1">
+                                    {(['left', 'center', 'right'] as Align[]).map((a) => {
+                                        const Icon = a === 'left' ? AlignLeft : a === 'center' ? AlignCenter : AlignRight;
+                                        return iconBtn(el.align === a, () => ch<ButtonEl>({ align: a }), <Icon className="w-3.5 h-3.5" />, a);
+                                    })}
+                                </div>
+                            </Field>
+                            <Field label={t('slideEditor.fields.letterSpacing')}>
+                                <SliderField value={el.letterSpacing} onChange={(v) => ch<ButtonEl>({ letterSpacing: v })} min={-10} max={50} step={0.5} unit="px" />
+                            </Field>
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.fill')}>
+                            <Field label={t('slideEditor.fields.textColor')}><ColorField value={el.fill} onChange={(v) => ch<ButtonEl>({ fill: v })} /></Field>
+                            <ToggleField label={t('slideEditor.fields.bgEnabled')} checked={el.bgEnabled} onChange={(v) => ch<ButtonEl>({ bgEnabled: v })} />
+                            {el.bgEnabled && (
+                                <>
+                                    <Field label={t('slideEditor.fields.bgColor')}><ColorField value={el.bgColor} onChange={(v) => ch<ButtonEl>({ bgColor: v })} /></Field>
+                                    <Field label={t('slideEditor.fields.opacity')}>
+                                        <SliderField value={el.bgOpacity} onChange={(v) => ch<ButtonEl>({ bgOpacity: v })} min={0} max={1} step={0.01} />
+                                    </Field>
+                                </>
+                            )}
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.border')}>
+                            <Field label={t('slideEditor.fields.color')}><ColorField value={el.stroke} onChange={(v) => ch<ButtonEl>({ stroke: v })} /></Field>
+                            <Field label={t('slideEditor.fields.thickness')}>
+                                <SliderField value={el.strokeWidth} onChange={(v) => ch<ButtonEl>({ strokeWidth: v })} min={0} max={30} />
+                            </Field>
+                            <Field label={t('slideEditor.fields.cornerRadius')}>
+                                <SliderField value={el.cornerRadius} onChange={(v) => ch<ButtonEl>({ cornerRadius: v })} min={0} max={300} />
+                            </Field>
+                            <Field label={t('slideEditor.fields.borderStyle')}>
+                                <div className="flex gap-1">
+                                    {(['solid', 'dashed', 'dotted'] as BorderStyle[]).map((s) =>
+                                        iconBtn(el.borderStyle === s, () => ch<ButtonEl>({ borderStyle: s, dashEnabled: s !== 'solid' }),
+                                            <span className="text-[9px] font-bold uppercase">{s[0]}</span>, s)
+                                    )}
+                                </div>
+                            </Field>
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.buttonSpacing')}>
+                            <Field label={t('slideEditor.fields.paddingX')}>
+                                <SliderField value={el.paddingX} onChange={(v) => ch<ButtonEl>({ paddingX: v })} min={0} max={300} />
+                            </Field>
+                            <Field label={t('slideEditor.fields.paddingY')}>
+                                <SliderField value={el.paddingY} onChange={(v) => ch<ButtonEl>({ paddingY: v })} min={0} max={300} />
+                            </Field>
+                        </Section>
+
+                        <Section title={t('slideEditor.sections.buttonIcon')} defaultOpen={false}>
+                            <ToggleField label={t('slideEditor.fields.enableIcon')} checked={el.iconEnabled} onChange={(v) => ch<ButtonEl>({ iconEnabled: v })} />
+                            {el.iconEnabled && (
+                                <>
+                                    <Field label={t('slideEditor.fields.icon')}>
+                                        <input
+                                            type="text"
+                                            value={el.icon}
+                                            onChange={(e) => ch<ButtonEl>({ icon: e.target.value })}
+                                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                                        />
+                                    </Field>
+                                    <Field label={t('slideEditor.fields.iconPosition')}>
+                                        <div className="flex gap-1">
+                                            {(['left', 'right'] as ButtonIconPosition[]).map((pos) => (
+                                                <button key={pos} type="button"
+                                                    onClick={() => ch<ButtonEl>({ iconPosition: pos })}
+                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium transition-colors ${el.iconPosition === pos ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                                                    {pos === 'left' ? t('slideEditor.fields.iconLeft') : t('slideEditor.fields.iconRight')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Field>
+                                </>
+                            )}
+                        </Section>
+                    </>
                 )}
 
                 {/* ── Shadow (all types) ────────────────────────────────────── */}
