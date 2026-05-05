@@ -572,11 +572,6 @@ export default function SlideEditor() {
     // ─── Render ──────────────────────────────────────────────────────────────
 
     const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
-    const slideTextElements = [...slide.elements]
-        .filter((el): el is TextEl => el.type === 'text')
-        .sort((a, b) => a.y - b.y || a.x - b.x);
-    const globalTitleEl = slideTextElements[0] ?? null;
-
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button title={label}
             onClick={() => { setTool(tool_); if (tool_ !== 'select') setSelectedId(null); }}
@@ -778,7 +773,7 @@ export default function SlideEditor() {
                 <div className="flex flex-1 overflow-hidden">
 
                     {/* Left: Slides / Templates */}
-                    <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden shrink-0" style={{ width: leftPanelMode === 'templates' ? 200 : PANEL_LEFT }}>
+                    <div className="flex flex-col min-h-0 bg-white border-r border-gray-100 overflow-hidden shrink-0" style={{ width: leftPanelMode === 'templates' ? 200 : PANEL_LEFT }}>
                         {/* Panel mode tabs */}
                         <div className="flex shrink-0 border-b border-gray-100">
                             <button
@@ -805,10 +800,10 @@ export default function SlideEditor() {
 
                         {/* Slides list */}
                         {leftPanelMode === 'slides' && (
-                            <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1">
+                            <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1 min-h-0">
                                 {slides.map((s, idx) => (
                                     <div key={s.id} onClick={() => { setCurrentIdx(idx); setSelectedId(null); }}
-                                        className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200 bg-gray-100'}`}
+                                        className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-colors shrink-0 ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent hover:border-gray-200 bg-gray-100'}`}
                                     >
                                         <SlideThumbnail slide={s} format={format} />
                                         <span className="absolute top-1 left-1 text-[9px] font-bold text-white bg-black/40 rounded px-1 leading-4 z-10">{idx + 1}</span>
@@ -1129,14 +1124,6 @@ export default function SlideEditor() {
                             el={selectedEl}
                             onChange={(patch) => selectedId && updateElement(selectedId, patch as Partial<SlideEl>)}
                             onDelete={() => selectedId && deleteElement(selectedId)}
-                            projectTitle={title}
-                            onProjectTitleChange={setTitle}
-                            slideBackground={slide.background}
-                            onSlideBackgroundChange={(background) => updateSlide({ background })}
-                            globalTitle={globalTitleEl?.text ?? ''}
-                            onGlobalTitleChange={(text) => globalTitleEl && updateElement(globalTitleEl.id, { text } as Partial<TextEl>)}
-                            globalCaption={caption}
-                            onGlobalCaptionChange={setCaption}
                         />
                     </div>
                 </div>

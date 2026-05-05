@@ -213,6 +213,42 @@ export function preserveSingleHighlightRichText(
     return buildRichTextWithHighlightRange(nextText, targetWord.start, targetWord.end, normalColor, existingHighlight.color);
 }
 
+export function measureTextWidthWithLetterSpacing(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    letterSpacing: number,
+    includeTrailingSpacing = false,
+): number {
+    if (!text) return 0;
+
+    const baseWidth = ctx.measureText(text).width;
+    const spacingCount = Math.max(0, text.length - 1) + (includeTrailingSpacing ? 1 : 0);
+
+    return baseWidth + spacingCount * letterSpacing;
+}
+
+export function drawTextWithLetterSpacing(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    letterSpacing: number,
+): void {
+    if (!text) return;
+    if (text.length === 1 || letterSpacing === 0) {
+        ctx.fillText(text, x, y);
+        return;
+    }
+
+    let cursorX = x;
+    for (let index = 0; index < text.length; index++) {
+        const char = text[index];
+        ctx.fillText(char, cursorX, y);
+        cursorX += ctx.measureText(char).width;
+        if (index < text.length - 1) cursorX += letterSpacing;
+    }
+}
+
 export interface SafeAreaPadding {
     top: number;
     right: number;
@@ -313,8 +349,8 @@ export function fitTextFontSize(
                 currentLineWidth = 0;
                 continue;
             }
-            
-            const wordWidth = ctx.measureText(word).width + (word.length * letterSpacing);
+
+            const wordWidth = measureTextWidthWithLetterSpacing(ctx, word, letterSpacing, true);
             
             if (currentLineWidth + wordWidth > innerMaxWidth && currentLineWidth > 0) {
                 lines++;

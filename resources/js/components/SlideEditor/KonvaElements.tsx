@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
 import { TextEl, ImageEl, RichSpan } from './types';
-import { getMeasureCtx } from './utils';
+import { drawTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing } from './utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 // ─── useLoadImage ─────────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ interface LayoutToken {
     highlight?: string;
     x: number;
     width: number;
+    advanceWidth: number;
 }
 
 interface LayoutLine {
@@ -67,16 +68,16 @@ function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
         // Trim trailing whitespace
         while (lineTokens.length > 0 && lineTokens[lineTokens.length - 1].isSpace) {
             const last = lineTokens.pop()!;
-            lineWidth -= ctx.measureText(last.text).width + el.letterSpacing * last.text.length;
+            lineWidth -= measureTextWidthWithLetterSpacing(ctx, last.text, el.letterSpacing, true);
         }
-        if (lineTokens.length > 0) lines.push(buildLine(lineTokens, lineWidth, ctx, el, lineH));
+        if (lineTokens.length > 0) lines.push(buildLine(lineTokens, ctx, el, lineH));
         lineTokens = [];
         lineWidth = 0;
     };
 
     for (const token of tokens) {
         if (token.isNewline) { flushLine(); continue; }
-        const tw = ctx.measureText(token.text).width + el.letterSpacing * token.text.length;
+        const tw = measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, true);
         if (!token.isSpace && lineWidth + tw > innerWidth && lineTokens.length > 0) flushLine();
         lineTokens.push(token);
         lineWidth += tw;
@@ -88,22 +89,26 @@ function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
 
 function buildLine(
     tokens: { text: string; color: string; highlight?: string }[],
-    lineWidth: number,
     ctx: CanvasRenderingContext2D,
     el: TextEl,
     lineH: number,
 ): LayoutLine {
     const innerWidth = Math.max(10, el.width - el.padding * 2);
+    const tokenMetrics = tokens.map((token, index) => ({
+        contentWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, false),
+        advanceWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, index < tokens.length - 1),
+    }));
+    const lineWidth = tokenMetrics.reduce((sum, token) => sum + token.advanceWidth, 0);
     let startX = el.padding;
     if (el.align === 'center') startX = el.padding + (innerWidth - lineWidth) / 2;
     else if (el.align === 'right') startX = el.padding + innerWidth - lineWidth;
 
     let x = startX;
     const layoutTokens: LayoutToken[] = [];
-    for (const token of tokens) {
-        const tw = ctx.measureText(token.text).width + el.letterSpacing * token.text.length;
-        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, x, width: tw });
-        x += tw;
+    for (const [index, token] of tokens.entries()) {
+        const { contentWidth, advanceWidth } = tokenMetrics[index];
+        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, x, width: contentWidth, advanceWidth });
+        x += advanceWidth;
     }
     return { tokens: layoutTokens, height: lineH };
 }
@@ -161,7 +166,6 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
         const c = (ctx as any)._context as CanvasRenderingContext2D;
         const fs = el.fontStyle || '';
         c.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
-        if ('letterSpacing' in c) (c as any).letterSpacing = `${el.letterSpacing}px`;
 
         let curY = el.padding;
         for (const line of layout) {
@@ -173,7 +177,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
                         c.fillRect(token.x - pad, curY, token.width + pad * 2, el.fontSize * 1.05);
                     }
                     c.fillStyle = token.color;
-                    c.fillText(token.text, token.x, curY + el.fontSize * 0.82);
+                    drawTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
                 }
             }
             curY += line.height;

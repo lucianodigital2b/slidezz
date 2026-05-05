@@ -29,7 +29,7 @@ export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format
     const scale = displayW / fmt.w;
 
     return (
-        <div ref={containerRef} className="w-full bg-gray-100 overflow-hidden flex items-center justify-center pointer-events-none" style={{ aspectRatio: `${fmt.w} / ${fmt.h}` }}>
+        <div ref={containerRef} className="w-full shrink-0 bg-gray-100 overflow-hidden flex items-center justify-center pointer-events-none" style={{ aspectRatio: `${fmt.w} / ${fmt.h}` }}>
             {displayW > 0 && (
                 <Stage width={displayW} height={displayH} scaleX={scale} scaleY={scale}>
                     <Layer>
