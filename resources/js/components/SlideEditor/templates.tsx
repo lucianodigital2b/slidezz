@@ -26,6 +26,7 @@ export interface SlideTemplate {
     letterSpacing: number;
     align: Align;
     fonts: string[];
+    description?: string;
     buildScene: (content: TemplateContent, slideH: number) => TemplateScene;
 }
 
@@ -806,6 +807,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'noir-manifesto',
         name: 'Noir Manifesto',
+        description: 'Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional.',
         background: '#0a0a0a',
         textColor: '#ffffff',
         font: 'Anton',
@@ -818,6 +820,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'dark-cards',
         name: 'Dark Cards',
+        description: 'Capa com foto full-bleed e título centralizado. Card arredondado no fundo escuro com destaques azuis.',
         background: '#111827',
         textColor: '#ffffff',
         font: 'Poppins',
@@ -830,6 +833,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'pop-magazine',
         name: 'Pop Magazine',
+        description: 'Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual.',
         background: '#fff8f1',
         textColor: '#111111',
         font: 'Anton',
@@ -841,7 +845,8 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     },
     {
         id: 'twitter-x',
-        name: 'Twitter/X',
+        name: 'Twitter/X Style',
+        description: 'Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade.',
         background: '#f3f4f6',
         textColor: '#000000',
         font: 'Inter',
@@ -854,6 +859,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'acid-brutalist',
         name: 'Acid Brutalist',
+        description: 'Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista.',
         background: '#050505',
         textColor: '#ffffff',
         font: 'Montserrat',
@@ -866,6 +872,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'documentary',
         name: 'Documentary',
+        description: 'Estética jornalismo investigativo vintage. Playfair Display + Inter. Layouts com grain e textura.',
         background: '#1a1108',
         textColor: '#f0e8d8',
         font: 'Playfair Display',

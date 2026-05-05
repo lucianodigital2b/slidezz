@@ -412,6 +412,7 @@
       "topicLabel": "Tema",
       "topicPlaceholder": "ex: 5 dicas para crescer no Instagram...",
       "styleLabel": "Estilo (opcional)",
+      "visualStyleLabel": "Estilo Visual",
       "stylePlaceholder": "ex: minimalista, vibrante, corporativo...",
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
@@ -455,7 +456,8 @@
       "bringForward": "Avançar camada",
       "sendBackward": "Recuar camada",
       "sendToBack": "Enviar para trás",
-      "elements": "Elementos"
+      "elements": "Elementos",
+      "clearAll": "Limpar tudo"
     },
     "alerts": {
       "switchFormat": "Mude o formato para Post (1:1) para publicar um carrossel no Instagram.",

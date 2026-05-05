@@ -134,6 +134,7 @@ export default function SlideEditor() {
         aiStyle, setAiStyle,
         aiSlideCount, setAiSlideCount,
         aiGenerateImages, setAiGenerateImages,
+        aiTemplateId, setAiTemplateId,
         aiStatus, setAiStatus,
         aiProgress, aiError,
         openAiModal, closeAiModal,
@@ -1198,6 +1199,31 @@ export default function SlideEditor() {
                                     rows={3}
                                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.visualStyleLabel')}</label>
+                                <div className="grid grid-cols-2 gap-1.5 max-h-60 overflow-y-auto pr-0.5">
+                                    {SLIDE_TEMPLATES.map((tpl) => (
+                                        <button
+                                            key={tpl.id}
+                                            type="button"
+                                            onClick={() => setAiTemplateId(aiTemplateId === tpl.id ? null : tpl.id)}
+                                            className={`text-left rounded-xl border-2 p-2 transition-all ${
+                                                aiTemplateId === tpl.id
+                                                    ? 'border-violet-500 bg-violet-50'
+                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                            }`}
+                                        >
+                                            <div className="relative w-full rounded-lg overflow-hidden mb-1.5" style={{ aspectRatio: '1' }}>
+                                                <TemplatePreview id={tpl.id} />
+                                            </div>
+                                            <p className="text-[10px] font-semibold text-gray-700 leading-tight">{tpl.name}</p>
+                                            {tpl.description && (
+                                                <p className="text-[9px] text-gray-400 mt-0.5 leading-tight line-clamp-2">{tpl.description}</p>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.styleLabel')}</label>

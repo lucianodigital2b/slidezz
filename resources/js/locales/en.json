@@ -129,6 +129,7 @@
       "topicLabel": "Topic",
       "topicPlaceholder": "e.g. 5 tips to grow on Instagram...",
       "styleLabel": "Style (optional)",
+      "visualStyleLabel": "Visual Style",
       "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
@@ -172,7 +173,8 @@
       "bringForward": "Bring Forward",
       "sendBackward": "Send Backward",
       "sendToBack": "Send to Back",
-      "elements": "Elements"
+      "elements": "Elements",
+      "clearAll": "Clear all"
     },
     "alerts": {
       "switchFormat": "Switch format to Post (1:1) to publish a carousel to Instagram.",

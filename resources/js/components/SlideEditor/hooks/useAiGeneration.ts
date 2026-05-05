@@ -4,6 +4,7 @@ import CarouselGenerationController from '@/actions/App/Http/Controllers/Carouse
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
+import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
 
 export interface SlideData {
     title: string;
@@ -27,6 +28,7 @@ export function useAiGeneration(
     const [aiStyle, setAiStyle] = useState('');
     const [aiSlideCount, setAiSlideCount] = useState(5);
     const [aiGenerateImages, setAiGenerateImages] = useState(true);
+    const [aiTemplateId, setAiTemplateId] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
     const [aiProgress, setAiProgress] = useState<string[]>([]);
     const [aiError, setAiError] = useState('');
@@ -79,7 +81,7 @@ export function useAiGeneration(
         return [];
     }
 
-    function buildSlideFromData(data: SlideData, bgBase64: string | null): Slide {
+    function buildSlideFromData(data: SlideData, bgBase64: string | null, template: SlideTemplate | null): Slide {
         const slideH = FORMATS[format].h;
         const safeBounds = getSafeAreaBounds(format);
         const horizontalInset = 80;
@@ -97,47 +99,55 @@ export function useAiGeneration(
         const descriptionX = contentX + descriptionInset;
         const descriptionWidth = Math.max(280, contentWidth - descriptionInset * 2);
         const descMaxHeight = Math.max(116, safeBottomY - descY);
-        const backgroundColor = '#1a1a2e';
+
+        const backgroundColor = template?.background ?? '#1a1a2e';
+        const titleFont = template?.font ?? 'Poppins';
+        const bodyFont = template ? (template.fonts[1] ?? template.fonts[0]) : 'Poppins';
+        const titleFontStyle = template?.fontStyle ?? 'bold';
+        const textColor = template?.textColor ?? '#ffffff';
+        const textAlign = template?.align ?? 'center';
+        const titleLetterSpacing = template?.letterSpacing ?? -1;
+
         const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
         const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
         const titlePadding = 28;
         const subtitlePadding = 20;
         const descriptionPadding = 16;
         const titleRichText = highlightWords.length > 0
-            ? buildRichText(data.title, highlightWords, '#ffffff', highlightColor)
+            ? buildRichText(data.title, highlightWords, textColor, highlightColor)
             : undefined;
 
-        const titleFontSize = fitTextFontSize(data.title, 'Poppins', 'bold', 80, 1.15, -1, contentWidth, titleHeight, titlePadding);
+        const titleFontSize = fitTextFontSize(data.title, titleFont, titleFontStyle, 80, 1.15, titleLetterSpacing, contentWidth, titleHeight, titlePadding);
         const titleEl: TextEl = {
             id: uid(), type: 'text', x: contentX, y: titleY,
             width: contentWidth, height: titleHeight, rotation: 0, opacity: 1,
-            text: data.title, fontSize: titleFontSize, fontFamily: 'Poppins', fill: '#ffffff',
-            fontStyle: 'bold', align: 'center', verticalAlign: 'top',
-            lineHeight: 1.15, letterSpacing: -1, textDecoration: '', stroke: '#000000',
+            text: data.title, fontSize: titleFontSize, fontFamily: titleFont, fill: textColor,
+            fontStyle: titleFontStyle, align: textAlign, verticalAlign: 'top',
+            lineHeight: 1.15, letterSpacing: titleLetterSpacing, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: titlePadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
             ...(titleRichText ? { richText: titleRichText } : {}),
         };
 
-        const subtitleFontSize = fitTextFontSize(data.subtitle, 'Poppins', '', 44, 1.3, 0, contentWidth, subtitleHeight, subtitlePadding);
+        const subtitleFontSize = fitTextFontSize(data.subtitle, bodyFont, '', 44, 1.3, 0, contentWidth, subtitleHeight, subtitlePadding);
         const subtitleEl: TextEl = {
             id: uid(), type: 'text', x: contentX, y: subtitleY,
             width: contentWidth, height: subtitleHeight, rotation: 0, opacity: 1,
-            text: data.subtitle, fontSize: subtitleFontSize, fontFamily: 'Poppins', fill: '#f0f0f0',
-            fontStyle: '', align: 'center', verticalAlign: 'top',
+            text: data.subtitle, fontSize: subtitleFontSize, fontFamily: bodyFont, fill: textColor === '#ffffff' ? '#e8e8e8' : textColor,
+            fontStyle: '', align: textAlign, verticalAlign: 'top',
             lineHeight: 1.3, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: subtitlePadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
         };
 
-        const descFontSize = fitTextFontSize(data.description, 'Poppins', '', 32, 1.5, 0, descriptionWidth, descMaxHeight, descriptionPadding);
+        const descFontSize = fitTextFontSize(data.description, bodyFont, '', 32, 1.5, 0, descriptionWidth, descMaxHeight, descriptionPadding);
         const descEl: TextEl = {
             id: uid(), type: 'text', x: descriptionX, y: descY,
             width: descriptionWidth, height: descMaxHeight, rotation: 0, opacity: 1,
-            text: data.description, fontSize: descFontSize, fontFamily: 'Poppins', fill: '#e0e0e0',
-            fontStyle: '', align: 'center', verticalAlign: 'top',
+            text: data.description, fontSize: descFontSize, fontFamily: bodyFont, fill: textColor === '#ffffff' ? '#d8d8d8' : textColor,
+            fontStyle: '', align: textAlign, verticalAlign: 'top',
             lineHeight: 1.5, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: descriptionPadding, wrap: 'word',
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
@@ -272,13 +282,15 @@ export function useAiGeneration(
             );
         }
 
+        const template = aiTemplateId ? SLIDE_TEMPLATES.find(t => t.id === aiTemplateId) ?? null : null;
+        await Promise.all((template ? [...new Set(template.fonts)] : ['Poppins']).map(f => loadGoogleFont(f)));
+
         const newSlides = parsedSlides.map((s, i) => {
             const imgResult = shouldGenerateImages ? imageResults[i] : null;
             const base64 = imgResult?.status === 'fulfilled' ? imgResult.value : null;
-            return buildSlideFromData(s, base64);
+            return buildSlideFromData(s, base64, template);
         });
 
-        await loadGoogleFont('Poppins');
         setSlides((prev) => [...prev, ...newSlides]);
         setCurrentIdx(newSlideStartIdx);
         setSelectedId(null);
@@ -297,6 +309,8 @@ export function useAiGeneration(
         setAiSlideCount,
         aiGenerateImages,
         setAiGenerateImages,
+        aiTemplateId,
+        setAiTemplateId,
         aiStatus,
         setAiStatus,
         aiProgress,

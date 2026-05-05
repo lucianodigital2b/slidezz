@@ -59,6 +59,7 @@ function buildRichTextFromHighlights(text: string, highlights: Map<number, strin
 const HIGHLIGHT_PRESETS = ['#FFD600', '#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#5AC8FA'];
 
 function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Partial<TextEl>) => void }) {
+    const { t } = useTranslation();
     const [hlColor, setHlColor] = React.useState(HIGHLIGHT_PRESETS[0]);
     const [hexInput, setHexInput] = React.useState(HIGHLIGHT_PRESETS[0]);
 
@@ -99,7 +100,7 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
 
             <button type="button" onClick={() => onChange({ richText: undefined })}
                 className="text-xs text-gray-400 hover:text-gray-600 self-start transition-colors">
-                Limpar tudo
+                {t('slideEditor.actions.clearAll')}
             </button>
 
             <div className="grid grid-cols-4 gap-1.5">
