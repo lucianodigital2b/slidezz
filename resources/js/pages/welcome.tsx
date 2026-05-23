@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Sprout, Check, X } from 'lucide-react';
+import { useState } from 'react';
 import { dashboard, login, register } from '@/routes';
 
 export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
