@@ -73,7 +73,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 ->with('wizardTopic', "AI\'s Economics Don't Make Sense")
                 ->with('wizardStyle', 'dark gradient overlay, ALL CAPS typography, documentary motivational style. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
                 ->with('wizardSlideCount', 5)
-                ->with('wizardGenerateImages', false);
+                ->with('wizardImageMode', 'alternate');
         })->name('dev.test-wizard');
     }
 });

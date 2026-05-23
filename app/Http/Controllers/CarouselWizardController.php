@@ -73,7 +73,7 @@ class CarouselWizardController extends Controller
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'save_config' => ['boolean'],
             'format' => ['nullable', 'string', 'in:post,stories'],
-            'generate_images' => ['boolean'],
+            'image_mode' => ['nullable', 'string', 'in:none,background,grid,alternate'],
         ]);
 
         $workspace = Workspace::where('owner_id', $request->user()->id)->firstOrFail();
@@ -103,6 +103,6 @@ class CarouselWizardController extends Controller
             ->with('wizardTopic', $validated['topic'])
             ->with('wizardStyle', $style)
             ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
-            ->with('wizardGenerateImages', $request->boolean('generate_images', true));
+            ->with('wizardImageMode', $validated['image_mode'] ?? 'background');
     }
 }

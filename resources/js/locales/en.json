@@ -156,7 +156,16 @@
       "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
-      "generateImagesLabel": "Generate AI background images",
+      "generateImagesLabel": "Images in carousel",
+      "imageMode": {
+        "none": "No images",
+        "background": "Background only",
+        "backgroundShort": "Background",
+        "grid": "Grid only",
+        "gridShort": "Grid",
+        "alternate": "Alternate both",
+        "alternateShort": "Alternate"
+      },
       "statusGenerating": "Writing your slides…",
       "statusGeneratingHint": "Creating each slide's content with AI",
       "statusImages": "Generating background images…",
@@ -230,6 +239,58 @@
       "importBtn": "Import from a URL",
       "formatLabel": "Format"
     },
+    "templates": {
+      "noir-manifesto": {
+        "name": "Noir Manifesto",
+        "description": "Full-bleed image with dark gradient. ALL CAPS high-impact typography. Documentary / motivational style."
+      },
+      "dark-cards": {
+        "name": "Dark Cards",
+        "description": "Full-bleed cover photo with centered title. Inner slides with rounded image cards on a dark background."
+      },
+      "pop-magazine": {
+        "name": "Pop Magazine",
+        "description": "Giant Anton typography with red highlight words. Pop culture magazine style. Maximum visual impact."
+      },
+      "twitter-x": {
+        "name": "Twitter/X Style",
+        "description": "White background, large text, clean editorial layout. Maximum readability."
+      },
+      "acid-brutalist": {
+        "name": "Acid Brutalist",
+        "description": "Massive Montserrat 900, black background, acid green accent. Brutalist outlined text."
+      },
+      "documentary": {
+        "name": "Documentary",
+        "description": "Vintage investigative journalism aesthetic. Playfair Display serif. Grain-textured layouts."
+      }
+    },
+    "archetypes": {
+      "disruptor-social": {
+        "name": "Social Disruptor",
+        "description": "A phenomenon that shocks and reveals a serious consequence for society."
+      },
+      "poder-oculto": {
+        "name": "Hidden Power",
+        "description": "Why does {group} act while {vulnerable} suffers in silence?"
+      },
+      "paradoxo-social": {
+        "name": "Social Paradox",
+        "description": "A shocking statement that flips conventional wisdom and shifts perspective."
+      },
+      "profecia-provocativa": {
+        "name": "Provocative Prophecy",
+        "description": "Authority predicted it; the event revealed it. A surprise revelation hook."
+      },
+      "estrategia-inusitada": {
+        "name": "Unusual Strategy",
+        "description": "How {person} used a surprising method and won."
+      },
+      "autoridade-cientifica": {
+        "name": "Scientific Authority",
+        "description": "Study proves a surprising result with a clear cause."
+      }
+    },
     "step2": {
       "templateTitle": "Visual Template",
       "archetypeTitle": "Hook Archetype — Cover Slide",
@@ -246,6 +307,10 @@
       "archetype": "Archetype",
       "format": "Format",
       "slideCountLabel": "Number of slides",
+      "imageModeLabel": "Images in carousel",
+      "customPromptLabel": "Additional instructions (optional)",
+      "customPromptHint": "Add specific details, tone, or constraints for the AI to follow.",
+      "customPromptPlaceholder": "e.g. Use a formal tone, focus on data and statistics, avoid jargon...",
       "saveConfigLabel": "Save as AI autopilot default",
       "saveConfigDesc": "This template and archetype will be used automatically in future autopilot generations.",
       "generateBtn": "Generate Carousel"

@@ -5,7 +5,10 @@ import Konva from 'konva';
 import {
     Circle,
     Download,
+    Grid2X2,
     Image as ImageIcon,
+    ImageOff,
+    Layers,
     Loader2,
     MousePointer,
     Plus,
@@ -58,7 +61,7 @@ import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 
 import { useUndoRedo } from '@/components/SlideEditor/hooks/useUndoRedo';
 import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager';
-import { useAiGeneration } from '@/components/SlideEditor/hooks/useAiGeneration';
+import { useAiGeneration, ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 
 import { ShapeDef, SHAPE_CATEGORIES } from '@/components/SlideEditor/shapes';
 import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/SlideEditor/templates';
@@ -77,7 +80,7 @@ interface WizardConfig {
     topic: string;
     style: string;
     slideCount: number;
-    generateImages: boolean;
+    imageMode: ImageMode;
 }
 
 const STORAGE_KEY = 'slidezz_editor_v1';
@@ -134,7 +137,7 @@ export default function SlideEditor() {
         aiTopic, setAiTopic,
         aiStyle, setAiStyle,
         aiSlideCount, setAiSlideCount,
-        aiGenerateImages, setAiGenerateImages,
+        aiImageMode, setAiImageMode,
         aiTemplateId, setAiTemplateId,
         aiStatus, setAiStatus,
         aiProgress, aiError,
@@ -276,11 +279,10 @@ export default function SlideEditor() {
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
         setAiSlideCount(wizardConfig.slideCount);
-        const shouldGen = wizardConfig.generateImages !== undefined ? wizardConfig.generateImages : true;
-        setAiGenerateImages(shouldGen);
+        const mode: ImageMode = wizardConfig.imageMode ?? 'background';
+        setAiImageMode(mode);
         setAiModalOpen(true);
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, shouldGen);
-        console.log('wizardConfig', wizardConfig)
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -368,9 +370,9 @@ export default function SlideEditor() {
                 text: 'Follow Now',
                 fontSize: 48, fontFamily: 'Poppins', fontStyle: 'bold',
                 letterSpacing: 0,
-                fill: '#ffffff',
-                bgColor: '#E8440A', bgEnabled: true, bgOpacity: 1,
-                stroke: '#E8440A', strokeWidth: 0,
+                fill: '#111111',
+                bgColor: '#f2f2f2', bgEnabled: true, bgOpacity: 1,
+                stroke: '#d9d9d9', strokeWidth: 2,
                 cornerRadius: 16, borderStyle: 'solid', dashEnabled: false,
                 paddingX: 60, paddingY: 0,
                 align: 'center',
@@ -441,7 +443,7 @@ export default function SlideEditor() {
                 brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
                 hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                 red: 255, green: 255, blue: 255,
-                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 0.4,
+                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
                 isBackground: false, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
                 ...SHADOW_DEFAULTS,
             });
@@ -595,7 +597,7 @@ export default function SlideEditor() {
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button title={label}
             onClick={() => { setTool(tool_); if (tool_ !== 'select') setSelectedId(null); }}
-            className={`p-2.5 rounded-xl transition-all ${tool === tool_ ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}>
+            className={`border p-2.5 rounded-xl transition-all ${tool === tool_ ? 'border-gray-200 bg-[#f2f2f2] text-gray-700 shadow-sm' : 'border-transparent text-gray-500 hover:bg-gray-100'}`}>
             {icon}
         </button>
     );
@@ -694,12 +696,12 @@ export default function SlideEditor() {
                             <button
                                 key={key}
                                 onClick={() => setFormat(key)}
-                                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${format === key ? 'bg-[#E8440A] text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${format === key ? 'bg-[#f2f2f2] text-gray-700' : 'text-gray-500 hover:text-gray-700'}`}
                             >
-                                <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === key ? 'border-white/70' : 'border-gray-400'}`}
+                                <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === key ? 'border-gray-500' : 'border-gray-400'}`}
                                     style={{ width: key === 'post' ? 12 : 9, height: key === 'post' ? 12 : 14 }} />
                                 {t(`slideEditor.formats.${key}`)}
-                                <span className={`text-[10px] ${format === key ? 'text-white/70' : 'text-gray-400'}`}>{fmt.ratio}</span>
+                                <span className={`text-[10px] ${format === key ? 'text-gray-500' : 'text-gray-400'}`}>{fmt.ratio}</span>
                             </button>
                         ))}
                     </div>
@@ -799,7 +801,7 @@ export default function SlideEditor() {
                             <button
                                 type="button"
                                 onClick={() => setLeftPanelMode('slides')}
-                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'slides' ? 'text-[#E8440A]' : 'text-gray-400 hover:text-gray-500'}`}
+                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'slides' ? 'bg-[#f2f2f2] text-gray-700' : 'text-gray-400 hover:text-gray-500'}`}
                             >
                                 {t('slideEditor.slides.panel')}
                             </button>
@@ -807,7 +809,7 @@ export default function SlideEditor() {
                             <button
                                 type="button"
                                 onClick={() => setLeftPanelMode('templates')}
-                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'templates' ? 'text-[#E8440A]' : 'text-gray-400 hover:text-gray-500'}`}
+                                className={`flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${leftPanelMode === 'templates' ? 'bg-[#f2f2f2] text-gray-700' : 'text-gray-400 hover:text-gray-500'}`}
                             >
                                 {t('slideEditor.templates.panel')}
                             </button>
@@ -924,7 +926,7 @@ export default function SlideEditor() {
                                 <button
                                     title={t('slideEditor.actions.elements')}
                                     onClick={() => setElementsOpen((o) => !o)}
-                                    className={`p-2.5 rounded-xl transition-all ${elementsOpen ? 'bg-[#E8440A] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                                    className={`border p-2.5 rounded-xl transition-all ${elementsOpen ? 'border-gray-200 bg-[#f2f2f2] text-gray-700 shadow-sm' : 'border-transparent text-gray-500 hover:bg-gray-100'}`}
                                 >
                                     <Shapes className="w-4 h-4" />
                                 </button>
@@ -1270,15 +1272,29 @@ export default function SlideEditor() {
                                 </div>
                             </div>
                             <div>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={aiGenerateImages}
-                                        onChange={(e) => setAiGenerateImages(e.target.checked)}
-                                        className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                                    />
-                                    <span className="text-xs font-medium text-gray-600">{t('slideEditor.ai.generateImagesLabel')}</span>
-                                </label>
+                                <p className="text-xs font-medium text-gray-500 mb-2">{t('slideEditor.ai.generateImagesLabel')}</p>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {([
+                                        { id: 'none'       as ImageMode, label: t('slideEditor.ai.imageMode.none'),            Icon: ImageOff },
+                                        { id: 'background' as ImageMode, label: t('slideEditor.ai.imageMode.backgroundShort'), Icon: ImageIcon },
+                                        { id: 'grid'       as ImageMode, label: t('slideEditor.ai.imageMode.gridShort'),       Icon: Grid2X2 },
+                                        { id: 'alternate'  as ImageMode, label: t('slideEditor.ai.imageMode.alternateShort'),  Icon: Layers },
+                                    ]).map(({ id, label, Icon }) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            onClick={() => setAiImageMode(id)}
+                                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium transition-all ${
+                                                aiImageMode === id
+                                                    ? 'border-violet-500 bg-violet-50 text-violet-700'
+                                                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <Icon className="h-3.5 w-3.5 shrink-0" />
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             {aiStatus === 'error' && (
                                 <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>

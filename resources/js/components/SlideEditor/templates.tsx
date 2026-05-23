@@ -2,16 +2,18 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Align, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
-import { SHADOW_DEFAULTS, uid } from './utils';
+import { SHADOW_DEFAULTS, fitTextFontSize, uid } from './utils';
+import { LayoutDefinition } from './layouts';
 
 export interface TemplateContent {
     eyebrow: string;
     title: string;
     subtitle: string;
     caption: string;
+    description?: string;
 }
 
-interface TemplateScene {
+export interface TemplateScene {
     background: string;
     elements: SlideEl[];
 }
@@ -20,13 +22,25 @@ export interface SlideTemplate {
     id: string;
     name: string;
     background: string;
+    backgroundAlt?: string;
     textColor: string;
+    textColorAlt?: string;
+    accentColor: string;
     font: string;
+    bodyFont: string;
+    captionFont: string;
     fontStyle: string;
     letterSpacing: number;
     align: Align;
     fonts: string[];
     description?: string;
+    buildSceneFromLayout: (
+        content: TemplateContent & { stat?: string; ctaPill?: string },
+        layout: LayoutDefinition,
+        slideH: number,
+        slideIndex: number,
+        totalSlides: number,
+    ) => TemplateScene;
     buildScene: (content: TemplateContent, slideH: number) => TemplateScene;
 }
 
@@ -87,6 +101,207 @@ function createGradient(overrides: Partial<GradientEl> & Pick<GradientEl, 'x' | 
         ...overrides,
     };
 }
+
+function fontStyleHintToStyle(hint: LayoutDefinition['title']['fontStyleHint']): string {
+    if (hint === 'normal') return '';
+    if (hint === 'black') return '900';
+    return hint; // 'bold' | 'italic'
+}
+
+export function buildSceneFromLayoutGeneric(
+    template: SlideTemplate,
+    content: TemplateContent & { stat?: string; ctaPill?: string },
+    layout: LayoutDefinition,
+    slideH: number,
+    slideIndex: number,
+): TemplateScene {
+    const topPad = slideH > 1400 ? 250 : 180;
+    const safeY = topPad;
+    const safeH = slideH - topPad * 2;
+    const pad = 80;
+    const safeX = pad;
+    const safeW = SLIDE_W - pad * 2;
+
+    const useAlt = slideIndex % 2 === 1 && Boolean(template.backgroundAlt);
+    const bg = useAlt ? template.backgroundAlt! : template.background;
+    const textColor = useAlt && template.textColorAlt ? template.textColorAlt : template.textColor;
+
+    const elements: SlideEl[] = [];
+
+    function fontForRole(role: 'display' | 'body' | 'caption'): string {
+        if (role === 'display') return template.font;
+        if (role === 'body') return template.bodyFont;
+        return template.captionFont;
+    }
+
+    function slotToRect(slot: LayoutDefinition['title']) {
+        return {
+            x: Math.round(safeX + slot.x * safeW),
+            y: Math.round(safeY + slot.y * safeH),
+            width: Math.round(slot.width * safeW),
+            height: Math.round(slot.height * safeH),
+        };
+    }
+
+    if (layout.gradientIntensity > 0.2) {
+        elements.push(createGradient({
+            x: 0,
+            y: Math.round(slideH * 0.35),
+            width: SLIDE_W,
+            height: Math.round(slideH * 0.65),
+            color: bg,
+            opacity: layout.gradientIntensity,
+        }));
+    }
+
+    if (layout.stat?.visible && content.stat) {
+        const rect = slotToRect(layout.stat);
+        const fontSize = fitTextFontSize(
+            content.stat,
+            fontForRole('display'),
+            '900',
+            layout.stat.maxFontSize,
+            layout.stat.lineHeight,
+            layout.stat.letterSpacing,
+            rect.width,
+            rect.height,
+            0,
+        );
+        elements.push(createText({
+            ...rect,
+            text: content.stat,
+            fontFamily: fontForRole(layout.stat.fontRole),
+            fontSize,
+            fontStyle: '900',
+            fill: template.accentColor,
+            align: layout.stat.align,
+            verticalAlign: layout.stat.verticalAlign,
+            lineHeight: layout.stat.lineHeight,
+            letterSpacing: layout.stat.letterSpacing,
+            opacity: layout.stat.opacity,
+        }));
+    }
+
+    if (layout.title.visible) {
+        const rect = slotToRect(layout.title);
+        const titleText = layout.type === 'stat_callout'
+            ? content.title.toUpperCase()
+            : content.title;
+        const fontSize = fitTextFontSize(
+            titleText,
+            fontForRole(layout.title.fontRole),
+            layout.title.fontStyleHint,
+            layout.title.maxFontSize,
+            layout.title.lineHeight,
+            layout.title.letterSpacing,
+            rect.width,
+            rect.height,
+            28,
+        );
+        elements.push(createText({
+            ...rect,
+            text: titleText,
+            fontFamily: fontForRole(layout.title.fontRole),
+            fontSize,
+            fontStyle: fontStyleHintToStyle(layout.title.fontStyleHint),
+            fill: textColor,
+            align: layout.title.align,
+            verticalAlign: layout.title.verticalAlign,
+            lineHeight: layout.title.lineHeight,
+            letterSpacing: layout.title.letterSpacing,
+            opacity: layout.title.opacity,
+        }));
+    }
+
+    if (layout.subtitle.visible && content.subtitle) {
+        const rect = slotToRect(layout.subtitle);
+        const subtitleText = layout.type === 'cta_closing'
+            ? content.subtitle.toUpperCase()
+            : content.subtitle;
+        const fontSize = fitTextFontSize(
+            subtitleText,
+            fontForRole(layout.subtitle.fontRole),
+            '',
+            layout.subtitle.maxFontSize,
+            layout.subtitle.lineHeight,
+            layout.subtitle.letterSpacing,
+            rect.width,
+            rect.height,
+            20,
+        );
+        elements.push(createText({
+            ...rect,
+            text: subtitleText,
+            fontFamily: fontForRole(layout.subtitle.fontRole),
+            fontSize,
+            fill: textColor,
+            align: layout.subtitle.align,
+            verticalAlign: layout.subtitle.verticalAlign,
+            lineHeight: layout.subtitle.lineHeight,
+            letterSpacing: layout.subtitle.letterSpacing,
+            opacity: layout.subtitle.opacity,
+        }));
+    }
+
+    const descriptionText = content.description ?? content.caption;
+    if (layout.description.visible && descriptionText) {
+        const rect = slotToRect(layout.description);
+        const fontSize = fitTextFontSize(
+            descriptionText,
+            fontForRole(layout.description.fontRole),
+            '',
+            layout.description.maxFontSize,
+            layout.description.lineHeight,
+            0,
+            rect.width,
+            rect.height,
+            16,
+        );
+        elements.push(createText({
+            ...rect,
+            text: descriptionText,
+            fontFamily: fontForRole(layout.description.fontRole),
+            fontSize,
+            fill: textColor,
+            align: layout.description.align,
+            verticalAlign: layout.description.verticalAlign,
+            lineHeight: layout.description.lineHeight,
+            opacity: layout.description.opacity,
+        }));
+    }
+
+    if (layout.pill && content.ctaPill) {
+        const pillY = Math.round(safeY + layout.pill.y * safeH);
+        const pillX = layout.pill.align === 'center'
+            ? Math.round(SLIDE_W / 2 - 100)
+            : layout.pill.align === 'right'
+                ? Math.round(safeX + safeW - 220)
+                : safeX;
+
+        elements.push(createRect({
+            type: 'rect',
+            x: pillX, y: pillY,
+            width: 200, height: 48,
+            fill: '#FFFFFF',
+            cornerRadius: 24,
+        }));
+        elements.push(createText({
+            x: pillX, y: pillY + 12,
+            width: 200, height: 24,
+            text: content.ctaPill,
+            fontFamily: fontForRole('caption'),
+            fontSize: 16,
+            fontStyle: '700',
+            fill: '#111111',
+            align: 'center',
+            letterSpacing: 1.5,
+        }));
+    }
+
+    return { background: bg, elements };
+}
+
+// ─── Legacy scene builders (unchanged) ──────────────────────────────────────
 
 function buildNoirManifesto(content: TemplateContent, slideH: number): TemplateScene {
     const titleY = slideH > 1400 ? slideH - 640 : slideH - 430;
@@ -803,84 +1018,410 @@ function buildDocumentary(content: TemplateContent, slideH: number): TemplateSce
     };
 }
 
+// ─── Template definitions ────────────────────────────────────────────────────
+
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'noir-manifesto',
         name: 'Noir Manifesto',
         description: 'Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional.',
-        background: '#0a0a0a',
+        background: '#090909',
+        backgroundAlt: '#0f0f14',
         textColor: '#ffffff',
+        accentColor: '#E8440A',
         font: 'Anton',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: '',
         letterSpacing: 1,
         align: 'left',
         fonts: ['Anton', 'Inter'],
         buildScene: buildNoirManifesto,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+
+            // Signature circle top-right (behind gradient)
+            scene.elements.unshift(createRect({
+                type: 'circle',
+                x: SLIDE_W - 420,
+                y: 140,
+                width: 360,
+                height: 360,
+                fill: 'rgba(232,68,10,0.10)',
+                stroke: 'rgba(255,255,255,0.08)',
+                strokeWidth: 2,
+            }));
+
+            if (layout.type === 'hook_hero' || layout.type === 'cta_closing') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 88,
+                    y: slideH - 500,
+                    width: 18,
+                    height: 280,
+                    fill: '#E8440A',
+                    cornerRadius: 999,
+                }));
+            }
+
+            if (layout.type === 'quote_block') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 76,
+                    y: Math.round(slideH * 0.18),
+                    width: 8,
+                    height: Math.round(slideH * 0.45),
+                    fill: '#E8440A',
+                    cornerRadius: 999,
+                }));
+            }
+
+            if (layout.type === 'stat_callout') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'circle',
+                    x: SLIDE_W / 2 - 200,
+                    y: Math.round(slideH * 0.22),
+                    width: 400,
+                    height: 400,
+                    fill: 'rgba(232,68,10,0.08)',
+                }));
+            }
+
+            return scene;
+        },
     },
     {
         id: 'dark-cards',
         name: 'Dark Cards',
         description: 'Capa com foto full-bleed e título centralizado. Card arredondado no fundo escuro com destaques azuis.',
-        background: '#111827',
+        background: '#0f172a',
+        backgroundAlt: '#111827',
         textColor: '#ffffff',
+        accentColor: '#2563eb',
         font: 'Poppins',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: 'bold',
         letterSpacing: 0,
         align: 'center',
         fonts: ['Poppins', 'Inter'],
         buildScene: buildDarkCards,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+
+            // Blue glow circle (behind gradient)
+            scene.elements.unshift(createRect({
+                type: 'circle',
+                x: 180,
+                y: Math.round(slideH * 0.2),
+                width: 720,
+                height: 720,
+                fill: 'rgba(37,99,235,0.10)',
+                shadowEnabled: false,
+            }));
+
+            if (layout.type === 'stat_callout') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'circle',
+                    x: SLIDE_W / 2 - 180,
+                    y: Math.round(slideH * 0.25),
+                    width: 360,
+                    height: 360,
+                    fill: 'rgba(37,99,235,0.12)',
+                }));
+            }
+
+            if (layout.type === 'hook_hero' || layout.type === 'cta_closing') {
+                // Accent top bar
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 92,
+                    y: 92,
+                    width: 120,
+                    height: 6,
+                    fill: '#2563eb',
+                    cornerRadius: 999,
+                }));
+            }
+
+            return scene;
+        },
     },
     {
         id: 'pop-magazine',
         name: 'Pop Magazine',
         description: 'Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual.',
         background: '#fff8f1',
+        backgroundAlt: '#fff0e6',
         textColor: '#111111',
+        textColorAlt: '#111111',
+        accentColor: '#E8120A',
         font: 'Anton',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: '',
         letterSpacing: 0,
         align: 'left',
         fonts: ['Anton', 'Inter'],
         buildScene: buildPopMagazine,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+
+            // Signature red left bar
+            scene.elements.unshift(createRect({
+                type: 'rect',
+                x: 88,
+                y: 86,
+                width: 18,
+                height: slideH - 172,
+                fill: '#E8120A',
+                cornerRadius: 999,
+            }));
+
+            if (layout.type === 'hook_hero') {
+                scene.elements.push(createRect({
+                    type: 'circle',
+                    x: 810,
+                    y: 88,
+                    width: 180,
+                    height: 180,
+                    fill: '#FFD84D',
+                    stroke: '#111111',
+                    strokeWidth: 5,
+                }));
+                scene.elements.push(createText({
+                    x: 832,
+                    y: 150,
+                    width: 136,
+                    height: 60,
+                    text: 'NEW',
+                    fontFamily: 'Anton',
+                    fontSize: 42,
+                    fill: '#111111',
+                    align: 'center',
+                    rotation: -8,
+                }));
+            }
+
+            if (layout.type === 'stat_callout') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 142,
+                    y: Math.round(slideH * 0.54),
+                    width: 560,
+                    height: 14,
+                    fill: '#ff7aa2',
+                    cornerRadius: 999,
+                }));
+            }
+
+            return scene;
+        },
     },
     {
         id: 'twitter-x',
         name: 'Twitter/X Style',
         description: 'Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade.',
         background: '#f3f4f6',
-        textColor: '#000000',
+        backgroundAlt: '#f8fafc',
+        textColor: '#0f172a',
+        textColorAlt: '#0f172a',
+        accentColor: '#2563eb',
         font: 'Inter',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: 'bold',
         letterSpacing: -0.5,
         align: 'left',
         fonts: ['Inter'],
         buildScene: buildTwitterX,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            const cardY = Math.round(slideH * 0.08);
+            const cardH = Math.round(slideH * 0.84);
+
+            // White card container (behind all text)
+            scene.elements.unshift(createRect({
+                type: 'rect',
+                x: 60,
+                y: cardY,
+                width: 960,
+                height: cardH,
+                fill: '#ffffff',
+                stroke: '#dbe1e8',
+                strokeWidth: 2,
+                cornerRadius: 28,
+                shadowEnabled: true,
+                shadowColor: '#cbd5e1',
+                shadowBlur: 18,
+                shadowOffsetY: 10,
+                shadowOffsetX: 0,
+                shadowOpacity: 0.25,
+            }));
+
+            if (layout.type === 'standard' || layout.type === 'split_text') {
+                // Blue accent bar
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 100,
+                    y: Math.round(slideH * 0.5),
+                    width: 10,
+                    height: 80,
+                    fill: '#2563eb',
+                    cornerRadius: 999,
+                }));
+            }
+
+            return scene;
+        },
     },
     {
         id: 'acid-brutalist',
         name: 'Acid Brutalist',
         description: 'Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista.',
         background: '#050505',
+        backgroundAlt: '#0a0a0a',
         textColor: '#ffffff',
+        accentColor: '#39FF14',
         font: 'Montserrat',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: 'bold',
         letterSpacing: -2,
         align: 'left',
         fonts: ['Montserrat', 'Inter'],
         buildScene: buildAcidBrutalist,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+
+            // Signature green border frame
+            scene.elements.unshift(createRect({
+                type: 'rect',
+                x: 56,
+                y: 58,
+                width: 968,
+                height: slideH - 116,
+                fill: 'rgba(0,0,0,0)',
+                stroke: '#39FF14',
+                strokeWidth: 4,
+                cornerRadius: 20,
+            }));
+
+            if (layout.type === 'hook_hero' || layout.type === 'cta_closing') {
+                scene.elements.push(createRect({
+                    type: 'rect',
+                    x: 784,
+                    y: 76,
+                    width: 180,
+                    height: 66,
+                    fill: '#ff5a1f',
+                    rotation: -4,
+                }));
+                scene.elements.push(createText({
+                    x: 806,
+                    y: 94,
+                    width: 138,
+                    height: 32,
+                    text: 'RAW',
+                    fontFamily: 'Montserrat',
+                    fontSize: 28,
+                    fontStyle: '800',
+                    fill: '#050505',
+                    align: 'center',
+                    rotation: -4,
+                }));
+            }
+
+            if (layout.type === 'stat_callout') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'circle',
+                    x: 702,
+                    y: slideH - 286,
+                    width: 210,
+                    height: 210,
+                    fill: 'rgba(57,255,20,0.10)',
+                    stroke: '#39FF14',
+                    strokeWidth: 3,
+                }));
+            }
+
+            return scene;
+        },
     },
     {
         id: 'documentary',
         name: 'Documentary',
         description: 'Estética jornalismo investigativo vintage. Playfair Display + Inter. Layouts com grain e textura.',
         background: '#1a1108',
+        backgroundAlt: '#1a1108',
         textColor: '#f0e8d8',
+        textColorAlt: '#f0e8d8',
+        accentColor: '#b45309',
         font: 'Playfair Display',
+        bodyFont: 'Inter',
+        captionFont: 'Inter',
         fontStyle: '',
         letterSpacing: 0,
         align: 'left',
         fonts: ['Playfair Display', 'Inter'],
         buildScene: buildDocumentary,
+        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+
+            // Vintage outer frame
+            scene.elements.unshift(createRect({
+                type: 'rect',
+                x: 72,
+                y: 72,
+                width: 936,
+                height: slideH - 144,
+                fill: 'rgba(255,255,255,0.02)',
+                stroke: 'rgba(240,232,216,0.10)',
+                strokeWidth: 2,
+                cornerRadius: 12,
+            }));
+
+            if (layout.type === 'quote_block') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 720,
+                    y: Math.round(slideH * 0.18) - 26,
+                    width: 200,
+                    height: 54,
+                    fill: 'rgba(0,0,0,0)',
+                    stroke: '#b45309',
+                    strokeWidth: 2,
+                    rotation: -5,
+                }));
+                scene.elements.splice(2, 0, createText({
+                    x: 736,
+                    y: Math.round(slideH * 0.18) - 10,
+                    width: 170,
+                    height: 24,
+                    text: 'ARCHIVE',
+                    fontFamily: 'Inter',
+                    fontSize: 20,
+                    fontStyle: '800',
+                    fill: '#b45309',
+                    align: 'center',
+                    rotation: -5,
+                    letterSpacing: 2,
+                }));
+            }
+
+            if (layout.type === 'stat_callout') {
+                scene.elements.splice(1, 0, createRect({
+                    type: 'rect',
+                    x: 106,
+                    y: slideH - 120,
+                    width: 868,
+                    height: 2,
+                    fill: 'rgba(240,232,216,0.14)',
+                }));
+            }
+
+            return scene;
+        },
     },
 ];
 

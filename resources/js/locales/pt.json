@@ -439,7 +439,16 @@
       "stylePlaceholder": "ex: minimalista, vibrante, corporativo...",
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
-      "generateImagesLabel": "Gerar imagens de fundo com IA",
+      "generateImagesLabel": "Imagens no carrossel",
+      "imageMode": {
+        "none": "Sem imagens",
+        "background": "Só imagem de fundo",
+        "backgroundShort": "Só fundo",
+        "grid": "Só grade de imagens",
+        "gridShort": "Só grade",
+        "alternate": "Intercalar ambas",
+        "alternateShort": "Intercalar"
+      },
       "statusGenerating": "Escrevendo seus slides…",
       "statusGeneratingHint": "Criando o conteúdo de cada slide com IA",
       "statusImages": "Gerando imagens de fundo…",
@@ -513,6 +522,58 @@
       "importBtn": "Importar a partir de uma URL",
       "formatLabel": "Formato"
     },
+    "templates": {
+      "noir-manifesto": {
+        "name": "Noir Manifesto",
+        "description": "Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional."
+      },
+      "dark-cards": {
+        "name": "Dark Cards",
+        "description": "Capa com foto full-bleed e título centralizado. Slides internos com card de imagem arredondado no fundo escuro."
+      },
+      "pop-magazine": {
+        "name": "Pop Magazine",
+        "description": "Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual."
+      },
+      "twitter-x": {
+        "name": "Twitter/X Style",
+        "description": "Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade."
+      },
+      "acid-brutalist": {
+        "name": "Acid Brutalist",
+        "description": "Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista."
+      },
+      "documentary": {
+        "name": "Documentary",
+        "description": "Estética jornalismo investigativo vintage. Playfair Display + Inter. Layouts com grain e textura."
+      }
+    },
+    "archetypes": {
+      "disruptor-social": {
+        "name": "Disruptor Social",
+        "description": "Fenômeno que choca e revela uma consequência grave para a sociedade."
+      },
+      "poder-oculto": {
+        "name": "Poder Oculto",
+        "description": "Por que {grupo} age enquanto {vulnerável} sofre calado?"
+      },
+      "paradoxo-social": {
+        "name": "Paradoxo Social",
+        "description": "Afirmação chocante que inverte o senso comum e muda a perspectiva."
+      },
+      "profecia-provocativa": {
+        "name": "Profecia Provocativa",
+        "description": "Autoridade previu; evento revelou. Gancho de revelação surpresa."
+      },
+      "estrategia-inusitada": {
+        "name": "Estratégia Inusitada",
+        "description": "Como {pessoa} usou um método surpreendente e venceu."
+      },
+      "autoridade-cientifica": {
+        "name": "Autoridade Científica",
+        "description": "Estudo comprova resultado surpreendente com causa clara."
+      }
+    },
     "step2": {
       "templateTitle": "Template Visual",
       "archetypeTitle": "Arquétipo de Gancho — Slide Capa",
@@ -529,6 +590,10 @@
       "archetype": "Arquétipo",
       "format": "Formato",
       "slideCountLabel": "Número de slides",
+      "imageModeLabel": "Imagens no carrossel",
+      "customPromptLabel": "Instruções adicionais (opcional)",
+      "customPromptHint": "Adicione detalhes específicos, tom ou restrições para a IA seguir.",
+      "customPromptPlaceholder": "ex: Use um tom formal, foque em dados e estatísticas, evite jargões...",
       "saveConfigLabel": "Salvar como padrão do autopiloto IA",
       "saveConfigDesc": "Este template e arquétipo serão usados automaticamente nas próximas gerações do autopiloto.",
       "generateBtn": "Gerar Carrossel"

@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough } from 'lucide-react';
+import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, Strikethrough, ChevronDown, Check } from 'lucide-react';
 import { BaseEl, SlideEl, TextEl, ShapeEl, ImageEl, GradientEl, PathEl, ButtonEl, ButtonIconPosition, Align, VAlign, Wrap, AccentSide, BorderStyle, BgSize, GradientDirection, RichSpan } from './types';
 import { Section, ToggleField, Field, ColorField, SliderField, FontPicker, PositionGrid } from './PrimitiveControls';
 import { preserveSingleHighlightRichText } from './utils';
+import { OVERLAY_PRESETS, OverlayPreset, getOverlayLabel } from './overlays';
 
 // ── Word Highlight helpers ────────────────────────────────────────────────────
 
@@ -122,6 +123,84 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
     );
 }
 
+// ─── Overlay Preset Section ───────────────────────────────────────────────────
+
+function OverlayPresetSection({ el, onChange }: { el: ImageEl; onChange: (p: Partial<ImageEl>) => void }) {
+    const [open, setOpen] = React.useState(false);
+    const ref = React.useRef<HTMLDivElement>(null);
+    const activePreset = (el.overlayPreset ?? 'none') as OverlayPreset;
+    const hasOverlay = activePreset !== 'none';
+
+    React.useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    function select(preset: OverlayPreset) {
+        setOpen(false);
+        if (preset === 'none') {
+            onChange({ overlayPreset: 'none', overlayEnabled: false });
+        } else {
+            onChange({
+                overlayPreset: preset,
+                overlayEnabled: true,
+                overlayColor: el.overlayColor || '#000000',
+                overlayOpacity: el.overlayOpacity > 0 ? el.overlayOpacity : 1,
+            });
+        }
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div ref={ref} className="relative">
+                <button
+                    type="button"
+                    onClick={() => setOpen((o) => !o)}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded border border-gray-200 text-xs text-gray-700 hover:border-gray-300 transition-colors bg-white"
+                >
+                    <span className="font-medium">{getOverlayLabel(activePreset)}</span>
+                    <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                </button>
+
+                {open && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg shadow-2xl border border-gray-800 bg-[#1a1a1a] overflow-hidden max-h-72 overflow-y-auto">
+                        {OVERLAY_PRESETS.map((opt) => (
+                            <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => select(opt.key)}
+                                className={`w-full flex items-center justify-between px-3 py-1.5 text-xs transition-colors text-left ${
+                                    activePreset === opt.key
+                                        ? 'bg-[#3b82f6] text-white'
+                                        : 'text-gray-200 hover:bg-[#2a2a2a]'
+                                }`}
+                            >
+                                {opt.label}
+                                {activePreset === opt.key && <Check className="w-3 h-3 shrink-0" />}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {hasOverlay && (
+                <>
+                    <Field label="Cor">
+                        <ColorField value={el.overlayColor} onChange={(v) => onChange({ overlayColor: v })} />
+                    </Field>
+                    <Field label="Intensidade">
+                        <SliderField value={el.overlayOpacity} onChange={(v) => onChange({ overlayOpacity: v })} min={0} max={1} step={0.01} />
+                    </Field>
+                </>
+            )}
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ShadowSection({ el, onChange }: { el: BaseEl | null; onChange: (p: Partial<BaseEl>) => void }) {
@@ -160,7 +239,7 @@ export function PropertiesPanel({
 
     const iconBtn = (active: boolean, onClick: () => void, icon: React.ReactNode, title: string) => (
         <button type="button" title={title} onClick={onClick}
-            className={`p-1.5 rounded border transition-colors ${active ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            className={`p-1.5 rounded border transition-colors ${active ? 'bg-[#f2f2f2] text-gray-700 border-gray-300' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
             {icon}
         </button>
     );
@@ -275,7 +354,7 @@ export function PropertiesPanel({
                                             {(['left', 'right', 'top', 'bottom'] as AccentSide[]).map((side) => (
                                                 <button key={side} type="button"
                                                     onClick={() => ch<TextEl>({ accentSide: side })}
-                                                    className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.accentSide === side ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                                                    className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.accentSide === side ? 'bg-[#f2f2f2] text-gray-700 border-gray-300' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
                                                     {t(`slideEditor.accentSides.${side}`)}
                                                 </button>
                                             ))}
@@ -366,7 +445,7 @@ export function PropertiesPanel({
                                             {(['cover', 'contain', 'fill'] as BgSize[]).map((s) => (
                                                 <button key={s} type="button"
                                                     onClick={() => ch<ImageEl>({ bgSize: s })}
-                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium uppercase tracking-wide transition-colors ${el.bgSize === s ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium uppercase tracking-wide transition-colors ${el.bgSize === s ? 'bg-[#f2f2f2] text-gray-700 border-gray-300' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
                                                     {t(`slideEditor.fields.bg${s.charAt(0).toUpperCase() + s.slice(1)}` as never)}
                                                 </button>
                                             ))}
@@ -396,15 +475,7 @@ export function PropertiesPanel({
 
                         {/* Overlay */}
                         <Section title={t('slideEditor.sections.colorOverlay')}>
-                            <ToggleField label={t('slideEditor.fields.enableOverlay')} checked={el.overlayEnabled} onChange={(v) => ch<ImageEl>({ overlayEnabled: v })} />
-                            {el.overlayEnabled && (
-                                <>
-                                    <Field label={t('slideEditor.fields.color')}><ColorField value={el.overlayColor} onChange={(v) => ch<ImageEl>({ overlayColor: v })} /></Field>
-                                    <Field label={t('slideEditor.fields.opacity')}>
-                                        <SliderField value={el.overlayOpacity} onChange={(v) => ch<ImageEl>({ overlayOpacity: v })} min={0} max={1} step={0.01} />
-                                    </Field>
-                                </>
-                            )}
+                            <OverlayPresetSection el={el} onChange={(p) => ch<ImageEl>(p)} />
                         </Section>
 
                         <Section title={t('slideEditor.sections.toneColor')}>
@@ -467,7 +538,7 @@ export function PropertiesPanel({
                                 {(['bottom', 'top', 'left', 'right'] as GradientDirection[]).map((dir) => (
                                     <button key={dir} type="button"
                                         onClick={() => ch<GradientEl>({ direction: dir })}
-                                        className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.direction === dir ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                                        className={`py-1.5 rounded border text-[10px] font-medium transition-colors ${el.direction === dir ? 'bg-[#f2f2f2] text-gray-700 border-gray-300' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
                                         {t(`slideEditor.gradientDirections.${dir}`)}
                                     </button>
                                 ))}
@@ -494,10 +565,10 @@ export function PropertiesPanel({
                                         { key: 'filled',   label: t('slideEditor.buttonStyles.filled'),   apply: () => ch<ButtonEl>({ bgEnabled: true,  bgOpacity: 1,    strokeWidth: 0 }) },
                                         { key: 'outlined', label: t('slideEditor.buttonStyles.outlined'), apply: () => ch<ButtonEl>({ bgEnabled: false, bgOpacity: 1,    strokeWidth: 4 }) },
                                         { key: 'ghost',    label: t('slideEditor.buttonStyles.ghost'),    apply: () => ch<ButtonEl>({ bgEnabled: false, bgOpacity: 1,    strokeWidth: 0 }) },
-                                        { key: 'glass',    label: t('slideEditor.buttonStyles.glass'),    apply: () => ch<ButtonEl>({ bgEnabled: true,  bgOpacity: 0.15, bgColor: '#ffffff', stroke: '#ffffff', strokeWidth: 2, cornerRadius: 16 }) },
+                                        { key: 'glass',    label: t('slideEditor.buttonStyles.glass'),    apply: () => ch<ButtonEl>({ bgEnabled: true,  bgOpacity: 1, bgColor: '#f2f2f2', stroke: '#d9d9d9', strokeWidth: 2, cornerRadius: 16, fill: '#111111' }) },
                                     ] as const).map(({ key, label, apply }) => (
                                         <button key={key} type="button" onClick={apply}
-                                            className="py-1.5 rounded border text-[10px] font-semibold uppercase tracking-wide transition-colors border-gray-200 text-gray-500 hover:border-[#E8440A] hover:text-[#E8440A]">
+                                            className="py-1.5 rounded border text-[10px] font-semibold uppercase tracking-wide transition-colors border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-[#f2f2f2] hover:text-gray-700">
                                             {label}
                                         </button>
                                     ))}
@@ -584,7 +655,7 @@ export function PropertiesPanel({
                                             {(['left', 'right'] as ButtonIconPosition[]).map((pos) => (
                                                 <button key={pos} type="button"
                                                     onClick={() => ch<ButtonEl>({ iconPosition: pos })}
-                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium transition-colors ${el.iconPosition === pos ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                                                    className={`flex-1 py-1 rounded border text-[10px] font-medium transition-colors ${el.iconPosition === pos ? 'bg-[#f2f2f2] text-gray-700 border-gray-300' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
                                                     {pos === 'left' ? t('slideEditor.fields.iconLeft') : t('slideEditor.fields.iconRight')}
                                                 </button>
                                             ))}

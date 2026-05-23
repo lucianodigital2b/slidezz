@@ -99,6 +99,7 @@ export interface ImageEl extends BaseEl {
     overlayEnabled: boolean;
     overlayColor: string;
     overlayOpacity: number;
+    overlayPreset?: string;  // OverlayPreset key — optional for backward compat
     // background
     isBackground: boolean;
     bgSize: BgSize;

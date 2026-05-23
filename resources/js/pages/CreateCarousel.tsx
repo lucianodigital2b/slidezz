@@ -1,3 +1,4 @@
+import React from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import CarouselWizardController from '@/actions/App/Http/Controllers/CarouselWizardController';
 import {
@@ -5,34 +6,39 @@ import {
     ArrowRight,
     Check,
     ExternalLink,
+    Grid2X2,
+    Image,
+    ImageOff,
+    Layers,
     Loader2,
     X,
 } from 'lucide-react';
+import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
 
-const TEMPLATES = [
-    { id: 'noir-manifesto',  name: 'Noir Manifesto',  description: 'Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional.' },
-    { id: 'dark-cards',      name: 'Dark Cards',       description: 'Capa com foto full-bleed e título centralizado. Slides internos com card de imagem arredondado no fundo escuro.' },
-    { id: 'pop-magazine',    name: 'Pop Magazine',     description: 'Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual.' },
-    { id: 'twitter-x',       name: 'Twitter/X Style',  description: 'Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade.' },
-    { id: 'acid-brutalist',  name: 'Acid Brutalist',   description: 'Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista.' },
-    { id: 'documentary',     name: 'Documentary',      description: 'Estética jornalismo investigativo vintage. Playfair Display + Anton. Layouts com grain e textura.' },
+const TEMPLATE_IDS = [
+    'noir-manifesto',
+    'dark-cards',
+    'pop-magazine',
+    'twitter-x',
+    'acid-brutalist',
+    'documentary',
 ] as const;
 
-const ARCHETYPES = [
-    { id: 'disruptor-social',      name: 'Disruptor Social',      description: 'Fenômeno que choca e revela uma consequência grave para a sociedade.' },
-    { id: 'poder-oculto',          name: 'Poder Oculto',          description: 'Por que {grupo} age enquanto {vulnerável} sofre calado?' },
-    { id: 'paradoxo-social',       name: 'Paradoxo Social',       description: 'Afirmação chocante que inverte o senso comum e muda a perspectiva.' },
-    { id: 'profecia-provocativa',  name: 'Profecia Provocativa',  description: 'Autoridade previu; evento revelou. Gancho de revelação surpresa.' },
-    { id: 'estrategia-inusitada',  name: 'Estratégia Inusitada',  description: 'Como {pessoa} usou um método surpreendente e venceu.' },
-    { id: 'autoridade-cientifica', name: 'Autoridade Científica', description: 'Estudo comprova resultado surpreendente com causa clara.' },
+const ARCHETYPE_IDS = [
+    'disruptor-social',
+    'poder-oculto',
+    'paradoxo-social',
+    'profecia-provocativa',
+    'estrategia-inusitada',
+    'autoridade-cientifica',
 ] as const;
 
-type TemplateId  = typeof TEMPLATES[number]['id'];
-type ArchetypeId = typeof ARCHETYPES[number]['id'];
+type TemplateId  = typeof TEMPLATE_IDS[number];
+type ArchetypeId = typeof ARCHETYPE_IDS[number];
 type UrlType     = 'youtube' | 'instagram' | 'blog';
 
 interface WorkspaceConfig {
@@ -220,14 +226,14 @@ export default function CreateCarousel() {
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
-    const [generateImages, setGenerateImages] = useState(true);
+    const [imageMode, setImageMode] = useState<ImageMode>('background');
     const [saveConfig, setSaveConfig]       = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
 
-    const selectedTemplate  = TEMPLATES.find((t) => t.id === template);
-    const selectedArchetype = ARCHETYPES.find((a) => a.id === archetype);
+    const selectedTemplateName  = template  ? t(`createCarousel.templates.${template}.name`)  : null;
+    const selectedArchetypeName = archetype ? t(`createCarousel.archetypes.${archetype}.name`) : null;
 
     const stepLabels = [
         t('createCarousel.steps.input'),
@@ -256,7 +262,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt, generate_images: generateImages },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt, image_mode: imageMode },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -385,13 +391,13 @@ export default function CreateCarousel() {
                                 <div>
                                     <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('createCarousel.step2.templateTitle')}</h2>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {TEMPLATES.map((tpl) => (
+                                        {TEMPLATE_IDS.map((id) => (
                                             <SelectionCard
-                                                key={tpl.id}
-                                                name={tpl.name}
-                                                description={tpl.description}
-                                                selected={template === tpl.id}
-                                                onClick={() => setTemplate(tpl.id)}
+                                                key={id}
+                                                name={t(`createCarousel.templates.${id}.name`)}
+                                                description={t(`createCarousel.templates.${id}.description`)}
+                                                selected={template === id}
+                                                onClick={() => setTemplate(id)}
                                             />
                                         ))}
                                     </div>
@@ -402,13 +408,13 @@ export default function CreateCarousel() {
                                     <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('createCarousel.step2.archetypeTitle')}</h2>
                                     <p className="text-xs text-gray-400 mb-3">{t('createCarousel.step2.archetypeSubtitle')}</p>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {ARCHETYPES.map((arc) => (
+                                        {ARCHETYPE_IDS.map((id) => (
                                             <SelectionCard
-                                                key={arc.id}
-                                                name={arc.name}
-                                                description={arc.description}
-                                                selected={archetype === arc.id}
-                                                onClick={() => setArchetype(arc.id)}
+                                                key={id}
+                                                name={t(`createCarousel.archetypes.${id}.name`)}
+                                                description={t(`createCarousel.archetypes.${id}.description`)}
+                                                selected={archetype === id}
+                                                onClick={() => setArchetype(id)}
                                             />
                                         ))}
                                     </div>
@@ -421,20 +427,20 @@ export default function CreateCarousel() {
                                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('createCarousel.step2.preview')}</p>
                                     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
                                         <div className="aspect-square bg-gray-900 flex items-center justify-center p-6">
-                                            {selectedTemplate ? (
+                                            {template ? (
                                                 <div className="text-center space-y-2">
-                                                    <p className="text-white text-xs font-bold uppercase tracking-widest opacity-60">{selectedTemplate.name}</p>
-                                                    <p className="text-white/40 text-[10px] leading-relaxed">{selectedTemplate.description}</p>
+                                                    <p className="text-white text-xs font-bold uppercase tracking-widest opacity-60">{selectedTemplateName}</p>
+                                                    <p className="text-white/40 text-[10px] leading-relaxed">{t(`createCarousel.templates.${template}.description`)}</p>
                                                 </div>
                                             ) : (
                                                 <p className="text-white/30 text-xs text-center">{t('createCarousel.step2.previewEmpty')}</p>
                                             )}
                                         </div>
-                                        {selectedArchetype && (
+                                        {archetype && (
                                             <div className="px-4 py-3 border-t border-gray-100">
                                                 <p className="text-[10px] font-semibold text-[#E8440A] uppercase tracking-wider">{t('createCarousel.step2.hook')}</p>
-                                                <p className="text-xs font-semibold text-gray-800 mt-0.5">{selectedArchetype.name}</p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">{selectedArchetype.description}</p>
+                                                <p className="text-xs font-semibold text-gray-800 mt-0.5">{selectedArchetypeName}</p>
+                                                <p className="text-[10px] text-gray-400 mt-0.5">{t(`createCarousel.archetypes.${archetype}.description`)}</p>
                                             </div>
                                         )}
                                     </div>
@@ -461,11 +467,11 @@ export default function CreateCarousel() {
                                 <div className="px-5 py-4 flex gap-4">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.template')}</p>
-                                        <p className="text-sm font-semibold text-gray-800 mt-1">{selectedTemplate?.name ?? '—'}</p>
+                                        <p className="text-sm font-semibold text-gray-800 mt-1">{selectedTemplateName ?? '—'}</p>
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.archetype')}</p>
-                                        <p className="text-sm font-semibold text-gray-800 mt-1">{selectedArchetype?.name ?? '—'}</p>
+                                        <p className="text-sm font-semibold text-gray-800 mt-1">{selectedArchetypeName ?? '—'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.format')}</p>
@@ -507,24 +513,32 @@ export default function CreateCarousel() {
                                 />
                             </div>
 
-                            {/* Generate Images Toggle */}
-                            <button
-                                type="button"
-                                onClick={() => setGenerateImages((v) => !v)}
-                                className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                                    generateImages ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                            >
-                                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                    generateImages ? 'border-[#E8440A] bg-[#E8440A]' : 'border-gray-300'
-                                }`}>
-                                    {generateImages && <Check className="h-3 w-3 text-white" />}
+                            {/* Image Mode Selector */}
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('createCarousel.step3.imageModeLabel')}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                        { id: 'none'       as ImageMode, label: t('slideEditor.ai.imageMode.none'),       Icon: ImageOff  },
+                                        { id: 'background' as ImageMode, label: t('slideEditor.ai.imageMode.background'), Icon: Image     },
+                                        { id: 'grid'       as ImageMode, label: t('slideEditor.ai.imageMode.grid'),       Icon: Grid2X2   },
+                                        { id: 'alternate'  as ImageMode, label: t('slideEditor.ai.imageMode.alternate'),  Icon: Layers    },
+                                    ] as { id: ImageMode; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            onClick={() => setImageMode(id)}
+                                            className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
+                                                imageMode === id
+                                                    ? 'border-[#E8440A] bg-[#E8440A]/5 text-[#E8440A]'
+                                                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <Icon className="h-4 w-4 shrink-0" />
+                                            {label}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-800">Gerar imagens de fundo com IA</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Criar imagens automáticas baseadas no conteúdo dos slides.</p>
-                                </div>
-                            </button>
+                            </div>
 
                             {/* Save as workspace default */}
                             <button

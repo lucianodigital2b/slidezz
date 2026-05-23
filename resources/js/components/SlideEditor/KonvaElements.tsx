@@ -4,6 +4,7 @@ import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
 import { TextEl, ImageEl, ButtonEl, RichSpan } from './types';
 import { drawTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing, borderStyleToDash, hexToRgba } from './utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
+import { OverlayPreset } from './overlays';
 
 // ─── useLoadImage ─────────────────────────────────────────────────────────────
 
@@ -283,6 +284,9 @@ export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }:
         : el.text;
 
     const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
+    const isSoftSurfaceButton = el.bgEnabled && el.bgOpacity >= 1 && el.bgColor.toLowerCase() === '#f2f2f2';
+    const strokeColor = el.strokeWidth > 0 ? el.stroke : isSoftSurfaceButton ? '#d9d9d9' : undefined;
+    const strokeWidth = el.strokeWidth > 0 ? el.strokeWidth : isSoftSurfaceButton ? 1 : 0;
 
     return (
         <Group
@@ -313,8 +317,8 @@ export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }:
                 x={0} y={0}
                 width={el.width} height={el.height}
                 fill={el.bgEnabled ? hexToRgba(el.bgColor, el.bgOpacity) : undefined}
-                stroke={el.strokeWidth > 0 ? el.stroke : undefined}
-                strokeWidth={el.strokeWidth}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
                 cornerRadius={el.cornerRadius}
                 dash={dash.length ? dash : undefined}
                 dashEnabled={el.dashEnabled}
@@ -343,6 +347,153 @@ export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }:
             />
         </Group>
     );
+}
+
+// ─── Overlay Preset Rendering ─────────────────────────────────────────────────
+
+function OverlayPresetLayer({ preset, color, opacity, w, h }: {
+    preset: OverlayPreset;
+    color: string;
+    opacity: number;
+    w: number;
+    h: number;
+}) {
+    const c = (a: number) => hexToRgba(color, Math.min(1, a * opacity));
+    const diagonal = Math.sqrt(w * w + h * h) / 2;
+
+    switch (preset) {
+        case 'none': return null;
+
+        case 'dark':
+            return <Rect x={0} y={0} width={w} height={h} fill={c(0.38)} listening={false} />;
+        case 'dark_strong':
+            return <Rect x={0} y={0} width={w} height={h} fill={c(0.65)} listening={false} />;
+
+        case 'gradient':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: h }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientColorStops={[0, c(0.85), 0.5, c(0.35), 0.75, c(0)]}
+                listening={false} />;
+        case 'gradient_strong':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: h }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientColorStops={[0, c(0.95), 0.55, c(0.5), 0.82, c(0)]}
+                listening={false} />;
+
+        case 'vignette':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillRadialGradientStartPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientEndPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientStartRadius={0}
+                fillRadialGradientEndRadius={diagonal}
+                fillRadialGradientColorStops={[0, c(0), 0.45, c(0.05), 0.75, c(0.55), 1, c(0.9)]}
+                listening={false} />;
+        case 'vignette_strong':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillRadialGradientStartPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientEndPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientStartRadius={0}
+                fillRadialGradientEndRadius={diagonal}
+                fillRadialGradientColorStops={[0, c(0), 0.35, c(0.1), 0.65, c(0.65), 1, c(1)]}
+                listening={false} />;
+
+        case 'base':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: h }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: h * 0.42 }}
+                fillLinearGradientColorStops={[0, c(0.75), 0.65, c(0.2), 1, c(0)]}
+                listening={false} />;
+        case 'base_strong':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: h }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: h * 0.22 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.6, c(0.4), 1, c(0)]}
+                listening={false} />;
+        case 'base_intense':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: h }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientColorStops={[0, c(1), 0.55, c(0.65), 0.82, c(0.15), 1, c(0)]}
+                listening={false} />;
+
+        case 'top':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: h * 0.58 }}
+                fillLinearGradientColorStops={[0, c(0.75), 0.65, c(0.2), 1, c(0)]}
+                listening={false} />;
+        case 'top_strong':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: h * 0.78 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.6, c(0.4), 1, c(0)]}
+                listening={false} />;
+        case 'top_intense':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w / 2, y: 0 }}
+                fillLinearGradientEndPoint={{ x: w / 2, y: h }}
+                fillLinearGradientColorStops={[0, c(1), 0.55, c(0.65), 0.82, c(0.15), 1, c(0)]}
+                listening={false} />;
+
+        case 'frame':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillRadialGradientStartPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientEndPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientStartRadius={diagonal * 0.45}
+                fillRadialGradientEndRadius={diagonal}
+                fillRadialGradientColorStops={[0, c(0), 0.35, c(0.1), 0.75, c(0.5), 1, c(0.85)]}
+                listening={false} />;
+        case 'frame_strong':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillRadialGradientStartPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientEndPoint={{ x: w / 2, y: h / 2 }}
+                fillRadialGradientStartRadius={diagonal * 0.28}
+                fillRadialGradientEndRadius={diagonal}
+                fillRadialGradientColorStops={[0, c(0), 0.3, c(0.15), 0.65, c(0.65), 1, c(1)]}
+                listening={false} />;
+
+        case 'left':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: 0, y: h / 2 }}
+                fillLinearGradientEndPoint={{ x: w * 0.65, y: h / 2 }}
+                fillLinearGradientColorStops={[0, c(0.85), 0.6, c(0.2), 1, c(0)]}
+                listening={false} />;
+        case 'right':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w, y: h / 2 }}
+                fillLinearGradientEndPoint={{ x: w * 0.35, y: h / 2 }}
+                fillLinearGradientColorStops={[0, c(0.85), 0.6, c(0.2), 1, c(0)]}
+                listening={false} />;
+
+        case 'diag_bl':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: 0, y: h }}
+                fillLinearGradientEndPoint={{ x: w * 0.75, y: h * 0.25 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.55, c(0.3), 1, c(0)]}
+                listening={false} />;
+        case 'diag_br':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w, y: h }}
+                fillLinearGradientEndPoint={{ x: w * 0.25, y: h * 0.25 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.55, c(0.3), 1, c(0)]}
+                listening={false} />;
+        case 'diag_tl':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                fillLinearGradientEndPoint={{ x: w * 0.75, y: h * 0.75 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.55, c(0.3), 1, c(0)]}
+                listening={false} />;
+        case 'diag_tr':
+            return <Rect x={0} y={0} width={w} height={h}
+                fillLinearGradientStartPoint={{ x: w, y: 0 }}
+                fillLinearGradientEndPoint={{ x: w * 0.25, y: h * 0.75 }}
+                fillLinearGradientColorStops={[0, c(0.9), 0.55, c(0.3), 1, c(0)]}
+                listening={false} />;
+
+        default: return null;
+    }
 }
 
 // ─── KonvaImageEl ─────────────────────────────────────────────────────────────
@@ -474,14 +625,23 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onChange
                 width={dispW} height={dispH}
                 {...(crop ? { cropX: crop.cropX, cropY: crop.cropY, cropWidth: crop.cropWidth, cropHeight: crop.cropHeight } : {})}
             />
-            {el.overlayEnabled && (
-                <Rect
-                    x={0} y={0} width={dispW} height={dispH}
-                    fill={el.overlayColor}
+            {el.overlayPreset && el.overlayPreset !== 'none'
+                ? <OverlayPresetLayer
+                    preset={el.overlayPreset as OverlayPreset}
+                    color={el.overlayColor}
                     opacity={el.overlayOpacity}
-                    listening={false}
-                />
-            )}
+                    w={dispW}
+                    h={dispH}
+                  />
+                : el.overlayEnabled && (
+                    <Rect
+                        x={0} y={0} width={dispW} height={dispH}
+                        fill={el.overlayColor}
+                        opacity={el.overlayOpacity}
+                        listening={false}
+                    />
+                )
+            }
         </Group>
     );
 }

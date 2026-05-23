@@ -5,6 +5,9 @@ import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS,
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
+import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequence } from '../layouts';
+
+export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
 
 export interface SlideData {
     title: string;
@@ -13,6 +16,8 @@ export interface SlideData {
     imagePrompt: string;
     highlightWords?: string[];
     highlightColor?: string;
+    stat?: string;
+    ctaPill?: string;
 }
 
 export function useAiGeneration(
@@ -27,7 +32,7 @@ export function useAiGeneration(
     const [aiTopic, setAiTopic] = useState('');
     const [aiStyle, setAiStyle] = useState('');
     const [aiSlideCount, setAiSlideCount] = useState(5);
-    const [aiGenerateImages, setAiGenerateImages] = useState(true);
+    const [aiImageMode, setAiImageMode] = useState<ImageMode>('background');
     const [aiTemplateId, setAiTemplateId] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
     const [aiProgress, setAiProgress] = useState<string[]>([]);
@@ -81,8 +86,93 @@ export function useAiGeneration(
         return [];
     }
 
-    function buildSlideFromData(data: SlideData, bgBase64: string | null, template: SlideTemplate | null): Slide {
+    function buildSlideFromData(
+        data: SlideData,
+        bgBase64: string | null,
+        template: SlideTemplate | null,
+        layoutType: LayoutType,
+        slideIndex: number,
+        totalSlides: number,
+        imageMode: ImageMode = 'background',
+    ): Slide {
         const slideH = FORMATS[format].h;
+        const layout = LAYOUT_DEFINITIONS[layoutType];
+
+        if (template?.buildSceneFromLayout) {
+            const content = {
+                eyebrow: '',
+                title: data.title,
+                subtitle: data.subtitle,
+                caption: data.description,
+                description: data.description,
+                stat: data.stat,
+                ctaPill: data.ctaPill,
+            };
+
+            const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides);
+
+            const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, scene.background);
+            const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
+
+            if (highlightWords.length > 0) {
+                const titleEl = scene.elements.find(
+                    (el): el is TextEl => el.type === 'text' && el.text === data.title,
+                );
+                if (titleEl) {
+                    titleEl.richText = buildRichText(data.title, highlightWords, titleEl.fill, highlightColor);
+                }
+            }
+
+            if (bgBase64 && layout.backgroundPreference !== 'solid') {
+                const effectiveMode: 'background' | 'grid' =
+                    imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
+                    imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
+                    imageMode;
+
+                if (effectiveMode === 'background') {
+                    scene.elements.unshift({
+                        id: uid(), type: 'image', src: bgBase64,
+                        x: 0, y: 0, width: SLIDE_W, height: slideH,
+                        rotation: 0, opacity: 1,
+                        brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
+                        hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
+                        red: 255, green: 255, blue: 255,
+                        overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+                        isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
+                        ...SHADOW_DEFAULTS,
+                    } as ImageEl);
+                } else {
+                    // Grid: image as a contained card in the upper portion of the slide
+                    const cardPad = 80;
+                    const cardH = Math.round(slideH * (layout.type === 'hook_hero' ? 0.50 : 0.40));
+                    scene.elements.unshift({
+                        id: uid(), type: 'image', src: bgBase64,
+                        x: cardPad, y: cardPad,
+                        width: SLIDE_W - cardPad * 2, height: cardH,
+                        rotation: 0, opacity: 1,
+                        brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
+                        hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
+                        red: 255, green: 255, blue: 255,
+                        overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+                        isBackground: false, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
+                        ...SHADOW_DEFAULTS,
+                    } as ImageEl);
+                }
+            }
+
+            return { id: uid(), background: scene.background, elements: scene.elements };
+        }
+
+        // Fallback: legacy layout-agnostic rendering
+        return buildSlideFromDataLegacy(data, bgBase64, template, slideH);
+    }
+
+    function buildSlideFromDataLegacy(
+        data: SlideData,
+        bgBase64: string | null,
+        template: SlideTemplate | null,
+        slideH: number,
+    ): Slide {
         const safeBounds = getSafeAreaBounds(format);
         const horizontalInset = 80;
         const descriptionInset = 20;
@@ -173,7 +263,7 @@ export function useAiGeneration(
                 brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
                 hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                 red: 255, green: 255, blue: 255,
-                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 0,
+                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
                 isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
                 ...SHADOW_DEFAULTS,
             };
@@ -183,11 +273,12 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, generateImagesOverride?: boolean) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode) {
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
-        const shouldGenerateImages = generateImagesOverride !== undefined ? generateImagesOverride : aiGenerateImages;
+        const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
+        const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
         const newSlideStartIdx = slides.length;
         setAiStatus('generating');
@@ -196,7 +287,6 @@ export function useAiGeneration(
 
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
 
-        // POST to get an SSE stream; we use fetch + ReadableStream to handle POST+SSE
         let response: Response;
         try {
             response = await fetch(CarouselGenerationController.generate().url, {
@@ -216,7 +306,6 @@ export function useAiGeneration(
             return;
         }
 
-        // Consume SSE stream, collecting all text_delta chunks into one string
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let sseBuffer = '';
@@ -242,7 +331,6 @@ export function useAiGeneration(
 
         setAiStatus('imaging');
 
-        // Parse assembled NDJSON — one JSON object per line
         const parsedSlides: SlideData[] = [];
         for (const rawLine of assembled.split('\n')) {
             const trimmed = rawLine.trim();
@@ -259,10 +347,12 @@ export function useAiGeneration(
             return;
         }
 
+        const hasStats = parsedSlides.some(s => Boolean(s.stat));
+        const layoutSequence = generateLayoutSequence(parsedSlides.length, hasStats);
+
         let imageResults: PromiseSettledResult<string | null>[] = [];
 
         if (shouldGenerateImages) {
-            // Generate images in parallel
             imageResults = await Promise.allSettled(
                 parsedSlides.map(async (s) => {
                     setAiProgress((prev) => [...prev, s.title]);
@@ -288,7 +378,7 @@ export function useAiGeneration(
         const newSlides = parsedSlides.map((s, i) => {
             const imgResult = shouldGenerateImages ? imageResults[i] : null;
             const base64 = imgResult?.status === 'fulfilled' ? imgResult.value : null;
-            return buildSlideFromData(s, base64, template);
+            return buildSlideFromData(s, base64, template, layoutSequence[i], i, parsedSlides.length, imageMode);
         });
 
         setSlides((prev) => [...prev, ...newSlides]);
@@ -307,8 +397,8 @@ export function useAiGeneration(
         setAiStyle,
         aiSlideCount,
         setAiSlideCount,
-        aiGenerateImages,
-        setAiGenerateImages,
+        aiImageMode,
+        setAiImageMode,
         aiTemplateId,
         setAiTemplateId,
         aiStatus,
