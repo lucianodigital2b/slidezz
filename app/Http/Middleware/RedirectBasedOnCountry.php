@@ -16,25 +16,23 @@ class RedirectBasedOnCountry
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only redirect if visiting the root domain directly
-        if ($request->path() === '/') {
-            // Cloudflare header is the fastest and most reliable signal
-            $countryCode = $request->header('CF-IPCountry');
-
-            if (! $countryCode) {
-                try {
-                    $position = Location::get($request->ip());
-                    $countryCode = $position?->countryCode;
-                } catch (\Throwable) {
-                    // Detection failed — don't redirect
-                }
-            }
-
-            // If the user is from Brazil, redirect to the PT-BR landing page
-            if ($countryCode === 'BR') {
-                return redirect()->route('home.br');
-            }
-        }
+        // Geo-based redirect temporarily disabled — releasing in English only
+        // if ($request->path() === '/') {
+        //     $countryCode = $request->header('CF-IPCountry');
+        //
+        //     if (! $countryCode) {
+        //         try {
+        //             $position = Location::get($request->ip());
+        //             $countryCode = $position?->countryCode;
+        //         } catch (\Throwable) {
+        //             // Detection failed — don't redirect
+        //         }
+        //     }
+        //
+        //     if ($countryCode === 'BR') {
+        //         return redirect()->route('home.br');
+        //     }
+        // }
 
         return $next($request);
     }
