@@ -8,8 +8,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CarouselGenerationService
 {
-    public function generateSlides(string $topic, string $style, int $slideCount): StreamedResponse
+    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true): StreamedResponse
     {
+        $highlightFields = $wordHighlight ? <<<'FIELDS'
+- highlightWords: array containing exactly 1 single impactful word from the title to highlight. Never return more than one item. Do not return phrases. Example: ["Claude"]
+- highlightColor: vivid hex color for the highlighted word that stays readable on dark backgrounds. Never use near-black, deep navy, charcoal, or other dark muted colors. Prefer bright accent colors like "#FFD84D", "#E8440A", "#FF5A36", or "#39FF14".
+FIELDS : '';
+
         $systemPrompt = <<<PROMPT
 You are a social media carousel designer. Generate slide content for an Instagram carousel.
 Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
@@ -17,9 +22,7 @@ Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSO
 - subtitle: supporting subheadline (max 12 words)
 - description: substantive body text that deepens understanding. Slide 1 must be a viral hook with fewer words, high tension, and immediate curiosity (18-28 words max). It should feel punchy, memorable, and emotionally charged, not explanatory. Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide MUST be a short soft CTA: direct the reader to take a specific action (follow, save, share, comment, DM, etc.) Every description must feel complete and informative — never vague or generic.
 - imagePrompt: image generation prompt for a background image that fits the slide content (max 60 words)
-- highlightWords: array containing exactly 1 single impactful word from the title to highlight. Never return more than one item. Do not return phrases. Example: ["Claude"]
-- highlightColor: vivid hex color for the highlighted word that stays readable on dark backgrounds. Never use near-black, deep navy, charcoal, or other dark muted colors. Prefer bright accent colors like "#FFD84D", "#E8440A", "#FF5A36", or "#39FF14".
-- stat: (optional) a single hero number or statistic to display prominently on that slide, e.g. "$150B", "90%", "3 out of 4". Only include when the slide contains a genuinely dramatic number worth calling out. Omit entirely if there is no strong stat.
+{$highlightFields}- stat: (optional) a single hero number or statistic to display prominently on that slide, e.g. "$150B", "90%", "3 out of 4". Only include when the slide contains a genuinely dramatic number worth calling out. Omit entirely if there is no strong stat.
 - ctaPill: (optional) short pill button text for a visual CTA badge (2–5 words, uppercase, with arrow). Use on slide 1 and sparingly on 1–2 middle slides. Examples: "HERE'S WHY →", "SWIPE →", "THE THING IS →". Omit on most slides.
 
 Style: {$style}
@@ -32,7 +35,7 @@ MANDATORY rule for the LAST slide (slide {$slideCount}): This slide MUST be a CT
 Output exactly {$slideCount} lines. No extra text, no markdown, no code blocks. Just raw NDJSON lines.
 PROMPT;
 
-// \Log::error(print_r($systemPrompt, true));
+        // \Log::error(print_r($systemPrompt, true));
         return Prism::text()
             ->using(Provider::DeepSeek, 'deepseek-chat')
             ->withSystemPrompt($systemPrompt)
@@ -69,24 +72,38 @@ PROMPT;
     public function generateImage(string $prompt): string
     {
         $response = Prism::image()
-            ->using(Provider::OpenAI, 'dall-e-3')
+            ->using(Provider::OpenAI, 'gpt-image-1')
             ->withPrompt($prompt)
-            ->withProviderOptions(['size' => '1024x1024', 'response_format' => 'b64_json', 'quality' => 'standard'])
+            ->withProviderOptions(['size' => '1024x1024', 'quality' => 'medium'])
             ->withClientOptions(['timeout' => 120])
             ->generate();
 
         $image = $response->firstImage();
 
-        if (! $image || ! $image->base64) {
-            throw new \RuntimeException('Image generation failed');
+        if (! $image) {
+            throw new \RuntimeException('Image generation failed: no image in response');
         }
 
-        $base64 = $image->base64;
+        if ($image->base64) {
+            $base64 = $image->base64;
 
-        if (str_starts_with($base64, 'data:image')) {
-            return $base64;
+            if (str_starts_with($base64, 'data:image')) {
+                return $base64;
+            }
+
+            return 'data:image/png;base64,'.$base64;
         }
 
-        return 'data:image/png;base64,'.$base64;
+        if ($image->url) {
+            $imageData = file_get_contents($image->url);
+
+            if ($imageData === false) {
+                throw new \RuntimeException('Image generation failed: could not fetch image URL');
+            }
+
+            return 'data:image/png;base64,'.base64_encode($imageData);
+        }
+
+        throw new \RuntimeException('Image generation failed: no base64 or URL in response');
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Services\Social\Instagram\InstagramSdk;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class InstagramPublisher implements SocialPublisher
@@ -38,63 +39,126 @@ class InstagramPublisher implements SocialPublisher
 
     public function authenticate(): string
     {
-        $state = Str::random(40);
+        $workspaceId = session('current_workspace_id');
+        $nonce = Str::random(40);
+
+        // Encode workspace_id + nonce in state so the callback works even if the
+        // session is reset during the Instagram OAuth redirect (common in local dev).
+        $state = base64_encode(json_encode([
+            'workspace_id' => $workspaceId,
+            'nonce' => $nonce,
+            'hmac' => hash_hmac('sha256', $workspaceId.'|'.$nonce, config('app.key')),
+        ]));
+
         session(['instagram_oauth_state' => $state]);
+
+        $scopes = [
+            'instagram_business_basic',
+            'instagram_business_content_publish',
+            'instagram_business_manage_messages',
+            'instagram_business_manage_comments',
+        ];
 
         $query = http_build_query([
             'client_id' => $this->appId,
             'redirect_uri' => url($this->redirectUri),
-            'scope' => implode(',', [
-                'instagram_business_basic',
-                'instagram_business_content_publish',
-                'instagram_business_manage_messages',
-                'instagram_business_manage_comments',
-            ]),
+            'scope' => implode(',', $scopes),
             'response_type' => 'code',
             'state' => $state,
         ]);
 
-        return "https://www.instagram.com/oauth/authorize?{$query}";
+        $url = "https://www.instagram.com/oauth/authorize?{$query}";
+
+        Log::info('[Instagram] Starting OAuth flow', [
+            'redirect_uri' => url($this->redirectUri),
+            'scopes' => $scopes,
+            'app_id' => $this->appId,
+            'workspace_id' => $workspaceId,
+        ]);
+
+        return $url;
     }
 
     public function handleCallback(array $data): SocialAccount
     {
-        if (($data['state'] ?? null) !== session('instagram_oauth_state')) {
+        Log::info('[Instagram] handleCallback received', ['keys' => array_keys($data), 'has_code' => isset($data['code']), 'has_state' => isset($data['state'])]);
+
+        $rawState = $data['state'] ?? null;
+        $decoded = $rawState ? json_decode(base64_decode($rawState), true) : null;
+
+        Log::debug('[Instagram] State decoded', ['decoded_keys' => $decoded ? array_keys($decoded) : null]);
+
+        if (! $decoded || ! isset($decoded['workspace_id'], $decoded['nonce'], $decoded['hmac'])) {
+            Log::error('[Instagram] Invalid or missing state parameter', ['raw_state' => $rawState]);
             throw new \Exception('Invalid OAuth state.');
         }
 
+        $expectedHmac = hash_hmac('sha256', $decoded['workspace_id'].'|'.$decoded['nonce'], config('app.key'));
+
+        if (! hash_equals($expectedHmac, $decoded['hmac'])) {
+            Log::error('[Instagram] OAuth state HMAC mismatch — possible CSRF');
+            throw new \Exception('Invalid OAuth state.');
+        }
+
+        $workspaceId = $decoded['workspace_id'];
+
         // 1. Exchange code → short-lived user access token
-        $tokenResponse = Http::asForm()->post('https://api.instagram.com/oauth/access_token', [
+        Log::info('[Instagram] Exchanging code for short-lived token');
+        $tokenRequest = [
+            'client_id' => $this->appId,
+            'client_secret' => '***',
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => url($this->redirectUri),
+        ];
+        Log::debug('[Instagram] Short-lived token request', $tokenRequest);
+
+        $shortLivedResponse = Http::asForm()->post('https://api.instagram.com/oauth/access_token', [
             'client_id' => $this->appId,
             'client_secret' => $this->appSecret,
             'grant_type' => 'authorization_code',
             'redirect_uri' => url($this->redirectUri),
             'code' => $data['code'],
-        ])->throw()->json();
+        ]);
+
+        Log::debug('[Instagram] Short-lived token response', ['status' => $shortLivedResponse->status(), 'body' => $shortLivedResponse->body()]);
+
+        if ($shortLivedResponse->failed()) {
+            Log::error('[Instagram] Failed to get short-lived token', ['status' => $shortLivedResponse->status(), 'body' => $shortLivedResponse->body()]);
+        }
+
+        $tokenResponse = $shortLivedResponse->throw()->json();
 
         $shortLivedToken = $tokenResponse['access_token'];
         $igUserId = $tokenResponse['user_id'];
+        Log::info('[Instagram] Got short-lived token', ['ig_user_id' => $igUserId]);
 
         // 2. Exchange short-lived → long-lived user access token (60 days)
+        Log::info('[Instagram] Exchanging for long-lived token', ['ig_user_id' => $igUserId]);
+
         $longLivedResponse = Http::get('https://graph.instagram.com/access_token', [
             'grant_type' => 'ig_exchange_token',
             'client_secret' => $this->appSecret,
             'access_token' => $shortLivedToken,
-        ])->throw()->json();
+        ]);
 
-        $userToken = $longLivedResponse['access_token'];
-        $expiresIn = $longLivedResponse['expires_in'] ?? 5_184_000;
+        Log::debug('[Instagram] Long-lived token response', ['status' => $longLivedResponse->status(), 'body' => $longLivedResponse->body()]);
 
-        // 3. Get Instagram account details
-        $igDetails = $this->sdk->getMedia($userToken, (string) $igUserId, 'id,username,name,profile_picture_url');
-
-        $workspaceId = session('current_workspace_id');
-
-        if (! $workspaceId) {
-            throw new \RuntimeException('No workspace in session when connecting Instagram account.');
+        if ($longLivedResponse->failed()) {
+            Log::error('[Instagram] Failed to get long-lived token', ['status' => $longLivedResponse->status(), 'body' => $longLivedResponse->body()]);
         }
 
-        return SocialAccount::updateOrCreate(
+        $longLived = $longLivedResponse->throw()->json();
+
+        $userToken = $longLived['access_token'];
+        $expiresIn = $longLived['expires_in'] ?? 5_184_000;
+        Log::info('[Instagram] Got long-lived token', ['expires_in' => $expiresIn]);
+
+        // 3. Get Instagram account details
+        Log::info('[Instagram] Fetching account details', ['ig_user_id' => $igUserId]);
+        $igDetails = $this->sdk->getMedia($userToken, (string) $igUserId, 'id,username,name,profile_picture_url');
+        Log::info('[Instagram] Account details fetched', ['username' => $igDetails['username'] ?? null, 'name' => $igDetails['name'] ?? null]);
+
+        $account = SocialAccount::updateOrCreate(
             [
                 'provider' => 'instagram',
                 'provider_id' => (string) $igUserId,
@@ -108,6 +172,10 @@ class InstagramPublisher implements SocialPublisher
                 'expires_at' => now()->addSeconds($expiresIn),
             ]
         );
+
+        Log::info('[Instagram] SocialAccount saved', ['social_account_id' => $account->id, 'handle' => $account->handle, 'workspace_id' => $workspaceId]);
+
+        return $account;
     }
 
     /**
@@ -118,7 +186,7 @@ class InstagramPublisher implements SocialPublisher
      *   - type = 'carousel' → carousel album   (script_data.image_urls[] + script_data.caption)
      *   - type = 'video'    → single video / reel (video_url + script_data.caption)
      */
-    public function publish(ContentProject $project, \App\Models\Schedule $schedule): string
+    public function publish(ContentProject $project, Schedule $schedule): string
     {
         $account = $schedule->socialAccount;
         $igUserId = $account->provider_id;
@@ -127,15 +195,31 @@ class InstagramPublisher implements SocialPublisher
         $scriptData = $project->script_data ?? [];
         $caption = $scriptData['caption'] ?? '';
 
+        Log::info('[Instagram] Starting publish', [
+            'project_id' => $project->id,
+            'project_type' => $project->type,
+            'schedule_id' => $schedule->id,
+            'ig_user_id' => $igUserId,
+            'social_account_id' => $account->id,
+            'token_expires_at' => $account->expires_at?->toDateTimeString(),
+            'caption_length' => strlen($caption),
+        ]);
+
         $containerId = match ($project->type) {
             'carousel' => $this->createCarouselContainer($accessToken, $igUserId, $scriptData['image_urls'] ?? [], $caption),
             'video' => $this->createVideoContainer($accessToken, $igUserId, $project->video_url, $caption),
             default => $this->createImageContainer($accessToken, $igUserId, $scriptData['image_url'] ?? $project->video_url, $caption),
         };
 
+        Log::info('[Instagram] Container created', ['container_id' => $containerId, 'type' => $project->type]);
+
         $this->waitForContainer($accessToken, $containerId);
 
-        return $this->publishContainer($accessToken, $igUserId, $containerId);
+        $postId = $this->publishContainer($accessToken, $igUserId, $containerId);
+
+        Log::info('[Instagram] Published successfully', ['post_id' => $postId, 'container_id' => $containerId, 'project_id' => $project->id]);
+
+        return $postId;
     }
 
     public function getAnalytics(string $platformPostId): array
@@ -216,20 +300,28 @@ class InstagramPublisher implements SocialPublisher
      */
     private function waitForContainer(string $accessToken, string $containerId): void
     {
+        Log::info('[Instagram] Waiting for container to be ready', ['container_id' => $containerId, 'max_attempts' => self::POLL_MAX_ATTEMPTS, 'poll_interval' => self::POLL_INTERVAL]);
+
         for ($attempt = 0; $attempt < self::POLL_MAX_ATTEMPTS; $attempt++) {
             $statusCode = $this->sdk->getContainerStatus($accessToken, $containerId);
 
+            Log::debug('[Instagram] Container status poll', ['container_id' => $containerId, 'attempt' => $attempt + 1, 'status' => $statusCode]);
+
             if ($statusCode === 'FINISHED') {
+                Log::info('[Instagram] Container ready', ['container_id' => $containerId, 'attempts' => $attempt + 1]);
+
                 return;
             }
 
             if ($statusCode === 'ERROR') {
+                Log::error('[Instagram] Container processing error', ['container_id' => $containerId, 'attempt' => $attempt + 1]);
                 throw new \RuntimeException("Instagram container {$containerId} encountered an error during processing.");
             }
 
             sleep(self::POLL_INTERVAL);
         }
 
+        Log::error('[Instagram] Container timed out', ['container_id' => $containerId, 'attempts' => self::POLL_MAX_ATTEMPTS]);
         throw new \RuntimeException("Timed out waiting for Instagram container {$containerId} to finish processing.");
     }
 

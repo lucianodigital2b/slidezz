@@ -72,8 +72,9 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 ->route('slideshow-editor.edit', $slideProject)
                 ->with('wizardTopic', "AI\'s Economics Don't Make Sense")
                 ->with('wizardStyle', 'dark gradient overlay, ALL CAPS typography, documentary motivational style. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
-                ->with('wizardSlideCount', 5)
-                ->with('wizardImageMode', 'alternate');
+                ->with('wizardSlideCount', 3)
+                ->with('wizardImageMode', 'alternate')
+                ->with('wizardWordHighlight', false);
         })->name('dev.test-wizard');
     }
 });

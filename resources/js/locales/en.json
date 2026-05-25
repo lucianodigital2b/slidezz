@@ -157,6 +157,7 @@
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
       "generateImagesLabel": "Images in carousel",
+      "wordHighlight": "Highlight a word per slide",
       "imageMode": {
         "none": "No images",
         "background": "Background only",
@@ -216,6 +217,30 @@
       "published": "Posted to Instagram.",
       "publishFailed": "Failed to publish to Instagram.",
       "slidesCountError": "Instagram carousels require between 2 and 10 slides."
+    },
+    "globalPanel": {
+      "background": "Background",
+      "quickPalettes": "Quick Palettes",
+      "bgColor": "Background Color",
+      "transparent": "Transparent",
+      "text": "Text",
+      "addTextLayer": "Add text layer",
+      "addTextLayerHint": "Click to add to canvas",
+      "textLayers": "Text Layers",
+      "corners": "Corners",
+      "cornersTexts": "TEXTS",
+      "cornerTopLeft": "TOP L.",
+      "cornerTopRight": "TOP R.",
+      "cornerBottomLeft": "BOT. L.",
+      "cornerBottomRight": "BOT. R.",
+      "cornerPlaceholder": "Text...",
+      "showCorners": "Show corners",
+      "showDots": "Quantity indicators (dots)",
+      "cornerIcon": "ICON — BOTTOM RIGHT"
+    },
+    "rightPanel": {
+      "editingLayer": "Editing Layer",
+      "selectElement": "Select an element to edit its properties"
     }
   },
   "createCarousel": {

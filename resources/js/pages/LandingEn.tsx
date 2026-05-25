@@ -189,20 +189,22 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <a href="#how-it-works" className="hover:text-[#1A1A1A] transition-colors">How it works</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Pricing</a>
                             <a href="#testimonials" className="hover:text-[#1A1A1A] transition-colors">Results</a>
+                        </nav>
+
+                        <div className="flex items-center gap-3">
                             {!auth.user && (
-                                <Link href={login()} className="hover:text-[#1A1A1A] transition-colors">
+                                <Link href={login()} className="hidden md:inline-flex text-lg font-semibold text-[#444440] hover:text-[#1A1A1A] transition-colors px-2">
                                     Login
                                 </Link>
                             )}
-                        </nav>
-
-                        <Link
-                            href={ctaHref}
-                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
-                        >
-                            {auth.user ? 'Go to app' : 'Stop wasting time'}
-                            <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                            <Link
+                                href={ctaHref}
+                                className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-80"
+                            >
+                                {auth.user ? 'Go to app' : 'Stop wasting time'}
+                                <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
                     </div>
                 </header>
 

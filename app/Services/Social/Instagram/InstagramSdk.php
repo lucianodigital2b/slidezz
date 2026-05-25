@@ -3,6 +3,7 @@
 namespace App\Services\Social\Instagram;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class InstagramSdk
 {
@@ -111,21 +112,39 @@ class InstagramSdk
 
     private function get(string $accessToken, string $path, array $query = []): array
     {
-        return Http::withToken($accessToken)
+        $url = $this->url($path);
+        Log::debug('[Instagram SDK] GET request', ['url' => $url, 'query_keys' => array_keys($query)]);
+
+        $response = Http::withToken($accessToken)
             ->acceptJson()
-            ->get($this->url($path), $query)
-            ->throw()
-            ->json();
+            ->get($url, $query);
+
+        Log::debug('[Instagram SDK] GET response', ['url' => $url, 'status' => $response->status(), 'body' => $response->body()]);
+
+        if ($response->failed()) {
+            Log::error('[Instagram SDK] GET failed', ['url' => $url, 'status' => $response->status(), 'body' => $response->body()]);
+        }
+
+        return $response->throw()->json();
     }
 
     private function post(string $accessToken, string $path, array $payload = []): array
     {
-        return Http::withToken($accessToken)
+        $url = $this->url($path);
+        Log::debug('[Instagram SDK] POST request', ['url' => $url, 'payload' => $payload]);
+
+        $response = Http::withToken($accessToken)
             ->acceptJson()
             ->asJson()
-            ->post($this->url($path), $payload)
-            ->throw()
-            ->json();
+            ->post($url, $payload);
+
+        Log::debug('[Instagram SDK] POST response', ['url' => $url, 'status' => $response->status(), 'body' => $response->body()]);
+
+        if ($response->failed()) {
+            Log::error('[Instagram SDK] POST failed', ['url' => $url, 'status' => $response->status(), 'body' => $response->body()]);
+        }
+
+        return $response->throw()->json();
     }
 
     private function url(string $path): string

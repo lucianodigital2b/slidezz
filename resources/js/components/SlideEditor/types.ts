@@ -160,8 +160,27 @@ export interface PathEl extends BaseEl {
 
 export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl | PathEl | ButtonEl;
 
+export type CornerIcon = 'none' | 'bookmark' | 'arrow' | 'heart';
+
+export interface CornerConfig {
+    text: string;
+    enabled: boolean;
+    color: string;
+}
+
+export interface SlideCorners {
+    topLeft: CornerConfig;
+    topRight: CornerConfig;
+    bottomLeft: CornerConfig;
+    bottomRight: CornerConfig;
+    show: boolean;
+    showDots: boolean;
+    bottomRightIcon: CornerIcon;
+}
+
 export interface Slide {
     id: string;
     background: string;
     elements: SlideEl[];
+    corners?: SlideCorners;
 }

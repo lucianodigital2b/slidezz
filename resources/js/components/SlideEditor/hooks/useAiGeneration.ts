@@ -33,6 +33,7 @@ export function useAiGeneration(
     const [aiStyle, setAiStyle] = useState('');
     const [aiSlideCount, setAiSlideCount] = useState(5);
     const [aiImageMode, setAiImageMode] = useState<ImageMode>('background');
+    const [aiWordHighlight, setAiWordHighlight] = useState(true);
     const [aiTemplateId, setAiTemplateId] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
     const [aiProgress, setAiProgress] = useState<string[]>([]);
@@ -98,6 +99,11 @@ export function useAiGeneration(
         const slideH = FORMATS[format].h;
         const layout = LAYOUT_DEFINITIONS[layoutType];
 
+        const effectiveMode: 'background' | 'grid' =
+            imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
+            imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
+            imageMode as 'background' | 'grid';
+
         if (template?.buildSceneFromLayout) {
             const content = {
                 eyebrow: '',
@@ -124,11 +130,6 @@ export function useAiGeneration(
             }
 
             if (bgBase64 && layout.backgroundPreference !== 'solid') {
-                const effectiveMode: 'background' | 'grid' =
-                    imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
-                    imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
-                    imageMode;
-
                 if (effectiveMode === 'background') {
                     scene.elements.unshift({
                         id: uid(), type: 'image', src: bgBase64,
@@ -163,8 +164,8 @@ export function useAiGeneration(
             return { id: uid(), background: scene.background, elements: scene.elements };
         }
 
-        // Fallback: legacy layout-agnostic rendering
-        return buildSlideFromDataLegacy(data, bgBase64, template, slideH);
+        // Fallback: legacy layout-agnostic rendering (background images only; grid slides get no image)
+        return buildSlideFromDataLegacy(data, effectiveMode === 'background' ? bgBase64 : null, template, slideH);
     }
 
     function buildSlideFromDataLegacy(
@@ -191,8 +192,8 @@ export function useAiGeneration(
         const descMaxHeight = Math.max(116, safeBottomY - descY);
 
         const backgroundColor = template?.background ?? '#1a1a2e';
-        const titleFont = template?.font ?? 'Poppins';
-        const bodyFont = template ? (template.fonts[1] ?? template.fonts[0]) : 'Poppins';
+        const titleFont = template?.font ?? 'Space Mono';
+        const bodyFont = template ? (template.fonts[1] ?? template.fonts[0]) : 'Inter';
         const titleFontStyle = template?.fontStyle ?? 'bold';
         const textColor = template?.textColor ?? '#ffffff';
         const textAlign = template?.align ?? 'center';
@@ -273,11 +274,12 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean) {
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
         const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
+        const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
         const newSlideStartIdx = slides.length;
@@ -292,7 +294,7 @@ export function useAiGeneration(
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
-                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount }),
+                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight }),
             });
         } catch {
             setAiStatus('error');
@@ -373,7 +375,7 @@ export function useAiGeneration(
         }
 
         const template = aiTemplateId ? SLIDE_TEMPLATES.find(t => t.id === aiTemplateId) ?? null : null;
-        await Promise.all((template ? [...new Set(template.fonts)] : ['Poppins']).map(f => loadGoogleFont(f)));
+        await Promise.all((template ? [...new Set(template.fonts)] : ['Space Mono', 'Inter']).map(f => loadGoogleFont(f)));
 
         const newSlides = parsedSlides.map((s, i) => {
             const imgResult = shouldGenerateImages ? imageResults[i] : null;
@@ -399,6 +401,8 @@ export function useAiGeneration(
         setAiSlideCount,
         aiImageMode,
         setAiImageMode,
+        aiWordHighlight,
+        setAiWordHighlight,
         aiTemplateId,
         setAiTemplateId,
         aiStatus,

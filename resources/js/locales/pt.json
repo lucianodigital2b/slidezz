@@ -440,6 +440,7 @@
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
       "generateImagesLabel": "Imagens no carrossel",
+      "wordHighlight": "Destacar uma palavra por slide",
       "imageMode": {
         "none": "Sem imagens",
         "background": "Só imagem de fundo",
@@ -499,6 +500,30 @@
       "published": "Publicado no Instagram.",
       "publishFailed": "Falha ao publicar no Instagram.",
       "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides."
+    },
+    "globalPanel": {
+      "background": "Fundo",
+      "quickPalettes": "Paletas Rápidas",
+      "bgColor": "Cor de Fundo",
+      "transparent": "Transparente",
+      "text": "Texto",
+      "addTextLayer": "Adicionar camada de texto",
+      "addTextLayerHint": "Clique para adicionar ao canvas",
+      "textLayers": "Camadas de Texto",
+      "corners": "Cantos",
+      "cornersTexts": "TEXTOS",
+      "cornerTopLeft": "SUP. ESQ.",
+      "cornerTopRight": "SUP. DIR.",
+      "cornerBottomLeft": "INF. ESQ.",
+      "cornerBottomRight": "INF. DIR.",
+      "cornerPlaceholder": "Texto...",
+      "showCorners": "Exibir cantos",
+      "showDots": "Indicadores de quantidade (bolinhas)",
+      "cornerIcon": "ÍCONE — CANTO INF. DIR."
+    },
+    "rightPanel": {
+      "editingLayer": "Camada de Edição",
+      "selectElement": "Selecione um elemento para editar suas propriedades"
     }
   },
   "createCarousel": {

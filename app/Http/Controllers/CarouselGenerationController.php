@@ -17,12 +17,14 @@ class CarouselGenerationController extends Controller
             'topic' => ['required', 'string', 'max:500'],
             'style' => ['nullable', 'string', 'max:200'],
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
+            'word_highlight' => ['nullable', 'boolean'],
         ]);
 
         return $this->carouselGenerationService->generateSlides(
             topic: $validated['topic'],
             style: $validated['style'] ?? 'modern and professional',
             slideCount: $validated['slide_count'] ?? 5,
+            wordHighlight: $validated['word_highlight'] ?? true,
         );
     }
 
@@ -34,8 +36,15 @@ class CarouselGenerationController extends Controller
 
         try {
             $base64 = $this->carouselGenerationService->generateImage($validated['prompt']);
-        } catch (\RuntimeException) {
-            return response()->json(['error' => 'Image generation failed'], 500);
+        } catch (\Throwable $e) {
+            \Log::error('Image generation failed', [
+                'message' => $e->getMessage(),
+                'class' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+                'prompt' => $validated['prompt'],
+            ]);
+
+            return response()->json(['error' => 'Image generation failed', 'detail' => $e->getMessage()], 500);
         }
 
         return response()->json(['base64' => $base64]);
