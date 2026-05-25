@@ -249,6 +249,28 @@ export function drawTextWithLetterSpacing(
     }
 }
 
+export function strokeTextWithLetterSpacing(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    letterSpacing: number,
+): void {
+    if (!text) return;
+    if (text.length === 1 || letterSpacing === 0) {
+        ctx.strokeText(text, x, y);
+        return;
+    }
+
+    let cursorX = x;
+    for (let index = 0; index < text.length; index++) {
+        const char = text[index];
+        ctx.strokeText(char, cursorX, y);
+        cursorX += ctx.measureText(char).width;
+        if (index < text.length - 1) cursorX += letterSpacing;
+    }
+}
+
 export interface SafeAreaPadding {
     top: number;
     right: number;

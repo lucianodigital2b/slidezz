@@ -42,6 +42,17 @@ export interface RichSpan {
     highlight?: string;  // background highlight color
 }
 
+export interface TextReadabilityStyle {
+    fill: string;
+    stroke?: string;
+    strokeWidth: number;
+    shadowColor?: string;
+    shadowBlur: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+    shadowOpacity: number;
+}
+
 export interface TextEl extends BaseEl {
     type: 'text';
     text: string;

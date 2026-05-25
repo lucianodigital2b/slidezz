@@ -67,11 +67,18 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
         onCornersChange({ ...corners, ...patch });
     }
 
+    function handleCornerTextChange(key: CornerKey, text: string) {
+        patchCorner(key, {
+            text,
+            ...(text.trim() ? { enabled: true } : {}),
+        });
+    }
+
     return (
-        <div className="flex flex-col gap-2.5 p-2.5 overflow-y-auto h-full bg-gray-50" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex flex-col gap-2.5 p-2.5 overflow-y-auto h-full bg-gray-100" style={{ scrollbarWidth: 'none' }}>
 
             {/* Background */}
-            <div className="p-3 flex flex-col gap-3 bg-white" style={{ borderRadius: '1.35rem' }}>
+            <div className="p-4 flex flex-col gap-3 bg-white" style={{ borderRadius: '1.35rem' }}>
                 <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.background')}</p>
 
                 {/* Quick Palettes */}
@@ -130,13 +137,13 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
             </div>
 
             {/* Text */}
-            <div className="p-3 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
+            <div className="p-4 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
                 <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.text')}</p>
 
                 {/* Add text badge */}
                 <button
                     onClick={onAddText}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-left bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-gray-200">
                         <span className="text-gray-700 text-sm font-bold leading-none">T</span>
@@ -179,7 +186,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
             {/* Cantos */}
             <div className="overflow-hidden bg-white" style={{ borderRadius: '1.35rem' }}>
                 <button
-                    className="w-full flex items-center justify-between px-3 py-2.5"
+                    className="w-full flex items-center justify-between px-4 py-3"
                     onClick={() => setCornersOpen((o) => !o)}
                 >
                     <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.corners')}</p>
@@ -190,7 +197,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                 </button>
 
                 {cornersOpen && (
-                    <div className="px-3 pb-3 flex flex-col gap-3 border-t border-gray-100">
+                    <div className="px-4 pb-3 flex flex-col gap-3 border-t border-gray-100">
 
                         {/* Corner text inputs — 2×2 grid */}
                         <div className="pt-2.5">
@@ -218,7 +225,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                                             <input
                                                 type="text"
                                                 value={cfg.text}
-                                                onChange={(e) => patchCorner(key, { text: e.target.value })}
+                                                onChange={(e) => handleCornerTextChange(key, e.target.value)}
                                                 placeholder={t('slideEditor.globalPanel.cornerPlaceholder')}
                                                 className="w-full rounded text-[10px] px-1.5 py-1 outline-none bg-white border border-gray-200 focus:border-[#E8440A] text-gray-700 placeholder:text-gray-300"
                                             />

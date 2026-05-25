@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
-import { TextEl, ImageEl, ButtonEl, RichSpan } from './types';
-import { drawTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing, borderStyleToDash, hexToRgba } from './utils';
+import { TextEl, ImageEl, ButtonEl, RichSpan, TextReadabilityStyle } from './types';
+import { drawTextWithLetterSpacing, strokeTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing, borderStyleToDash, hexToRgba } from './utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { OverlayPreset } from './overlays';
 
@@ -38,7 +38,7 @@ interface LayoutLine {
     height: number;
 }
 
-function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
+function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): LayoutLine[] {
     const ctx = getMeasureCtx();
     const fs = el.fontStyle || '';
     ctx.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
@@ -53,7 +53,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl): LayoutLine[] {
             if (!part) continue;
             tokens.push({
                 text: part,
-                color: span.color ?? el.fill,
+                color: span.color ?? defaultColor,
                 highlight: span.highlight,
                 isNewline: part === '\n',
                 isSpace: /^\s+$/.test(part) && part !== '\n',
@@ -123,10 +123,11 @@ interface KonvaTextElProps {
     onSelect: () => void;
     onDblClick: () => void;
     onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
+    readability?: TextReadabilityStyle;
     onChange: (patch: Partial<TextEl>) => void;
 }
 
-export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDragMove, onChange }: KonvaTextElProps) {
+export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDragMove, readability, onChange }: KonvaTextElProps) {
     const groupRef = useRef<Konva.Group>(null);
     const textRef = useRef<Konva.Text>(null);
     const [textH, setTextH] = useState(80);
@@ -154,10 +155,20 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
     });
 
     // Rich text layout (memoized on relevant fields)
+    const effectiveFill = readability?.fill ?? el.fill;
+    const effectiveStroke = el.strokeWidth > 0 ? el.stroke : readability?.stroke;
+    const effectiveStrokeWidth = el.strokeWidth > 0 ? el.strokeWidth : readability?.strokeWidth ?? 0;
+    const textShadowColor = readability?.shadowColor;
+    const textShadowBlur = readability?.shadowBlur ?? 0;
+    const textShadowOffsetX = readability?.shadowOffsetX ?? 0;
+    const textShadowOffsetY = readability?.shadowOffsetY ?? 0;
+    const textShadowOpacity = readability?.shadowOpacity ?? 0;
+    const textShadowEnabled = Boolean(textShadowColor && textShadowOpacity > 0);
+
     const layout = useMemo(
-        () => (el.richText && el.richText.length > 0 ? layoutRichText(el.richText, el) : null),
+        () => (el.richText && el.richText.length > 0 ? layoutRichText(el.richText, el, effectiveFill) : null),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [el.richText, el.width, el.fontSize, el.fontFamily, el.fontStyle, el.fill, el.lineHeight, el.letterSpacing, el.align, fontRevision],
+        [el.richText, el.width, el.fontSize, el.fontFamily, el.fontStyle, effectiveFill, el.lineHeight, el.letterSpacing, el.align, fontRevision],
     );
     const richTotalH = layout ? layout.reduce((s, l) => s + l.height, 0) : 0;
 
@@ -168,6 +179,13 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
         const c = (ctx as any)._context as CanvasRenderingContext2D;
         const fs = el.fontStyle || '';
         c.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
+        c.lineJoin = 'round';
+        c.strokeStyle = effectiveStroke ?? 'transparent';
+        c.lineWidth = effectiveStrokeWidth;
+        c.shadowColor = textShadowEnabled ? textShadowColor! : 'transparent';
+        c.shadowBlur = textShadowEnabled ? textShadowBlur : 0;
+        c.shadowOffsetX = textShadowEnabled ? textShadowOffsetX : 0;
+        c.shadowOffsetY = textShadowEnabled ? textShadowOffsetY : 0;
 
         let curY = el.padding;
         for (const line of layout) {
@@ -178,13 +196,16 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
                         c.fillStyle = token.highlight;
                         c.fillRect(token.x - pad, curY, token.width + pad * 2, el.fontSize * 1.05);
                     }
+                    if (effectiveStroke && effectiveStrokeWidth > 0) {
+                        strokeTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
+                    }
                     c.fillStyle = token.color;
                     drawTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
                 }
             }
             curY += line.height;
         }
-    }, [layout, el, hidden]);
+    }, [layout, el, hidden, effectiveStroke, effectiveStrokeWidth, textShadowEnabled, textShadowColor, textShadowBlur, textShadowOffsetX, textShadowOffsetY]);
 
     const effectiveH = layout ? richTotalH + el.padding * 2 : textH;
     const { t, gap } = { t: el.accentThickness, gap: el.accentGap };
@@ -245,13 +266,18 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
                 x={0} y={0}
                 width={el.width}
                 text={hidden ? '' : el.text}
-                fontSize={el.fontSize} fontFamily={el.fontFamily} fill={el.fill}
+                fontSize={el.fontSize} fontFamily={el.fontFamily} fill={effectiveFill}
                 fontStyle={el.fontStyle} align={el.align} verticalAlign={el.verticalAlign}
                 lineHeight={el.lineHeight} letterSpacing={el.letterSpacing}
                 textDecoration={el.textDecoration}
-                stroke={el.strokeWidth > 0 ? el.stroke : undefined}
-                strokeWidth={el.strokeWidth}
+                stroke={effectiveStroke}
+                strokeWidth={effectiveStrokeWidth}
                 padding={el.padding} wrap={el.wrap}
+                shadowColor={textShadowColor}
+                shadowBlur={textShadowBlur}
+                shadowOpacity={textShadowOpacity}
+                shadowOffsetX={textShadowOffsetX}
+                shadowOffsetY={textShadowOffsetY}
             />
         </Group>
     );

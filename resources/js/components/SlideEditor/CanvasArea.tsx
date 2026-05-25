@@ -12,11 +12,11 @@ import {
     Transformer,
 } from 'react-konva';
 import type React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, SlideCorners,
+    SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, SlideCorners, TextReadabilityStyle,
 } from './types';
-import { borderStyleToDash, gradientLinearProps } from './utils';
+import { borderStyleToDash, contrastRatio, gradientLinearProps, normalizeHexColor } from './utils';
 import { KonvaTextEl, KonvaImageEl, KonvaButtonEl } from './KonvaElements';
 import { ShapeDef, SHAPE_CATEGORIES } from './shapes';
 
@@ -57,6 +57,10 @@ const CORNER_FS = 28;
 const DRAG_GUIDE_THRESHOLD = 18;
 const DRAG_GUIDE_STROKE = '#0D99FF';
 const DRAG_GUIDE_DASH = [3, 9];
+const READABLE_TEXT_DARK = '#111111';
+const READABLE_TEXT_LIGHT = '#F5F7FA';
+const MIN_TEXT_CONTRAST = 4.5;
+const BUSY_BACKDROP_VARIANCE = 900;
 const ICON_CHAR: Record<string, string> = {
     none: '',
     bookmark: '🔖',
@@ -67,6 +71,99 @@ const ICON_CHAR: Record<string, string> = {
 interface DragGuideState {
     showVertical: boolean;
     showHorizontal: boolean;
+}
+
+interface CanvasSampleStats {
+    backgroundHex: string;
+    variance: number;
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+    return `#${[r, g, b].map((value) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
+function sampleCanvasRegion(
+    ctx: CanvasRenderingContext2D,
+    rect: { x: number; y: number; width: number; height: number },
+): CanvasSampleStats | null {
+    const sx = clamp(Math.floor(rect.x), 0, Math.max(0, ctx.canvas.width - 1));
+    const sy = clamp(Math.floor(rect.y), 0, Math.max(0, ctx.canvas.height - 1));
+    const sw = Math.max(1, Math.min(ctx.canvas.width - sx, Math.ceil(rect.width)));
+    const sh = Math.max(1, Math.min(ctx.canvas.height - sy, Math.ceil(rect.height)));
+    if (sw <= 0 || sh <= 0) return null;
+
+    const { data } = ctx.getImageData(sx, sy, sw, sh);
+    const pixelCount = sw * sh;
+    const stride = Math.max(1, Math.floor(Math.sqrt(pixelCount / 3000)));
+
+    let samples = 0;
+    let sumR = 0;
+    let sumG = 0;
+    let sumB = 0;
+    let sumRSquared = 0;
+    let sumGSquared = 0;
+    let sumBSquared = 0;
+
+    for (let y = 0; y < sh; y += stride) {
+        for (let x = 0; x < sw; x += stride) {
+            const index = (y * sw + x) * 4;
+            const alpha = data[index + 3] / 255;
+            const red = data[index] * alpha + 255 * (1 - alpha);
+            const green = data[index + 1] * alpha + 255 * (1 - alpha);
+            const blue = data[index + 2] * alpha + 255 * (1 - alpha);
+
+            sumR += red;
+            sumG += green;
+            sumB += blue;
+            sumRSquared += red * red;
+            sumGSquared += green * green;
+            sumBSquared += blue * blue;
+            samples++;
+        }
+    }
+
+    if (samples === 0) return null;
+
+    const avgR = sumR / samples;
+    const avgG = sumG / samples;
+    const avgB = sumB / samples;
+    const varianceR = Math.max(0, sumRSquared / samples - avgR * avgR);
+    const varianceG = Math.max(0, sumGSquared / samples - avgG * avgG);
+    const varianceB = Math.max(0, sumBSquared / samples - avgB * avgB);
+
+    return {
+        backgroundHex: rgbToHex(avgR, avgG, avgB),
+        variance: (varianceR + varianceG + varianceB) / 3,
+    };
+}
+
+function resolveTextReadability(fill: string, sample: CanvasSampleStats): TextReadabilityStyle {
+    const preferredFill = normalizeHexColor(fill);
+    const preferredContrast = preferredFill ? contrastRatio(preferredFill, sample.backgroundHex) : 0;
+    const darkContrast = contrastRatio(READABLE_TEXT_DARK, sample.backgroundHex);
+    const lightContrast = contrastRatio(READABLE_TEXT_LIGHT, sample.backgroundHex);
+    const autoFill = darkContrast >= lightContrast ? READABLE_TEXT_DARK : READABLE_TEXT_LIGHT;
+    const resolvedFill = preferredContrast >= MIN_TEXT_CONTRAST ? preferredFill! : autoFill;
+    const resolvedContrast = contrastRatio(resolvedFill, sample.backgroundHex);
+    const useOutline = sample.variance >= BUSY_BACKDROP_VARIANCE || resolvedContrast < 6;
+    const useShadow = sample.variance >= 320 || resolvedContrast < 7;
+    const supportStroke = resolvedFill === READABLE_TEXT_DARK ? 'rgba(245, 247, 250, 0.7)' : 'rgba(17, 17, 17, 0.55)';
+    const supportShadow = resolvedFill === READABLE_TEXT_DARK ? '#F5F7FA' : '#111111';
+
+    return {
+        fill: resolvedFill,
+        stroke: useOutline ? supportStroke : undefined,
+        strokeWidth: useOutline ? 1.25 : 0,
+        shadowColor: useShadow ? supportShadow : undefined,
+        shadowBlur: useShadow ? (useOutline ? 6 : 4) : 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: useShadow ? 1 : 0,
+        shadowOpacity: useShadow ? (useOutline ? 0.22 : 0.16) : 0,
+    };
 }
 
 export function CanvasArea({
@@ -87,6 +184,20 @@ export function CanvasArea({
         showVertical: false,
         showHorizontal: false,
     });
+    const [textReadabilityMap, setTextReadabilityMap] = useState<Record<string, TextReadabilityStyle>>({});
+    const sampleFrameRef = useRef<number | null>(null);
+    const isSamplingTextReadabilityRef = useRef(false);
+    const readabilitySignatureRef = useRef('');
+
+    const sortedElements = useMemo(() => [...slide.elements].sort((a, b) => {
+        const aIsBg = a.type === 'image' && a.isBackground ? -1 : 0;
+        const bIsBg = b.type === 'image' && b.isBackground ? -1 : 0;
+        return aIsBg - bIsBg;
+    }), [slide.elements]);
+    const textElements = useMemo(
+        () => sortedElements.filter((el): el is TextEl => el.type === 'text'),
+        [sortedElements],
+    );
 
     const clearDragGuides = useCallback(() => {
         setDragGuides({ showVertical: false, showHorizontal: false });
@@ -110,6 +221,84 @@ export function CanvasArea({
         clearDragGuides();
         onStageDragEnd();
     }, [clearDragGuides, onStageDragEnd]);
+
+    const sampleTextReadability = useCallback(() => {
+        const stage = stageRef.current;
+        if (!stage || textElements.length === 0) {
+            readabilitySignatureRef.current = '';
+            setTextReadabilityMap({});
+            return;
+        }
+
+        isSamplingTextReadabilityRef.current = true;
+        const nextReadabilityMap: Record<string, TextReadabilityStyle> = {};
+
+        try {
+            for (const el of textElements) {
+                const node = stage.findOne(`#${el.id}`) as Konva.Node | null;
+                if (!node) continue;
+
+                const rect = node.getClientRect({ relativeTo: stage, skipShadow: true });
+                if (rect.width < 1 || rect.height < 1) continue;
+
+                const wasVisible = node.visible();
+                node.visible(false);
+                stage.batchDraw();
+
+                const canvas = stage.toCanvas();
+                const ctx = canvas.getContext('2d');
+
+                node.visible(wasVisible);
+                stage.batchDraw();
+
+                if (!ctx) continue;
+
+                const sample = sampleCanvasRegion(ctx, rect);
+                if (!sample) continue;
+
+                nextReadabilityMap[el.id] = resolveTextReadability(el.fill, sample);
+            }
+        } finally {
+            isSamplingTextReadabilityRef.current = false;
+        }
+
+        const nextSignature = JSON.stringify(nextReadabilityMap);
+        if (nextSignature !== readabilitySignatureRef.current) {
+            readabilitySignatureRef.current = nextSignature;
+            setTextReadabilityMap(nextReadabilityMap);
+        }
+    }, [stageRef, textElements]);
+
+    const scheduleTextReadabilitySampling = useCallback(() => {
+        if (sampleFrameRef.current !== null || isSamplingTextReadabilityRef.current) return;
+        sampleFrameRef.current = window.requestAnimationFrame(() => {
+            sampleFrameRef.current = null;
+            sampleTextReadability();
+        });
+    }, [sampleTextReadability]);
+
+    useEffect(() => {
+        scheduleTextReadabilitySampling();
+        return () => {
+            if (sampleFrameRef.current !== null) {
+                window.cancelAnimationFrame(sampleFrameRef.current);
+                sampleFrameRef.current = null;
+            }
+        };
+    }, [scheduleTextReadabilitySampling, slide.background, sortedElements, displayW, displayH, scale]);
+
+    useEffect(() => {
+        const stage = stageRef.current;
+        if (!stage) return;
+
+        const handleLayerDraw = () => scheduleTextReadabilitySampling();
+        const layers = stage.getLayers();
+        layers.forEach((layer) => layer.on('draw.text-readability', handleLayerDraw));
+
+        return () => {
+            layers.forEach((layer) => layer.off('draw.text-readability'));
+        };
+    }, [stageRef, scheduleTextReadabilitySampling]);
 
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button
@@ -216,11 +405,7 @@ export function CanvasArea({
                     <Layer>
                         <Rect id="bg" x={0} y={0} width={SLIDE_W} height={slideH} fill={slide.background} listening={true} />
 
-                        {[...slide.elements].sort((a, b) => {
-                            const aIsBg = a.type === 'image' && a.isBackground ? -1 : 0;
-                            const bIsBg = b.type === 'image' && b.isBackground ? -1 : 0;
-                            return aIsBg - bIsBg;
-                        }).map((el) => {
+                        {sortedElements.map((el) => {
                             const common = {
                                 key: el.id,
                                 id: el.id,
@@ -246,6 +431,7 @@ export function CanvasArea({
                                         onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
                                         onDblClick={() => onStartEditing(el)}
                                         onDragMove={(e) => updateDragGuides(el, e.target)}
+                                        readability={textReadabilityMap[el.id]}
                                         onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
                                     />
                                 );
