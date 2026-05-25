@@ -12,6 +12,7 @@ import {
     Transformer,
 } from 'react-konva';
 import type React from 'react';
+import { useCallback, useState } from 'react';
 import {
     SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, SlideCorners,
 } from './types';
@@ -53,12 +54,20 @@ interface CanvasAreaProps {
 
 const CORNER_PAD = 50;
 const CORNER_FS = 28;
+const DRAG_GUIDE_THRESHOLD = 18;
+const DRAG_GUIDE_STROKE = '#0D99FF';
+const DRAG_GUIDE_DASH = [3, 9];
 const ICON_CHAR: Record<string, string> = {
     none: '',
     bookmark: '🔖',
     arrow: '→',
     heart: '♥',
 };
+
+interface DragGuideState {
+    showVertical: boolean;
+    showHorizontal: boolean;
+}
 
 export function CanvasArea({
     slide, slideH, scale, displayW, displayH,
@@ -74,6 +83,33 @@ export function CanvasArea({
     corners,
 }: CanvasAreaProps) {
     const { t } = useTranslation();
+    const [dragGuides, setDragGuides] = useState<DragGuideState>({
+        showVertical: false,
+        showHorizontal: false,
+    });
+
+    const clearDragGuides = useCallback(() => {
+        setDragGuides({ showVertical: false, showHorizontal: false });
+    }, []);
+
+    const updateDragGuides = useCallback((el: SlideEl, node: Konva.Node) => {
+        const frame = el.type === 'circle'
+            ? { x: node.x() - el.width / 2, y: node.y() - el.height / 2, width: el.width, height: el.height }
+            : { x: node.x(), y: node.y(), width: el.width, height: el.height };
+
+        const centerX = frame.x + frame.width / 2;
+        const centerY = frame.y + frame.height / 2;
+
+        setDragGuides({
+            showVertical: Math.abs(centerX - SLIDE_W / 2) <= DRAG_GUIDE_THRESHOLD,
+            showHorizontal: Math.abs(centerY - slideH / 2) <= DRAG_GUIDE_THRESHOLD,
+        });
+    }, [slideH]);
+
+    const handleStageDragEnd = useCallback(() => {
+        clearDragGuides();
+        onStageDragEnd();
+    }, [clearDragGuides, onStageDragEnd]);
 
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button
@@ -174,7 +210,7 @@ export function CanvasArea({
                     scaleY={scale}
                     onClick={onStageClick}
                     onDragStart={onStageDragStart}
-                    onDragEnd={onStageDragEnd}
+                    onDragEnd={handleStageDragEnd}
                     style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}
                 >
                     <Layer>
@@ -191,6 +227,7 @@ export function CanvasArea({
                                 draggable: tool === 'select',
                                 onClick: () => { if (tool === 'select') onSelectElement(el.id); },
                                 onTap: () => { if (tool === 'select') onSelectElement(el.id); },
+                                onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => updateDragGuides(el, e.target),
                                 shadowEnabled: el.shadowEnabled,
                                 shadowColor: el.shadowColor,
                                 shadowBlur: el.shadowBlur,
@@ -208,6 +245,7 @@ export function CanvasArea({
                                         draggable={tool === 'select'}
                                         onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
                                         onDblClick={() => onStartEditing(el)}
+                                        onDragMove={(e) => updateDragGuides(el, e.target)}
                                         onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
                                     />
                                 );
@@ -264,6 +302,7 @@ export function CanvasArea({
                                         slideH={slideH}
                                         draggable={tool === 'select'}
                                         onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
+                                        onDragMove={(e) => updateDragGuides(el, e.target)}
                                         onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
                                     />
                                 );
@@ -280,6 +319,7 @@ export function CanvasArea({
                                             const textInput = prompt('Edit button text:', el.text);
                                             if (textInput !== null) onElementChange(el.id, { text: textInput } as Partial<SlideEl>);
                                         }}
+                                        onDragMove={(e) => updateDragGuides(el, e.target)}
                                         onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
                                     />
                                 );
@@ -438,6 +478,35 @@ export function CanvasArea({
                                     width={safeAreaBounds.width} height={safeAreaBounds.height}
                                     stroke="#84cc16" strokeWidth={3} dash={[24, 14]} listening={false}
                                 />
+                            </>
+                        )}
+
+                        {(dragGuides.showVertical || dragGuides.showHorizontal) && (
+                            <>
+                                {dragGuides.showVertical && (
+                                    <Rect
+                                        x={SLIDE_W / 2 - 1}
+                                        y={0}
+                                        width={2}
+                                        height={slideH}
+                                        stroke={DRAG_GUIDE_STROKE}
+                                        strokeWidth={2}
+                                        dash={DRAG_GUIDE_DASH}
+                                        listening={false}
+                                    />
+                                )}
+                                {dragGuides.showHorizontal && (
+                                    <Rect
+                                        x={0}
+                                        y={slideH / 2 - 1}
+                                        width={SLIDE_W}
+                                        height={2}
+                                        stroke={DRAG_GUIDE_STROKE}
+                                        strokeWidth={2}
+                                        dash={DRAG_GUIDE_DASH}
+                                        listening={false}
+                                    />
+                                )}
                             </>
                         )}
 

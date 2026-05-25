@@ -122,10 +122,11 @@ interface KonvaTextElProps {
     draggable: boolean;
     onSelect: () => void;
     onDblClick: () => void;
+    onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
     onChange: (patch: Partial<TextEl>) => void;
 }
 
-export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onChange }: KonvaTextElProps) {
+export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDragMove, onChange }: KonvaTextElProps) {
     const groupRef = useRef<Konva.Group>(null);
     const textRef = useRef<Konva.Text>(null);
     const [textH, setTextH] = useState(80);
@@ -202,6 +203,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onCha
         draggable,
         onClick: onSelect, onTap: onSelect,
         onDblClick,
+        onDragMove,
         shadowEnabled: el.shadowEnabled, shadowColor: el.shadowColor,
         shadowBlur: el.shadowBlur, shadowOffsetX: el.shadowOffsetX,
         shadowOffsetY: el.shadowOffsetY, shadowOpacity: el.shadowOpacity,
@@ -262,10 +264,11 @@ interface KonvaButtonElProps {
     draggable: boolean;
     onSelect: () => void;
     onDblClick: () => void;
+    onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
     onChange: (patch: Partial<ButtonEl>) => void;
 }
 
-export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }: KonvaButtonElProps) {
+export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onDragMove, onChange }: KonvaButtonElProps) {
     const groupRef = useRef<Konva.Group>(null);
     const [fontRevision, setFontRevision] = useState(0);
 
@@ -298,6 +301,7 @@ export function KonvaButtonEl({ el, draggable, onSelect, onDblClick, onChange }:
             draggable={draggable}
             onClick={onSelect} onTap={onSelect}
             onDblClick={onDblClick}
+            onDragMove={onDragMove}
             shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
             shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
             shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
@@ -530,10 +534,11 @@ interface KonvaImageElProps {
     slideH: number;
     draggable: boolean;
     onSelect: () => void;
+    onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
     onChange: (patch: Partial<ImageEl>) => void;
 }
 
-export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onChange }: KonvaImageElProps) {
+export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onDragMove, onChange }: KonvaImageElProps) {
     const img = useLoadImage(el.src);
     const imgRef = useRef<Konva.Image>(null);
 
@@ -603,6 +608,7 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onChange
             opacity={el.opacity}
             draggable={draggable && !el.isBackground}
             onClick={onSelect} onTap={onSelect}
+            onDragMove={onDragMove}
             shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
             shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
             shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}

@@ -165,6 +165,16 @@ export default function SlideEditor() {
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null;
+            const isEditableTarget = !!target && (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target instanceof HTMLSelectElement ||
+                target.isContentEditable ||
+                target.closest('[contenteditable="true"]') !== null
+            );
+
+            if (isEditableTarget) return;
             if (editingId) return;
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
                 updateSlide({ elements: slide.elements.filter((el) => el.id !== selectedId) });
