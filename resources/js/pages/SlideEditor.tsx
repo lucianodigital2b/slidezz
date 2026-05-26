@@ -534,6 +534,24 @@ export default function SlideEditor() {
 
     const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
 
+    function cloneCorners(corners: Slide['corners']): Slide['corners'] {
+        if (!corners) return undefined;
+        return {
+            ...corners,
+            topLeft: { ...corners.topLeft },
+            topRight: { ...corners.topRight },
+            bottomLeft: { ...corners.bottomLeft },
+            bottomRight: { ...corners.bottomRight },
+        };
+    }
+
+    function applyCornersToAll(corners: NonNullable<Slide['corners']>) {
+        setSlides((prev) => prev.map((slideItem) => ({
+            ...slideItem,
+            corners: cloneCorners(corners),
+        })));
+    }
+
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
@@ -579,6 +597,7 @@ export default function SlideEditor() {
                             onSelectElement={(id) => { setTool('select'); setSelectedId(id); }}
                             onDeleteElement={(id) => deleteElement(id)}
                             onCornersChange={(c) => updateSlide({ corners: c })}
+                            onApplyCornersToAll={applyCornersToAll}
                         />
                     </div>
 
@@ -638,13 +657,13 @@ export default function SlideEditor() {
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-80 bg-gray-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-xl backdrop-blur-sm flex flex-col gap-2">
                     <div className="flex items-center gap-2.5">
                         <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin shrink-0" />
-                        <span className="text-sm text-gray-200 truncate flex-1">
+                        <span className="text-sm font-medium text-gray-200 truncate flex-1">
                             {aiStatus === 'generating'
                                 ? 'Generating carousel...'
                                 : `Slide ${aiProgress.length} of ${aiSlideCount} — generating images`}
                         </span>
                         {aiStatus === 'imaging' && (
-                            <span className="text-xs text-gray-500 shrink-0">
+                            <span className="text-xs font-medium text-gray-500 shrink-0">
                                 {Math.round((aiProgress.length / aiSlideCount) * 100)}%
                             </span>
                         )}
@@ -657,7 +676,7 @@ export default function SlideEditor() {
                                     style={{ width: `${Math.round((aiProgress.length / aiSlideCount) * 100)}%` }}
                                 />
                             </div>
-                            <p className="text-xs text-gray-600">Images appear in the canvas as they're ready</p>
+                            <p className="text-xs font-medium text-gray-600">Images appear in the canvas as they're ready</p>
                         </>
                     )}
                 </div>
@@ -670,7 +689,7 @@ export default function SlideEditor() {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-indigo-50">
                             <div className="flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-violet-600" />
-                                <h2 className="text-base font-semibold text-gray-800">{t('slideEditor.ai.modalTitle')}</h2>
+                                <h2 className="text-base font-medium text-gray-800">{t('slideEditor.ai.modalTitle')}</h2>
                             </div>
                             <button onClick={closeAiModal} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                                 <X className="w-4 h-4" />
@@ -700,9 +719,9 @@ export default function SlideEditor() {
                                             <div className="relative w-full rounded-lg overflow-hidden mb-1.5" style={{ aspectRatio: '1' }}>
                                                 <TemplatePreview id={tpl.id} />
                                             </div>
-                                            <p className="text-[10px] font-semibold text-gray-700 leading-tight">{tpl.name}</p>
+                                            <p className="text-[10px] font-medium text-gray-700 leading-tight">{tpl.name}</p>
                                             {tpl.description && (
-                                                <p className="text-[9px] text-gray-400 mt-0.5 leading-tight line-clamp-2">{tpl.description}</p>
+                                                <p className="text-[9px] font-medium text-gray-400 mt-0.5 leading-tight line-clamp-2">{tpl.description}</p>
                                             )}
                                         </button>
                                     ))}
@@ -725,7 +744,7 @@ export default function SlideEditor() {
                                         onChange={(e) => setAiSlideCount(Number(e.target.value))}
                                         className="flex-1 accent-violet-600"
                                     />
-                                    <span className="text-sm font-semibold text-violet-700 w-6 text-center">{aiSlideCount}</span>
+                                    <span className="text-sm font-medium text-violet-700 w-6 text-center">{aiSlideCount}</span>
                                 </div>
                             </div>
                             <div>

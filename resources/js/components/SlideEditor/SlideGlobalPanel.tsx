@@ -38,6 +38,7 @@ interface SlideGlobalPanelProps {
     onSelectElement: (id: string) => void;
     onDeleteElement: (id: string) => void;
     onCornersChange: (corners: SlideCorners) => void;
+    onApplyCornersToAll: (corners: SlideCorners) => void;
 }
 
 type CornerKey = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
@@ -51,7 +52,7 @@ const CORNER_T_KEYS: Record<CornerKey, string> = {
 
 const CORNER_ORDER: CornerKey[] = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
 
-export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange }: SlideGlobalPanelProps) {
+export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange, onApplyCornersToAll }: SlideGlobalPanelProps) {
     const { t } = useTranslation();
     const textElements = slide.elements.filter((el): el is TextEl => el.type === 'text');
     const isTransparent = slide.background === 'transparent' || slide.background === '';
@@ -79,11 +80,11 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
 
             {/* Background */}
             <div className="p-4 flex flex-col gap-3 bg-white" style={{ borderRadius: '1.35rem' }}>
-                <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.background')}</p>
+                <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.background')}</p>
 
                 {/* Quick Palettes */}
                 <div className="flex flex-col gap-2">
-                    <p className="text-xs text-gray-400">{t('slideEditor.globalPanel.quickPalettes')}</p>
+                    <p className="text-xs font-medium text-gray-400">{t('slideEditor.globalPanel.quickPalettes')}</p>
                     <div className="grid grid-cols-3 gap-1.5">
                         {QUICK_PALETTES.map((palette, i) => (
                             <button
@@ -102,7 +103,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
 
                 {/* Background Color */}
                 <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">{t('slideEditor.globalPanel.bgColor')}</p>
+                    <p className="text-xs font-medium text-gray-400">{t('slideEditor.globalPanel.bgColor')}</p>
                     <div className="flex items-center gap-2">
                         <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-200 cursor-pointer">
                             <input
@@ -114,7 +115,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                             />
                             <div className="w-full h-full rounded-full" style={{ backgroundColor: isTransparent ? '#ffffff' : slide.background }} />
                         </div>
-                        <span className="text-xs font-mono text-gray-400">
+                        <span className="text-xs font-medium font-mono text-gray-400">
                             {isTransparent ? 'transparent' : slide.background.toUpperCase()}
                         </span>
                     </div>
@@ -122,7 +123,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
 
                 {/* Transparent toggle */}
                 <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">{t('slideEditor.globalPanel.transparent')}</p>
+                    <p className="text-xs font-medium text-gray-400">{t('slideEditor.globalPanel.transparent')}</p>
                     <button
                         onClick={() => onBackgroundChange(isTransparent ? '#FFFFFF' : 'transparent')}
                         className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${isTransparent ? 'bg-[#E8440A]' : 'bg-gray-200'}`}
@@ -138,7 +139,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
 
             {/* Text */}
             <div className="p-4 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
-                <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.text')}</p>
+                <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.text')}</p>
 
                 {/* Add text badge */}
                 <button
@@ -150,14 +151,14 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                     </div>
                     <div>
                         <p className="text-xs font-medium text-gray-900">{t('slideEditor.globalPanel.addTextLayer')}</p>
-                        <p className="text-[10px] text-gray-400">{t('slideEditor.globalPanel.addTextLayerHint')}</p>
+                        <p className="text-[10px] font-medium text-gray-400">{t('slideEditor.globalPanel.addTextLayerHint')}</p>
                     </div>
                 </button>
 
                 {/* Text Layers */}
                 {textElements.length > 0 && (
                     <div className="flex flex-col gap-0.5">
-                        <p className="text-xs mb-1 text-gray-400">{t('slideEditor.globalPanel.textLayers')}</p>
+                        <p className="text-xs mb-1 font-medium text-gray-400">{t('slideEditor.globalPanel.textLayers')}</p>
                         {textElements.map((el) => (
                             <div
                                 key={el.id}
@@ -169,7 +170,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-xs font-medium text-gray-900 truncate leading-tight">{el.text || t('slideEditor.globalPanel.text')}</p>
-                                    <p className="text-[10px] truncate text-gray-400">{el.fontFamily}</p>
+                                    <p className="text-[10px] truncate font-medium text-gray-400">{el.fontFamily}</p>
                                 </div>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onDeleteElement(el.id); }}
@@ -189,7 +190,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                     className="w-full flex items-center justify-between px-4 py-3"
                     onClick={() => setCornersOpen((o) => !o)}
                 >
-                    <p className="text-sm font-semibold text-gray-900">{t('slideEditor.globalPanel.corners')}</p>
+                    <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.corners')}</p>
                     {cornersOpen
                         ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                         : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
@@ -201,14 +202,14 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
 
                         {/* Corner text inputs — 2×2 grid */}
                         <div className="pt-2.5">
-                            <p className="text-[10px] font-semibold tracking-wider mb-2 text-gray-400">{t('slideEditor.globalPanel.cornersTexts')}</p>
+                            <p className="text-[10px] font-medium tracking-wider mb-2 text-gray-400">{t('slideEditor.globalPanel.cornersTexts')}</p>
                             <div className="grid grid-cols-2 gap-1.5">
                                 {CORNER_ORDER.map((key) => {
                                     const cfg = corners[key];
                                     return (
                                         <div key={key} className="flex flex-col gap-1 rounded-lg p-2 bg-gray-100">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-semibold tracking-wide text-gray-400">
+                                                <span className="text-[9px] font-medium tracking-wide text-gray-400">
                                                     {t(CORNER_T_KEYS[key])}
                                                 </span>
                                                 <button
@@ -243,7 +244,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                                 onChange={(e) => patchCorners({ show: e.target.checked })}
                                 className="rounded accent-[#E8440A]"
                             />
-                            <span className="text-xs text-gray-800">{t('slideEditor.globalPanel.showCorners')}</span>
+                            <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.showCorners')}</span>
                         </label>
 
                         {/* Indicadores de quantidade */}
@@ -254,12 +255,20 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                                 onChange={(e) => patchCorners({ showDots: e.target.checked })}
                                 className="rounded accent-[#E8440A]"
                             />
-                            <span className="text-xs text-gray-800">{t('slideEditor.globalPanel.showDots')}</span>
+                            <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.showDots')}</span>
                         </label>
+
+                        <button
+                            type="button"
+                            onClick={() => onApplyCornersToAll(corners)}
+                            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                        >
+                            Apply to all
+                        </button>
 
                         {/* Icon picker */}
                         <div className="flex flex-col gap-1.5">
-                            <p className="text-[9px] font-semibold tracking-wider text-gray-400">
+                            <p className="text-[9px] font-medium tracking-wider text-gray-400">
                                 {t('slideEditor.globalPanel.cornerIcon')}
                             </p>
                             <div className="flex items-center gap-1.5">

@@ -16,7 +16,7 @@ class CarouselGenerationService
 FIELDS : '';
 
         $systemPrompt = <<<PROMPT
-You are a social media carousel designer. Generate slide content for an Instagram carousel.
+You are a social media carousel designer. Generate slide content for an Instagram carousel. Zero em-dashes anywhere. Hyphen only.
 Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
 - title: short headline (max 8 words)
 - subtitle: supporting subheadline (max 12 words)
