@@ -10,13 +10,29 @@ export function SliderField({
     value: number; onChange: (v: number) => void;
     min: number; max: number; step?: number; unit?: string;
 }) {
+    const percentage = max === min ? 0 : ((value - min) / (max - min)) * 100;
+
     return (
-        <div className="flex items-center gap-2">
-            <input
-                type="range" value={value} min={min} max={max} step={step}
-                onChange={(e) => onChange(parseFloat(e.target.value))}
-                className="flex-1 h-1 rounded-full appearance-none cursor-pointer accent-[#E8440A] bg-gray-200"
-            />
+        <div className="group flex items-center gap-2">
+            <div className="relative flex-1 h-7">
+                <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-gray-200 transition-all duration-200 ease-out group-hover:h-2.5" />
+                <div
+                    className="absolute left-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-gray-700 transition-all duration-200 ease-out group-hover:h-2.5"
+                    style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
+                />
+                <input
+                    type="range" value={value} min={min} max={max} step={step}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    className="absolute inset-0 w-full cursor-pointer appearance-none bg-transparent
+                        [&::-webkit-slider-runnable-track]:h-7 [&::-webkit-slider-runnable-track]:bg-transparent
+                        [&::-moz-range-track]:h-7 [&::-moz-range-track]:bg-transparent [&::-moz-range-track]:border-0
+                        [&::-webkit-slider-thumb]:mt-0 [&::-webkit-slider-thumb]:h-0 [&::-webkit-slider-thumb]:w-0
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-transparent [&::-webkit-slider-thumb]:shadow-none
+                        [&::-moz-range-thumb]:h-0 [&::-moz-range-thumb]:w-0 [&::-moz-range-thumb]:rounded-full
+                        [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-transparent [&::-moz-range-thumb]:shadow-none"
+                />
+            </div>
             <div className="flex items-center gap-0.5 shrink-0">
                 <input
                     type="number" value={value} min={min} max={max} step={step}
@@ -24,9 +40,9 @@ export function SliderField({
                         const v = parseFloat(e.target.value);
                         if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
                     }}
-                    className="w-12 text-center text-[11px] border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                    className="w-12 rounded-md border border-gray-200 bg-white px-1.5 py-1 text-center text-[11px] focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
                 />
-                {unit && <span className="text-[10px] text-gray-400">{unit}</span>}
+                {unit && <span className="text-[10px] font-medium text-gray-400">{unit}</span>}
             </div>
         </div>
     );

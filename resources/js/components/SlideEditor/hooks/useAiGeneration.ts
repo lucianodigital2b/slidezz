@@ -131,6 +131,15 @@ export function useAiGeneration(
 
             if (bgBase64 && layout.backgroundPreference !== 'solid') {
                 if (effectiveMode === 'background') {
+                    const overlayColor = template?.background ?? '#000000';
+                    const overlayPreset =
+                        layout.gradientIntensity >= 0.75 ? 'gradient_strong' :
+                        layout.gradientIntensity >= 0.5  ? 'gradient' :
+                        layout.gradientIntensity >= 0.25 ? 'base' : 'none';
+
+                    // Remove standalone gradient elements — the image overlay replaces them
+                    scene.elements = scene.elements.filter(el => el.type !== 'gradient');
+
                     scene.elements.unshift({
                         id: uid(), type: 'image', src: bgBase64,
                         x: 0, y: 0, width: SLIDE_W, height: slideH,
@@ -138,7 +147,10 @@ export function useAiGeneration(
                         brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
                         hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
                         red: 255, green: 255, blue: 255,
-                        overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+                        overlayEnabled: overlayPreset !== 'none',
+                        overlayColor,
+                        overlayOpacity: 1,
+                        overlayPreset,
                         isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
                         ...SHADOW_DEFAULTS,
                     } as ImageEl);

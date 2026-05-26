@@ -5,9 +5,12 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format as formatFns } from 'date-fns';
+import { Link } from '@inertiajs/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import AppLogoIcon from '@/components/app-logo-icon';
+import DashboardController from '@/actions/App/Http/Controllers/DashboardController';
 import { FORMATS, Format } from './types';
 
 interface InstagramAccount {
@@ -59,6 +62,16 @@ export function EditorToolbar({
 
     return (
         <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-100 shrink-0">
+
+            {/* Logo / home link */}
+            <Link href={DashboardController.index().url} className="flex items-center gap-1.5 mr-1 shrink-0 group">
+                <div className="flex size-7 items-center justify-center rounded-md bg-[#E8440A] text-white group-hover:bg-[#D13D09] transition-colors">
+                    <AppLogoIcon className="size-4 fill-current" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800 leading-tight">Slidezz</span>
+            </Link>
+
+            <div className="w-px h-6 bg-gray-200 mx-1" />
 
             {/* Undo / Redo */}
             <div className="flex items-center gap-1">
