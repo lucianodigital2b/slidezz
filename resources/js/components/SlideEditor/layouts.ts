@@ -34,6 +34,7 @@ export interface LayoutDefinition {
     };
     backgroundPreference: 'image' | 'solid' | 'either';
     gradientIntensity: number;
+    imageCardPosition: 'top' | 'bottom';
 }
 
 const HOOK_HERO: LayoutDefinition = {
@@ -59,6 +60,7 @@ const HOOK_HERO: LayoutDefinition = {
     pill: { y: 0.96, align: 'left' },
     backgroundPreference: 'image',
     gradientIntensity: 0.85,
+    imageCardPosition: 'top',
 };
 
 const STANDARD: LayoutDefinition = {
@@ -83,6 +85,7 @@ const STANDARD: LayoutDefinition = {
     },
     backgroundPreference: 'either',
     gradientIntensity: 0.7,
+    imageCardPosition: 'bottom',
 };
 
 const STAT_CALLOUT: LayoutDefinition = {
@@ -113,6 +116,7 @@ const STAT_CALLOUT: LayoutDefinition = {
     },
     backgroundPreference: 'solid',
     gradientIntensity: 0.4,
+    imageCardPosition: 'bottom',
 };
 
 const SPLIT_TEXT: LayoutDefinition = {
@@ -137,6 +141,7 @@ const SPLIT_TEXT: LayoutDefinition = {
     },
     backgroundPreference: 'either',
     gradientIntensity: 0.7,
+    imageCardPosition: 'bottom',
 };
 
 const QUOTE_BLOCK: LayoutDefinition = {
@@ -161,6 +166,7 @@ const QUOTE_BLOCK: LayoutDefinition = {
     },
     backgroundPreference: 'solid',
     gradientIntensity: 0.3,
+    imageCardPosition: 'top',
 };
 
 const CTA_CLOSING: LayoutDefinition = {
@@ -185,6 +191,7 @@ const CTA_CLOSING: LayoutDefinition = {
     },
     backgroundPreference: 'solid',
     gradientIntensity: 0.5,
+    imageCardPosition: 'top',
 };
 
 export const LAYOUT_DEFINITIONS: Record<LayoutType, LayoutDefinition> = {

@@ -49,14 +49,14 @@ class CarouselWizardController extends Controller
     {
         $validated = $request->validate([
             'template' => ['required', 'string', 'max:100'],
-            'archetype' => ['required', 'string', 'max:100'],
+            'archetype' => ['nullable', 'string', 'max:100'],
         ]);
 
         $workspace = Workspace::where('owner_id', $request->user()->id)->firstOrFail();
         $profile = $workspace->profile ?? [];
         $profile['carousel'] = [
             'template' => $validated['template'],
-            'archetype' => $validated['archetype'],
+            'archetype' => $validated['archetype'] ?? '',
         ];
         $workspace->update(['profile' => $profile]);
 
@@ -69,7 +69,7 @@ class CarouselWizardController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'topic' => ['required', 'string', 'max:2000'],
             'template' => ['required', 'string', 'max:100'],
-            'archetype' => ['required', 'string', 'max:100'],
+            'archetype' => ['nullable', 'string', 'max:100'],
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'save_config' => ['boolean'],
             'format' => ['nullable', 'string', 'in:post,stories'],
@@ -83,7 +83,7 @@ class CarouselWizardController extends Controller
             $profile = $workspace->profile ?? [];
             $profile['carousel'] = [
                 'template' => $validated['template'],
-                'archetype' => $validated['archetype'],
+                'archetype' => $validated['archetype'] ?? '',
             ];
             $workspace->update(['profile' => $profile]);
         }
@@ -97,7 +97,7 @@ class CarouselWizardController extends Controller
             'template' => $validated['template'],
         ]);
 
-        $style = $this->carouselGenerationService->buildStyle($validated['template'], $validated['archetype']);
+        $style = $this->carouselGenerationService->buildStyle($validated['template'], $validated['archetype'] ?? null);
 
         return redirect()
             ->route('slideshow-editor.edit', $project)

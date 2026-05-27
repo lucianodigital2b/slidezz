@@ -11,7 +11,6 @@ export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
 
 export interface SlideData {
     title: string;
-    subtitle: string;
     description: string;
     imagePrompt: string;
     highlightWords?: string[];
@@ -108,7 +107,7 @@ export function useAiGeneration(
             const content = {
                 eyebrow: '',
                 title: data.title,
-                subtitle: data.subtitle,
+                subtitle: '',
                 caption: data.description,
                 description: data.description,
                 stat: data.stat,
@@ -155,12 +154,15 @@ export function useAiGeneration(
                         ...SHADOW_DEFAULTS,
                     } as ImageEl);
                 } else {
-                    // Grid: image as a contained card in the upper portion of the slide
+                    // Grid: image as a contained card, position driven by layout
                     const cardPad = 80;
                     const cardH = Math.round(slideH * (layout.type === 'hook_hero' ? 0.50 : 0.40));
+                    const cardY = layout.imageCardPosition === 'bottom'
+                        ? slideH - cardPad - cardH
+                        : cardPad;
                     scene.elements.unshift({
                         id: uid(), type: 'image', src: bgBase64,
-                        x: cardPad, y: cardPad,
+                        x: cardPad, y: cardY,
                         width: SLIDE_W - cardPad * 2, height: cardH,
                         rotation: 0, opacity: 1,
                         brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
@@ -195,9 +197,7 @@ export function useAiGeneration(
         const contentWidth = Math.max(320, safeBounds.width - horizontalInset * 2);
         const titleY = safeBounds.y + topInset;
         const titleHeight = Math.min(format === 'stories' ? 280 : 240, Math.round(safeBounds.height * 0.24));
-        const subtitleY = titleY + titleHeight + 24;
-        const subtitleHeight = Math.min(140, Math.round(safeBounds.height * 0.12));
-        const descY = subtitleY + subtitleHeight + 28;
+        const descY = titleY + titleHeight + 24;
         const safeBottomY = safeBounds.y + safeBounds.height - bottomInset;
         const descriptionX = contentX + descriptionInset;
         const descriptionWidth = Math.max(280, contentWidth - descriptionInset * 2);
@@ -214,7 +214,6 @@ export function useAiGeneration(
         const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
         const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
         const titlePadding = 28;
-        const subtitlePadding = 20;
         const descriptionPadding = 16;
         const titleRichText = highlightWords.length > 0
             ? buildRichText(data.title, highlightWords, textColor, highlightColor)
@@ -231,18 +230,6 @@ export function useAiGeneration(
             accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
             ...(titleRichText ? { richText: titleRichText } : {}),
-        };
-
-        const subtitleFontSize = fitTextFontSize(data.subtitle, bodyFont, '', 44, 1.3, 0, contentWidth, subtitleHeight, subtitlePadding);
-        const subtitleEl: TextEl = {
-            id: uid(), type: 'text', x: contentX, y: subtitleY,
-            width: contentWidth, height: subtitleHeight, rotation: 0, opacity: 1,
-            text: data.subtitle, fontSize: subtitleFontSize, fontFamily: bodyFont, fill: textColor === '#ffffff' ? '#e8e8e8' : textColor,
-            fontStyle: '', align: textAlign, verticalAlign: 'top',
-            lineHeight: 1.3, letterSpacing: 0, textDecoration: '', stroke: '#000000',
-            strokeWidth: 0, padding: subtitlePadding, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
-            ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 12, shadowOpacity: 0.5,
         };
 
         const descFontSize = fitTextFontSize(data.description, bodyFont, '', 32, 1.5, 0, descriptionWidth, descMaxHeight, descriptionPadding);
@@ -266,7 +253,7 @@ export function useAiGeneration(
             ...SHADOW_DEFAULTS,
         };
 
-        const elements: SlideEl[] = [gradientEl, titleEl, subtitleEl, descEl];
+        const elements: SlideEl[] = [gradientEl, titleEl, descEl];
 
         if (bgBase64) {
             const bgEl: ImageEl = {
@@ -316,7 +303,11 @@ export function useAiGeneration(
 
         if (!response.ok || !response.body) {
             setAiStatus('error');
-            setAiError(t('slideEditor.ai.errorServer'));
+            if (response.status === 402) {
+                setAiError(t('slideEditor.ai.errorNoCredits'));
+            } else {
+                setAiError(t('slideEditor.ai.errorServer'));
+            }
             return;
         }
 

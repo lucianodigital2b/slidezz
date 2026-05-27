@@ -2,30 +2,42 @@
 
 return [
 
-    'pro' => [
-        'name' => 'Pro',
+    'starter' => [
+        'name' => 'Starter',
         'description' => 'Para criadores individuais',
-        'price_label' => 'R$ 49/mês',
-        'price_id' => env('STRIPE_PRICE_PRO'),
+        'credits_per_cycle' => 10,
+        'monthly' => [
+            'price_label' => '$36/mo',
+            'price_id' => env('STRIPE_PRICE_STARTER_MONTHLY'),
+        ],
+        'annual' => [
+            'price_label' => '$21.60/mo',
+            'price_id' => env('STRIPE_PRICE_STARTER_ANNUAL'),
+        ],
         'features' => [
-            '5 contas TikTok',
-            '100 agendamentos por mês',
-            'Analytics básico',
+            '10 carousels por mês',
+            'Todos os templates',
             'Suporte por e-mail',
         ],
     ],
 
-    'business' => [
-        'name' => 'Business',
-        'description' => 'Para agências e equipes',
-        'price_label' => 'R$ 149/mês',
-        'price_id' => env('STRIPE_PRICE_BUSINESS'),
+    'pro' => [
+        'name' => 'Pro',
+        'description' => 'Para times e agências',
+        'credits_per_cycle' => 30,
+        'monthly' => [
+            'price_label' => '$120/mo',
+            'price_id' => env('STRIPE_PRICE_PRO_MONTHLY'),
+        ],
+        'annual' => [
+            'price_label' => '$72/mo',
+            'price_id' => env('STRIPE_PRICE_PRO_ANNUAL'),
+        ],
         'features' => [
-            '20 contas TikTok',
-            'Agendamentos ilimitados',
-            'Analytics avançado',
+            '30 carousels por mês',
+            'Todos os templates',
             'Suporte prioritário',
-            'Acesso antecipado a novidades',
+            'Acesso antecipado',
         ],
     ],
 

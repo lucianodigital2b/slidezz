@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CarouselGenerationController;
 use App\Http\Controllers\CarouselWizardController;
+use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ScheduleController;
@@ -57,6 +58,8 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
+
+    Route::post('credits/purchase', [CreditController::class, 'purchase'])->name('credits.purchase');
 
     Route::post('carousel/generate', [CarouselGenerationController::class, 'generate'])->name('carousel.generate');
     Route::post('carousel/generate-image', [CarouselGenerationController::class, 'generateImage'])->name('carousel.generate-image');

@@ -38,7 +38,7 @@ interface CanvasAreaProps {
     slidesCount: number;
     showSafeAreaGuide: boolean;
     safeAreaBounds: { x: number; y: number; width: number; height: number };
-    safeAreaPadding: { top: number; bottom: number };
+    safeAreaPadding: { top: number; right: number; bottom: number; left: number };
     elementsOpen: boolean;
     onElementsOpenChange: (open: boolean) => void;
     onStageClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
@@ -658,6 +658,12 @@ export function CanvasArea({
                                 )}
                                 {safeAreaPadding.bottom > 0 && (
                                     <Rect x={0} y={slideH - safeAreaPadding.bottom} width={SLIDE_W} height={safeAreaPadding.bottom} fill="rgba(163,230,53,0.14)" listening={false} />
+                                )}
+                                {safeAreaPadding.left > 0 && (
+                                    <Rect x={0} y={0} width={safeAreaPadding.left} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
+                                )}
+                                {safeAreaPadding.right > 0 && (
+                                    <Rect x={SLIDE_W - safeAreaPadding.right} y={0} width={safeAreaPadding.right} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
                                 )}
                                 <Rect
                                     x={safeAreaBounds.x} y={safeAreaBounds.y}

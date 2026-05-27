@@ -175,7 +175,8 @@
       "doneBtn": "View slides",
       "errorNetwork": "Network error. Please try again.",
       "errorServer": "Server error. Please try again.",
-      "errorParsing": "Could not parse the generated content. Please try again."
+      "errorParsing": "Could not parse the generated content. Please try again.",
+      "errorNoCredits": "You have no credits. Purchase more credits to continue."
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -477,6 +478,9 @@
     "prev": "Prev",
     "next": "Next",
     "recentLabel": "Recent Projects",
+    "searchPlaceholder": "Search projects...",
+    "noResults": "No projects found for your search.",
+    "clearSearch": "Clear search",
     "empty": "You don't have any projects yet. Create your first carousel to get started!",
     "actions": {
       "createAi": {

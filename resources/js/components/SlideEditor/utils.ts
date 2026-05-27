@@ -282,16 +282,16 @@ export type SafeAreaFormat = Format | 'carousel';
 
 export const SAFE_AREA_PADDINGS: Record<SafeAreaFormat, SafeAreaPadding> = {
     carousel: {
-        top: 180,
-        right: 0,
-        bottom: 180,
-        left: 0,
+        top: 0,
+        right: 34,
+        bottom: 0,
+        left: 34,
     },
     post: {
-        top: 180,
-        right: 0,
-        bottom: 180,
-        left: 0,
+        top: 0,
+        right: 34,
+        bottom: 0,
+        left: 34,
     },
     stories: {
         top: 250,

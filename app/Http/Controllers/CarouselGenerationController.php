@@ -11,7 +11,7 @@ class CarouselGenerationController extends Controller
 {
     public function __construct(private readonly CarouselGenerationService $carouselGenerationService) {}
 
-    public function generate(Request $request): StreamedResponse
+    public function generate(Request $request): StreamedResponse|JsonResponse
     {
         $validated = $request->validate([
             'topic' => ['required', 'string', 'max:500'],
@@ -19,6 +19,13 @@ class CarouselGenerationController extends Controller
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'word_highlight' => ['nullable', 'boolean'],
         ]);
+
+        if (! $request->user()->deductCredit()) {
+            return response()->json([
+                'error' => 'no_credits',
+                'message' => 'Créditos insuficientes.',
+            ], 402);
+        }
 
         return $this->carouselGenerationService->generateSlides(
             topic: $validated['topic'],

@@ -146,7 +146,7 @@ class CarouselWizardControllerTest extends TestCase
         $this->actingAs($user)
             ->postJson(route('carousel.save-config'), [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['template', 'archetype']);
+            ->assertJsonValidationErrors(['template']);
     }
 
     public function test_save_config_persists_to_workspace_profile(): void
@@ -199,7 +199,7 @@ class CarouselWizardControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('carousel.store'), [])
-            ->assertSessionHasErrors(['title', 'topic', 'template', 'archetype']);
+            ->assertSessionHasErrors(['title', 'topic', 'template']);
     }
 
     public function test_store_creates_slide_project_and_redirects_to_editor(): void

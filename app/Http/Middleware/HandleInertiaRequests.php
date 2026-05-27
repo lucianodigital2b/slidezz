@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
                 'trial_ends_at' => $request->user()?->trial_ends_at?->toDateString(),
                 'on_trial' => $request->user()?->onTrial(),
                 'onboarding_complete' => $request->user()?->hasCompletedOnboarding(),
+                'credits' => $request->user()?->credits ?? 0,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

@@ -19,7 +19,6 @@ FIELDS : '';
 You are a social media carousel designer. Generate slide content for an Instagram carousel. Zero em-dashes anywhere. Hyphen only.
 Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
 - title: short headline (max 8 words)
-- subtitle: supporting subheadline (max 12 words)
 - description: substantive body text that deepens understanding. Slide 1 must be a viral hook with fewer words, high tension, and immediate curiosity (18-28 words max). It should feel punchy, memorable, and emotionally charged, not explanatory. Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide MUST be a short soft CTA: direct the reader to take a specific action (follow, save, share, comment, DM, etc.) Every description must feel complete and informative — never vague or generic.
 - imagePrompt: image generation prompt for a background image that fits the slide content (max 60 words)
 {$highlightFields}- stat: (optional) a single hero number or statistic to display prominently on that slide, e.g. "$150B", "90%", "3 out of 4". Only include when the slide contains a genuinely dramatic number worth calling out. Omit entirely if there is no strong stat.
@@ -43,7 +42,7 @@ PROMPT;
             ->asEventStreamResponse();
     }
 
-    public function buildStyle(string $template, string $archetype): string
+    public function buildStyle(string $template, ?string $archetype): string
     {
         $templates = [
             'noir-manifesto' => 'dark gradient overlay, ALL CAPS typography, documentary motivational style',
@@ -64,6 +63,11 @@ PROMPT;
         ];
 
         $templateStyle = $templates[$template] ?? $template;
+
+        if (empty($archetype)) {
+            return $templateStyle;
+        }
+
         $archetypeStyle = $archetypes[$archetype] ?? $archetype;
 
         return "{$templateStyle}. Hook archetype: {$archetypeStyle}.";

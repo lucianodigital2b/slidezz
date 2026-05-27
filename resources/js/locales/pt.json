@@ -195,6 +195,9 @@
     "prev": "Ant",
     "next": "Próx",
     "recentLabel": "Projetos Recentes",
+    "searchPlaceholder": "Buscar projetos...",
+    "noResults": "Nenhum projeto encontrado para sua busca.",
+    "clearSearch": "Limpar busca",
     "actions": {
       "createAi": {
         "title": "Criar com IA",
@@ -458,7 +461,8 @@
       "doneBtn": "Ver slides",
       "errorNetwork": "Erro de rede. Por favor, tente novamente.",
       "errorServer": "Erro no servidor. Por favor, tente novamente.",
-      "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente."
+      "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente.",
+      "errorNoCredits": "Você não tem créditos. Adquira mais créditos para continuar."
     },
     "templates": {
       "panel": "TEMPLATES",

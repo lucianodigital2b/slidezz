@@ -40,6 +40,24 @@ class User extends Authenticatable
         return $this->onboarding_completed_at !== null;
     }
 
+    public function hasCredits(): bool
+    {
+        return $this->credits > 0;
+    }
+
+    public function deductCredit(): bool
+    {
+        return (bool) static::where('id', $this->id)
+            ->where('credits', '>', 0)
+            ->decrement('credits');
+    }
+
+    public function addCredits(int $amount): void
+    {
+        static::where('id', $this->id)->increment('credits', $amount);
+        $this->refresh();
+    }
+
     public function workspaces()
     {
         return $this->hasMany(Workspace::class, 'owner_id');

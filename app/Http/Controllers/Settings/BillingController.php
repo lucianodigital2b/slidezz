@@ -47,13 +47,16 @@ class BillingController extends Controller
     {
         $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
+            'cycle' => ['nullable', 'string', 'in:monthly,annual'],
         ]);
 
+        $cycle = $request->input('cycle', 'monthly');
         $plan = config('plans.'.$request->plan);
+        $priceId = $plan[$cycle]['price_id'];
 
         try {
             $checkout = $request->user()
-                ->newSubscription($request->plan, $plan['price_id'])
+                ->newSubscription($request->plan, $priceId)
                 ->allowPromotionCodes()
                 ->checkout([
                     'success_url' => route('billing.edit').'?subscribed=1',

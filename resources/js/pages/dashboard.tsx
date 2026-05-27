@@ -8,11 +8,15 @@ import {
     ExternalLink,
     Files,
     PenLine,
+    Search,
     Sparkles,
     Trash2,
 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
+import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
+import type { Format } from '@/components/SlideEditor/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +28,7 @@ interface Project {
     prompt: string | null;
     slide_count: number;
     cover_color: string;
+    first_slide: { background: string; elements: unknown[] } | null;
     created_at: string;
 }
 
@@ -94,10 +99,15 @@ function CarouselCard({ project }: { project: Project }) {
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors">
             {/* Thumbnail */}
-            <div
-                className="relative flex-none overflow-hidden"
-                style={{ aspectRatio: project.format === 'stories' ? '9/16' : '3/4', background: project.cover_color }}
-            >
+            <div className="relative flex-none overflow-hidden">
+                {project.first_slide ? (
+                    <SlideThumbnail
+                        slide={project.first_slide as Parameters<typeof SlideThumbnail>[0]['slide']}
+                        format={project.format as Format}
+                    />
+                ) : (
+                    <div style={{ aspectRatio: project.format === 'stories' ? '9/16' : '3/4', background: project.cover_color }} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 backdrop-blur-sm">
                     <BookOpen className="h-3 w-3 text-white/80" />
@@ -165,7 +175,7 @@ function CarouselCard({ project }: { project: Project }) {
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
-function Pagination({ current, last }: { current: number; last: number }) {
+function Pagination({ current, last, search }: { current: number; last: number; search: string }) {
     const { t } = useTranslation();
     if (last <= 1) return null;
 
@@ -181,7 +191,9 @@ function Pagination({ current, last }: { current: number; last: number }) {
     }
 
     function goTo(page: number) {
-        router.get(window.location.pathname, { page } as Record<string, unknown>, { preserveScroll: true, preserveState: true });
+        const params: Record<string, unknown> = { page };
+        if (search) params.search = search;
+        router.get(window.location.pathname, params, { preserveScroll: true, preserveState: true });
     }
 
     return (
@@ -210,8 +222,20 @@ function Pagination({ current, last }: { current: number; last: number }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-export default function Dashboard({ projects }: { projects: PaginatedProjects }) {
+export default function Dashboard({ projects, search: initialSearch }: { projects: PaginatedProjects; search: string }) {
     const { t } = useTranslation();
+    const [search, setSearch] = useState(initialSearch ?? '');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            const params: Record<string, unknown> = { page: 1 };
+            if (search.trim()) params.search = search.trim();
+            router.get(window.location.pathname, params, { preserveScroll: true, preserveState: true, replace: true });
+        }, 400);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, [search]);
 
     return (
         <>
@@ -243,19 +267,44 @@ export default function Dashboard({ projects }: { projects: PaginatedProjects })
                     />
                 </div>
 
+                {/* Search + header row */}
+                <div className="flex items-center justify-between gap-4 mb-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 shrink-0">
+                        {t('dashboard.recentLabel')}
+                    </p>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={t('dashboard.searchPlaceholder')}
+                            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-gray-400 transition-colors"
+                        />
+                    </div>
+                </div>
+
                 {/* Projects grid */}
                 {projects.data.length > 0 ? (
                     <>
-                        <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                            {t('dashboard.recentLabel')}
-                        </p>
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                             {projects.data.map((project) => (
                                 <CarouselCard key={project.id} project={project} />
                             ))}
                         </div>
-                        <Pagination current={projects.current_page} last={projects.last_page} />
+                        <Pagination current={projects.current_page} last={projects.last_page} search={search} />
                     </>
+                ) : search.trim() ? (
+                    <div className="flex flex-col items-center justify-center py-28 gap-3">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
+                            <Search className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-500">{t('dashboard.noResults')}</p>
+                        <button type="button" onClick={() => setSearch('')}
+                            className="mt-2 rounded-lg border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+                            {t('dashboard.clearSearch')}
+                        </button>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-28 gap-3">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">

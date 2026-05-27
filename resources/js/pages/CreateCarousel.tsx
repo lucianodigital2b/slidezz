@@ -14,6 +14,7 @@ import {
     X,
 } from 'lucide-react';
 import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
+import { FORMATS } from '@/components/SlideEditor/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -243,7 +244,7 @@ export default function CreateCarousel() {
 
     function canAdvance() {
         if (step === 1) return title.trim().length > 0 && topic.trim().length > 0;
-        if (step === 2) return template !== '' && archetype !== '';
+        if (step === 2) return template !== '';
         return true;
     }
 
@@ -373,7 +374,7 @@ export default function CreateCarousel() {
                                                 <p className={`text-sm font-semibold ${format === f ? 'text-[#E8440A]' : 'text-gray-700'}`}>
                                                     {f === 'post' ? 'Post' : 'Stories'}
                                                 </p>
-                                                <p className="text-xs text-gray-400">{f === 'post' ? '3:4 · 1080×1440' : '9:16 · 1080×1920'}</p>
+                                                <p className="text-xs text-gray-400">{FORMATS[f as keyof typeof FORMATS].ratio} · {FORMATS[f as keyof typeof FORMATS].w}×{FORMATS[f as keyof typeof FORMATS].h}</p>
                                             </div>
                                             {format === f && <Check className="h-4 w-4 text-[#E8440A] ml-auto" />}
                                         </button>
