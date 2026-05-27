@@ -173,10 +173,16 @@ export type SlideEl = TextEl | ShapeEl | ImageEl | GradientEl | PathEl | ButtonE
 
 export type CornerIcon = 'none' | 'bookmark' | 'arrow' | 'heart';
 
+export type CornerKey = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+
 export interface CornerConfig {
     text: string;
     enabled: boolean;
     color: string;
+    fontFamily?: string;
+    fontSize?: number;
+    fontStyle?: string;
+    letterSpacing?: number;
 }
 
 export interface SlideCorners {
@@ -189,9 +195,23 @@ export interface SlideCorners {
     bottomRightIcon: CornerIcon;
 }
 
+export type BadgeStyle = 'glass' | 'solid' | 'minimal' | 'divider';
+
+export interface ProfileBadge {
+    enabled: boolean;
+    style: BadgeStyle;
+    handle: string;
+    photoUrl: string;
+    size: number;
+    verified?: boolean;
+    x?: number;
+    y?: number;
+}
+
 export interface Slide {
     id: string;
     background: string;
     elements: SlideEl[];
     corners?: SlideCorners;
+    profileBadge?: ProfileBadge;
 }

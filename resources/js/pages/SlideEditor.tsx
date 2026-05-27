@@ -10,7 +10,7 @@ import { loadGoogleFont } from '@/utils/google-fonts';
 
 import {
     SLIDE_W, FORMATS, Format, Tool,
-    SlideEl, Slide, TextEl, ImageEl,
+    SlideEl, Slide, TextEl, ImageEl, CornerKey, SlideCorners, ProfileBadge,
 } from '@/components/SlideEditor/types';
 import { uid, makeSlide, SHADOW_DEFAULTS, getSafeAreaBounds, getSafeAreaPadding, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
 
@@ -94,6 +94,7 @@ export default function SlideEditor() {
     const [igPosting, setIgPosting] = useState(false);
     const [elementsOpen, setElementsOpen] = useState(false);
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
+    const [selectedCornerId, setSelectedCornerId] = useState<CornerKey | null>(null);
 
     // ── AI carousel generation ──────────────────────────────────────────────
     const {
@@ -176,11 +177,13 @@ export default function SlideEditor() {
 
             if (isEditableTarget) return;
             if (editingId) return;
-            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCornerId) {
+                handleCornerElDelete();
+            } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
                 updateSlide({ elements: slide.elements.filter((el) => el.id !== selectedId) });
                 setSelectedId(null);
             }
-            if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); }
+            if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); setSelectedCornerId(null); }
             if (e.ctrlKey || e.metaKey) {
                 if (e.key.toLowerCase() === 'z') {
                     e.preventDefault();
@@ -272,7 +275,23 @@ export default function SlideEditor() {
             .filter((el): el is ImageEl => el.type === 'image' && el.isBackground)
             .map((el) => ({ ...el }));
         setSelectedId(null);
-        updateSlide({ background: scene.background, elements: [...preservedBackgroundImages, ...scene.elements] });
+        const updates: Partial<Slide> = {
+            background: scene.background,
+            elements: [...preservedBackgroundImages, ...scene.elements],
+        };
+        if (tpl.id !== 'twitter-x' && scene.badgeX !== undefined && scene.badgeY !== undefined) {
+            updates.profileBadge = {
+                enabled: true,
+                handle: instagramAccounts?.[0]?.handle ?? '',
+                photoUrl: instagramAccounts?.[0]?.avatar ?? '',
+                size: 60,
+                ...slide.profileBadge,
+                style: scene.badgeStyle ?? slide.profileBadge?.style ?? 'glass',
+                x: scene.badgeX,
+                y: scene.badgeY,
+            };
+        }
+        updateSlide(updates);
     }
 
     // ─── Stage click ──────────────────────────────────────────────────────────
@@ -288,7 +307,7 @@ export default function SlideEditor() {
             target === target.getStage() ||
             (target.getClassName() === 'Rect' && target.id() === 'bg') ||
             (isBackgroundImage && tool !== 'select');
-        if (tool === 'select') { if (clickedOnEmpty) setSelectedId(null); return; }
+        if (tool === 'select') { if (clickedOnEmpty) { setSelectedId(null); setSelectedCornerId(null); } return; }
         if (!clickedOnEmpty) return;
 
         const pos = stageRef.current!.getPointerPosition()!;
@@ -530,9 +549,69 @@ export default function SlideEditor() {
         }
     }
 
+    // ─── Corner element editing ───────────────────────────────────────────────
+
+    const CORNER_FS = 28;
+
+    function makeCornerTextEl(key: CornerKey, corners: NonNullable<Slide['corners']>): TextEl {
+        const cfg = corners[key];
+        return {
+            id: `corner-${key}`,
+            type: 'text',
+            x: 0, y: 0, width: 600, height: 80,
+            rotation: 0, opacity: 1,
+            text: cfg.text,
+            fontSize: cfg.fontSize ?? CORNER_FS,
+            fontFamily: cfg.fontFamily ?? 'Poppins',
+            fill: cfg.color,
+            fontStyle: cfg.fontStyle ?? '',
+            align: 'left', verticalAlign: 'top',
+            lineHeight: 1.2, letterSpacing: cfg.letterSpacing ?? 0,
+            textDecoration: '',
+            stroke: '#000000', strokeWidth: 0, padding: 0, wrap: 'word',
+            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+            ...SHADOW_DEFAULTS,
+        };
+    }
+
+    function handleCornerElChange(patch: Partial<SlideEl>) {
+        if (!selectedCornerId) return;
+        const corners: NonNullable<SlideCorners> = slide.corners ?? {
+            topLeft: { text: '', enabled: false, color: '#111111' },
+            topRight: { text: '', enabled: false, color: '#111111' },
+            bottomLeft: { text: '', enabled: false, color: '#111111' },
+            bottomRight: { text: '', enabled: false, color: '#111111' },
+            show: true, showDots: false, bottomRightIcon: 'none',
+        };
+        const tp = patch as Partial<TextEl>;
+        const cp: Partial<typeof corners[CornerKey]> = {};
+        if (tp.text !== undefined) cp.text = tp.text;
+        if (tp.fill !== undefined) cp.color = tp.fill;
+        if (tp.fontFamily !== undefined) cp.fontFamily = tp.fontFamily;
+        if (tp.fontSize !== undefined) cp.fontSize = tp.fontSize;
+        if (tp.fontStyle !== undefined) cp.fontStyle = tp.fontStyle;
+        if (tp.letterSpacing !== undefined) cp.letterSpacing = tp.letterSpacing;
+        updateSlide({ corners: { ...corners, [selectedCornerId]: { ...corners[selectedCornerId], ...cp } } });
+    }
+
+    function handleCornerElDelete() {
+        if (!selectedCornerId || !slide.corners) return;
+        updateSlide({
+            corners: { ...slide.corners, [selectedCornerId]: { ...slide.corners[selectedCornerId], text: '', enabled: false } },
+        });
+        setSelectedCornerId(null);
+    }
+
+    function selectCorner(key: CornerKey) {
+        setSelectedCornerId(key);
+        setSelectedId(null);
+    }
+
     // ─── Derived ──────────────────────────────────────────────────────────────
 
-    const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
+    const selectedEl = selectedCornerId && slide.corners
+        ? makeCornerTextEl(selectedCornerId, slide.corners)
+        : (slide.elements.find((el) => el.id === selectedId) ?? null);
 
     function cloneCorners(corners: Slide['corners']): Slide['corners'] {
         if (!corners) return undefined;
@@ -549,6 +628,13 @@ export default function SlideEditor() {
         setSlides((prev) => prev.map((slideItem) => ({
             ...slideItem,
             corners: cloneCorners(corners),
+        })));
+    }
+
+    function applyBadgeToAll(badge: ProfileBadge) {
+        setSlides((prev) => prev.map((slideItem) => ({
+            ...slideItem,
+            profileBadge: { ...badge },
         })));
     }
 
@@ -594,10 +680,17 @@ export default function SlideEditor() {
                             slide={slide}
                             onBackgroundChange={(color) => updateSlide({ background: color })}
                             onAddText={addDefaultTextElement}
-                            onSelectElement={(id) => { setTool('select'); setSelectedId(id); }}
+                            onSelectElement={(id) => { setTool('select'); setSelectedId(id); setSelectedCornerId(null); }}
                             onDeleteElement={(id) => deleteElement(id)}
                             onCornersChange={(c) => updateSlide({ corners: c })}
                             onApplyCornersToAll={applyCornersToAll}
+                            caption={caption}
+                            onCaptionChange={setCaption}
+                            selectedCornerId={selectedCornerId}
+                            onCornerSelect={selectCorner}
+                            defaultHandle={instagramAccounts?.[0]?.handle ?? null}
+                            onProfileBadgeChange={(badge: ProfileBadge) => updateSlide({ profileBadge: badge })}
+                            onApplyBadgeToAll={applyBadgeToAll}
                         />
                     </div>
 
@@ -632,6 +725,9 @@ export default function SlideEditor() {
                         onPrevSlide={() => { if (safeIdx > 0) { setCurrentIdx(safeIdx - 1); setSelectedId(null); } }}
                         onNextSlide={() => { if (safeIdx < slides.length - 1) { setCurrentIdx(safeIdx + 1); setSelectedId(null); } }}
                         corners={slide.corners}
+                        onBadgeMove={(x, y) => {
+                            if (slide.profileBadge) updateSlide({ profileBadge: { ...slide.profileBadge, x, y } });
+                        }}
                     />
 
                     {/* Right: Thumbnails + Editing Layer */}
@@ -645,8 +741,14 @@ export default function SlideEditor() {
                             onAddSlide={addSlide}
                             onDuplicateSlide={duplicateSlide}
                             onDeleteSlide={deleteSlide}
-                            onElementChange={(patch) => selectedId && updateElement(selectedId, patch)}
-                            onElementDelete={() => selectedId && deleteElement(selectedId)}
+                            onElementChange={(patch) => {
+                                if (selectedCornerId) { handleCornerElChange(patch); }
+                                else if (selectedId) { updateElement(selectedId, patch); }
+                            }}
+                            onElementDelete={() => {
+                                if (selectedCornerId) { handleCornerElDelete(); }
+                                else if (selectedId) { deleteElement(selectedId); }
+                            }}
                         />
                     </div>
                 </div>

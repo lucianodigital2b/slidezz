@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Align, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
+import { Align, BadgeStyle, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
 import { SHADOW_DEFAULTS, fitTextFontSize, uid } from './utils';
 import { LayoutDefinition } from './layouts';
 
@@ -16,6 +16,9 @@ export interface TemplateContent {
 export interface TemplateScene {
     background: string;
     elements: SlideEl[];
+    badgeX?: number;
+    badgeY?: number;
+    badgeStyle?: BadgeStyle;
 }
 
 export interface SlideTemplate {
@@ -298,7 +301,15 @@ export function buildSceneFromLayoutGeneric(
         }));
     }
 
-    return { background: bg, elements };
+    const titleRect = layout.title.visible ? slotToRect(layout.title) : null;
+    const badgeY = titleRect ? Math.max(30, titleRect.y - 116) : undefined;
+    const isCentered = template.align === 'center';
+    const badgeX = isCentered
+        ? Math.round(SLIDE_W * 0.15)
+        : (titleRect ? titleRect.x : safeX);
+    const badgeStyle: BadgeStyle | undefined = isCentered ? 'divider' : undefined;
+
+    return { background: bg, elements, badgeX, badgeY, badgeStyle };
 }
 
 // ─── Legacy scene builders (unchanged) ──────────────────────────────────────
@@ -307,9 +318,13 @@ function buildNoirManifesto(content: TemplateContent, slideH: number): TemplateS
     const titleY = slideH > 1400 ? slideH - 640 : slideH - 430;
     const subtitleY = slideH > 1400 ? slideH - 180 : slideH - 110;
     const captionY = slideH > 1400 ? slideH - 110 : slideH - 62;
+    const badgeX = 130;
+    const badgeY = titleY - 116;
 
     return {
         background: '#090909',
+        badgeX,
+        badgeY,
         elements: [
             createRect({
                 type: 'circle',
@@ -394,9 +409,14 @@ function buildDarkCards(content: TemplateContent, slideH: number): TemplateScene
     const cardY = Math.round(slideH * 0.16);
     const cardH = Math.round(slideH * 0.62);
     const innerY = cardY + 34;
+    const badgeX = Math.round(SLIDE_W * 0.15);
+    const badgeY = innerY + 82;
 
     return {
         background: '#0f172a',
+        badgeX,
+        badgeY,
+        badgeStyle: 'divider' as BadgeStyle,
         elements: [
             createRect({
                 type: 'circle',
@@ -557,9 +577,13 @@ function buildDarkCards(content: TemplateContent, slideH: number): TemplateScene
 
 function buildPopMagazine(content: TemplateContent, slideH: number): TemplateScene {
     const footerY = slideH - 120;
+    const badgeX = 138;
+    const badgeY = 90;
 
     return {
         background: '#fff8f1',
+        badgeX,
+        badgeY,
         elements: [
             createRect({
                 type: 'rect',
@@ -782,9 +806,13 @@ function buildTwitterX(content: TemplateContent, slideH: number): TemplateScene 
 
 function buildAcidBrutalist(content: TemplateContent, slideH: number): TemplateScene {
     const titleY = slideH > 1400 ? 360 : 230;
+    const badgeX = 90;
+    const badgeY = titleY - 116;
 
     return {
         background: '#050505',
+        badgeX,
+        badgeY,
         elements: [
             createRect({
                 type: 'rect',
@@ -897,9 +925,13 @@ function buildAcidBrutalist(content: TemplateContent, slideH: number): TemplateS
 function buildDocumentary(content: TemplateContent, slideH: number): TemplateScene {
     const frameY = Math.round(slideH * 0.18);
     const frameH = Math.round(slideH * 0.56);
+    const badgeX = 144;
+    const badgeY = frameY - 34;
 
     return {
         background: '#1a1108',
+        badgeX,
+        badgeY,
         elements: [
             createRect({
                 type: 'rect',

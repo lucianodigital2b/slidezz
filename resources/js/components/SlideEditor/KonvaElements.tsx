@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Konva from 'konva';
 import { Group, Rect, Shape, Text, Image as KonvaImage } from 'react-konva';
-import { TextEl, ImageEl, ButtonEl, RichSpan, TextReadabilityStyle } from './types';
+import { TextEl, ImageEl, ButtonEl, RichSpan, TextReadabilityStyle, ProfileBadge } from './types';
 import { drawTextWithLetterSpacing, strokeTextWithLetterSpacing, getMeasureCtx, measureTextWidthWithLetterSpacing, borderStyleToDash, hexToRgba } from './utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { OverlayPreset } from './overlays';
@@ -674,6 +674,228 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onDragMo
                     />
                 )
             }
+        </Group>
+    );
+}
+
+// ─── KonvaBadgeEl ─────────────────────────────────────────────────────────────
+
+const BADGE_PAD = 18;
+const BADGE_GAP = 10;
+const BADGE_CORNER_PAD = 50;
+
+const VERIFIED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="rgb(0,149,246)"><path d="M19.998 3.094 14.638 0l-2.972 5.15H5.432v6.354L0 14.64 3.094 20 0 25.359l5.432 3.137v5.905h5.975L14.638 40l5.36-3.094L25.358 40l3.232-5.6h6.162v-6.01L40 25.359 36.905 20 40 14.641l-5.248-3.03v-6.46h-6.419L25.358 0l-5.36 3.094Zm7.415 11.225 2.254 2.287-11.43 11.5-6.835-6.93 2.244-2.258 4.587 4.581 9.18-9.18Z" fill-rule="evenodd"/></svg>`;
+const VERIFIED_DATA_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(VERIFIED_SVG)}`;
+
+interface KonvaBadgeElProps {
+    badge: ProfileBadge;
+    slideW: number;
+    slideH: number;
+    onBadgeMove?: (x: number, y: number) => void;
+}
+
+export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeElProps) {
+    const img = useLoadImage(badge.photoUrl ?? '');
+    const verifiedImg = useLoadImage(badge.verified ? VERIFIED_DATA_URL : '');
+    const [fontReady, setFontReady] = useState(false);
+
+    useEffect(() => {
+        loadGoogleFont('Poppins').then(() => setFontReady(true)).catch(() => setFontReady(true));
+    }, []);
+
+    if (!badge.enabled) return null;
+
+    const photoSize = badge.size;
+    const photoR = photoSize / 2;
+    const fontSize = Math.max(16, Math.round(photoSize * 0.36));
+    const handleText = badge.handle ? `@${badge.handle}` : '';
+
+    const measureCtx = getMeasureCtx();
+    measureCtx.font = `500 ${fontSize}px ${fontReady ? '"Poppins"' : 'sans-serif'}, sans-serif`;
+    // +20 buffer guards against font-fallback measurement being narrower than Poppins
+    const textW = handleText ? Math.ceil(measureCtx.measureText(handleText).width) : 0;
+
+    const verifiedSize = Math.round(fontSize * 0.95);
+    const VERIFIED_GAP = 10;
+    const verifiedBlockW = badge.verified ? verifiedSize + VERIFIED_GAP : 0;
+
+    const hasAvatar = !!img;
+    const avatarBlockW = hasAvatar ? photoSize + BADGE_GAP : 0;
+    const contentW = avatarBlockW + textW + verifiedBlockW;
+    const contentH = Math.max(hasAvatar ? photoSize : 0, fontSize);
+
+    const containerW = contentW + BADGE_PAD * 2;
+    const containerH = contentH + BADGE_PAD * 2;
+
+    // ── Divider style — centered layout with horizontal lines ──────────────────
+    if (badge.style === 'divider') {
+        const iconSize = Math.round(fontSize * 1.05);
+        const iconR = iconSize / 2;
+        const iconTextGap = 9;
+        const lineGap = 14;
+
+        const iconBlockW = iconSize + iconTextGap;
+        const divContentW = iconBlockW + textW + verifiedBlockW;
+        const divTotalW = Math.round(slideW * 0.70);
+        const lineW = Math.max(20, Math.round((divTotalW - divContentW - lineGap * 2) / 2));
+        const totalW = lineW * 2 + lineGap * 2 + divContentW;
+        const padV = 5;
+        const divH = Math.max(iconSize, fontSize) + padV * 2;
+        const midY = Math.round(divH / 2);
+
+        const dbx = badge.x ?? Math.round((slideW - totalW) / 2);
+        const dby = badge.y ?? (slideH - BADGE_CORNER_PAD - divH);
+
+        const lineFill = 'rgba(255,255,255,0.50)';
+        const iconX = lineW + lineGap;
+        const divTextX = iconX + iconBlockW;
+        const divTextY = midY - Math.round(fontSize / 2);
+        const divIconY = midY - iconR;
+
+        return (
+            <Group
+                x={dbx} y={dby}
+                draggable
+                onDragEnd={(e) => onBadgeMove?.(Math.round(e.target.x()), Math.round(e.target.y()))}
+                onClick={(e) => { e.cancelBubble = true; }}
+                onTap={(e) => { e.cancelBubble = true; }}
+            >
+                {/* Left line */}
+                <Rect x={0} y={midY - 1} width={lineW} height={1.5} fill={lineFill} listening={false} />
+
+                {/* Avatar (circular) or decorative ring */}
+                {hasAvatar ? (
+                    <Group
+                        x={iconX}
+                        y={divIconY}
+                        clipFunc={(ctx: Konva.Context) => { ctx.arc(iconR, iconR, iconR, 0, Math.PI * 2); }}
+                    >
+                        <KonvaImage image={img!} width={iconSize} height={iconSize} />
+                    </Group>
+                ) : (
+                    <Rect
+                        x={iconX + iconR - 5}
+                        y={midY - 5}
+                        width={10} height={10}
+                        cornerRadius={999}
+                        fill="transparent"
+                        stroke={lineFill}
+                        strokeWidth={1.5}
+                        listening={false}
+                    />
+                )}
+
+                {/* Handle text */}
+                {handleText && (
+                    <Text
+                        x={divTextX}
+                        y={divTextY}
+                        width={textW + 20}
+                        text={handleText}
+                        fontSize={fontSize}
+                        fontFamily="Poppins"
+                        fontStyle="500"
+                        fill="#ffffff"
+                        align="left"
+                        listening={false}
+                    />
+                )}
+
+                {/* Verified */}
+                {badge.verified && verifiedImg && (
+                    <KonvaImage
+                        x={divTextX + textW + VERIFIED_GAP}
+                        y={midY - Math.round(verifiedSize / 2)}
+                        width={verifiedSize}
+                        height={verifiedSize}
+                        image={verifiedImg}
+                        listening={false}
+                    />
+                )}
+
+                {/* Right line */}
+                <Rect
+                    x={lineW + lineGap + divContentW + lineGap}
+                    y={midY - 1}
+                    width={lineW} height={1.5}
+                    fill={lineFill}
+                    listening={false}
+                />
+            </Group>
+        );
+    }
+
+    const bx = badge.x ?? BADGE_CORNER_PAD;
+    const by = badge.y ?? (slideH - BADGE_CORNER_PAD - containerH);
+
+    const bgFill = badge.style === 'solid'
+        ? 'rgba(0,0,0,0.68)'
+        : badge.style === 'glass'
+        ? 'rgba(255,255,255,0.18)'
+        : 'transparent';
+
+    const textFill = badge.style === 'minimal' ? '#111111' : '#ffffff';
+    const cornerR = photoR + BADGE_PAD;
+
+    const textX = BADGE_PAD + avatarBlockW;
+    const textY = BADGE_PAD + Math.round((contentH - fontSize) / 2);
+
+    return (
+        <Group
+            x={bx} y={by}
+            draggable
+            onDragEnd={(e) => onBadgeMove?.(Math.round(e.target.x()), Math.round(e.target.y()))}
+            onClick={(e) => { e.cancelBubble = true; }}
+            onTap={(e) => { e.cancelBubble = true; }}
+        >
+            {badge.style !== 'minimal' && (
+                <Rect
+                    x={0} y={0}
+                    width={containerW} height={containerH}
+                    cornerRadius={cornerR}
+                    fill={bgFill}
+                    stroke={badge.style === 'glass' ? 'rgba(255,255,255,0.35)' : undefined}
+                    strokeWidth={badge.style === 'glass' ? 1.5 : 0}
+                />
+            )}
+
+            {hasAvatar && (
+                <Group
+                    x={BADGE_PAD}
+                    y={BADGE_PAD + Math.round((contentH - photoSize) / 2)}
+                    clipFunc={(ctx: Konva.Context) => {
+                        ctx.arc(photoR, photoR, photoR, 0, Math.PI * 2);
+                    }}
+                >
+                    <KonvaImage image={img!} width={photoSize} height={photoSize} />
+                </Group>
+            )}
+
+            {handleText && (
+                <Text
+                    x={textX}
+                    y={textY}
+                    width={textW}
+                    text={handleText}
+                    fontSize={fontSize}
+                    fontFamily="Poppins"
+                    fontStyle="500"
+                    fill={textFill}
+                    align="left"
+                    listening={false}
+                />
+            )}
+
+            {badge.verified && verifiedImg && (
+                <KonvaImage
+                    x={textX + textW + VERIFIED_GAP}
+                    y={BADGE_PAD + Math.round((contentH - verifiedSize) / 2)}
+                    width={verifiedSize}
+                    height={verifiedSize}
+                    image={verifiedImg}
+                    listening={false}
+                />
+            )}
         </Group>
     );
 }

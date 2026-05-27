@@ -17,7 +17,7 @@ import {
     SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, SlideCorners, TextReadabilityStyle,
 } from './types';
 import { borderStyleToDash, contrastRatio, gradientLinearProps, normalizeHexColor } from './utils';
-import { KonvaTextEl, KonvaImageEl, KonvaButtonEl } from './KonvaElements';
+import { KonvaTextEl, KonvaImageEl, KonvaButtonEl, KonvaBadgeEl } from './KonvaElements';
 import { ShapeDef, SHAPE_CATEGORIES } from './shapes';
 
 interface CanvasAreaProps {
@@ -50,6 +50,7 @@ interface CanvasAreaProps {
     onPrevSlide: () => void;
     onNextSlide: () => void;
     corners?: SlideCorners;
+    onBadgeMove?: (x: number, y: number) => void;
 }
 
 const CORNER_PAD = 50;
@@ -177,7 +178,7 @@ export function CanvasArea({
     onStageClick, onStageDragStart, onStageDragEnd,
     onAddPath, onStartEditing, onElementChange,
     onPrevSlide, onNextSlide,
-    corners,
+    corners, onBadgeMove,
 }: CanvasAreaProps) {
     const { t } = useTranslation();
     const [dragGuides, setDragGuides] = useState<DragGuideState>({
@@ -224,7 +225,10 @@ export function CanvasArea({
 
     const sampleTextReadability = useCallback(() => {
         const stage = stageRef.current;
-        if (!stage || textElements.length === 0) {
+        const enabledCorners = (['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const).filter(
+            (key) => corners?.show && corners[key].enabled && corners[key].text,
+        );
+        if (!stage || (textElements.length === 0 && enabledCorners.length === 0)) {
             readabilitySignatureRef.current = '';
             setTextReadabilityMap({});
             return;
@@ -258,6 +262,31 @@ export function CanvasArea({
 
                 nextReadabilityMap[el.id] = resolveTextReadability(el.fill, sample);
             }
+
+            for (const key of enabledCorners) {
+                const node = stage.findOne(`#corner-${key}`) as Konva.Node | null;
+                if (!node) continue;
+
+                const rect = node.getClientRect({ relativeTo: stage, skipShadow: true });
+                if (rect.width < 1 || rect.height < 1) continue;
+
+                const wasVisible = node.visible();
+                node.visible(false);
+                stage.batchDraw();
+
+                const canvas = stage.toCanvas();
+                const ctx = canvas.getContext('2d');
+
+                node.visible(wasVisible);
+                stage.batchDraw();
+
+                if (!ctx) continue;
+
+                const sample = sampleCanvasRegion(ctx, rect);
+                if (!sample) continue;
+
+                nextReadabilityMap[`corner-${key}`] = resolveTextReadability(corners![key].color, sample);
+            }
         } finally {
             isSamplingTextReadabilityRef.current = false;
         }
@@ -267,7 +296,7 @@ export function CanvasArea({
             readabilitySignatureRef.current = nextSignature;
             setTextReadabilityMap(nextReadabilityMap);
         }
-    }, [stageRef, textElements]);
+    }, [stageRef, textElements, corners]);
 
     const scheduleTextReadabilitySampling = useCallback(() => {
         if (sampleFrameRef.current !== null || isSamplingTextReadabilityRef.current) return;
@@ -285,7 +314,7 @@ export function CanvasArea({
                 sampleFrameRef.current = null;
             }
         };
-    }, [scheduleTextReadabilitySampling, slide.background, sortedElements, displayW, displayH, scale]);
+    }, [scheduleTextReadabilitySampling, slide.background, sortedElements, displayW, displayH, scale, corners]);
 
     useEffect(() => {
         const stage = stageRef.current;
@@ -576,41 +605,57 @@ export function CanvasArea({
                             <>
                                 {corners.topLeft.enabled && corners.topLeft.text && (
                                     <KonvaText
+                                        id="corner-topLeft"
                                         x={CORNER_PAD} y={CORNER_PAD}
                                         text={corners.topLeft.text}
-                                        fontSize={CORNER_FS} fontFamily="sans-serif"
-                                        fill={corners.topLeft.color}
+                                        fontSize={corners.topLeft.fontSize ?? CORNER_FS}
+                                        fontFamily={corners.topLeft.fontFamily ?? 'Poppins'}
+                                        fontStyle={corners.topLeft.fontStyle ?? ''}
+                                        letterSpacing={corners.topLeft.letterSpacing ?? 0}
+                                        fill={textReadabilityMap['corner-topLeft']?.fill ?? corners.topLeft.color}
                                         listening={false}
                                     />
                                 )}
                                 {corners.topRight.enabled && corners.topRight.text && (
                                     <KonvaText
+                                        id="corner-topRight"
                                         x={CORNER_PAD} y={CORNER_PAD}
                                         width={SLIDE_W - CORNER_PAD * 2}
                                         align="right"
                                         text={corners.topRight.text}
-                                        fontSize={CORNER_FS} fontFamily="sans-serif"
-                                        fill={corners.topRight.color}
+                                        fontSize={corners.topRight.fontSize ?? CORNER_FS}
+                                        fontFamily={corners.topRight.fontFamily ?? 'Poppins'}
+                                        fontStyle={corners.topRight.fontStyle ?? ''}
+                                        letterSpacing={corners.topRight.letterSpacing ?? 0}
+                                        fill={textReadabilityMap['corner-topRight']?.fill ?? corners.topRight.color}
                                         listening={false}
                                     />
                                 )}
                                 {corners.bottomLeft.enabled && corners.bottomLeft.text && (
                                     <KonvaText
-                                        x={CORNER_PAD} y={slideH - CORNER_PAD - CORNER_FS}
+                                        id="corner-bottomLeft"
+                                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS)}
                                         text={corners.bottomLeft.text}
-                                        fontSize={CORNER_FS} fontFamily="sans-serif"
-                                        fill={corners.bottomLeft.color}
+                                        fontSize={corners.bottomLeft.fontSize ?? CORNER_FS}
+                                        fontFamily={corners.bottomLeft.fontFamily ?? 'Poppins'}
+                                        fontStyle={corners.bottomLeft.fontStyle ?? ''}
+                                        letterSpacing={corners.bottomLeft.letterSpacing ?? 0}
+                                        fill={textReadabilityMap['corner-bottomLeft']?.fill ?? corners.bottomLeft.color}
                                         listening={false}
                                     />
                                 )}
                                 {corners.bottomRight.enabled && corners.bottomRight.text && (
                                     <KonvaText
-                                        x={CORNER_PAD} y={slideH - CORNER_PAD - CORNER_FS}
+                                        id="corner-bottomRight"
+                                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS)}
                                         width={SLIDE_W - CORNER_PAD * 2}
                                         align="right"
                                         text={corners.bottomRight.text}
-                                        fontSize={CORNER_FS} fontFamily="sans-serif"
-                                        fill={corners.bottomRight.color}
+                                        fontSize={corners.bottomRight.fontSize ?? CORNER_FS}
+                                        fontFamily={corners.bottomRight.fontFamily ?? 'Poppins'}
+                                        fontStyle={corners.bottomRight.fontStyle ?? ''}
+                                        letterSpacing={corners.bottomRight.letterSpacing ?? 0}
+                                        fill={textReadabilityMap['corner-bottomRight']?.fill ?? corners.bottomRight.color}
                                         listening={false}
                                     />
                                 )}
@@ -700,6 +745,16 @@ export function CanvasArea({
                                     />
                                 )}
                             </>
+                        )}
+
+                        {/* Profile badge overlay */}
+                        {slide.profileBadge && (
+                            <KonvaBadgeEl
+                                badge={slide.profileBadge}
+                                slideW={SLIDE_W}
+                                slideH={slideH}
+                                onBadgeMove={onBadgeMove}
+                            />
                         )}
 
                         <Transformer
