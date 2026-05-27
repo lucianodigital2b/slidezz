@@ -251,13 +251,13 @@ export default function Dashboard({ projects, search: initialSearch }: { project
                         buttonLabel={t('dashboard.actions.createAi.button')}
                         onClick={() => router.visit('/carousel/create')}
                     />
-                    <ActionCard
+                    {/* <ActionCard
                         icon={<BookOpen className="h-5 w-5 text-gray-500" />}
                         title={t('dashboard.actions.train.title')}
                         description={t('dashboard.actions.train.description')}
                         buttonLabel={t('dashboard.actions.train.button')}
                         onClick={() => router.visit('/automations')}
-                    />
+                    /> */}
                     <ActionCard
                         icon={<PenLine className="h-5 w-5 text-gray-500" />}
                         title={t('dashboard.actions.scratch.title')}

@@ -414,7 +414,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 items-stretch">
+                    <div className="grid md:grid-cols-2 gap-6 items-stretch max-w-3xl mx-auto w-full">
                         {/* Starter */}
                         <div className="bg-white rounded-[24px] p-8 border border-[#E8E7E2] flex flex-col shadow-sm relative">
                             <div className="flex items-center justify-between mb-4">
@@ -457,8 +457,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 {[
                                     'Sugestões ilimitadas de posts',
                                     'Geração de carrossel',
-                                    'Integração com Instagram',
-                                    'AutoFeed (100% automático)'
+                                    'Exportar carrosséis',
                                 ].map((feature) => (
                                     <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#555550]">
                                         <Check className="w-4 h-4 text-[#E8440A] flex-shrink-0 mt-0.5" />
@@ -476,7 +475,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         </div>
 
                         {/* Pro */}
-                        <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative transform md:-translate-y-4">
+                        <div className="bg-white rounded-[24px] p-8 border-2 border-[#E8440A] flex flex-col shadow-lg relative">
                             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0F766E] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
                                 Mais popular
                             </div>
@@ -538,46 +537,6 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             </Link>
                         </div>
 
-                        {/* Enterprise */}
-                        <div className="bg-[#1A1A1A] rounded-[24px] p-8 border border-[#333330] flex flex-col shadow-lg relative">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-2xl font-extrabold text-white">Enterprise</h3>
-                            </div>
-                            <div className="mb-6">
-                                <div className="text-lg text-[#AAAAAA] font-semibold mb-1">Preço sob consulta</div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-5xl font-extrabold text-white leading-none">Custom</span>
-                                </div>
-                                <div className="text-sm text-[#888880] mt-2 font-medium">cobrado anualmente</div>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 text-lg font-bold text-[#FCD34D] mb-6 pb-6 border-b border-[#333330]">
-                                <Check className="w-4 h-4 text-[#FCD34D]" />
-                                Conteúdo sob demanda
-                            </div>
-
-                            <div className="text-sm font-bold text-[#AAAAAA] mb-4">Tudo no Pro, mais:</div>
-                            <ul className="flex flex-col gap-3 mb-8 flex-1">
-                                {[
-                                    'Múltiplos projetos',
-                                    'Acesso à API',
-                                    'Área de cliente e aprovação',
-                                    'Treinamento da equipe'
-                                ].map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]">
-                                        <Check className="w-4 h-4 text-[#FCD34D] flex-shrink-0 mt-0.5" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={ctaHref}
-                                className="w-full text-center bg-[#E8440A] hover:bg-[#D13D09] text-white text-lg font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-                            >
-                                Fale conosco <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
                     </div>
                 </section>
 

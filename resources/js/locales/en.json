@@ -488,6 +488,29 @@
       "toneRequired": "Please select at least one voice tone."
     }
   },
+  "creditsModal": {
+    "title": "Get more carousels",
+    "subtitle": "Each carousel generation uses 1 credit.",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "carouselsPerMonth": "{{count}} carousels/month",
+    "subscribeTo": "Subscribe to {{plan}}",
+    "redirecting": "Redirecting…",
+    "noSubscription": "Prefer no subscription? Buy individual credits.",
+    "credits": "{{count}} credits",
+    "badgeMostPopular": "MOST POPULAR",
+    "badgeBestValue": "BEST VALUE",
+    "plans": {
+      "starter": {
+        "annualSub": "/mo, billed annually",
+        "features": ["10 carousels per month", "All templates", "Email support"]
+      },
+      "pro": {
+        "annualSub": "/mo, billed annually",
+        "features": ["30 carousels per month", "All templates", "Priority support", "Early access"]
+      }
+    }
+  },
   "sidebar": {
     "schedule": "Schedule",
     "automations": "Automations",

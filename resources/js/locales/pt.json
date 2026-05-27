@@ -166,6 +166,29 @@
       "confirmButton": "Excluir conta"
     }
   },
+  "creditsModal": {
+    "title": "Obter mais carousels",
+    "subtitle": "Cada geração de carousel consome 1 crédito.",
+    "monthly": "Mensal",
+    "annual": "Anual",
+    "carouselsPerMonth": "{{count}} carousels/mês",
+    "subscribeTo": "Assinar {{plan}}",
+    "redirecting": "Redirecionando…",
+    "noSubscription": "Prefere sem assinatura? Compre créditos avulsos.",
+    "credits": "{{count}} créditos",
+    "badgeMostPopular": "MAIS POPULAR",
+    "badgeBestValue": "MELHOR VALOR",
+    "plans": {
+      "starter": {
+        "annualSub": "/mês, cobrado anualmente",
+        "features": ["10 carousels por mês", "Todos os templates", "Suporte por e-mail"]
+      },
+      "pro": {
+        "annualSub": "/mês, cobrado anualmente",
+        "features": ["30 carousels por mês", "Todos os templates", "Suporte prioritário", "Acesso antecipado"]
+      }
+    }
+  },
   "sidebar": {
     "newAutomation": "Nova Automação",
     "home": "Início",
