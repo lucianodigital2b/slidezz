@@ -13,7 +13,15 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
-        $workspace = Workspace::where('owner_id', $request->user()->id)->first();
+        $user = $request->user();
+        $showWelcome = $user->welcome_shown_at === null;
+
+        if ($showWelcome) {
+            $user->welcome_shown_at = now();
+            $user->save();
+        }
+
+        $workspace = Workspace::where('owner_id', $user->id)->first();
         $search = $request->string('search')->trim()->toString();
 
         $projects = $workspace
@@ -41,6 +49,7 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'projects' => $projects,
             'search' => $search,
+            'show_welcome' => $showWelcome,
         ]);
     }
 }

@@ -27,7 +27,7 @@ export function SlideRightPanel({
 
             {/* Thumbnail filmstrip */}
             <div className="shrink-0 p-2.5 border-b border-gray-100">
-                <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
                     {slides.map((s, idx) => (
                         <div
                             key={s.id}
@@ -76,7 +76,7 @@ export function SlideRightPanel({
             </div>
 
             {/* Editing Layer */}
-            <div className="flex-1 overflow-y-auto min-h-0" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
                 {selectedEl ? (
                     <div className="p-2.5">
                         <div className="overflow-hidden bg-white" style={{ borderRadius: '1.35rem' }}>

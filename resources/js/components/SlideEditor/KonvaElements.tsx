@@ -626,6 +626,8 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onDragMo
 
     if (!img) return null;
 
+    const cr = !el.isBackground && el.cornerRadius ? el.cornerRadius : 0;
+
     return (
         <Group
             id={el.id}
@@ -638,6 +640,21 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onDragMo
             shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
             shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
             shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
+            {...(cr > 0 ? {
+                clipFunc: (ctx: Konva.Context) => {
+                    ctx.beginPath();
+                    ctx.moveTo(cr, 0);
+                    ctx.lineTo(dispW - cr, 0);
+                    ctx.quadraticCurveTo(dispW, 0, dispW, cr);
+                    ctx.lineTo(dispW, dispH - cr);
+                    ctx.quadraticCurveTo(dispW, dispH, dispW - cr, dispH);
+                    ctx.lineTo(cr, dispH);
+                    ctx.quadraticCurveTo(0, dispH, 0, dispH - cr);
+                    ctx.lineTo(0, cr);
+                    ctx.quadraticCurveTo(0, 0, cr, 0);
+                    ctx.closePath();
+                },
+            } : {})}
             onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => onChange({ x: e.target.x(), y: e.target.y() })}
             onTransformEnd={(e: Konva.KonvaEventObject<Event>) => {
                 const node = e.target;

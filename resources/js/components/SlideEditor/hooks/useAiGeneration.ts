@@ -164,6 +164,7 @@ export function useAiGeneration(
                         id: uid(), type: 'image', src: bgBase64,
                         x: cardPad, y: cardY,
                         width: SLIDE_W - cardPad * 2, height: cardH,
+                        cornerRadius: 40,
                         rotation: 0, opacity: 1,
                         brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
                         hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,

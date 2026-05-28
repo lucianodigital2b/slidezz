@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 import { Head, router, usePage } from '@inertiajs/react';
 import Konva from 'konva';
-import { Grid2X2, Highlighter, ImageOff, Image as ImageIcon, Layers, Loader2, Sparkles, X } from 'lucide-react';
+import { Highlighter, Loader2, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
@@ -847,23 +847,6 @@ export default function SlideEditor() {
                                         className="flex-1 accent-violet-600"
                                     />
                                     <span className="text-sm font-medium text-violet-700 w-6 text-center">{aiSlideCount}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-gray-500 mb-2">{t('slideEditor.ai.generateImagesLabel')}</p>
-                                <div className="grid grid-cols-2 gap-1.5">
-                                    {([
-                                        { id: 'none' as ImageMode, label: t('slideEditor.ai.imageMode.none'), Icon: ImageOff },
-                                        { id: 'background' as ImageMode, label: t('slideEditor.ai.imageMode.backgroundShort'), Icon: ImageIcon },
-                                        { id: 'grid' as ImageMode, label: t('slideEditor.ai.imageMode.gridShort'), Icon: Grid2X2 },
-                                        { id: 'alternate' as ImageMode, label: t('slideEditor.ai.imageMode.alternateShort'), Icon: Layers },
-                                    ]).map(({ id, label, Icon }) => (
-                                        <button key={id} type="button" onClick={() => setAiImageMode(id)}
-                                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium transition-all ${aiImageMode === id ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                                            <Icon className="h-3.5 w-3.5 shrink-0" />
-                                            {label}
-                                        </button>
-                                    ))}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between">

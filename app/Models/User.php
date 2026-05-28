@@ -31,6 +31,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
+            'welcome_shown_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];
     }

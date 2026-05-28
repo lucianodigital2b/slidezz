@@ -18,6 +18,7 @@ import {
 } from './types';
 import { borderStyleToDash, contrastRatio, gradientLinearProps, normalizeHexColor } from './utils';
 import { KonvaTextEl, KonvaImageEl, KonvaButtonEl, KonvaBadgeEl } from './KonvaElements';
+import { loadGoogleFont } from '@/utils/google-fonts';
 import { ShapeDef, SHAPE_CATEGORIES } from './shapes';
 
 interface CanvasAreaProps {
@@ -186,6 +187,7 @@ export function CanvasArea({
         showHorizontal: false,
     });
     const [textReadabilityMap, setTextReadabilityMap] = useState<Record<string, TextReadabilityStyle>>({});
+    const [cornerFontRevision, setCornerFontRevision] = useState(0);
     const sampleFrameRef = useRef<number | null>(null);
     const isSamplingTextReadabilityRef = useRef(false);
     const readabilitySignatureRef = useRef('');
@@ -199,6 +201,20 @@ export function CanvasArea({
         () => sortedElements.filter((el): el is TextEl => el.type === 'text'),
         [sortedElements],
     );
+
+    // Load corner fonts and re-render when ready
+    useEffect(() => {
+        if (!corners?.show) return;
+        const fonts = new Set<string>();
+        for (const key of ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const) {
+            const f = corners[key].fontFamily;
+            if (f) fonts.add(f);
+        }
+        if (fonts.size === 0) fonts.add('Poppins');
+        Promise.all([...fonts].map(f => loadGoogleFont(f))).then(() => {
+            setCornerFontRevision(r => r + 1);
+        });
+    }, [corners?.show, corners?.topLeft.fontFamily, corners?.topRight.fontFamily, corners?.bottomLeft.fontFamily, corners?.bottomRight.fontFamily]);
 
     const clearDragGuides = useCallback(() => {
         setDragGuides({ showVertical: false, showHorizontal: false });
@@ -605,6 +621,7 @@ export function CanvasArea({
                             <>
                                 {corners.topLeft.enabled && corners.topLeft.text && (
                                     <KonvaText
+                                        key={`corner-topLeft-${cornerFontRevision}`}
                                         id="corner-topLeft"
                                         x={CORNER_PAD} y={CORNER_PAD}
                                         text={corners.topLeft.text}
@@ -618,6 +635,7 @@ export function CanvasArea({
                                 )}
                                 {corners.topRight.enabled && corners.topRight.text && (
                                     <KonvaText
+                                        key={`corner-topRight-${cornerFontRevision}`}
                                         id="corner-topRight"
                                         x={CORNER_PAD} y={CORNER_PAD}
                                         width={SLIDE_W - CORNER_PAD * 2}
@@ -633,6 +651,7 @@ export function CanvasArea({
                                 )}
                                 {corners.bottomLeft.enabled && corners.bottomLeft.text && (
                                     <KonvaText
+                                        key={`corner-bottomLeft-${cornerFontRevision}`}
                                         id="corner-bottomLeft"
                                         x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS)}
                                         text={corners.bottomLeft.text}
@@ -646,6 +665,7 @@ export function CanvasArea({
                                 )}
                                 {corners.bottomRight.enabled && corners.bottomRight.text && (
                                     <KonvaText
+                                        key={`corner-bottomRight-${cornerFontRevision}`}
                                         id="corner-bottomRight"
                                         x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS)}
                                         width={SLIDE_W - CORNER_PAD * 2}

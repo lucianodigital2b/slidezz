@@ -71,11 +71,11 @@ export function AppSidebar() {
                         <SidebarMenuItem>
                             <SidebarMenuButton
                                 onClick={() => setCreditsOpen(true)}
-                                tooltip={{ children: `${auth.credits} créditos` }}
+                                tooltip={{ children: `${auth.credits} credits` }}
                                 className="text-[#E8440A] bg-orange-50 hover:bg-orange-100 font-semibold rounded-full"
                             >
                                 <Zap className="w-4 h-4 fill-[#E8440A] text-[#E8440A]" />
-                                <span>{auth.credits} créditos</span>
+                                <span>{auth.credits} {t('sidebar.credits')}</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 

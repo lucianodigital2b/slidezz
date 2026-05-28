@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,14 +14,21 @@ class OnboardingController extends Controller
 {
     public function show(Request $request): Response|RedirectResponse
     {
-        if ($request->user()->onboarding_completed_at !== null) {
+        $user = $request->user();
+
+        if ($user->onboarding_completed_at !== null) {
             return redirect()->route('dashboard');
         }
 
-        $workspace = Workspace::where('owner_id', $request->user()->id)->first();
+        $workspace = Workspace::where('owner_id', $user->id)->first();
+
+        // If profile was already saved (e.g. user returning to onboarding), complete it now.
+        if ($workspace?->profile !== null) {
+            return $this->completeOnboarding($user);
+        }
 
         return Inertia::render('Onboarding', [
-            'has_profile' => $workspace?->profile !== null,
+            'has_profile' => false,
             'plans' => config('plans'),
         ]);
     }
@@ -71,7 +79,16 @@ class OnboardingController extends Controller
             ]
         );
 
-        return to_route('onboarding');
+        return $this->completeOnboarding($request->user());
+    }
+
+    private function completeOnboarding(User $user): RedirectResponse
+    {
+        $user->onboarding_completed_at = now();
+        $user->save();
+        $user->addCredits(3);
+
+        return redirect()->route('dashboard');
     }
 
     public function subscribe(Request $request): RedirectResponse

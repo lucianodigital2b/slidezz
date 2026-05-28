@@ -34,14 +34,16 @@ class OnboardingControllerTest extends TestCase
             );
     }
 
-    public function test_has_profile_is_true_when_workspace_profile_json_exists(): void
+    public function test_user_with_existing_profile_is_completed_and_redirected_to_dashboard(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
         Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
-            ->assertInertia(fn ($page) => $page->where('has_profile', true));
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertNotNull($user->fresh()->onboarding_completed_at);
     }
 
     public function test_completed_user_is_redirected_from_onboarding(): void
@@ -100,7 +102,7 @@ class OnboardingControllerTest extends TestCase
                 'goal' => 'sell_products',
                 'tone_of_voice' => ['professional', 'motivational'],
             ]))
-            ->assertRedirect(route('onboarding'));
+            ->assertRedirect(route('dashboard'));
 
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $this->assertNotNull($workspace);
@@ -110,14 +112,16 @@ class OnboardingControllerTest extends TestCase
         $this->assertSame(['professional', 'motivational'], $workspace->profile['tone_of_voice']);
     }
 
-    public function test_save_profile_does_not_complete_onboarding(): void
+    public function test_save_profile_completes_onboarding_and_awards_three_credits(): void
     {
         Storage::fake('public');
-        $user = User::factory()->create(['onboarding_completed_at' => null]);
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'credits' => 0]);
 
         $this->actingAs($user)->post(route('onboarding.profile'), $this->validProfilePayload());
 
-        $this->assertNull($user->fresh()->onboarding_completed_at);
+        $fresh = $user->fresh();
+        $this->assertNotNull($fresh->onboarding_completed_at);
+        $this->assertSame(3, $fresh->credits);
     }
 
     public function test_save_profile_stores_logo_and_references_in_profile(): void
@@ -227,17 +231,14 @@ class OnboardingControllerTest extends TestCase
             ->assertOk();
     }
 
-    public function test_returning_user_without_subscription_sees_plans_step(): void
+    public function test_returning_user_with_saved_profile_is_redirected_to_dashboard(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
         Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
-            ->assertInertia(fn ($page) => $page
-                ->where('has_profile', true)
-                ->has('plans')
-            );
+            ->assertRedirect(route('dashboard'));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

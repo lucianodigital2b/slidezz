@@ -237,6 +237,12 @@
         "description": "Use o editor para criar seus slides manualmente.",
         "button": "Começar do zero"
       }
+    },
+    "welcome": {
+      "title": "Bem-vindo ao Slidezz!",
+      "description": "Para você começar, ganhamos 3 créditos grátis para criar seus primeiros carrosséis.",
+      "credits": "3 créditos grátis",
+      "cta": "Criar meu primeiro carrossel"
     }
   },
   "schedule": {
@@ -602,27 +608,27 @@
     "templates": {
       "noir-manifesto": {
         "name": "Noir Manifesto",
-        "description": "Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional."
+        "description": "Capa escura full-bleed com gradiente e título ALL CAPS de alto impacto. Slides internos com barras laranja e tipografia editorial."
       },
       "dark-cards": {
         "name": "Dark Cards",
-        "description": "Capa com foto full-bleed e título centralizado. Slides internos com card de imagem arredondado no fundo escuro."
+        "description": "Capa com foto full-bleed e título centralizado. Slides internos com cards arredondados no fundo escuro."
       },
       "pop-magazine": {
         "name": "Pop Magazine",
-        "description": "Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual."
+        "description": "Capa de revista com título Anton gigante e barra vermelha lateral. Slides internos com tipografia grande e faixas de accent colorido."
       },
       "twitter-x": {
         "name": "Twitter/X Style",
-        "description": "Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade."
+        "description": "Capa branca limpa com título em negrito e divisor azul. Slides internos com layout editorial mínimo para máxima legibilidade."
       },
       "acid-brutalist": {
         "name": "Acid Brutalist",
-        "description": "Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista."
+        "description": "Capa preta com título vazado verde neon e moldura brutalista. Slides internos com accent verde ácido sobre fundos escuros."
       },
       "documentary": {
         "name": "Documentary",
-        "description": "Estética jornalismo investigativo vintage. Playfair Display + Inter. Layouts com grain e textura."
+        "description": "Capa estilo jornalismo investigativo vintage com Playfair serif e carimbo de arquivo. Slides internos com tons sépia e molduras editoriais."
       }
     },
     "archetypes": {
@@ -698,7 +704,7 @@
     "nav": {
       "back": "Voltar",
       "continue": "Continuar",
-      "viewPlans": "Ver planos",
+      "viewPlans": "Concluir",
       "saving": "Salvando..."
     },
     "advanced": {

@@ -173,7 +173,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
     const overLimit = charsLeft > INSTAGRAM_LIMIT;
 
     return (
-        <div className="overflow-y-auto h-full bg-gray-100" style={{ scrollbarWidth: 'thin', scrollbarColor: '#d1d5db transparent' }}>
+        <div className="overflow-y-auto h-full bg-gray-100" style={{ scrollbarWidth: 'thin', scrollbarColor: 'transparent transparent' }}>
         <div className="flex flex-col gap-2.5 p-2.5">
 
             {/* Background */}

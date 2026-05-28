@@ -92,6 +92,7 @@ export type BgSize = 'cover' | 'contain' | 'fill';
 export interface ImageEl extends BaseEl {
     type: 'image';
     src: string;
+    cornerRadius?: number;
     brightness: number;
     contrast: number;
     blurRadius: number;

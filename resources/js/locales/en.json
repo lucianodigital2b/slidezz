@@ -293,7 +293,7 @@
     "templates": {
       "noir-manifesto": {
         "name": "Noir Manifesto",
-        "description": "Full-bleed image with dark gradient. ALL CAPS high-impact typography. Documentary / motivational style."
+        "description": "Full-bleed dark cover with gradient overlay and ALL CAPS impact title. Inner slides with orange accent bars and bold editorial typography."
       },
       "dark-cards": {
         "name": "Dark Cards",
@@ -301,19 +301,19 @@
       },
       "pop-magazine": {
         "name": "Pop Magazine",
-        "description": "Giant Anton typography with red highlight words. Pop culture magazine style. Maximum visual impact."
+        "description": "Bold magazine cover with giant Anton title and red left bar. Inner slides with oversized typography and pop color accent strips."
       },
       "twitter-x": {
         "name": "Twitter/X Style",
-        "description": "White background, large text, clean editorial layout. Maximum readability."
+        "description": "Clean white cover with large bold headline and blue accent divider. Inner slides with minimal editorial layout for maximum readability."
       },
       "acid-brutalist": {
         "name": "Acid Brutalist",
-        "description": "Massive Montserrat 900, black background, acid green accent. Brutalist outlined text."
+        "description": "Black cover with neon green outlined title and brutalist border frame. Inner slides with acid-green accents on dark backgrounds."
       },
       "documentary": {
         "name": "Documentary",
-        "description": "Vintage investigative journalism aesthetic. Playfair Display serif. Grain-textured layouts."
+        "description": "Vintage investigative journalism cover with Playfair serif and archive stamp. Inner slides with sepia tones, editorial frames, and caption strips."
       }
     },
     "archetypes": {
@@ -389,7 +389,7 @@
     "nav": {
       "back": "Back",
       "continue": "Continue",
-      "viewPlans": "View plans",
+      "viewPlans": "Finish",
       "saving": "Saving..."
     },
     "advanced": {
@@ -515,7 +515,8 @@
     "schedule": "Schedule",
     "automations": "Automations",
     "slideshowEditor": "Slideshow Editor",
-    "settings": "Settings"
+    "settings": "Settings",
+    "credits": "Credits"
   },
   "dashboard": {
     "pageTitle": "Dashboard",
@@ -546,6 +547,12 @@
         "description": "Use the editor to design your slides manually.",
         "button": "Start from scratch"
       }
+    },
+    "welcome": {
+      "title": "Welcome to Slidezz!",
+      "description": "To get you started, we've given you 3 free credits to create your first carousels.",
+      "credits": "3 free credits",
+      "cta": "Create my first carousel"
     }
   }
 }

@@ -1056,7 +1056,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'noir-manifesto',
         name: 'Noir Manifesto',
-        description: 'Imagem full-bleed com gradiente escuro na base. Tipografia ALL CAPS de alto impacto. Estilo documentário / motivacional.',
+        description: 'Full-bleed dark cover with gradient overlay and ALL CAPS impact title. Inner slides with orange accent bars and bold editorial typography.',
         background: '#090909',
         backgroundAlt: '#0f0f14',
         textColor: '#ffffff',
@@ -1125,7 +1125,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'dark-cards',
         name: 'Dark Cards',
-        description: 'Capa com foto full-bleed e título centralizado. Card arredondado no fundo escuro com destaques azuis.',
+        description: 'Full-bleed cover photo with centered title. Inner slides with rounded image cards on a dark background.',
         background: '#0f172a',
         backgroundAlt: '#111827',
         textColor: '#ffffff',
@@ -1139,7 +1139,20 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         fonts: ['Poppins', 'Inter'],
         buildScene: buildDarkCards,
         buildSceneFromLayout(content, layout, slideH, slideIndex) {
-            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            // For inner-slide layouts, shift the title element down so it doesn't crowd the top edge
+            const titleShiftLayouts: string[] = ['standard', 'split_text'];
+            const modifiedLayout = titleShiftLayouts.includes(layout.type)
+                ? {
+                    ...layout,
+                    title: {
+                        ...layout.title,
+                        y: layout.title.y + 0.10,
+                        height: Math.max(0.1, layout.title.height - 0.10),
+                    },
+                }
+                : layout;
+
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, modifiedLayout, slideH, slideIndex);
 
             // Blue glow circle (behind gradient)
             scene.elements.unshift(createRect({
@@ -1182,7 +1195,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'pop-magazine',
         name: 'Pop Magazine',
-        description: 'Tipografia Anton gigante com palavras em destaque vermelho. Estilo revista de cultura pop. Máximo impacto visual.',
+        description: 'Bold magazine cover with giant Anton title and red left bar. Inner slides with oversized typography and pop color accent strips.',
         background: '#fff8f1',
         backgroundAlt: '#fff0e6',
         textColor: '#111111',
@@ -1253,7 +1266,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'twitter-x',
         name: 'Twitter/X Style',
-        description: 'Fundo branco, textos grandes, visual limpo e editorial. Máxima legibilidade.',
+        description: 'Clean white cover with large bold headline and blue accent divider. Inner slides with minimal editorial layout for maximum readability.',
         background: '#f3f4f6',
         backgroundAlt: '#f8fafc',
         textColor: '#0f172a',
@@ -1310,7 +1323,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'acid-brutalist',
         name: 'Acid Brutalist',
-        description: 'Tipografia massiva Montserrat 900, fundo preto, accent verde ácido. Texto vazado brutalista.',
+        description: 'Black cover with neon green outlined title and brutalist border frame. Inner slides with acid-green accents on dark backgrounds.',
         background: '#050505',
         backgroundAlt: '#0a0a0a',
         textColor: '#ffffff',
@@ -1383,7 +1396,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'documentary',
         name: 'Documentary',
-        description: 'Estética jornalismo investigativo vintage. Playfair Display + Inter. Layouts com grain e textura.',
+        description: 'Vintage investigative journalism cover with Playfair serif and archive stamp. Inner slides with sepia tones, editorial frames, and caption strips.',
         background: '#1a1108',
         backgroundAlt: '#1a1108',
         textColor: '#f0e8d8',

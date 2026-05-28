@@ -7,6 +7,7 @@ import {
     Copy,
     ExternalLink,
     Files,
+    Gift,
     PenLine,
     Search,
     Sparkles,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 import type { Format } from '@/components/SlideEditor/types';
@@ -220,11 +222,48 @@ function Pagination({ current, last, search }: { current: number; last: number; 
     );
 }
 
+// ─── WelcomeModal ─────────────────────────────────────────────────────────────
+
+function WelcomeModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+    const { t } = useTranslation();
+    return (
+        <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+            <DialogContent className="sm:max-w-md text-center">
+                <DialogHeader className="items-center gap-3">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 mx-auto">
+                        <Gift className="h-8 w-8 text-blue-500" />
+                    </div>
+                    <DialogTitle className="text-xl">{t('dashboard.welcome.title')}</DialogTitle>
+                    <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+                        {t('dashboard.welcome.description')}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 my-2">
+                    <Sparkles className="h-4 w-4 text-blue-500 shrink-0" />
+                    <span className="text-sm font-semibold text-blue-700">{t('dashboard.welcome.credits')}</span>
+                </div>
+
+                <DialogFooter className="sm:justify-center">
+                    <button
+                        type="button"
+                        onClick={() => { onClose(); router.visit('/carousel/create'); }}
+                        className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
+                    >
+                        {t('dashboard.welcome.cta')}
+                    </button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-export default function Dashboard({ projects, search: initialSearch }: { projects: PaginatedProjects; search: string }) {
+export default function Dashboard({ projects, search: initialSearch, show_welcome }: { projects: PaginatedProjects; search: string; show_welcome: boolean }) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(initialSearch ?? '');
+    const [welcomeOpen, setWelcomeOpen] = useState(show_welcome);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
@@ -240,6 +279,7 @@ export default function Dashboard({ projects, search: initialSearch }: { project
     return (
         <>
             <Head title={t('dashboard.pageTitle')} />
+            <WelcomeModal open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
             <div className="flex-1 p-6">
 
                 {/* Action cards */}
