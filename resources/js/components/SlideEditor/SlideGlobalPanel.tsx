@@ -1,9 +1,117 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Trash2, ChevronDown, ChevronRight, Minus, Bookmark, ArrowRight, Heart, MessageSquare, Smile, X, User } from 'lucide-react';
+import { Trash2, ChevronDown, Minus, Bookmark, ArrowRight, Heart, MessageSquare, Smile, X, User, LayoutGrid } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Slide, TextEl, SlideCorners, CornerIcon, CornerKey, ProfileBadge, BadgeStyle } from './types';
+
+const SLIDE_LAYOUTS = [
+    {
+        id: 'bg_photo',
+        nameKey: 'slideEditor.globalPanel.layouts.bg_photo.name',
+        descKey: 'slideEditor.globalPanel.layouts.bg_photo.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#e5e7eb" rx="3"/>
+                <circle cx="44" cy="20" r="5" fill="#9ca3af"/>
+                <path d="M4 58 L16 42 L26 52 L34 44 L56 58 Z" fill="#9ca3af"/>
+                <rect x="4" y="60" width="52" height="7" fill="white" rx="2" fillOpacity="0.75"/>
+                <rect x="4" y="69" width="36" height="4" fill="white" rx="1.5" fillOpacity="0.5"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'text_photo_text',
+        nameKey: 'slideEditor.globalPanel.layouts.text_photo_text.name',
+        descKey: 'slideEditor.globalPanel.layouts.text_photo_text.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#f9fafb" rx="3"/>
+                <rect x="4" y="5" width="52" height="7" fill="#d1d5db" rx="1.5"/>
+                <rect x="4" y="17" width="52" height="28" fill="#d1d5db" rx="5"/>
+                <rect x="4" y="51" width="52" height="6" fill="#d1d5db" rx="1.5"/>
+                <rect x="4" y="61" width="36" height="5" fill="#d1d5db" rx="1.5"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'photo_top',
+        nameKey: 'slideEditor.globalPanel.layouts.photo_top.name',
+        descKey: 'slideEditor.globalPanel.layouts.photo_top.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#f9fafb" rx="3"/>
+                <rect x="4" y="5" width="52" height="29" fill="#d1d5db" rx="5"/>
+                <rect x="4" y="39" width="52" height="8" fill="#d1d5db" rx="1.5"/>
+                <rect x="4" y="51" width="52" height="5" fill="#d1d5db" rx="1"/>
+                <rect x="4" y="60" width="36" height="5" fill="#d1d5db" rx="1"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'photo_bottom',
+        nameKey: 'slideEditor.globalPanel.layouts.photo_bottom.name',
+        descKey: 'slideEditor.globalPanel.layouts.photo_bottom.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#f9fafb" rx="3"/>
+                <rect x="4" y="5" width="52" height="8" fill="#d1d5db" rx="1.5"/>
+                <rect x="4" y="17" width="52" height="5" fill="#d1d5db" rx="1"/>
+                <rect x="4" y="26" width="36" height="5" fill="#d1d5db" rx="1"/>
+                <rect x="4" y="39" width="52" height="31" fill="#d1d5db" rx="5"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'photo_left',
+        nameKey: 'slideEditor.globalPanel.layouts.photo_left.name',
+        descKey: 'slideEditor.globalPanel.layouts.photo_left.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#f9fafb" rx="3"/>
+                <rect x="0" y="0" width="27" height="75" fill="#d1d5db" rx="3"/>
+                <rect x="32" y="20" width="24" height="7" fill="#d1d5db" rx="1.5"/>
+                <rect x="32" y="32" width="24" height="4" fill="#d1d5db" rx="1"/>
+                <rect x="32" y="40" width="24" height="4" fill="#d1d5db" rx="1"/>
+                <rect x="32" y="48" width="18" height="4" fill="#d1d5db" rx="1"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'text_only',
+        nameKey: 'slideEditor.globalPanel.layouts.text_only.name',
+        descKey: 'slideEditor.globalPanel.layouts.text_only.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#f9fafb" rx="3"/>
+                <rect x="4" y="16" width="52" height="9" fill="#d1d5db" rx="1.5"/>
+                <rect x="4" y="30" width="52" height="5" fill="#d1d5db" rx="1"/>
+                <rect x="4" y="39" width="52" height="5" fill="#d1d5db" rx="1"/>
+                <rect x="4" y="48" width="38" height="5" fill="#d1d5db" rx="1"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'image_only',
+        nameKey: 'slideEditor.globalPanel.layouts.image_only.name',
+        descKey: 'slideEditor.globalPanel.layouts.image_only.desc',
+        thumbnail: (
+            <svg viewBox="0 0 60 75" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                <rect width="60" height="75" fill="#d1d5db" rx="3"/>
+                <circle cx="42" cy="22" r="6" fill="#9ca3af"/>
+                <path d="M4 58 L18 38 L28 50 L36 42 L56 58 Z" fill="#9ca3af"/>
+            </svg>
+        ),
+    },
+] as const;
+
+const layoutCardVariants = {
+    hidden: { opacity: 0, y: 10, scale: 0.95 },
+    show:   { opacity: 1, y: 0,  scale: 1 },
+};
+
+const collapseTransition = { type: 'tween', duration: 0.22, ease: 'easeInOut' } as const;
 
 const QUICK_PALETTES = [
     ['#F9A8D4', '#374151', '#EF4444'],
@@ -35,6 +143,7 @@ function makeDefaultCorners(): SlideCorners {
 
 interface SlideGlobalPanelProps {
     slide: Slide;
+    slideIdx: number;
     onBackgroundChange: (color: string) => void;
     onAddText: () => void;
     onSelectElement: (id: string) => void;
@@ -48,6 +157,7 @@ interface SlideGlobalPanelProps {
     defaultHandle: string | null;
     onProfileBadgeChange: (badge: ProfileBadge) => void;
     onApplyBadgeToAll?: (badge: ProfileBadge) => void;
+    onLayoutApply: (layoutId: string) => void;
 }
 
 const CORNER_T_KEYS: Record<CornerKey, string> = {
@@ -61,12 +171,14 @@ const CORNER_ORDER: CornerKey[] = ['topLeft', 'topRight', 'bottomLeft', 'bottomR
 
 const INSTAGRAM_LIMIT = 2200;
 
-export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange, onApplyCornersToAll, caption, onCaptionChange, selectedCornerId, onCornerSelect, defaultHandle, onProfileBadgeChange, onApplyBadgeToAll }: SlideGlobalPanelProps) {
+export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange, onApplyCornersToAll, caption, onCaptionChange, selectedCornerId, onCornerSelect, defaultHandle, onProfileBadgeChange, onApplyBadgeToAll, onLayoutApply }: SlideGlobalPanelProps) {
     const { t } = useTranslation();
     const textElements = slide.elements.filter((el): el is TextEl => el.type === 'text');
     const isTransparent = slide.background === 'transparent' || slide.background === '';
     const [cornersOpen, setCornersOpen] = useState(true);
     const [badgeOpen, setBadgeOpen] = useState(false);
+    const [layoutOpen, setLayoutOpen] = useState(false);
+    const [activeLayoutId, setActiveLayoutId] = useState<string | null>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
 
     const corners = slide.corners ?? makeDefaultCorners();
@@ -185,15 +297,18 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                     <p className="text-xs font-medium text-gray-400">{t('slideEditor.globalPanel.quickPalettes')}</p>
                     <div className="grid grid-cols-3 gap-1.5">
                         {QUICK_PALETTES.map((palette, i) => (
-                            <button
+                            <motion.button
                                 key={i}
                                 onClick={() => onBackgroundChange(palette[0])}
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.90 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 22 }}
                                 className="flex items-center justify-center gap-1 rounded-full bg-gray-100 px-2 py-1.5 hover:bg-gray-200 transition-colors"
                             >
                                 {palette.map((color, j) => (
                                     <div key={j} className="rounded-full shrink-0" style={{ backgroundColor: color, width: 13, height: 13 }} />
                                 ))}
-                            </button>
+                            </motion.button>
                         ))}
                     </div>
                 </div>
@@ -234,6 +349,81 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                 </div>
             </div>
 
+            {/* Layout */}
+            <div className="overflow-hidden bg-white" style={{ borderRadius: '1.35rem' }}>
+                <button
+                    className="w-full flex items-center justify-between px-4 py-3"
+                    onClick={() => setLayoutOpen((o) => !o)}
+                >
+                    <div className="flex items-center gap-2">
+                        <LayoutGrid className="w-3.5 h-3.5 text-gray-500" />
+                        <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.layout')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-medium text-gray-400">
+                            {t('slideEditor.globalPanel.layoutSlide', { index: slideIdx + 1 })}
+                        </span>
+                        <motion.span animate={{ rotate: layoutOpen ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                        </motion.span>
+                    </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                {layoutOpen && (
+                    <motion.div
+                        key="layout-body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={collapseTransition}
+                        style={{ overflow: 'hidden' }}
+                        className="border-t border-gray-100"
+                    >
+                        <motion.div
+                            className="px-3 pb-3 pt-3 grid grid-cols-2 gap-2"
+                            initial="hidden"
+                            animate="show"
+                            variants={{ show: { transition: { staggerChildren: 0.045, delayChildren: 0.05 } } }}
+                        >
+                            {SLIDE_LAYOUTS.map((layout) => {
+                                const isActive = activeLayoutId === layout.id;
+                                return (
+                                    <motion.button
+                                        key={layout.id}
+                                        type="button"
+                                        variants={layoutCardVariants}
+                                        transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+                                        whileHover={{ scale: 1.04, transition: { type: 'spring', stiffness: 400, damping: 18 } }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => {
+                                            onLayoutApply(layout.id);
+                                            setActiveLayoutId(layout.id);
+                                        }}
+                                        className={`text-left rounded-xl border-2 p-2 transition-colors ${
+                                            isActive
+                                                ? 'border-[#E8440A] bg-[#E8440A]/5'
+                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                        }`}
+                                    >
+                                        <div className="rounded-lg overflow-hidden mb-1.5 bg-gray-50" style={{ aspectRatio: '4/5' }}>
+                                            {layout.thumbnail}
+                                        </div>
+                                        <p className={`text-[10px] font-semibold leading-tight ${isActive ? 'text-[#E8440A]' : 'text-gray-800'}`}>
+                                            {t(layout.nameKey)}
+                                        </p>
+                                        <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">
+                                            {t(layout.descKey)}
+                                        </p>
+                                    </motion.button>
+                                );
+                            })}
+                        </motion.div>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+            </div>
+
             {/* Text */}
             <div className="p-4 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
                 <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.text')}</p>
@@ -256,9 +446,12 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                 {textElements.length > 0 && (
                     <div className="flex flex-col gap-0.5">
                         <p className="text-xs mb-1 font-medium text-gray-400">{t('slideEditor.globalPanel.textLayers')}</p>
-                        {textElements.map((el) => (
-                            <div
+                        {textElements.map((el, i) => (
+                            <motion.div
                                 key={el.id}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.04, duration: 0.18 }}
                                 className="flex items-center gap-2 px-2 py-1.5 rounded-xl cursor-pointer group hover:bg-gray-50 transition-colors"
                                 onClick={() => onSelectElement(el.id)}
                             >
@@ -275,7 +468,7 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                                 >
                                     <Trash2 className="w-3 h-3" />
                                 </button>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 )}
@@ -320,13 +513,21 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                         <User className="w-3.5 h-3.5 text-gray-500" />
                         <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.profileBadge')}</p>
                     </div>
-                    {badgeOpen
-                        ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                        : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                    }
+                    <motion.span animate={{ rotate: badgeOpen ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                    </motion.span>
                 </button>
 
+                <AnimatePresence initial={false}>
                 {badgeOpen && (
+                    <motion.div
+                        key="badge-body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={collapseTransition}
+                        style={{ overflow: 'hidden' }}
+                    >
                     <div className="px-4 pb-4 flex flex-col gap-3 border-t border-gray-100">
                         <p className="text-[10px] text-gray-400 pt-2.5 leading-relaxed">{t('slideEditor.globalPanel.profileBadgeDesc')}</p>
 
@@ -453,7 +654,9 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                             </button>
                         )}
                     </div>
+                    </motion.div>
                 )}
+                </AnimatePresence>
             </div>
 
             {/* Cantos */}
@@ -463,13 +666,21 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                     onClick={() => setCornersOpen((o) => !o)}
                 >
                     <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.corners')}</p>
-                    {cornersOpen
-                        ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                        : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                    }
+                    <motion.span animate={{ rotate: cornersOpen ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                    </motion.span>
                 </button>
 
+                <AnimatePresence initial={false}>
                 {cornersOpen && (
+                    <motion.div
+                        key="corners-body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={collapseTransition}
+                        style={{ overflow: 'hidden' }}
+                    >
                     <div className="px-4 pb-3 flex flex-col gap-3 border-t border-gray-100">
 
                         {/* Corner text inputs — 2×2 grid */}
@@ -551,19 +762,24 @@ export function SlideGlobalPanel({ slide, onBackgroundChange, onAddText, onSelec
                             </p>
                             <div className="flex items-center gap-1.5">
                                 {CORNER_ICONS.map(({ id, icon }) => (
-                                    <button
+                                    <motion.button
                                         key={id}
+                                        whileHover={{ scale: 1.12 }}
+                                        whileTap={{ scale: 0.88 }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                                         onClick={() => patchCorners({ bottomRightIcon: id })}
                                         className={`flex items-center justify-center rounded-lg transition-colors ${corners.bottomRightIcon === id ? 'bg-[#E8440A] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                                         style={{ width: 32, height: 32 }}
                                     >
                                         {icon}
-                                    </button>
+                                    </motion.button>
                                 ))}
                             </div>
                         </div>
                     </div>
+                    </motion.div>
                 )}
+                </AnimatePresence>
             </div>
 
             {/* Caption Modal — rendered in a portal to escape overflow:hidden */}

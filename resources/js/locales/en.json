@@ -1,4 +1,83 @@
 {
+  "auth": {
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "login": {
+      "title": "Good to see you again",
+      "description": "Sign in and get back to creating scroll-stopping carousels in under 1 minute.",
+      "headTitle": "Sign in",
+      "imageAlt": "Creator smiling while working on a laptop in a café",
+      "testimonialQuote": "I went from 3 hours per carousel to 3 minutes. My saves tripled.",
+      "testimonialAuthor": "Marina Duarte",
+      "testimonialRole": "Content strategist",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Keep me signed in",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create your Slidezz account",
+      "description": "Start publishing professional carousels today, without opening Canva.",
+      "headTitle": "Sign up",
+      "imageAlt": "Creator smiling with a phone in hand at a workspace",
+      "testimonialQuote": "I post every day now. I closed 4 consulting deals straight from the carousels.",
+      "testimonialAuthor": "Rafael Nunes",
+      "testimonialRole": "Marketing consultant",
+      "name": "Name",
+      "namePlaceholder": "Full name",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "logIn": "Sign in"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "description": "Enter your email to receive a password reset link",
+      "headTitle": "Forgot password",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "returnToLogin": "Or, return to",
+      "logIn": "sign in"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "description": "Please enter your new password below",
+      "headTitle": "Reset password",
+      "email": "Email",
+      "password": "New password",
+      "passwordPlaceholder": "New password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Reset password"
+    },
+    "verifyEmail": {
+      "title": "Verify email",
+      "description": "Please verify your email address by clicking the link we just sent you.",
+      "headTitle": "Email verification",
+      "linkSent": "A new verification link has been sent to the email address you provided during sign up.",
+      "resend": "Resend verification email",
+      "logOut": "Log out"
+    },
+    "confirmPassword": {
+      "title": "Confirm your password",
+      "description": "This is a secure area of the application. Please confirm your password before continuing.",
+      "headTitle": "Confirm password",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "submit": "Confirm password"
+    }
+  },
   "slideEditor": {
     "pageTitle": "Slideshow Editor",
     "toolbar": {
@@ -262,7 +341,18 @@
       "captionModalTitle": "Edit Caption",
       "captionPlaceholder": "Write the post caption...",
       "captionChars": "{{count}} characters",
-      "captionLimitWarning": "Near Instagram limit (2200)"
+      "captionLimitWarning": "Near Instagram limit (2200)",
+      "layout": "Layout",
+      "layoutSlide": "Slide {{index}}",
+      "layouts": {
+        "bg_photo":        { "name": "Photo background",   "desc": "Full-bleed photo, text overlay" },
+        "text_photo_text": { "name": "Text · photo · text", "desc": "Title, photo card, body below" },
+        "photo_top":       { "name": "Photo on top",        "desc": "Photo above, text below" },
+        "photo_bottom":    { "name": "Photo on bottom",     "desc": "Text above, photo below" },
+        "photo_left":      { "name": "Side photo",          "desc": "Photo left, text right" },
+        "text_only":       { "name": "Text only",           "desc": "Text only, no image" },
+        "image_only":      { "name": "Image only",          "desc": "Image only (text hidden)" }
+      }
     },
     "rightPanel": {
       "editingLayer": "Editing Layer",

@@ -1,13 +1,59 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Sprout, Check, X } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
 import { useState } from 'react';
+import AppLogoIcon from '@/components/app-logo-icon';
+import LandingFooter from '@/components/landing-footer';
+import ScrollStack from '@/components/scroll-stack';
+import TestimonialMarquee, { type Testimonial } from '@/components/testimonial-marquee';
+import { useScrolled } from '@/hooks/use-scrolled';
+import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
+
+const testimonials: Testimonial[] = [
+    {
+        name: 'Camila Alves',
+        role: 'Marketing B2B',
+        quote: 'Meu carrossel de funil bateu +48% de salvamentos vs. o resto do feed no mesmo mês — sem passar o fim de semana no Canva.',
+        initials: 'CA',
+    },
+    {
+        name: 'Rafael Santos',
+        role: 'Criador de infoproduto',
+        quote: 'Um lead perguntou qual agência fez o layout. Era eu, no Slidezz, de madrugada. Na terça seguinte ele fechou uma consultoria.',
+        initials: 'RS',
+    },
+    {
+        name: 'Juliana Menezes',
+        role: 'Mentora',
+        quote: 'Antes eu gravava Reels na correria. Agora o carrossel da semana fica pronto no domingo — só adapto o gancho pro vídeo.',
+        initials: 'JM',
+    },
+    {
+        name: 'Lucas Pereira',
+        role: 'Fitness',
+        quote: 'Testei o gancho que a IA sugeriu no 1º slide: salvamentos foram de 4% para 11% no mesmo nicho. Não foi sorte.',
+        initials: 'LP',
+    },
+    {
+        name: 'Bianca Ferreira',
+        role: 'Estética',
+        quote: 'Mesmo template, skincare e contador — só troco a paleta. Cliente disse que parecia marca com rebranding.',
+        initials: 'BF',
+    },
+    {
+        name: 'Diego Rocha',
+        role: 'Consultor',
+        quote: 'As DMs de "quanto custa?" triplicaram no mês em que padronizei os carrosséis. Coincidiu com o Slidezz — não foi viralização aleatória.',
+        initials: 'DR',
+    },
+];
 
 export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
     const { auth } = usePage().props as any;
     const ctaHref = auth.user ? dashboard() : canRegister ? register() : login();
 
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+    const scrolled = useScrolled();
 
     return (
         <>
@@ -30,24 +76,30 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                 }}
             >
                 {/* ── NAV ── */}
-                <header
-                    className="sticky top-0 z-50"
-                    style={{
-                        background: 'rgba(243,238,232,0.92)',
-                        backdropFilter: 'blur(12px)',
-                        borderBottom: '1px solid #1A1A1A',
-                    }}
-                >
-                    <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+                <header className="sticky top-0 z-50">
+                    <div
+                        className={cn(
+                            'mx-auto max-w-6xl transition-all duration-300',
+                            scrolled ? 'px-4 pt-3' : 'px-6 pt-0',
+                        )}
+                    >
+                    <div
+                        className={cn(
+                            'h-16 flex items-center justify-between transition-all duration-300',
+                            scrolled
+                                ? 'rounded-[64px] border border-black/10 bg-white/70 px-6 shadow-[0_8px_30px_rgba(0,0,0,0.10)] backdrop-blur-xl'
+                                : 'px-0',
+                        )}
+                    >
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
-                                <Sprout className="w-4 h-4 text-white" />
+                                <AppLogoIcon className="w-4 h-4 text-white" />
                             </div>
                             <span className="text-2xl font-[Bebas_Neue] tracking-wide mt-1">Slidezz</span>
                         </div>
 
                         <nav className="hidden md:flex items-center gap-8 text-lg font-semibold text-[#444440]">
-                            <a href="#diferencial" className="hover:text-[#1A1A1A] transition-colors">Como funciona</a>
+                            <a href="#como-funciona" className="hover:text-[#1A1A1A] transition-colors">Como funciona</a>
                             <a href="#pricing" className="hover:text-[#1A1A1A] transition-colors">Preços</a>
                             <a href="#prova" className="hover:text-[#1A1A1A] transition-colors">Resultados</a>
                         </nav>
@@ -59,6 +111,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             {auth.user ? 'Ir para o app' : 'Parar de perder tempo'}
                             <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
+                    </div>
                     </div>
                 </header>
 
@@ -149,7 +202,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 >
                                     <div className="flex items-center gap-2 px-2 py-1.5 mb-2">
                                         <div className="w-5 h-5 bg-[#1A1A1A] rounded flex items-center justify-center">
-                                            <Sprout className="w-3 h-3 text-white" />
+                                            <AppLogoIcon className="w-3 h-3 text-white" />
                                         </div>
                                         <span className="text-xs font-extrabold">Slidezz</span>
                                     </div>
@@ -223,6 +276,69 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* ── COMO FUNCIONA ── */}
+                <section id="como-funciona" className="mx-auto max-w-6xl px-6 pt-24">
+                    <div className="text-center mb-4">
+                        <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Em 3 passos</p>
+                        <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">
+                            Tão simples que parece mágica
+                        </h2>
+                    </div>
+
+                    <ScrollStack
+                        items={[
+                            {
+                                step: '01',
+                                title: 'Descreva seu conteúdo',
+                                body: 'Digite o tema, o nicho e o tom de voz. Pode ser uma frase simples como "5 dicas de marketing digital."',
+                            },
+                            {
+                                step: '02',
+                                title: 'A IA cria tudo',
+                                body: 'Em segundos, a IA gera o texto persuasivo, escolhe o layout perfeito e monta o carrossel completo.',
+                            },
+                            {
+                                step: '03',
+                                title: 'Publique e viralize',
+                                body: 'Exporte em Full HD ou agende direto. Pronto. Seu carrossel está no ar, ganhando seguidores.',
+                            },
+                        ].map(({ step, title, body }) => (
+                            <div
+                                key={step}
+                                className="flex min-h-[300px] flex-col justify-center rounded-[24px] bg-white p-10 sm:p-12"
+                                style={{ border: '1px solid #1A1A1A', boxShadow: '0 24px 48px rgba(0,0,0,0.10)' }}
+                            >
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div
+                                        className="flex w-12 h-12 items-center justify-center rounded-full text-lg font-extrabold"
+                                        style={{ background: '#1A1A1A', color: '#fff' }}
+                                    >
+                                        {step}
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-widest text-[#888880]">
+                                        Passo {step}
+                                    </span>
+                                </div>
+                                <h3 className="text-3xl sm:text-4xl font-[Bebas_Neue] tracking-normal mb-3 leading-none">
+                                    {title}
+                                </h3>
+                                <p className="text-lg text-[#555550] font-medium leading-relaxed max-w-xl">{body}</p>
+                            </div>
+                        ))}
+                    />
+
+                    <div className="text-center pb-24">
+                        <Link
+                            href={ctaHref}
+                            className="inline-flex items-center gap-2 text-lg font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
+                            style={{ border: '1px solid #1A1A1A', background: '#1A1A1A', color: '#fff' }}
+                        >
+                            Criar minha máquina de conteúdo
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
                     </div>
                 </section>
 
@@ -342,6 +458,22 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                     <p className="text-center text-lg text-[#AAAAAA] font-medium mt-6">
                         Você precisa disso. Dados reais em breve.
                     </p>
+                </section>
+
+                {/* ── DEPOIMENTOS ── */}
+                <section
+                    id="depoimentos"
+                    className="py-24"
+                    style={{ borderTop: '1px solid #1A1A1A', background: '#FAFAF7' }}
+                >
+                    <div className="mx-auto max-w-6xl px-6 text-center mb-16">
+                        <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Quem usa, recomenda</p>
+                        <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">
+                            O que dizem os criadores
+                        </h2>
+                    </div>
+
+                    <TestimonialMarquee items={testimonials} />
                 </section>
 
                 {/* ── CTA FINAL ── */}
@@ -541,23 +673,38 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                 </section>
 
                 {/* ── FOOTER ── */}
-                <footer style={{ borderTop: '1px solid #1A1A1A', background: '#1A1A1A' }}>
-                    <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
-                                <Sprout className="w-3.5 h-3.5 text-[#1A1A1A]" />
-                            </div>
-                            <span className="text-2xl font-[Bebas_Neue] tracking-wide text-white mt-1">Slidezz</span>
-                        </div>
-                        <div className="flex items-center gap-8 text-lg font-semibold text-[#555550]">
-                            <a href="#diferencial" className="hover:text-white transition-colors">Como funciona</a>
-                            <a href="#prova" className="hover:text-white transition-colors">Resultados</a>
-                            <a href="#pricing" className="hover:text-white transition-colors">Preços</a>
-                            <a href="#cta" className="hover:text-white transition-colors">Começar</a>
-                        </div>
-                        <p className="text-[#444440] font-medium">© 2026 Slidezz. Todos os direitos reservados.</p>
-                    </div>
-                </footer>
+                <LandingFooter
+                    reachOutTitle="Precisa de ajuda?"
+                    contact={{
+                        title: 'Fale com a gente',
+                        subtitle: 'Respondemos em até 24h',
+                        href: 'mailto:contato@slidezz.app',
+                    }}
+                    columns={[
+                        {
+                            title: 'Explorar',
+                            links: [
+                                { label: 'Como funciona', href: '#como-funciona' },
+                                { label: 'Preços', href: '#pricing' },
+                                { label: 'Resultados', href: '#prova' },
+                            ],
+                        },
+                        {
+                            title: 'Ajuda',
+                            links: [
+                                { label: 'Começar', href: '#cta' },
+                                { label: 'Contato', href: 'mailto:contato@slidezz.app' },
+                            ],
+                        },
+                    ]}
+                    socialLabel="Redes sociais"
+                    rights="© 2026 Slidezz. Todos os direitos reservados."
+                    legal={[
+                        { label: 'Termos de Uso', href: '#' },
+                        { label: 'Privacidade', href: '#' },
+                        { label: 'Cookies', href: '#' },
+                    ]}
+                />
             </div>
         </>
     );

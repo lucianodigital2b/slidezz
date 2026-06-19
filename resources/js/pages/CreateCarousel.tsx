@@ -17,6 +17,7 @@ import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 import { FORMATS } from '@/components/SlideEditor/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CreditsModal } from '@/components/CreditsModal';
 
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ interface WorkspaceConfig {
 
 interface PageProps extends Record<string, unknown> {
     workspaceConfig: WorkspaceConfig | null;
+    auth: { credits: number };
 }
 
 // ─── SelectionCard ────────────────────────────────────────────────────────────
@@ -218,7 +220,7 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
 
 export default function CreateCarousel() {
     const { t } = useTranslation();
-    const { workspaceConfig } = usePage<PageProps>().props;
+    const { workspaceConfig, auth } = usePage<PageProps>().props;
 
     const [step, setStep]                   = useState(1);
     const [title, setTitle]                 = useState('');
@@ -232,6 +234,7 @@ export default function CreateCarousel() {
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
+    const [creditsModalOpen, setCreditsModalOpen] = useState(false);
 
     const selectedTemplateName  = template  ? t(`createCarousel.templates.${template}.name`)  : null;
     const selectedArchetypeName = archetype ? t(`createCarousel.archetypes.${archetype}.name`) : null;
@@ -259,6 +262,10 @@ export default function CreateCarousel() {
 
     function handleSubmit() {
         if (submitting) return;
+        if (auth.credits <= 0) {
+            setCreditsModalOpen(true);
+            return;
+        }
         setSubmitting(true);
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
@@ -601,6 +608,8 @@ export default function CreateCarousel() {
             {importOpen && (
                 <ImportModal onClose={() => setImportOpen(false)} onImport={handleImport} />
             )}
+
+            <CreditsModal open={creditsModalOpen} onOpenChange={setCreditsModalOpen} />
         </>
     );
 }

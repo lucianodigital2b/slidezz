@@ -2,6 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import Konva from 'konva';
 import { Highlighter, Loader2, Sparkles, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
@@ -250,7 +251,7 @@ export default function SlideEditor() {
         const hl = wizardConfig.wordHighlight ?? true;
         setAiWordHighlight(hl);
         setAiModalOpen(true);
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl);
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -549,6 +550,70 @@ export default function SlideEditor() {
         }
     }
 
+    // ─── Layout rearrangement ─────────────────────────────────────────────────
+
+    function applySlideLayout(elements: SlideEl[], height: number, layoutId: string): SlideEl[] {
+        const H = height;
+        const PAD = 80;
+
+        const cloned = elements.map((el) => ({ ...el }));
+
+        const imgEl = cloned.find((el): el is ImageEl => el.type === 'image') ?? null;
+        const textEls = cloned
+            .filter((el): el is TextEl => el.type === 'text')
+            .sort((a, b) => (b as TextEl).fontSize - (a as TextEl).fontSize);
+        const titleEl = textEls[0] ?? null;
+        const descEl  = textEls[1] ?? null;
+
+        const pImg   = (p: Partial<ImageEl>) => { if (imgEl)   Object.assign(imgEl,   p); };
+        const pTitle = (p: Partial<TextEl>)  => { if (titleEl) Object.assign(titleEl, p); };
+        const pDesc  = (p: Partial<TextEl>)  => { if (descEl)  Object.assign(descEl,  p); };
+
+        switch (layoutId) {
+            case 'bg_photo':
+                pImg({ x: 0, y: 0, width: SLIDE_W, height: H, isBackground: true, bgSize: 'cover', opacity: 1, cornerRadius: 0 });
+                pTitle({ x: PAD, y: Math.round(H * 0.52), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.82), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.13), opacity: 1 });
+                break;
+            case 'photo_top':
+                pImg({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.40), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+                pTitle({ x: PAD, y: Math.round(H * 0.46), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.24), opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.73), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.20), opacity: 1 });
+                break;
+            case 'photo_bottom':
+                pTitle({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.22), opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.28), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.22), opacity: 1 });
+                pImg({ x: PAD, y: Math.round(H * 0.55), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+                break;
+            case 'text_photo_text':
+                pTitle({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.16), opacity: 1 });
+                pImg({ x: PAD, y: Math.round(H * 0.22), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.64), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
+                break;
+            case 'photo_left':
+                pImg({ x: 0, y: 0, width: Math.round(SLIDE_W * 0.48), height: H, isBackground: false, cornerRadius: 0, bgSize: 'cover', opacity: 1 });
+                pTitle({ x: Math.round(SLIDE_W * 0.54), y: Math.round(H * 0.28), width: Math.round(SLIDE_W * 0.42), height: Math.round(H * 0.24), opacity: 1 });
+                pDesc({ x: Math.round(SLIDE_W * 0.54), y: Math.round(H * 0.56), width: Math.round(SLIDE_W * 0.42), height: Math.round(H * 0.26), opacity: 1 });
+                break;
+            case 'text_only':
+                pImg({ opacity: 0 });
+                pTitle({ x: PAD, y: Math.round(H * 0.20), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.52), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.32), opacity: 1 });
+                break;
+            case 'image_only':
+                pImg({ x: 0, y: 0, width: SLIDE_W, height: H, isBackground: true, bgSize: 'cover', opacity: 1, cornerRadius: 0 });
+                pTitle({ opacity: 0 });
+                pDesc({ opacity: 0 });
+                break;
+        }
+
+        return cloned;
+    }
+
+    function handleLayoutApply(layoutId: string) {
+        updateSlide({ elements: applySlideLayout(slide.elements, slideH, layoutId) });
+    }
+
     // ─── Corner element editing ───────────────────────────────────────────────
 
     const CORNER_FS = 28;
@@ -678,6 +743,7 @@ export default function SlideEditor() {
                     <div className="shrink-0 overflow-hidden" style={{ width: LEFT_PANEL_W }}>
                         <SlideGlobalPanel
                             slide={slide}
+                            slideIdx={safeIdx}
                             onBackgroundChange={(color) => updateSlide({ background: color })}
                             onAddText={addDefaultTextElement}
                             onSelectElement={(id) => { setTool('select'); setSelectedId(id); setSelectedCornerId(null); }}
@@ -691,6 +757,7 @@ export default function SlideEditor() {
                             defaultHandle={instagramAccounts?.[0]?.handle ?? null}
                             onProfileBadgeChange={(badge: ProfileBadge) => updateSlide({ profileBadge: badge })}
                             onApplyBadgeToAll={applyBadgeToAll}
+                            onLayoutApply={handleLayoutApply}
                         />
                     </div>
 
@@ -755,39 +822,61 @@ export default function SlideEditor() {
             </div>
 
             {/* ── AI Generation status bar ─────────────────────────────────── */}
-            {aiModalOpen && (aiStatus === 'generating' || aiStatus === 'imaging') && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-80 bg-gray-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-xl backdrop-blur-sm flex flex-col gap-2">
-                    <div className="flex items-center gap-2.5">
-                        <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin shrink-0" />
-                        <span className="text-sm font-medium text-gray-200 truncate flex-1">
-                            {aiStatus === 'generating'
-                                ? 'Generating carousel...'
-                                : `Slide ${aiProgress.length} of ${aiSlideCount} — generating images`}
-                        </span>
-                        {aiStatus === 'imaging' && (
-                            <span className="text-xs font-medium text-gray-500 shrink-0">
-                                {Math.round((aiProgress.length / aiSlideCount) * 100)}%
+            <AnimatePresence>
+                {aiModalOpen && (aiStatus === 'generating' || aiStatus === 'imaging') && (
+                    <motion.div
+                        initial={{ y: 80, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 80, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-80 bg-gray-900/95 border border-white/10 rounded-xl px-4 py-3 shadow-xl backdrop-blur-sm flex flex-col gap-2"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin shrink-0" />
+                            <span className="text-sm font-medium text-gray-200 truncate flex-1">
+                                {aiStatus === 'generating'
+                                    ? 'Generating carousel...'
+                                    : `Slide ${aiProgress.length} of ${aiSlideCount} — generating images`}
                             </span>
+                            {aiStatus === 'imaging' && (
+                                <span className="text-xs font-medium text-gray-500 shrink-0">
+                                    {Math.round((aiProgress.length / aiSlideCount) * 100)}%
+                                </span>
+                            )}
+                        </div>
+                        {aiStatus === 'imaging' && (
+                            <>
+                                <div className="h-px bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-violet-500 rounded-full"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.round((aiProgress.length / aiSlideCount) * 100)}%` }}
+                                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                                    />
+                                </div>
+                                <p className="text-xs font-medium text-gray-600">Images appear in the canvas as they're ready</p>
+                            </>
                         )}
-                    </div>
-                    {aiStatus === 'imaging' && (
-                        <>
-                            <div className="h-px bg-white/10 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-violet-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${Math.round((aiProgress.length / aiSlideCount) * 100)}%` }}
-                                />
-                            </div>
-                            <p className="text-xs font-medium text-gray-600">Images appear in the canvas as they're ready</p>
-                        </>
-                    )}
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ── AI Modal (idle / error) ──────────────────────────────────── */}
+            <AnimatePresence>
             {aiModalOpen && (aiStatus === 'idle' || aiStatus === 'error') && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.93, y: 24 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.93, y: 24 }}
+                        transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-indigo-50">
                             <div className="flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-violet-600" />
@@ -862,16 +951,20 @@ export default function SlideEditor() {
                             {aiStatus === 'error' && (
                                 <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{aiError}</p>
                             )}
-                            <button
+                            <motion.button
                                 onClick={() => generateCarousel()}
                                 disabled={!aiTopic.trim()}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-medium hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                                 <Sparkles className="w-4 h-4" /> {t('slideEditor.ai.generateBtn')}
-                            </button>
+                            </motion.button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
+            </AnimatePresence>
         </>
     );
 }

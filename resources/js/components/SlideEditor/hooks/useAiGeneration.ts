@@ -38,6 +38,7 @@ export function useAiGeneration(
     const [aiProgress, setAiProgress] = useState<string[]>([]);
     const [aiError, setAiError] = useState('');
     const esRef = useRef<EventSource | null>(null);
+    const isGeneratingRef = useRef(false);
 
     function openAiModal() {
         setAiModalOpen(true);
@@ -274,7 +275,8 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean) {
+        if (isGeneratingRef.current) return;
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
@@ -282,7 +284,8 @@ export function useAiGeneration(
         const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
-        const newSlideStartIdx = slides.length;
+        isGeneratingRef.current = true;
+        const newSlideStartIdx = replaceSlides ? 0 : slides.length;
         setAiStatus('generating');
         setAiProgress([]);
         setAiError('');
@@ -297,12 +300,14 @@ export function useAiGeneration(
                 body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight }),
             });
         } catch {
+            isGeneratingRef.current = false;
             setAiStatus('error');
             setAiError(t('slideEditor.ai.errorNetwork'));
             return;
         }
 
         if (!response.ok || !response.body) {
+            isGeneratingRef.current = false;
             setAiStatus('error');
             if (response.status === 402) {
                 setAiError(t('slideEditor.ai.errorNoCredits'));
@@ -348,6 +353,7 @@ export function useAiGeneration(
         }
 
         if (parsedSlides.length === 0) {
+            isGeneratingRef.current = false;
             setAiStatus('error');
             setAiError(t('slideEditor.ai.errorParsing'));
             return;
@@ -387,11 +393,16 @@ export function useAiGeneration(
             return buildSlideFromData(s, base64, template, layoutSequence[i], i, parsedSlides.length, imageMode);
         });
 
-        setSlides((prev) => [...prev, ...newSlides]);
+        if (replaceSlides) {
+            setSlides(newSlides);
+        } else {
+            setSlides((prev) => [...prev, ...newSlides]);
+        }
         setCurrentIdx(newSlideStartIdx);
         setSelectedId(null);
         setAiModalOpen(false);
         setAiStatus('idle');
+        isGeneratingRef.current = false;
     }
 
     return {

@@ -1,36 +1,17 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Check, ChevronDown, Sprout, X, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowRight, Check, ChevronDown, Sparkles, TrendingUp, X, Zap } from 'lucide-react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
+import { useRef, useState } from 'react';
+import AppLogoIcon from '@/components/app-logo-icon';
+import FeatureBento from '@/components/feature-bento';
+import LandingFooter from '@/components/landing-footer';
+import ScrollStack from '@/components/scroll-stack';
+import TestimonialMarquee from '@/components/testimonial-marquee';
+import { useScrolled } from '@/hooks/use-scrolled';
+import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
-
-const features = [
-    {
-        title: 'AI-Generated Carousels',
-        body: 'You provide the theme and tone; AI assembles the slides with a coherent layout, ready to publish — no starting from scratch in Canva.',
-    },
-    {
-        title: 'Ready-Made Text & Script',
-        body: 'Titles, hooks, and slide text are suggested by AI — you just adjust what you want, without relying on ChatGPT in another tab.',
-    },
-    {
-        title: 'Simple Visual Editor',
-        body: 'Adjust colors, fonts, and images with drag and drop. No steep learning curve of heavy professional tools.',
-    },
-    {
-        title: 'Full HD Export',
-        body: 'Download in PNG at 1080px — ideal format for Instagram feed and carousels — without losing sharpness.',
-    },
-    {
-        title: 'Content in Minutes',
-        body: 'The workflow is designed for you to produce multiple carousels in the same session. Less time on design, more time selling.',
-    },
-    {
-        title: 'Community for Creators',
-        body: 'Exchange with other creators, references, and posting rhythm — for those who want consistency, not posting blindly.',
-    },
-];
 
 const comparisonItems = [
     { label: 'Canva Pro (design)', price: '$14.99/mo' },
@@ -113,20 +94,45 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     const [open, setOpen] = useState(false);
     return (
         <div
-            className="border-b last:border-b-0 cursor-pointer"
-            style={{ borderColor: '#E8E7E2' }}
-            onClick={() => setOpen((v) => !v)}
+            className="rounded-2xl bg-white transition-shadow duration-300"
+            style={{
+                border: '1px solid #1A1A1A',
+                boxShadow: open ? '0 14px 36px rgba(0,0,0,0.08)' : 'none',
+            }}
         >
-            <div className="flex items-center justify-between gap-4 py-5">
-                <span className="text-lg font-bold">{q}</span>
-                <ChevronDown
-                    className="w-4 h-4 flex-shrink-0 text-[#888880] transition-transform duration-200"
-                    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className="flex w-full items-center justify-between gap-5 px-7 py-6 text-left sm:px-8 sm:py-7"
+            >
+                <span className="text-xl font-extrabold text-[#1A1A1A]">{q}</span>
+                <span
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300"
+                    style={{
+                        border: '1px solid #1A1A1A',
+                        background: open ? '#E8440A' : '#F3EEE8',
+                    }}
+                >
+                    <ChevronDown
+                        className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        style={{
+                            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: open ? '#fff' : '#1A1A1A',
+                        }}
+                    />
+                </span>
+            </button>
+            <div
+                className="grid transition-[grid-template-rows] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+            >
+                <div className="overflow-hidden">
+                    <p className="px-7 pb-7 text-lg font-medium leading-relaxed text-[#555550] sm:px-8">
+                        {a}
+                    </p>
+                </div>
             </div>
-            {open && (
-                <p className="text-lg text-[#555550] font-medium pb-5 leading-relaxed">{a}</p>
-            )}
         </div>
     );
 }
@@ -138,6 +144,18 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
     const ctaHref = auth.user ? dashboard() : canRegister ? register() : login();
 
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+    const scrolled = useScrolled();
+
+    // Final CTA card grows in width as it scrolls into view (up to 90% of viewport).
+    const ctaRef = useRef<HTMLDivElement>(null);
+    const reduceMotion = useReducedMotion();
+    const { scrollYProgress: ctaProgress } = useScroll({
+        target: ctaRef,
+        offset: ['start end', 'center center'],
+    });
+    const ctaWidth = useTransform(ctaProgress, [0, 1], ['66vw', '90vw']);
+
+    const signupUrl = canRegister ? register().url : login().url;
 
     const totalComparison = '$527.97/month';
 
@@ -153,13 +171,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
 
             <div
                 className="min-h-screen font-[Outfit,sans-serif]"
-                style={{
-                    background: '#F3EEE8',
-                    backgroundImage:
-                        'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    color: '#1A1A1A',
-                }}
+                style={{ background: '#F9F6F4', color: '#1A1A1A' }}
             >
                 {/* ── TOP BAR ── */}
                 <div
@@ -170,17 +182,24 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 </div>
 
                 {/* ── NAV ── */}
-                <header
-                    className="sticky top-0 z-50"
-                    style={{
-                        background: 'rgba(243,238,232,0.92)',
-                        backdropFilter: 'blur(12px)',
-                    }}
-                >
-                    <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+                <header className="sticky top-0 z-50">
+                    <div
+                        className={cn(
+                            'mx-auto max-w-6xl transition-all duration-300',
+                            scrolled ? 'px-4 pt-3' : 'px-6 pt-0',
+                        )}
+                    >
+                    <div
+                        className={cn(
+                            'h-16 flex items-center justify-between transition-all duration-300',
+                            scrolled
+                                ? 'rounded-[64px] border border-black/10 bg-white/70 px-6 shadow-[0_8px_30px_rgba(0,0,0,0.10)] backdrop-blur-xl'
+                                : 'px-0',
+                        )}
+                    >
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
-                                <Sprout className="w-4 h-4 text-white" />
+                                <AppLogoIcon className="w-4 h-4 text-white" />
                             </div>
                             <span className="text-2xl font-[Bebas_Neue] tracking-wide mt-1">Slidezz</span>
                         </div>
@@ -206,45 +225,167 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             </Link>
                         </div>
                     </div>
+                    </div>
                 </header>
 
                 {/* ── HERO ── */}
-                <section className="mx-auto max-w-6xl px-6 pt-24 pb-20 text-center">
+                <section className="relative overflow-hidden">
+                    {/* right-side grid accent */}
                     <div
-                        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
-                        style={{ border: '1px solid #1A1A1A', background: '#fff' }}
-                    >
-                        <Zap className="w-3.5 h-3.5 fill-[#E8440A] text-[#E8440A]" />
-                        AI-powered content at scale
+                        aria-hidden
+                        className="pointer-events-none absolute inset-y-0 right-0 hidden w-3/5 lg:block"
+                        style={{
+                            backgroundImage:
+                                'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+                            backgroundSize: '40px 40px',
+                            WebkitMaskImage:
+                                'radial-gradient(120% 90% at 78% 45%, #000 38%, transparent 78%)',
+                            maskImage: 'radial-gradient(120% 90% at 78% 45%, #000 38%, transparent 78%)',
+                        }}
+                    />
+
+                    <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 pt-16 pb-24 lg:grid-cols-2 lg:gap-10 lg:pt-20">
+                        {/* LEFT — copy + capture */}
+                        <div>
+                            <div
+                                className="mb-7 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold"
+                                style={{ border: '1px solid #1A1A1A', background: '#fff' }}
+                            >
+                                <Zap className="h-3.5 w-3.5 fill-[#E8440A] text-[#E8440A]" />
+                                AI-powered content at scale
+                            </div>
+
+                            <h1 className="font-[Bebas_Neue] text-[58px] leading-[0.92] tracking-normal sm:text-[72px] lg:text-[82px]">
+                                Generate viral carousels{' '}
+                                <span className="text-[#E8440A]">in less than 1 minute.</span>
+                            </h1>
+
+                            <p className="mt-6 max-w-md text-lg font-medium leading-relaxed text-[#555550]">
+                                AI writes the hook, designs every slide, and hands you a post ready to
+                                publish. No Canva, no designer, no wasted hours.
+                            </p>
+
+                            {auth.user ? (
+                                <Link
+                                    href={dashboard()}
+                                    className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#1A1A1A] px-7 py-4 text-lg font-bold text-white transition-opacity hover:opacity-80"
+                                >
+                                    Go to the app <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            ) : (
+                                <form
+                                    action={signupUrl}
+                                    method="get"
+                                    className="mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
+                                >
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        required
+                                        placeholder="Enter your email"
+                                        className="h-14 flex-1 rounded-full bg-white px-5 text-base text-[#1A1A1A] outline-none transition-shadow placeholder:text-[#888880] focus:ring-2 focus:ring-[#1A1A1A]/15"
+                                        style={{ border: '1px solid #DDD7CC' }}
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-7 text-base font-bold text-white transition-opacity hover:opacity-80"
+                                    >
+                                        Reserve my spot <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </form>
+                            )}
+
+                            <div className="mt-7 flex items-center gap-3">
+                                <div className="flex">
+                                    {[
+                                        { i: 'MD', bg: '#1A1A1A' },
+                                        { i: 'RS', bg: '#E8440A' },
+                                        { i: 'JM', bg: '#2563EB' },
+                                    ].map((p) => (
+                                        <span
+                                            key={p.i}
+                                            className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-extrabold text-white first:ml-0"
+                                            style={{ background: p.bg, border: '2px solid #F9F6F4' }}
+                                        >
+                                            {p.i}
+                                        </span>
+                                    ))}
+                                </div>
+                                <p className="text-sm font-semibold text-[#888880]">
+                                    <strong className="text-[#1A1A1A]">Creators</strong> are already on the beta
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* RIGHT — image card */}
+                        <div className="relative mx-auto w-full max-w-md">
+                            <div
+                                className="overflow-hidden rounded-[2rem] bg-white"
+                                style={{
+                                    border: '1px solid #1A1A1A',
+                                    boxShadow: '0 30px 60px -20px rgba(24,18,48,0.30)',
+                                }}
+                            >
+                                {/* Placeholder image — swap for final art */}
+                                <img
+                                    src="https://images.unsplash.com/photo-1598257006458-087169a1f08d?auto=format&fit=crop&w=900&h=1100&q=80"
+                                    alt="Creator placeholder"
+                                    className="aspect-[4/5] w-full object-cover grayscale"
+                                />
+                            </div>
+
+                            {/* floating stat card */}
+                            <div
+                                className="absolute -bottom-5 -left-3 w-60 rounded-2xl bg-white/95 p-2 backdrop-blur sm:left-6"
+                                style={{
+                                    border: '1px solid #1A1A1A',
+                                    boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
+                                }}
+                            >
+                                <div className="flex items-center gap-3 px-2 py-2">
+                                    <span
+                                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-white"
+                                        style={{ background: '#E8440A' }}
+                                    >
+                                        <Sparkles className="h-4 w-4" />
+                                    </span>
+                                    <div>
+                                        <div className="text-sm font-extrabold text-[#1A1A1A]">Carousel ready</div>
+                                        <div className="text-xs font-medium text-[#888880]">Generated in 42s</div>
+                                    </div>
+                                </div>
+                                <div
+                                    className="flex items-center gap-3 px-2 py-2"
+                                    style={{ borderTop: '1px solid #EFEAE3' }}
+                                >
+                                    <span
+                                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#1A1A1A]"
+                                        style={{ border: '1px solid #1A1A1A' }}
+                                    >
+                                        <TrendingUp className="h-4 w-4" />
+                                    </span>
+                                    <div>
+                                        <div className="text-sm font-extrabold text-[#1A1A1A]">+48% saves</div>
+                                        <div className="text-xs font-medium text-[#888880]">vs. the rest of the feed</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* pager dots */}
+                            <div aria-hidden className="mt-8 flex justify-center gap-1.5">
+                                {[0, 1, 2, 3, 4].map((i) => (
+                                    <span
+                                        key={i}
+                                        className="h-1.5 rounded-full"
+                                        style={{
+                                            width: i === 4 ? 20 : 6,
+                                            background: i === 4 ? '#1A1A1A' : 'rgba(26,26,26,0.2)',
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
-
-                    <h1 className="text-[64px] lg:text-[88px] leading-[0.95] font-[Bebas_Neue] tracking-normal mb-6 max-w-4xl mx-auto">
-                        Generate viral carousels{' '}
-                        <span className="text-[#E8440A]">in less than 1 minute.</span>
-                    </h1>
-
-                    <p className="text-[#555550] text-xl font-medium leading-relaxed mb-4 max-w-2xl mx-auto">
-                        AI does everything for you: persuasive text, professional design, and posts ready to publish.
-                    </p>
-                    <p className="text-[#888880] text-lg font-semibold mb-10">
-                        <span className="line-through">No Canva.</span>{' '}
-                        <span className="line-through">No designer.</span>{' '}
-                        <span className="line-through">No wasted hours.</span>
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <Link
-                            href={ctaHref}
-                            className="inline-flex items-center gap-2 bg-[#E8440A] text-white text-lg font-bold px-8 py-4 rounded-full transition-opacity hover:opacity-80"
-                        >
-                            I Want to Create Viral Carousels
-                            <ArrowRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-
-                    <p className="text-lg text-[#888880] font-semibold">
-                        Used by <strong className="text-[#1A1A1A]">creators and professionals</strong> who publish consistently.
-                    </p>
                 </section>
 
                 {/* ── PROBLEM ── */}
@@ -282,14 +423,14 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 </section>
 
                 {/* ── HOW IT WORKS ── */}
-                <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
-                    <div className="text-center mb-16">
+                <section id="how-it-works" className="mx-auto max-w-6xl px-6 pt-24">
+                    <div className="text-center mb-4">
                         <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">In 3 steps</p>
                         <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">So simple it feels like magic</h2>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {[
+                    <ScrollStack
+                        items={[
                             {
                                 step: '01',
                                 title: 'Describe your content',
@@ -303,27 +444,34 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             {
                                 step: '03',
                                 title: 'Publish and go viral',
-                                body: 'Export in Full HD or schedule directly. Done — your carousel is live, gaining followers.',
+                                body: 'Export in Full HD or schedule directly. Done. Your carousel is live, gaining followers.',
                             },
                         ].map(({ step, title, body }) => (
                             <div
                                 key={step}
-                                className="rounded-2xl p-8 bg-white"
-                                style={{ border: '1px solid #1A1A1A' }}
+                                className="flex min-h-[300px] flex-col justify-center rounded-[24px] bg-white p-10 sm:p-12"
+                                style={{ border: '1px solid #1A1A1A', boxShadow: '0 24px 48px rgba(0,0,0,0.10)' }}
                             >
-                                <div
-                                    className="inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-extrabold mb-6"
-                                    style={{ border: '1px solid #1A1A1A', background: '#1A1A1A', color: '#fff' }}
-                                >
-                                    {step}
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div
+                                        className="flex w-12 h-12 items-center justify-center rounded-full text-lg font-extrabold"
+                                        style={{ background: '#1A1A1A', color: '#fff' }}
+                                    >
+                                        {step}
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-widest text-[#888880]">
+                                        Step {step}
+                                    </span>
                                 </div>
-                                <h3 className="text-xl font-extrabold mb-3">{title}</h3>
-                                <p className="text-lg text-[#555550] font-medium leading-relaxed">{body}</p>
+                                <h3 className="text-3xl sm:text-4xl font-[Bebas_Neue] tracking-normal mb-3 leading-none">
+                                    {title}
+                                </h3>
+                                <p className="text-lg text-[#555550] font-medium leading-relaxed max-w-xl">{body}</p>
                             </div>
                         ))}
-                    </div>
+                    />
 
-                    <div className="text-center mt-12">
+                    <div className="text-center pb-24">
                         <Link
                             href={ctaHref}
                             className="inline-flex items-center gap-2 text-lg font-bold px-7 py-3.5 rounded-full transition-opacity hover:opacity-80"
@@ -350,24 +498,7 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             </p>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {features.map(({ title, body }) => (
-                                <div
-                                    key={title}
-                                    className="rounded-2xl p-6 bg-white"
-                                    style={{ border: '1px solid #E8E7E2' }}
-                                >
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center mb-4"
-                                        style={{ background: '#E8440A' }}
-                                    >
-                                        <Check className="w-4 h-4 text-white" />
-                                    </div>
-                                    <h3 className="text-lg font-extrabold mb-2">{title}</h3>
-                                    <p className="text-lg text-[#555550] font-medium leading-relaxed">{body}</p>
-                                </div>
-                            ))}
-                        </div>
+                        <FeatureBento />
                     </div>
                 </section>
 
@@ -621,53 +752,27 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 {/* ── TESTIMONIALS ── */}
                 <section
                     id="testimonials"
+                    className="py-24"
                     style={{ borderTop: '1px solid #E8E7E2', background: '#FAFAF7' }}
                 >
-                    <div className="mx-auto max-w-6xl px-6 py-24">
+                    <div className="mx-auto max-w-6xl px-6">
                         <div className="text-center mb-16">
                             <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">Results from those who publish</p>
                             <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">See what our clients say</h2>
                         </div>
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {testimonials.map(({ name, role, quote, initials }) => (
-                                <div
-                                    key={name}
-                                    className="rounded-2xl p-6 bg-white flex flex-col gap-4"
-                                    style={{ border: '1px solid #E8E7E2' }}
-                                >
-                                    <p className="text-lg font-medium text-[#333330] leading-relaxed flex-1">
-                                        "{quote}"
-                                    </p>
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white flex-shrink-0"
-                                            style={{ background: '#1A1A1A' }}
-                                        >
-                                            {initials}
-                                        </div>
-                                        <div>
-                                            <p className="text-lg font-extrabold">{name}</p>
-                                            <p className="text-sm text-[#888880] font-semibold">{role}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
+
+                    <TestimonialMarquee items={testimonials} />
                 </section>
 
                 {/* ── FAQ ── */}
-                <section className="mx-auto max-w-3xl px-6 py-24">
+                <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
                     <div className="text-center mb-14">
                         <p className="font-bold uppercase tracking-widest text-[#888880] mb-3">FAQ</p>
                         <h2 className="text-5xl lg:text-6xl font-[Bebas_Neue] tracking-normal leading-none">Frequently asked questions</h2>
                     </div>
 
-                    <div
-                        className="rounded-2xl bg-white px-8"
-                        style={{ border: '1px solid #E8E7E2' }}
-                    >
+                    <div className="space-y-4">
                         {faqs.map(({ q, a }) => (
                             <FaqItem key={q} q={q} a={a} />
                         ))}
@@ -675,10 +780,15 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                 </section>
 
                 {/* ── CTA FINAL ── */}
-                <section id="cta" className="mx-auto max-w-6xl px-6 pb-24">
-                    <div
-                        className="rounded-2xl p-16 text-center"
-                        style={{ border: '1px solid #1A1A1A', background: '#1A1A1A' }}
+                <section id="cta" className="flex justify-center overflow-x-hidden px-4 pb-24">
+                    <motion.div
+                        ref={ctaRef}
+                        style={{
+                            width: reduceMotion ? '90vw' : ctaWidth,
+                            border: '1px solid #1A1A1A',
+                            background: '#1A1A1A',
+                        }}
+                        className="rounded-[3rem] p-10 text-center sm:p-16"
                     >
                         <div
                             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold mb-8"
@@ -703,26 +813,42 @@ export default function LandingEn({ canRegister = true }: { canRegister?: boolea
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                         <p className="text-[#444440] font-medium mt-5">No credit card required. Cancel anytime.</p>
-                    </div>
+                    </motion.div>
                 </section>
 
                 {/* ── FOOTER ── */}
-                <footer style={{ borderTop: '1px solid #1A1A1A', background: '#1A1A1A' }}>
-                    <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
-                                <Sprout className="w-3.5 h-3.5 text-[#1A1A1A]" />
-                            </div>
-                            <span className="text-2xl font-[Bebas_Neue] tracking-wide text-white mt-1">Slidezz</span>
-                        </div>
-                        <div className="flex items-center gap-8 text-lg font-semibold text-[#555550]">
-                            <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-                            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-                            <a href="#testimonials" className="hover:text-white transition-colors">Results</a>
-                        </div>
-                        <p className="text-[#444440] font-medium">© 2026 Slidezz. All rights reserved.</p>
-                    </div>
-                </footer>
+                <LandingFooter
+                    reachOutTitle="Reach out to us"
+                    contact={{
+                        title: 'Talk to us',
+                        subtitle: 'We usually reply within 24h',
+                        href: 'mailto:hello@slidezz.app',
+                    }}
+                    columns={[
+                        {
+                            title: 'Explore',
+                            links: [
+                                { label: 'How it works', href: '#how-it-works' },
+                                { label: 'Pricing', href: '#pricing' },
+                                { label: 'Results', href: '#testimonials' },
+                            ],
+                        },
+                        {
+                            title: 'Help',
+                            links: [
+                                { label: 'FAQs', href: '#faq' },
+                                { label: 'Contact', href: 'mailto:hello@slidezz.app' },
+                            ],
+                        },
+                    ]}
+                    socialLabel="Social Media"
+                    rights="© 2026 Slidezz. All rights reserved."
+                    legal={[
+                        { label: 'Terms of Service', href: '#' },
+                        { label: 'Privacy Policy', href: '#' },
+                        { label: 'Cookies Policy', href: '#' },
+                    ]}
+                />
             </div>
         </>
     );

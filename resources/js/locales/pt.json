@@ -11,24 +11,34 @@
     "name": "Nome"
   },
   "auth": {
+    "or": "ou",
+    "continueWithGoogle": "Continuar com o Google",
     "login": {
-      "title": "Entrar na sua conta",
-      "description": "Insira seu e-mail e senha abaixo para entrar",
+      "title": "Que bom te ver de novo",
+      "description": "Entre e volte a criar carrosséis que param o feed em menos de 1 minuto.",
       "headTitle": "Entrar",
+      "imageAlt": "Criadora sorrindo enquanto trabalha no notebook em um café",
+      "testimonialQuote": "Saí de 3 horas por carrossel para 3 minutos. Meus salvamentos triplicaram.",
+      "testimonialAuthor": "Marina Duarte",
+      "testimonialRole": "Estrategista de conteúdo",
       "email": "E-mail",
       "emailPlaceholder": "email@exemplo.com",
       "password": "Senha",
       "passwordPlaceholder": "Senha",
       "forgotPassword": "Esqueceu a senha?",
-      "rememberMe": "Lembrar de mim",
+      "rememberMe": "Manter conectado",
       "submit": "Entrar",
       "noAccount": "Não tem uma conta?",
       "signUp": "Cadastre-se"
     },
     "register": {
-      "title": "Criar uma conta",
-      "description": "Insira seus dados abaixo para criar sua conta",
+      "title": "Crie sua conta no Slidezz",
+      "description": "Comece a publicar carrosséis profissionais hoje, sem abrir o Canva.",
       "headTitle": "Cadastro",
+      "imageAlt": "Criadora sorrindo com o celular na mão em um espaço de trabalho",
+      "testimonialQuote": "Publico todo dia agora. Fechei 4 consultorias direto pelos carrosséis.",
+      "testimonialAuthor": "Rafael Nunes",
+      "testimonialRole": "Consultor de marketing",
       "name": "Nome",
       "namePlaceholder": "Nome completo",
       "email": "E-mail",
@@ -577,7 +587,18 @@
       "captionModalTitle": "Editar Legenda",
       "captionPlaceholder": "Escreva a legenda do post...",
       "captionChars": "{{count}} caracteres",
-      "captionLimitWarning": "Próximo do limite do Instagram (2200)"
+      "captionLimitWarning": "Próximo do limite do Instagram (2200)",
+      "layout": "Layout",
+      "layoutSlide": "Slide {{index}}",
+      "layouts": {
+        "bg_photo":        { "name": "Foto no fundo",        "desc": "Foto full-bg com texto sobreposto" },
+        "text_photo_text": { "name": "Texto · foto · texto", "desc": "Título, foto no meio, body baixo" },
+        "photo_top":       { "name": "Foto no topo",         "desc": "Foto em cima, texto embaixo" },
+        "photo_bottom":    { "name": "Foto embaixo",         "desc": "Texto em cima, foto embaixo" },
+        "photo_left":      { "name": "Foto lateral",         "desc": "Foto esquerda, texto direita" },
+        "text_only":       { "name": "Texto puro",           "desc": "Só texto, sem imagem" },
+        "image_only":      { "name": "Imagem pura",          "desc": "Só a imagem (texto oculto)" }
+      }
     },
     "rightPanel": {
       "editingLayer": "Camada de Edição",
