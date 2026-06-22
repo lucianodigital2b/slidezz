@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import {
     Undo2, Redo2, Save, Image as ImageIcon, Loader2, Download, LayoutTemplate, Check,
-    ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, CalendarIcon,
+    ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, CalendarIcon, Bug,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format as formatFns } from 'date-fns';
@@ -41,6 +41,9 @@ interface EditorToolbarProps {
     format: Format;
     onFormatChange: (format: Format) => void;
     onExportPNG: () => void;
+    onExportAllZip: () => void;
+    onExportMetadata: () => void;
+    exportingZip: boolean;
     instagramAccounts: InstagramAccount[];
     igPosting: boolean;
     slidesCount: number;
@@ -57,7 +60,7 @@ export function EditorToolbar({
     saveStatus, onSave,
     templateStatus, onSaveAsTemplate,
     format, onFormatChange,
-    onExportPNG,
+    onExportPNG, onExportAllZip, onExportMetadata, exportingZip,
     instagramAccounts, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
 }: EditorToolbarProps) {
     const { t } = useTranslation();
@@ -182,11 +185,41 @@ export function EditorToolbar({
 
             <div className="w-px h-6 bg-gray-200 mx-1" />
 
-            {/* Export PNG */}
-            <button onClick={onExportPNG}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#E8440A] text-white hover:bg-[#D13D09] transition-colors">
-                <Download className="w-4 h-4" /> {t('slideEditor.toolbar.exportPng')}
-            </button>
+            {/* Export */}
+            <Popover>
+                <PopoverTrigger asChild>
+                    <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#E8440A] text-white hover:bg-[#D13D09] transition-colors disabled:opacity-60"
+                        disabled={exportingZip}>
+                        {exportingZip ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {t('slideEditor.toolbar.export')}
+                    </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 p-1">
+                    <button
+                        onClick={onExportPNG}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <Download className="w-4 h-4 shrink-0" /> {t('slideEditor.toolbar.exportCurrentPng')}
+                    </button>
+                    <button
+                        onClick={onExportAllZip}
+                        disabled={exportingZip || slidesCount === 0}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                        {exportingZip ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
+                        {t('slideEditor.toolbar.exportAllZip', { count: slidesCount })}
+                    </button>
+                    {import.meta.env.DEV && (
+                        <>
+                            <div className="my-1 h-px bg-gray-100" />
+                            <button
+                                onClick={onExportMetadata}
+                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                                <Bug className="w-4 h-4 shrink-0" /> {t('slideEditor.toolbar.exportMetadata')}
+                            </button>
+                        </>
+                    )}
+                </PopoverContent>
+            </Popover>
 
             {/* Instagram */}
             {instagramAccounts.length > 0 && (

@@ -145,14 +145,38 @@ function sampleCanvasRegion(
 
 function resolveTextReadability(fill: string, sample: CanvasSampleStats): TextReadabilityStyle {
     const preferredFill = normalizeHexColor(fill);
+    const backdropIsBusy = sample.variance >= BUSY_BACKDROP_VARIANCE;
+
+    // On flat (solid/gradient) backdrops, honour the author's chosen colour exactly.
+    // The auto-contrast assist (colour swap + support outline/shadow) only exists to
+    // keep text legible over busy photo backdrops. Running it on a flat background
+    // overrides deliberate accent colours — e.g. the template's brand orange dipping
+    // a touch below the AA ratio gets repainted black with an unwanted grey ring.
+    if (!backdropIsBusy && preferredFill) {
+        return {
+            fill: preferredFill,
+            stroke: undefined,
+            strokeWidth: 0,
+            shadowColor: undefined,
+            shadowBlur: 0,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0,
+            shadowOpacity: 0,
+        };
+    }
+
     const preferredContrast = preferredFill ? contrastRatio(preferredFill, sample.backgroundHex) : 0;
     const darkContrast = contrastRatio(READABLE_TEXT_DARK, sample.backgroundHex);
     const lightContrast = contrastRatio(READABLE_TEXT_LIGHT, sample.backgroundHex);
     const autoFill = darkContrast >= lightContrast ? READABLE_TEXT_DARK : READABLE_TEXT_LIGHT;
     const resolvedFill = preferredContrast >= MIN_TEXT_CONTRAST ? preferredFill! : autoFill;
     const resolvedContrast = contrastRatio(resolvedFill, sample.backgroundHex);
-    const useOutline = sample.variance >= BUSY_BACKDROP_VARIANCE || resolvedContrast < 6;
-    const useShadow = sample.variance >= 320 || resolvedContrast < 7;
+    // Only add the support outline/shadow when the backdrop is genuinely busy (e.g. a
+    // photo) or contrast is below the AA minimum. On flat backgrounds with adequate
+    // contrast this assist just renders as an unwanted grey ring around the glyphs.
+    const lowContrast = resolvedContrast < MIN_TEXT_CONTRAST;
+    const useOutline = sample.variance >= BUSY_BACKDROP_VARIANCE || lowContrast;
+    const useShadow = sample.variance >= 320 || lowContrast;
     const supportStroke = resolvedFill === READABLE_TEXT_DARK ? 'rgba(245, 247, 250, 0.7)' : 'rgba(17, 17, 17, 0.55)';
     const supportShadow = resolvedFill === READABLE_TEXT_DARK ? '#F5F7FA' : '#111111';
 
@@ -250,6 +274,20 @@ export function CanvasArea({
             return;
         }
 
+        // The readability assist (colour swap + support outline/shadow) only exists to
+        // keep text legible over photo backdrops. On flat slides (solid colour /
+        // gradient templates) there is no image to fight, so honour the author's
+        // chosen colours verbatim — otherwise a brand accent that dips just below the
+        // AA ratio gets repainted black with a grey ring.
+        const hasImageBackdrop = sortedElements.some((el) => el.type === 'image');
+        if (!hasImageBackdrop) {
+            if (readabilitySignatureRef.current !== '') {
+                readabilitySignatureRef.current = '';
+                setTextReadabilityMap({});
+            }
+            return;
+        }
+
         isSamplingTextReadabilityRef.current = true;
         const nextReadabilityMap: Record<string, TextReadabilityStyle> = {};
 
@@ -312,7 +350,7 @@ export function CanvasArea({
             readabilitySignatureRef.current = nextSignature;
             setTextReadabilityMap(nextReadabilityMap);
         }
-    }, [stageRef, textElements, corners]);
+    }, [stageRef, textElements, sortedElements, corners]);
 
     const scheduleTextReadabilitySampling = useCallback(() => {
         if (sampleFrameRef.current !== null || isSamplingTextReadabilityRef.current) return;

@@ -21,6 +21,7 @@ import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager'
 import { useAiGeneration, ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 
 import { ShapeDef } from '@/components/SlideEditor/shapes';
+import { createZip } from '@/components/SlideEditor/zip';
 import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/SlideEditor/templates';
 
 import { EditorToolbar } from '@/components/SlideEditor/EditorToolbar';
@@ -103,6 +104,7 @@ export default function SlideEditor() {
     const [templateStatus, setTemplateStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [igAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
     const [igPosting, setIgPosting] = useState(false);
+    const [exportingZip, setExportingZip] = useState(false);
     const [elementsOpen, setElementsOpen] = useState(false);
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
     const [selectedCornerId, setSelectedCornerId] = useState<CornerKey | null>(null);
@@ -582,6 +584,91 @@ export default function SlideEditor() {
         return blobs;
     }
 
+    // Dev-only: dump the full carousel state for debugging — typography (fonts,
+    // sizes, styles, richText, spacing, alignment), images (all props + overlay,
+    // base64 stripped to keep the file shareable), backgrounds, the resolved
+    // template, and the generation prompt/style/params. Everything needed to
+    // reproduce a slide without a screenshot.
+    function exportMetadata() {
+        const resolvedTemplate = aiTemplateId ? SLIDE_TEMPLATES.find((tpl) => tpl.id === aiTemplateId) ?? null : null;
+
+        const sanitizedSlides = slides.map((s, slideIndex) => ({
+            index: slideIndex,
+            background: s.background,
+            elements: s.elements.map((el) =>
+                el.type === 'image'
+                    ? {
+                        ...el,
+                        src: el.src ? `[base64 omitted, ${el.src.length} chars]` : el.src,
+                        hasImage: Boolean(el.src),
+                    }
+                    : el,
+            ),
+        }));
+
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            app: 'slidezz-editor',
+            project: { id: projectId, title, caption, format, slideW: SLIDE_W, slideH, slideCount: slides.length },
+            generation: {
+                topic: aiTopic,
+                style: aiStyle,
+                templateId: aiTemplateId,
+                template: resolvedTemplate
+                    ? {
+                        id: resolvedTemplate.id,
+                        name: resolvedTemplate.name,
+                        font: resolvedTemplate.font,
+                        bodyFont: resolvedTemplate.bodyFont,
+                        captionFont: resolvedTemplate.captionFont,
+                        background: resolvedTemplate.background,
+                        backgroundAlt: resolvedTemplate.backgroundAlt,
+                        textColor: resolvedTemplate.textColor,
+                        accentColor: resolvedTemplate.accentColor,
+                        align: resolvedTemplate.align,
+                        letterSpacing: resolvedTemplate.letterSpacing,
+                    }
+                    : null,
+                slideCount: aiSlideCount,
+                imageMode: aiImageMode,
+                wordHighlight: aiWordHighlight,
+                wizardConfig: wizardConfig ?? null,
+            },
+            slides: sanitizedSlides,
+        };
+
+        const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.download = `carousel-metadata-${Date.now()}.json`;
+        link.href = url;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function exportAllSlidesZip() {
+        if (!stageRef.current || exportingZip) return;
+        setExportingZip(true);
+        try {
+            const blobs = await exportAllSlidesJpeg();
+            if (blobs.length === 0) throw new Error(t('slideEditor.alerts.exportFailed'));
+            const files = await Promise.all(blobs.map(async (blob, i) => ({
+                name: `slide-${String(i + 1).padStart(2, '0')}.jpg`,
+                data: new Uint8Array(await blob.arrayBuffer()),
+            })));
+            const zipName = (title.trim().replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'carousel') + '.zip';
+            const url = URL.createObjectURL(createZip(files));
+            const link = document.createElement('a');
+            link.download = zipName;
+            link.href = url;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (e) {
+            window.alert(e instanceof Error ? e.message : t('slideEditor.alerts.exportFailed'));
+        } finally {
+            setExportingZip(false);
+        }
+    }
+
     async function publishCarouselToInstagram() {
         if (!igAccountId) return;
         if (slides.length < 2 || slides.length > 10) return;
@@ -796,6 +883,9 @@ export default function SlideEditor() {
                     format={format}
                     onFormatChange={setFormat}
                     onExportPNG={exportPNG}
+                    onExportAllZip={exportAllSlidesZip}
+                    onExportMetadata={exportMetadata}
+                    exportingZip={exportingZip}
                     instagramAccounts={instagramAccounts}
                     igPosting={igPosting}
                     slidesCount={slides.length}

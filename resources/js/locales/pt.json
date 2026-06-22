@@ -345,6 +345,10 @@
       "saveAsTemplate": "Salvar como template",
       "templateSaved": "Template salvo",
       "exportPng": "Exportar PNG",
+      "export": "Exportar",
+      "exportCurrentPng": "Slide atual (PNG)",
+      "exportAllZip": "Todos os slides (ZIP, {{count}})",
+      "exportMetadata": "Debug: exportar metadados (JSON)",
       "undo": "Desfazer (Ctrl+Z)",
       "redo": "Refazer (Ctrl+Y)"
     },

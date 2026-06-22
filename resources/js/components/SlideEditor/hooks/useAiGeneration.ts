@@ -143,8 +143,12 @@ export function useAiGeneration(
                 }
             }
 
-            const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, colorReference);
-            const highlightGradient = resolveAccessibleGradient(data.highlightGradient, colorReference);
+            // Use the template's accent color for the highlighted word (solid, no
+            // gradient) so the highlight is consistent across the deck. Falls back to
+            // the LLM-chosen color only when there is no template accent.
+            const accent = template.accentColor;
+            const highlightColor = resolveAccessibleHighlightColor(accent ?? data.highlightColor, colorReference);
+            const highlightGradient = accent ? undefined : resolveAccessibleGradient(data.highlightGradient, colorReference);
             const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
 
             if (highlightWords.length > 0) {
@@ -243,8 +247,9 @@ export function useAiGeneration(
         const textAlign = template?.align ?? 'center';
         const titleLetterSpacing = template?.letterSpacing ?? -1;
 
-        const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
-        const highlightGradient = resolveAccessibleGradient(data.highlightGradient, backgroundColor);
+        const accent = template?.accentColor;
+        const highlightColor = resolveAccessibleHighlightColor(accent ?? data.highlightColor, backgroundColor);
+        const highlightGradient = accent ? undefined : resolveAccessibleGradient(data.highlightGradient, backgroundColor);
         const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
         const titlePadding = 28;
         const descriptionPadding = 16;

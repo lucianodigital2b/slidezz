@@ -122,8 +122,9 @@ export function buildSceneFromLayoutGeneric(
     const safeY = topPad;
     const safeH = slideH - topPad * 2;
     const pad = 80;
-    const safeX = pad;
-    const safeW = SLIDE_W - pad * 2;
+    const leftPad = Math.round(pad * 1.3); // 30% more breathing room from the left border
+    const safeX = leftPad;
+    const safeW = SLIDE_W - leftPad - pad;
 
     const useAlt = slideIndex % 2 === 1 && Boolean(template.backgroundAlt);
     const bg = useAlt ? template.backgroundAlt! : template.background;
@@ -187,9 +188,9 @@ export function buildSceneFromLayoutGeneric(
 
     if (layout.title.visible) {
         const rect = slotToRect(layout.title);
-        const titleText = layout.type === 'stat_callout' || layout.type === 'hook_hero'
-            ? content.title.toUpperCase()
-            : content.title;
+        // All display titles are uppercased for a consistent impact look across the
+        // deck (highlight matching is case-insensitive, so this is safe).
+        const titleText = content.title.toUpperCase();
         // Resolve to a valid CSS font-weight ONCE: the raw hint ("black") is not a
         // valid font-weight, so passing it to fitTextFontSize corrupts measurement
         // (the canvas rejects the font string). Fit and render must use the same value.
