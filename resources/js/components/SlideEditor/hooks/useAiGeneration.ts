@@ -124,22 +124,44 @@ export function useAiGeneration(
 
             const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides);
 
-            const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, scene.background);
-            const highlightGradient = resolveAccessibleGradient(data.highlightGradient, scene.background);
+            // Full-bleed photographic slides get a cinematic dark treatment regardless of
+            // the template's palette: a dark overlay (so the photo stays vivid instead of
+            // being washed out by a light editorial background) and white content text (so
+            // it reads against the photo). Only the title/description are recolored —
+            // decorative elements (badges, pills, accent bars) keep their own colors.
+            const isPhotographic = Boolean(bgBase64) && effectiveMode === 'background' && layout.backgroundPreference !== 'solid';
+            const colorReference = isPhotographic ? '#0a0a0a' : scene.background;
+
+            if (isPhotographic) {
+                const contentTexts = new Set(
+                    [data.title, data.title.toUpperCase(), data.description, data.description?.toUpperCase()].filter(Boolean),
+                );
+                for (const el of scene.elements) {
+                    if (el.type === 'text' && contentTexts.has(el.text)) {
+                        el.fill = '#ffffff';
+                    }
+                }
+            }
+
+            const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, colorReference);
+            const highlightGradient = resolveAccessibleGradient(data.highlightGradient, colorReference);
             const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
 
             if (highlightWords.length > 0) {
+                // Match case-insensitively: some layouts (hook_hero, stat_callout) render the
+                // title uppercased, so build the rich text from the element's displayed text
+                // to preserve its casing.
                 const titleEl = scene.elements.find(
-                    (el): el is TextEl => el.type === 'text' && el.text === data.title,
+                    (el): el is TextEl => el.type === 'text' && el.text.toUpperCase() === data.title.toUpperCase(),
                 );
                 if (titleEl) {
-                    titleEl.richText = buildRichText(data.title, highlightWords, titleEl.fill, highlightColor, highlightGradient);
+                    titleEl.richText = buildRichText(titleEl.text, highlightWords, titleEl.fill, highlightColor, highlightGradient);
                 }
             }
 
             if (bgBase64 && layout.backgroundPreference !== 'solid') {
                 if (effectiveMode === 'background') {
-                    const overlayColor = template?.background ?? '#000000';
+                    const overlayColor = isPhotographic ? '#000000' : (template?.background ?? '#000000');
                     const overlayPreset =
                         layout.gradientIntensity >= 0.75 ? 'gradient_strong' :
                         layout.gradientIntensity >= 0.5  ? 'gradient' :
@@ -284,13 +306,14 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null) {
         if (isGeneratingRef.current) return;
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
         const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
         const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
+        const templateId = templateIdOverride !== undefined ? templateIdOverride : aiTemplateId;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
         isGeneratingRef.current = true;
@@ -395,7 +418,7 @@ export function useAiGeneration(
             );
         }
 
-        const template = aiTemplateId ? SLIDE_TEMPLATES.find(t => t.id === aiTemplateId) ?? null : null;
+        const template = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
         await Promise.all((template ? [...new Set(template.fonts)] : ['Space Mono', 'Inter']).map(f => loadGoogleFont(f)));
 
         const newSlides = parsedSlides.map((s, i) => {

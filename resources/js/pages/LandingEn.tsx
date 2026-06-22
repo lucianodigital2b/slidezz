@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     Check,
@@ -184,6 +184,12 @@ export default function LandingEn({
     const ctaWidth = useTransform(ctaProgress, [0, 1], ['66vw', '90vw']);
 
     const signupUrl = canRegister ? register().url : login().url;
+
+    // Guest checkout: the user picks a plan here and creates their account on
+    // Stripe Checkout itself. Cycle follows the monthly/annual toggle.
+    const startCheckout = (plan: 'starter' | 'pro') => {
+        router.post('/checkout', { plan, cycle: billingCycle });
+    };
 
     const totalComparison = '$527.97/month';
 
@@ -837,12 +843,13 @@ export default function LandingEn({
                                 ))}
                             </ul>
 
-                            <Link
-                                href={ctaHref}
+                            <button
+                                type="button"
+                                onClick={() => startCheckout('starter')}
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#333]"
                             >
                                 Try it now <ArrowRight className="h-4 w-4" />
-                            </Link>
+                            </button>
                         </div>
 
                         {/* Pro */}
@@ -923,12 +930,13 @@ export default function LandingEn({
                                 ))}
                             </ul>
 
-                            <Link
-                                href={ctaHref}
+                            <button
+                                type="button"
+                                onClick={() => startCheckout('pro')}
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
                             >
                                 Try it now <ArrowRight className="h-4 w-4" />
-                            </Link>
+                            </button>
                         </div>
 
                         {/* Enterprise */}
@@ -977,12 +985,12 @@ export default function LandingEn({
                                 ))}
                             </ul>
 
-                            <Link
-                                href={ctaHref}
+                            <a
+                                href="https://wa.me/5527997798070?text=Hi%21%20I%27m%20interested%20in%20the%20Slidezz%20Enterprise%20plan."
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
                             >
                                 Contact us <ArrowRight className="h-4 w-4" />
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </section>

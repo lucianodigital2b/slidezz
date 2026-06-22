@@ -112,6 +112,7 @@ class CarouselWizardController extends Controller
             ->route('slideshow-editor.edit', $project)
             ->with('wizardTopic', $validated['topic'])
             ->with('wizardStyle', $style)
+            ->with('wizardTemplate', $validated['template'])
             ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
             ->with('wizardImageMode', $validated['image_mode'] ?? 'background')
             ->with('wizardWordHighlight', $validated['word_highlight'] ?? true)

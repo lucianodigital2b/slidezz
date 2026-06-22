@@ -232,7 +232,8 @@ class CarouselWizardControllerTest extends TestCase
                 'template' => 'noir-manifesto',
                 'archetype' => 'disruptor-social',
             ])
-            ->assertSessionHas('wizardTopic', '5 tips to grow on Instagram');
+            ->assertSessionHas('wizardTopic', '5 tips to grow on Instagram')
+            ->assertSessionHas('wizardTemplate', 'noir-manifesto');
     }
 
     public function test_store_saves_workspace_config_when_save_config_is_true(): void

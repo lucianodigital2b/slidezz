@@ -21,10 +21,9 @@ FIELDS : '';
 You are a social media carousel designer. Generate slide content for an Instagram carousel. Zero em-dashes anywhere. Hyphen only.
 Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
 - title: short headline (max 8 words)
-- description: substantive body text that deepens understanding. Slide 1 must be a viral hook with fewer words, high tension, and immediate curiosity (18-28 words max). It should feel punchy, memorable, and emotionally charged, not explanatory. Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide MUST be a short soft CTA: direct the reader to take a specific action (follow, save, share, comment, DM, etc.) Every description must feel complete and informative — never vague or generic.
+- description: substantive body text that deepens understanding. Slide 1 must be a viral hook with fewer words, high tension, and immediate curiosity (15-22 words max, about two short lines). It should feel punchy, memorable, and emotionally charged, not explanatory. Middle slides develop the argument with specific facts, examples, or data (55-70 words each). The last slide MUST be a short soft CTA: direct the reader to take a specific action (follow, save, share, comment, DM, etc.) Every description must feel complete and informative — never vague or generic.
 - imagePrompt: cinematic background image prompt that fits the slide content (max 60 words). ALWAYS describe a vertical 4:5 portrait composition with the main subject in the upper two-thirds and the lower third left dark, empty, and unobstructed so a title can overlay it. Demand: dramatic single-source lighting, high contrast, shallow depth of field, rich color grade, subtle film grain, photorealistic, magazine-cover quality. Never put text, captions, logos, or watermarks in the image. If the topic is about a real person, company, brand, or organization: on slide 1 and 1–2 other key slides, write the prompt as a realistic close-up photographic shot of that specific subject — e.g. "cinematic close-up portrait of Elon Musk speaking on stage, dramatic rim light, shallow depth of field, dark moody lower third" or "Apple headquarters exterior at dusk, glass building, editorial photography, dramatic sky". For remaining slides use conceptual or atmospheric imagery that fits the narrative. If the topic is abstract or fictional, always use conceptual imagery.
 {$highlightFields}- stat: (optional) a single hero number or statistic to display prominently on that slide, e.g. "$150B", "90%", "3 out of 4". Only include when the slide contains a genuinely dramatic number worth calling out. Omit entirely if there is no strong stat.
-- ctaPill: (optional) short pill button text for a visual CTA badge (2–5 words, uppercase, with arrow). Use on slide 1 and sparingly on 1–2 middle slides. Examples: "HERE'S WHY →", "SWIPE →", "THE THING IS →". Omit on most slides.
 
 Style: {$style}
 Number of slides: {$slideCount}
@@ -36,7 +35,8 @@ MANDATORY rule for the LAST slide (slide {$slideCount}): This slide MUST be a CT
 Output exactly {$slideCount} lines. No extra text, no markdown, no code blocks. Just raw NDJSON lines.
 PROMPT;
 
-        // \Log::error(print_r($systemPrompt, true));
+        \Log::error(print_r($systemPrompt, true));
+
         return Prism::text()
             ->using(Provider::DeepSeek, 'deepseek-chat')
             ->withSystemPrompt($systemPrompt)
@@ -44,15 +44,25 @@ PROMPT;
             ->asEventStreamResponse();
     }
 
+    /**
+     * Build the creative brief handed to the text model.
+     *
+     * This is a CONTENT brief, not a visual one: fonts, colors, and layout are
+     * defined entirely by the selected template + layout code on the client, so
+     * the prompt only carries the editorial voice (per template) and the hook
+     * archetype. Visual-design language ("Anton typography", "red highlight",
+     * etc.) is deliberately excluded — a text model cannot act on it and it only
+     * pollutes the generated image prompts.
+     */
     public function buildStyle(string $template, ?string $archetype): string
     {
-        $templates = [
-            'noir-manifesto' => 'dark gradient overlay, ALL CAPS typography, documentary motivational style',
-            'dark-cards' => 'dark background, full-bleed cover photo, rounded image cards on dark slides',
-            'pop-magazine' => 'giant Anton typography, red highlight words, pop culture magazine maximum visual impact',
-            'twitter-x' => 'white background, large bold text, clean minimal editorial style',
-            'acid-brutalist' => 'black background, massive Montserrat 900, acid green accent color, outlined text',
-            'documentary' => 'vintage investigative journalism aesthetic, Playfair Display serif, film grain texture',
+        $tones = [
+            'noir-manifesto' => 'bold, cinematic, motivational documentary voice',
+            'dark-cards' => 'modern, confident, punchy voice',
+            'pop-magazine' => 'high-energy, pop-culture, attention-grabbing voice',
+            'twitter-x' => 'crisp, conversational, editorial voice',
+            'acid-brutalist' => 'edgy, provocative, in-your-face voice',
+            'documentary' => 'serious, investigative, journalistic voice',
         ];
 
         $archetypes = [
@@ -64,15 +74,15 @@ PROMPT;
             'autoridade-cientifica' => 'scientific authority proves a surprising result with clear cause hook',
         ];
 
-        $templateStyle = $templates[$template] ?? $template;
+        $tone = $tones[$template] ?? $template;
 
         if (empty($archetype)) {
-            return $templateStyle;
+            return $tone;
         }
 
         $archetypeStyle = $archetypes[$archetype] ?? $archetype;
 
-        return "{$templateStyle}. Hook archetype: {$archetypeStyle}.";
+        return "{$tone}. Hook archetype: {$archetypeStyle}.";
     }
 
     /**

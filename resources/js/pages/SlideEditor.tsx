@@ -41,6 +41,7 @@ interface SlideProjectProp {
 interface WizardConfig {
     topic: string;
     style: string;
+    template?: string | null;
     slideCount: number;
     imageMode: ImageMode;
     wordHighlight: boolean;
@@ -305,9 +306,11 @@ export default function SlideEditor() {
         setAiImageMode(mode);
         const hl = wizardConfig.wordHighlight ?? true;
         setAiWordHighlight(hl);
+        const templateId = wizardConfig.template ?? null;
+        setAiTemplateId(templateId);
         setAiModalOpen(true);
         const shouldSaveTemplate = wizardConfig.saveAsTemplate ?? false;
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true)
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId)
             .then((generated) => {
                 if (shouldSaveTemplate && generated && generated.length > 0) {
                     // Let the canvas paint the generated slides before snapshotting the thumbnail.

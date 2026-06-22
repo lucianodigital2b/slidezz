@@ -40,10 +40,10 @@ export interface LayoutDefinition {
 const HOOK_HERO: LayoutDefinition = {
     type: 'hook_hero',
     title: {
-        x: 0, y: 0.58, width: 1, height: 0.38,
+        x: 0, y: 0.36, width: 1, height: 0.36,
         align: 'left', verticalAlign: 'bottom',
-        maxFontSize: 144, fontRole: 'display', fontStyleHint: 'black',
-        lineHeight: 0.92, letterSpacing: 1, visible: true, opacity: 1,
+        maxFontSize: 132, fontRole: 'display', fontStyleHint: 'black',
+        lineHeight: 0.95, letterSpacing: 1, visible: true, opacity: 1,
     },
     subtitle: {
         x: 0, y: 0, width: 0, height: 0,
@@ -52,12 +52,11 @@ const HOOK_HERO: LayoutDefinition = {
         lineHeight: 1, letterSpacing: 0, visible: false, opacity: 0,
     },
     description: {
-        x: 0, y: 0.48, width: 0.85, height: 0.14,
-        align: 'left', verticalAlign: 'bottom',
-        maxFontSize: 44, fontRole: 'body', fontStyleHint: 'normal',
-        lineHeight: 1.3, letterSpacing: 0, visible: true, opacity: 0.85,
+        x: 0.01, y: 0.74, width: 0.94, height: 0.2,
+        align: 'left', verticalAlign: 'top',
+        maxFontSize: 40, fontRole: 'body', fontStyleHint: 'normal',
+        lineHeight: 1.4, letterSpacing: 0, visible: true, opacity: 0.85,
     },
-    pill: { y: 0.96, align: 'left' },
     backgroundPreference: 'image',
     gradientIntensity: 0.85,
     imageCardPosition: 'top',

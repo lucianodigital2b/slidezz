@@ -221,10 +221,23 @@ export function measureTextWidthWithLetterSpacing(
 ): number {
     if (!text) return 0;
 
-    const baseWidth = ctx.measureText(text).width;
     const spacingCount = Math.max(0, text.length - 1) + (includeTrailingSpacing ? 1 : 0);
 
-    return baseWidth + spacingCount * letterSpacing;
+    // When letter-spacing is active, drawTextWithLetterSpacing renders char-by-char,
+    // which disables kerning between glyphs. Measure the same way (sum of individual
+    // glyph widths) so a word's reserved advance matches its drawn width. Using the
+    // kerned whole-string width here makes long words overrun their advance and eat
+    // the following space — worst on the longest word in a line.
+    if (letterSpacing !== 0) {
+        let width = 0;
+        for (let i = 0; i < text.length; i++) {
+            width += ctx.measureText(text[i]).width;
+        }
+
+        return width + spacingCount * letterSpacing;
+    }
+
+    return ctx.measureText(text).width;
 }
 
 export function drawTextWithLetterSpacing(

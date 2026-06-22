@@ -30,7 +30,7 @@ class CarouselGenerationServiceTest extends TestCase
     {
         $style = $this->service->buildStyle('noir-manifesto', 'disruptor-social');
 
-        $this->assertStringContainsString('dark gradient overlay', $style);
+        $this->assertStringContainsString('cinematic', $style);
         $this->assertStringContainsString('shocking social phenomenon', $style);
     }
 
@@ -46,7 +46,7 @@ class CarouselGenerationServiceTest extends TestCase
     {
         $style = $this->service->buildStyle('documentary', 'unknown-archetype');
 
-        $this->assertStringContainsString('Playfair Display serif', $style);
+        $this->assertStringContainsString('investigative', $style);
         $this->assertStringContainsString('unknown-archetype', $style);
     }
 

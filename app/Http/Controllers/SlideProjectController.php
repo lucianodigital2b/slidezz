@@ -76,6 +76,7 @@ class SlideProjectController extends Controller
         $wizardConfig = session('wizardTopic') ? [
             'topic' => session('wizardTopic'),
             'style' => session('wizardStyle'),
+            'template' => session('wizardTemplate'),
             'slideCount' => session('wizardSlideCount', 3),
             'imageMode' => session('wizardImageMode', 'background'),
             'wordHighlight' => session('wizardWordHighlight', true),

@@ -13,8 +13,8 @@ return [
         ],
         'prices' => [
             'usd' => [
-                'monthly' => ['price_label' => '$36/mo', 'price_id' => env('STRIPE_PRICE_STARTER_MONTHLY_USD')],
-                'annual' => ['price_label' => '$21.60/mo', 'price_id' => env('STRIPE_PRICE_STARTER_ANNUAL_USD')],
+                'monthly' => ['price_label' => '$36/mo', 'price_id' => env('STRIPE_PRICE_STARTER_MONTHLY')],
+                'annual' => ['price_label' => '$29/mo', 'price_id' => env('STRIPE_PRICE_STARTER_ANNUAL')],
             ],
             'brl' => [
                 // TODO: confirmar os valores reais em BRL criados no Stripe.
@@ -36,8 +36,8 @@ return [
         ],
         'prices' => [
             'usd' => [
-                'monthly' => ['price_label' => '$120/mo', 'price_id' => env('STRIPE_PRICE_PRO_MONTHLY_USD')],
-                'annual' => ['price_label' => '$72/mo', 'price_id' => env('STRIPE_PRICE_PRO_ANNUAL_USD')],
+                'monthly' => ['price_label' => '$120/mo', 'price_id' => env('STRIPE_PRICE_PRO_MONTHLY')],
+                'annual' => ['price_label' => '$79/mo', 'price_id' => env('STRIPE_PRICE_PRO_ANNUAL')],
             ],
             'brl' => [
                 // TODO: confirmar os valores reais em BRL criados no Stripe.

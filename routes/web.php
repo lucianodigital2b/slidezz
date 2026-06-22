@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CarouselGenerationController;
 use App\Http\Controllers\CarouselWizardController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MetaEventController;
@@ -29,6 +30,11 @@ Route::inertia('/br', 'welcome', [
 Route::post('meta/event', [MetaEventController::class, 'store'])
     ->middleware('throttle:60,1')
     ->name('meta.event');
+
+// Guest checkout: pick a plan on the landing page and create the account on
+// Stripe Checkout itself, then provision it on the success redirect.
+Route::post('checkout', [CheckoutController::class, 'create'])->name('checkout.create');
+Route::get('checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
@@ -86,9 +92,10 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
             return redirect()
                 ->route('slideshow-editor.edit', $slideProject)
                 ->with('wizardTopic', "AI\'s Economics Don't Make Sense")
-                ->with('wizardStyle', 'dark gradient overlay, ALL CAPS typography, documentary motivational style. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
+                ->with('wizardStyle', 'bold, cinematic, motivational documentary voice. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
+                ->with('wizardTemplate', 'noir-manifesto')
                 ->with('wizardSlideCount', 3)
-                ->with('wizardImageMode', 'alternate')
+                ->with('wizardImageMode', 'none')
                 ->with('wizardWordHighlight', false);
         })->name('dev.test-wizard');
 
@@ -99,9 +106,10 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
             return redirect()
                 ->route('slideshow-editor.edit', $slideProject)
                 ->with('wizardTopic', 'Neymar vai jogar a Copa de 2026?')
-                ->with('wizardStyle', 'giant Anton typography, red highlight words, pop culture magazine maximum visual impact. Hook archetype: authoritative prophecy fulfilled hook, revelation that surprises everyone.')
+                // ->with('wizardStyle', 'high-energy, pop-culture, attention-grabbing voice. Hook archetype: authoritative prophecy fulfilled hook, revelation that surprises everyone.')
+                ->with('wizardTemplate', 'pop-magazine')
                 ->with('wizardSlideCount', 5)
-                ->with('wizardImageMode', 'background')
+                ->with('wizardImageMode', 'none')
                 ->with('wizardWordHighlight', true);
         })->name('dev.test-wizard-competitor');
     }
