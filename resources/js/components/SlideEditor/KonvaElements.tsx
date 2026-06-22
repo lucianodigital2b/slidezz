@@ -28,6 +28,7 @@ interface LayoutToken {
     text: string;
     color: string;
     highlight?: string;
+    gradient?: string[];
     x: number;
     width: number;
     advanceWidth: number;
@@ -46,7 +47,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     const innerWidth = Math.max(10, el.width - el.padding * 2);
 
     // Tokenize spans into words/spaces/newlines
-    const tokens: { text: string; color: string; highlight?: string; isSpace: boolean; isNewline: boolean }[] = [];
+    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; isSpace: boolean; isNewline: boolean }[] = [];
     for (const span of spans) {
         const parts = span.text.split(/(\n|\s+)/);
         for (const part of parts) {
@@ -55,6 +56,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
                 text: part,
                 color: span.color ?? defaultColor,
                 highlight: span.highlight,
+                gradient: span.gradient,
                 isNewline: part === '\n',
                 isSpace: /^\s+$/.test(part) && part !== '\n',
             });
@@ -89,7 +91,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
 }
 
 function buildLine(
-    tokens: { text: string; color: string; highlight?: string }[],
+    tokens: { text: string; color: string; highlight?: string; gradient?: string[] }[],
     ctx: CanvasRenderingContext2D,
     el: TextEl,
     lineH: number,
@@ -108,7 +110,7 @@ function buildLine(
     const layoutTokens: LayoutToken[] = [];
     for (const [index, token] of tokens.entries()) {
         const { contentWidth, advanceWidth } = tokenMetrics[index];
-        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, x, width: contentWidth, advanceWidth });
+        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, gradient: token.gradient, x, width: contentWidth, advanceWidth });
         x += advanceWidth;
     }
     return { tokens: layoutTokens, height: lineH };
@@ -199,7 +201,14 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
                     if (effectiveStroke && effectiveStrokeWidth > 0) {
                         strokeTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
                     }
-                    c.fillStyle = token.color;
+                    if (token.gradient && token.gradient.length >= 2 && token.text.trim()) {
+                        const grad = c.createLinearGradient(token.x, curY, token.x + token.width, curY + el.fontSize);
+                        const stops = token.gradient;
+                        stops.forEach((color, i) => grad.addColorStop(i / (stops.length - 1), color));
+                        c.fillStyle = grad;
+                    } else {
+                        c.fillStyle = token.color;
+                    }
                     drawTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
                 }
             }

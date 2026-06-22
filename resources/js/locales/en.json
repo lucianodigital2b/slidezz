@@ -94,6 +94,8 @@
       "saved": "Saved",
       "saveError": "Error saving",
       "save": "Save",
+      "saveAsTemplate": "Save as template",
+      "templateSaved": "Template saved",
       "exportPng": "Export PNG",
       "undo": "Undo (Ctrl+Z)",
       "redo": "Redo (Ctrl+Y)"
@@ -454,6 +456,11 @@
       "customPromptPlaceholder": "e.g. Use a formal tone, focus on data and statistics, avoid jargon...",
       "saveConfigLabel": "Save as AI autopilot default",
       "saveConfigDesc": "This template and archetype will be used automatically in future autopilot generations.",
+      "saveAsTemplateLabel": "Save result as a template",
+      "saveAsTemplateDesc": "When the AI finishes generating, the carousel is saved as a reusable template.",
+      "savedTemplatesTitle": "Your saved templates",
+      "savedTemplatesEmpty": "You haven't saved any templates yet.",
+      "useTemplate": "Use this template",
       "generateBtn": "Generate Carousel"
     },
     "import": {
@@ -617,6 +624,8 @@
     "prev": "Prev",
     "next": "Next",
     "recentLabel": "Recent Projects",
+    "heroEyebrow": "Dashboard",
+    "heroSubtitle": "Generate a complete carousel in under a minute, or start from scratch in the editor.",
     "searchPlaceholder": "Search projects...",
     "noResults": "No projects found for your search.",
     "clearSearch": "Clear search",

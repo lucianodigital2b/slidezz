@@ -39,10 +39,14 @@ class CarouselGenerationController extends Controller
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'max:4000'],
+            'aspect_ratio' => ['nullable', 'string', 'in:1:1,4:5,9:16,3:4,16:9'],
         ]);
 
         try {
-            $base64 = $this->carouselGenerationService->generateImage($validated['prompt']);
+            $base64 = $this->carouselGenerationService->generateImage(
+                $validated['prompt'],
+                $validated['aspect_ratio'] ?? '4:5',
+            );
         } catch (\Throwable $e) {
             \Log::error('Image generation failed', [
                 'message' => $e->getMessage(),

@@ -38,8 +38,9 @@ export interface BaseEl extends ShadowProps {
 
 export interface RichSpan {
     text: string;
-    color?: string;      // undefined = inherit el.fill
-    highlight?: string;  // background highlight color
+    color?: string;        // undefined = inherit el.fill
+    highlight?: string;    // background highlight color
+    gradient?: string[];   // 2+ hex stops; renders the glyph fill as a left→right gradient
 }
 
 export interface TextReadabilityStyle {

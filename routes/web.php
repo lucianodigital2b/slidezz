@@ -5,9 +5,11 @@ use App\Http\Controllers\CarouselGenerationController;
 use App\Http\Controllers\CarouselWizardController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MetaEventController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SlideProjectController;
+use App\Http\Controllers\SlideTemplateController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
@@ -22,6 +24,11 @@ Route::inertia('/', 'LandingEn', [
 Route::inertia('/br', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home.br');
+
+// Meta Pixel browser events mirrored to the Conversions API (works for guests too).
+Route::post('meta/event', [MetaEventController::class, 'store'])
+    ->middleware('throttle:60,1')
+    ->name('meta.event');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
@@ -41,6 +48,11 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('slideshow-editor', [SlideProjectController::class, 'store'])->name('slideshow-editor.store');
     Route::put('slideshow-editor/{slideProject}', [SlideProjectController::class, 'update'])->name('slideshow-editor.update');
     Route::post('slideshow-editor/{slideProject}/duplicate', [SlideProjectController::class, 'duplicate'])->name('slideshow-editor.duplicate');
+
+    Route::get('slide-templates', [SlideTemplateController::class, 'index'])->name('slide-templates.index');
+    Route::post('slide-templates', [SlideTemplateController::class, 'store'])->name('slide-templates.store');
+    Route::post('slide-templates/{slideTemplate}/use', [SlideTemplateController::class, 'use'])->name('slide-templates.use');
+    Route::delete('slide-templates/{slideTemplate}', [SlideTemplateController::class, 'destroy'])->name('slide-templates.destroy');
     Route::post('slideshow-editor/{slideProject}/publish/instagram', [SlideProjectController::class, 'publishInstagram'])->name('slideshow-editor.publish.instagram');
     Route::delete('slideshow-editor/{slideProject}', [SlideProjectController::class, 'destroy'])->name('slideshow-editor.destroy');
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
@@ -79,6 +91,19 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 ->with('wizardImageMode', 'alternate')
                 ->with('wizardWordHighlight', false);
         })->name('dev.test-wizard');
+
+        // Competitor-style carousel: cinematic, subject-accurate Gemini photos
+        // (full-bleed background), bold pop-magazine ALL CAPS typography, and a
+        // single gradient-highlighted word with curiosity-gap hooks.
+        Route::get('dev/test-wizard-competitor/{slideProject}', function (SlideProject $slideProject) {
+            return redirect()
+                ->route('slideshow-editor.edit', $slideProject)
+                ->with('wizardTopic', 'Neymar vai jogar a Copa de 2026?')
+                ->with('wizardStyle', 'giant Anton typography, red highlight words, pop culture magazine maximum visual impact. Hook archetype: authoritative prophecy fulfilled hook, revelation that surprises everyone.')
+                ->with('wizardSlideCount', 5)
+                ->with('wizardImageMode', 'background')
+                ->with('wizardWordHighlight', true);
+        })->name('dev.test-wizard-competitor');
     }
 });
 

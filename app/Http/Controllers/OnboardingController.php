@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendMetaConversionEvent;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Billing\BillingCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,7 +14,7 @@ use Laravel\Cashier\Exceptions\IncompletePayment;
 
 class OnboardingController extends Controller
 {
-    public function show(Request $request): Response|RedirectResponse
+    public function show(Request $request, BillingCatalog $catalog): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -29,7 +31,7 @@ class OnboardingController extends Controller
 
         return Inertia::render('Onboarding', [
             'has_profile' => false,
-            'plans' => config('plans'),
+            'plans' => $catalog->plans($catalog->currencyFor($request)),
         ]);
     }
 
@@ -91,17 +93,22 @@ class OnboardingController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function subscribe(Request $request): RedirectResponse
+    public function subscribe(Request $request, BillingCatalog $catalog): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
+            'cycle' => ['nullable', 'string', 'in:monthly,annual'],
         ]);
 
-        $plan = config('plans.'.$request->plan);
+        $cycle = $validated['cycle'] ?? 'monthly';
+        $currency = $catalog->currencyFor($request);
+        $priceId = $catalog->subscriptionPriceId($validated['plan'], $cycle, $currency);
+
+        abort_if(! $priceId, 404, 'Plan price not configured for this currency.');
 
         try {
             $checkout = $request->user()
-                ->newSubscription($request->plan, $plan['price_id'])
+                ->newSubscription($validated['plan'], $priceId)
                 ->trialDays(14)
                 ->allowPromotionCodes()
                 ->checkout([
@@ -122,6 +129,21 @@ class OnboardingController extends Controller
         if ($user->onboarding_completed_at === null) {
             $user->onboarding_completed_at = now();
             $user->save();
+
+            // Subscription trial just started — report it to Meta. A deterministic
+            // event_id keeps it idempotent if the success URL is hit more than once.
+            SendMetaConversionEvent::dispatchAfterResponse(
+                'StartTrial',
+                'starttrial_'.$user->id,
+                [
+                    'email' => $user->email,
+                    'external_id' => (string) $user->id,
+                    'client_ip_address' => $request->ip(),
+                    'client_user_agent' => $request->userAgent(),
+                ],
+                ['currency' => 'USD'],
+                $request->fullUrl(),
+            );
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Assinatura ativada! Bem-vindo ao Slidezz.']);

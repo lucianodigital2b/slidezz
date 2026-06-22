@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
+import SlideTemplateController from '@/actions/App/Http/Controllers/SlideTemplateController';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
 import {
@@ -43,6 +44,7 @@ interface WizardConfig {
     slideCount: number;
     imageMode: ImageMode;
     wordHighlight: boolean;
+    saveAsTemplate?: boolean;
 }
 
 interface InstagramAccount {
@@ -90,7 +92,14 @@ export default function SlideEditor() {
     const [title, setTitle] = useState(slideProject?.title ?? t('slideEditor.toolbar.untitled'));
     const [caption, setCaption] = useState(slideProject?.caption ?? '');
     const [projectId, setProjectId] = useState<number | null>(slideProject?.id ?? null);
+    // Mirror of projectId readable synchronously inside saveProject so chained
+    // autosaves can't fire a duplicate POST /store before the state updates.
+    const projectIdRef = useRef<number | null>(slideProject?.id ?? null);
+    const saveInFlightRef = useRef<Promise<number | null> | null>(null);
+    // Guards the wizard auto-generation against React StrictMode's double-invoke.
+    const wizardStartedRef = useRef(false);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+    const [templateStatus, setTemplateStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [igAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
     const [igPosting, setIgPosting] = useState(false);
     const [elementsOpen, setElementsOpen] = useState(false);
@@ -202,33 +211,77 @@ export default function SlideEditor() {
     // ─── Save ────────────────────────────────────────────────────────────────
 
     async function saveProject(): Promise<number | null> {
-        setSaveStatus('saving');
-        const body = { title, caption, format, slides };
-        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
-        try {
-            if (projectId) {
-                await fetch(SlideProjectController.update(projectId).url, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify(body),
-                });
-                setSaveStatus('saved');
-                return projectId;
-            } else {
+        // Chain onto any in-flight save so a second autosave waits for the first
+        // to assign a project id, instead of racing it into a duplicate POST /store.
+        const previous = saveInFlightRef.current;
+        const run = (async (): Promise<number | null> => {
+            if (previous) {
+                await previous.catch(() => {});
+            }
+            setSaveStatus('saving');
+            const body = { title, caption, format, slides };
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+            try {
+                const existingId = projectIdRef.current;
+                if (existingId) {
+                    await fetch(SlideProjectController.update(existingId).url, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify(body),
+                    });
+                    setSaveStatus('saved');
+                    return existingId;
+                }
                 const res = await fetch(SlideProjectController.store().url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify(body),
                 });
                 const data = await res.json();
+                projectIdRef.current = data.id ?? null;
                 setProjectId(data.id);
                 router.visit(SlideProjectController.edit(data.id).url, { replace: true, preserveState: true });
                 setSaveStatus('saved');
                 return data.id ?? null;
+            } catch {
+                setSaveStatus('error');
+                return null;
             }
+        })();
+        saveInFlightRef.current = run;
+        try {
+            return await run;
+        } finally {
+            if (saveInFlightRef.current === run) {
+                saveInFlightRef.current = null;
+            }
+        }
+    }
+
+    // ─── Save as reusable template ───────────────────────────────────────────
+    async function saveAsTemplate(slidesOverride?: Slide[]): Promise<void> {
+        const templateSlides = slidesOverride ?? slides;
+        if (templateSlides.length === 0) return;
+        setTemplateStatus('saving');
+
+        let thumbnail: string | null = null;
+        try {
+            thumbnail = stageRef.current?.toDataURL({ pixelRatio: 0.35, mimeType: 'image/jpeg', quality: 0.7 }) ?? null;
+        } catch { /* thumbnail is best-effort */ }
+
+        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+        try {
+            const res = await fetch(SlideTemplateController.store().url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ title, format, slides: templateSlides, thumbnail }),
+            });
+            if (!res.ok) throw new Error('save template failed');
+            setTemplateStatus('saved');
+            setTimeout(() => setTemplateStatus('idle'), 2500);
         } catch {
-            setSaveStatus('error');
-            return null;
+            setTemplateStatus('error');
+            setTimeout(() => setTemplateStatus('idle'), 2500);
         }
     }
 
@@ -243,6 +296,8 @@ export default function SlideEditor() {
     // ─── Auto-open AI modal from wizard ─────────────────────────────────────
     useEffect(() => {
         if (!wizardConfig) return;
+        if (wizardStartedRef.current) return;
+        wizardStartedRef.current = true;
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
         setAiSlideCount(wizardConfig.slideCount);
@@ -251,7 +306,14 @@ export default function SlideEditor() {
         const hl = wizardConfig.wordHighlight ?? true;
         setAiWordHighlight(hl);
         setAiModalOpen(true);
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true);
+        const shouldSaveTemplate = wizardConfig.saveAsTemplate ?? false;
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true)
+            .then((generated) => {
+                if (shouldSaveTemplate && generated && generated.length > 0) {
+                    // Let the canvas paint the generated slides before snapshotting the thumbnail.
+                    setTimeout(() => saveAsTemplate(generated), 400);
+                }
+            });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -726,6 +788,8 @@ export default function SlideEditor() {
                     onTitleChange={setTitle}
                     saveStatus={saveStatus}
                     onSave={saveProject}
+                    templateStatus={templateStatus}
+                    onSaveAsTemplate={() => saveAsTemplate()}
                     format={format}
                     onFormatChange={setFormat}
                     onExportPNG={exportPNG}

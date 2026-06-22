@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import {
-    Undo2, Redo2, Save, Image as ImageIcon, Loader2, Download,
+    Undo2, Redo2, Save, Image as ImageIcon, Loader2, Download, LayoutTemplate, Check,
     ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, CalendarIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,8 @@ interface EditorToolbarProps {
     onTitleChange: (title: string) => void;
     saveStatus: 'saved' | 'saving' | 'error';
     onSave: () => void;
+    templateStatus: 'idle' | 'saving' | 'saved' | 'error';
+    onSaveAsTemplate: () => void;
     format: Format;
     onFormatChange: (format: Format) => void;
     onExportPNG: () => void;
@@ -53,6 +55,7 @@ export function EditorToolbar({
     onImageUpload, onAddGradient,
     title, onTitleChange,
     saveStatus, onSave,
+    templateStatus, onSaveAsTemplate,
     format, onFormatChange,
     onExportPNG,
     instagramAccounts, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
@@ -146,6 +149,20 @@ export function EditorToolbar({
             <button onClick={onSave}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                 <Save className="w-4 h-4" /> {t('slideEditor.toolbar.save')}
+            </button>
+
+            {/* Save as template button */}
+            <button onClick={onSaveAsTemplate} disabled={templateStatus === 'saving'}
+                title={t('slideEditor.toolbar.saveAsTemplate')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-60 transition-colors">
+                {templateStatus === 'saving'
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : templateStatus === 'saved'
+                    ? <Check className="w-4 h-4 text-green-600" />
+                    : <LayoutTemplate className="w-4 h-4" />}
+                <span className="hidden lg:inline">
+                    {templateStatus === 'saved' ? t('slideEditor.toolbar.templateSaved') : t('slideEditor.toolbar.saveAsTemplate')}
+                </span>
             </button>
 
             {/* Format switcher */}

@@ -2,11 +2,10 @@ import { Form, Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AuthField, AuthPasswordField } from '@/components/auth/auth-fields';
+import CtaSubmit from '@/components/cta-submit';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import AuthBrandSplit from '@/layouts/auth/auth-brand-split';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
@@ -21,7 +20,11 @@ type Props = {
 const LOGIN_IMAGE =
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1000&h=1300&q=80';
 
-export default function Login({ status, canResetPassword, canRegister }: Props) {
+export default function Login({
+    status,
+    canResetPassword,
+    canRegister,
+}: Props) {
     const { t } = useTranslation();
 
     return (
@@ -49,7 +52,10 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                 autoComplete="email"
                                 placeholder={t('auth.login.emailPlaceholder')}
                             />
-                            <InputError message={errors.email} className="mt-1.5" />
+                            <InputError
+                                message={errors.email}
+                                className="mt-1.5"
+                            />
                         </div>
 
                         <div>
@@ -60,14 +66,19 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                 required
                                 tabIndex={2}
                                 autoComplete="current-password"
-                                placeholder={t('auth.login.passwordPlaceholder')}
+                                placeholder={t(
+                                    'auth.login.passwordPlaceholder',
+                                )}
                             />
-                            <InputError message={errors.password} className="mt-1.5" />
+                            <InputError
+                                message={errors.password}
+                                className="mt-1.5"
+                            />
                             {canResetPassword && (
                                 <div className="mt-2">
                                     <TextLink
                                         href={request()}
-                                        className="text-sm font-medium text-violet-600 no-underline hover:text-violet-700 hover:underline"
+                                        className="text-sm font-medium text-[#E8440A] no-underline hover:text-[#D13D09] hover:underline"
                                         tabIndex={5}
                                     >
                                         {t('auth.login.forgotPassword')}
@@ -87,27 +98,24 @@ export default function Login({ status, canResetPassword, canRegister }: Props) 
                                 id="remember"
                                 name="remember"
                                 tabIndex={3}
-                                className="data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600"
+                                className="data-[state=checked]:border-[#E8440A] data-[state=checked]:bg-[#E8440A]"
                             />
                         </div>
 
-                        <Button
-                            type="submit"
-                            disabled={processing}
+                        <CtaSubmit
+                            processing={processing}
                             tabIndex={4}
                             data-test="login-button"
-                            className="h-11 w-full rounded-xl bg-violet-600 text-white hover:bg-violet-700 focus-visible:ring-violet-500/40"
                         >
-                            {processing && <Spinner />}
                             {t('auth.login.submit')}
-                        </Button>
+                        </CtaSubmit>
 
                         {canRegister && (
                             <p className="text-center text-sm text-muted-foreground">
                                 {t('auth.login.noAccount')}{' '}
                                 <TextLink
                                     href={register()}
-                                    className="font-medium text-violet-600 no-underline hover:text-violet-700 hover:underline"
+                                    className="font-medium text-[#E8440A] no-underline hover:text-[#D13D09] hover:underline"
                                     tabIndex={6}
                                 >
                                     {t('auth.login.signUp')}

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SlideProject;
+use App\Models\SlideTemplate;
 use App\Models\Workspace;
 use App\Services\AI\CarouselGenerationService;
 use App\Services\AI\UrlContentExtractorService;
@@ -24,8 +25,15 @@ class CarouselWizardController extends Controller
         $workspace = Workspace::where('owner_id', $request->user()->id)->first();
         $carouselConfig = data_get($workspace?->profile, 'carousel');
 
+        $templates = $workspace
+            ? SlideTemplate::where('workspace_id', $workspace->id)
+                ->latest()
+                ->get(['id', 'title', 'format', 'thumbnail'])
+            : collect();
+
         return Inertia::render('CreateCarousel', [
             'workspaceConfig' => $carouselConfig,
+            'savedTemplates' => $templates,
         ]);
     }
 
@@ -72,6 +80,7 @@ class CarouselWizardController extends Controller
             'archetype' => ['nullable', 'string', 'max:100'],
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'save_config' => ['boolean'],
+            'save_as_template' => ['boolean'],
             'format' => ['nullable', 'string', 'in:post,stories'],
             'image_mode' => ['nullable', 'string', 'in:none,background,grid,alternate'],
             'word_highlight' => ['nullable', 'boolean'],
@@ -105,6 +114,7 @@ class CarouselWizardController extends Controller
             ->with('wizardStyle', $style)
             ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
             ->with('wizardImageMode', $validated['image_mode'] ?? 'background')
-            ->with('wizardWordHighlight', $validated['word_highlight'] ?? true);
+            ->with('wizardWordHighlight', $validated['word_highlight'] ?? true)
+            ->with('wizardSaveAsTemplate', $request->boolean('save_as_template'));
     }
 }

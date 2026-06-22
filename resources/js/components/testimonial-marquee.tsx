@@ -17,7 +17,10 @@ type TestimonialMarqueeProps = {
  * user prefers reduced motion. Cards use uniform right margin (not flex
  * `gap`) so the duplicated track loops seamlessly at exactly -50%.
  */
-export default function TestimonialMarquee({ items, speedSeconds = 60 }: TestimonialMarqueeProps) {
+export default function TestimonialMarquee({
+    items,
+    speedSeconds = 60,
+}: TestimonialMarqueeProps) {
     const loop = [...items, ...items];
 
     return (
@@ -26,7 +29,8 @@ export default function TestimonialMarquee({ items, speedSeconds = 60 }: Testimo
             style={{
                 WebkitMaskImage:
                     'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)',
-                maskImage: 'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)',
+                maskImage:
+                    'linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)',
             }}
         >
             <style>{`
@@ -51,7 +55,7 @@ export default function TestimonialMarquee({ items, speedSeconds = 60 }: Testimo
                         key={i}
                         aria-hidden={i >= items.length || undefined}
                         className="mr-5 flex w-[320px] flex-shrink-0 flex-col rounded-2xl bg-white p-7 sm:w-[360px]"
-                        style={{ border: '1px solid #1A1A1A' }}
+                        style={{ border: '1px solid #E8E7E2' }}
                     >
                         <blockquote className="flex-1 text-lg leading-relaxed font-medium text-[#333330]">
                             “{t.quote}”
@@ -64,8 +68,12 @@ export default function TestimonialMarquee({ items, speedSeconds = 60 }: Testimo
                                 {t.initials}
                             </div>
                             <div>
-                                <div className="font-extrabold text-[#1A1A1A]">{t.name}</div>
-                                <div className="text-sm font-semibold text-[#888880]">{t.role}</div>
+                                <div className="font-extrabold text-[#1A1A1A]">
+                                    {t.name}
+                                </div>
+                                <div className="text-sm font-semibold text-[#888880]">
+                                    {t.role}
+                                </div>
                             </div>
                         </figcaption>
                     </figure>

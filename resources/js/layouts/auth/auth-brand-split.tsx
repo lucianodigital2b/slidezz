@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import LanguageSwitcher from '@/components/language-switcher';
@@ -20,7 +20,14 @@ export default function AuthBrandSplit({
     children,
 }: AuthBrandSplitProps) {
     return (
-        <div className="relative flex min-h-svh flex-col bg-white lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="relative flex min-h-svh flex-col bg-white font-[Outfit,sans-serif] lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <Head>
+                <link rel="preconnect" href="https://fonts.bunny.net" />
+                <link
+                    href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800"
+                    rel="stylesheet"
+                />
+            </Head>
             <LanguageSwitcher className="absolute top-5 right-5 z-20" />
             <aside className="relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
                 <img
@@ -37,18 +44,22 @@ export default function AuthBrandSplit({
                     className="relative z-10 flex items-center gap-2.5 text-white"
                 >
                     <AppLogoIcon className="size-7" />
-                    <span className="text-lg font-semibold tracking-tight">Slidezz</span>
+                    <span className="mt-1 font-display text-2xl tracking-wide">
+                        Slidezz
+                    </span>
                 </Link>
 
                 <figure className="relative z-10 max-w-xl">
-                    <blockquote className="text-3xl leading-snug font-semibold tracking-tight text-balance text-white">
+                    <blockquote className="font-display text-[2.5rem] leading-[1.1] tracking-normal text-balance text-white">
                         “{testimonial.quote}”
                     </blockquote>
                     <figcaption className="mt-6">
                         <div className="text-base font-semibold text-white">
                             {testimonial.author}
                         </div>
-                        <div className="text-sm text-white/70">{testimonial.role}</div>
+                        <div className="text-sm text-white/70">
+                            {testimonial.role}
+                        </div>
                     </figcaption>
                 </figure>
             </aside>
@@ -58,16 +69,18 @@ export default function AuthBrandSplit({
                     href={home()}
                     className="mb-10 flex items-center gap-2.5 text-foreground lg:hidden"
                 >
-                    <AppLogoIcon className="size-7 text-violet-600" />
-                    <span className="text-lg font-semibold tracking-tight">Slidezz</span>
+                    <AppLogoIcon className="size-7 text-[#E8440A]" />
+                    <span className="mt-1 font-display text-2xl tracking-wide">
+                        Slidezz
+                    </span>
                 </Link>
 
                 <div className="mx-auto w-full max-w-sm">
-                    <div className="space-y-1.5">
-                        <h1 className="text-2xl font-bold tracking-tight text-balance text-foreground">
+                    <div className="space-y-2">
+                        <h1 className="font-display text-4xl tracking-normal text-balance text-foreground">
                             {title}
                         </h1>
-                        <p className="text-sm text-pretty text-muted-foreground">
+                        <p className="text-base text-pretty text-muted-foreground">
                             {description}
                         </p>
                     </div>

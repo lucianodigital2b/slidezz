@@ -16,20 +16,19 @@ colors:
   signal-green: "#28CA41"
   signal-lime: "#A3E635"
   badge-teal: "#0F766E"
-  app-accent: "#7C3AED"
 typography:
   display:
-    fontFamily: "Bebas Neue, Impact, sans-serif"
+    fontFamily: "Euclid Circular A, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(2.75rem, 6vw, 5.5rem)"
-    fontWeight: 400
+    fontWeight: 700
     lineHeight: 0.95
-    letterSpacing: "normal"
+    letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Bebas Neue, Impact, sans-serif"
+    fontFamily: "Euclid Circular A, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(2.25rem, 4vw, 3.75rem)"
-    fontWeight: 400
+    fontWeight: 700
     lineHeight: 1
-    letterSpacing: "normal"
+    letterSpacing: "-0.02em"
   title:
     fontFamily: "Outfit, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
@@ -95,13 +94,13 @@ Slidezz looks like a confident risograph poster that learned to run software. Th
 
 This system explicitly rejects the three things PRODUCT.md names as anti-references. It is **not Canva**: no pastel friendliness, no rounded "anyone can design this" softness, no beginner hand-holding. It is **not generic SaaS**: no cream-and-slate gradient hero blobs, no floating glass cards, no "all-in-one platform for teams" polish that says nothing. It is **not AI-tool aesthetic**: no neon-on-black, no neural-net grids, no "powered by GPT" badging. The AI is plumbing; the voice is a creator.
 
-There are two registers in the product. The **brand surface** (landing pages, marketing, auth split panels) is the loud one documented above and below. The **in-app product surface** (editor, dashboard, settings) runs a deliberately quieter neutral utility layer: near-grayscale OKLCH neutrals, the humanist `Instrument Sans`, shadcn/ui primitives, and a violet (`#7C3AED`) action accent. The quiet layer exists so dense tool screens stay legible; it does not get to redecorate the brand.
+There are two registers in the product. The **brand surface** (landing pages, marketing, auth split panels) is the loud one documented above and below. The **in-app product surface** (editor, dashboard, settings) runs a deliberately quieter neutral utility layer: near-grayscale OKLCH neutrals, the humanist `Instrument Sans`, and shadcn/ui primitives. Flame (`#E8440A`) remains the single action accent across both registers; the quiet layer exists so dense tool screens stay legible, not to introduce a second brand color.
 
 **Key Characteristics:**
 - Warm off-white ground (`#F9F6F4`), never flat white; the 40px ink grid is a hero-right accent, not a global wash.
 - Hard 1px ink hairlines as the primary structural device.
 - One molten-orange accent, used sparingly and always for action.
-- Condensed display caps (Bebas Neue) against a clean geometric body (Outfit).
+- Bold geometric display (Euclid Circular A) against a clean geometric body (Outfit).
 - Squared, blocky, poster-like; corners are modest, borders are loud.
 
 ## 2. Colors
@@ -125,7 +124,7 @@ A warm, high-contrast palette: aged-paper ground, near-black ink, and a single s
 ### Tertiary (signals only)
 - **Signal Green** (`#28CA41`) / **Signal Lime** (`#A3E635`): Discount and savings badges only.
 - **Badge Teal** (`#0F766E`): The "Most popular" plan flag. Never as a general accent.
-- **App Accent — Violet** (`#7C3AED`): In-app/auth only. The product UI's action color (buttons, focus rings, links). It belongs to the quiet layer and must not appear on brand/marketing surfaces.
+- **Flame in-app** (`#E8440A`): The same flame accent carries the product UI's action color (buttons, focus rings, links) on in-app/auth surfaces. There is no separate app accent.
 
 ### Named Rules
 **The One Flame Rule.** Orange (`#E8440A`) is the only saturated hue on a brand surface, and it never exceeds ~10% of a screen. It means "do this." If two things are orange, one of them is lying about its importance.
@@ -138,23 +137,23 @@ A warm, high-contrast palette: aged-paper ground, near-black ink, and a single s
 
 ## 3. Typography
 
-**Display Font:** Bebas Neue (with Impact, sans-serif fallback)
+**Display Font:** Euclid Circular A (with ui-sans-serif, system-ui, sans-serif fallback)
 **Body Font:** Outfit (with ui-sans-serif, system-ui fallback), weights 400–800
 **App/Product Font:** Instrument Sans (in-app and auth surfaces only)
 
-**Character:** A condensed grotesque shouting in caps over a calm, geometric humanist sans. The contrast *is* the brand: Bebas gives poster-grade impact and confidence, Outfit keeps the reading experience modern and unfussy. The pairing should feel like a billboard with clean fine print, never like a magazine spread.
+**Character:** A bold geometric grotesque set large over a calm, geometric humanist sans. The contrast *is* the brand: Euclid Circular A in heavy weights with tight tracking gives poster-grade impact and confidence, Outfit keeps the reading experience modern and unfussy. The pairing should feel like a billboard with clean fine print, never like a magazine spread.
 
 ### Hierarchy
-- **Display** (Bebas Neue 400, `clamp(2.75rem, 6vw, 5.5rem)`, line-height 0.95): Hero and final-CTA headlines. Always tight leading, frequently with one phrase in Flame.
-- **Headline** (Bebas Neue 400, `clamp(2.25rem, 4vw, 3.75rem)`, line-height 1): Section titles ("Números que falam por si sós").
+- **Display** (Euclid Circular A 700, `clamp(2.75rem, 6vw, 5.5rem)`, line-height 0.95, letter-spacing -0.02em): Hero and final-CTA headlines. Always tight leading, frequently with one phrase in Flame.
+- **Headline** (Euclid Circular A 700, `clamp(2.25rem, 4vw, 3.75rem)`, line-height 1, letter-spacing -0.02em): Section titles ("Números que falam por si sós").
 - **Title** (Outfit 800, 1.5rem): Card and plan names, in-mockup labels. This is where Outfit goes heaviest.
 - **Body** (Outfit 500, 1.125rem, line-height 1.6): All paragraph and list copy. Keep measure at 65–75ch; hero supporting copy caps around `max-w-lg`/`max-w-2xl`.
 - **Label** (Outfit 700, 0.8125rem, letter-spacing 0.12em, UPPERCASE): Eyebrows and kickers above headlines ("Resultados", "What's inside").
 
 ### Named Rules
-**The Caps-For-Impact Rule.** All-caps is reserved for the Bebas display/headline tier and short Outfit labels. Never set body copy or long strings in caps.
+**The Caps-For-Impact Rule.** All-caps is reserved for the Euclid display/headline tier and short Outfit labels. Never set body copy or long strings in caps.
 
-**The Bebas Needs Air Rule.** Bebas Neue renders optically smaller and rides high; give it tight line-height (0.95–1.0) but never cram two display lines without breathing room. Pair big Bebas only with Outfit, never with another display face.
+**The Display Needs Air Rule.** Set the Euclid display tier heavy (700) with tight line-height (0.95–1.0) and negative tracking, but never cram two display lines without breathing room. Pair the big Euclid display only with Outfit, never with another display face.
 
 ## 4. Elevation
 
@@ -163,7 +162,7 @@ The brand surface is **flat and line-driven**. Depth comes from hard 1px Ink bor
 ### Shadow Vocabulary
 - **Float** (`box-shadow: 0 24px 48px rgba(0,0,0,0.1)`): The hero product mockup and other large floating panels.
 - **Card Lift** (`shadow-sm` → `shadow-lg` on the emphasized plan): Pricing cards; the popular tier sits one step higher than its siblings.
-- **App Focus Ring** (`0 0 0 3px rgba(124,58,237,0.20)`): In-app/auth inputs only; the violet focus halo.
+- **App Focus Ring** (`0 0 0 3px rgba(232,68,10,0.20)`): In-app/auth inputs only; the flame focus halo.
 
 ### Named Rules
 **The Borders-Not-Shadows Rule.** On brand surfaces, separation is a 1px Ink line first. Reach for shadow only when an element genuinely floats above the page (mockup, sticky bar, the one elevated plan). If a card needs a shadow just to be visible, it needed a border instead.
@@ -189,14 +188,14 @@ The brand surface is **flat and line-driven**. Depth comes from hard 1px Ink bor
 
 ### Inputs / Fields (app + auth layer)
 - **Style:** White fill, 1px neutral border, ~12px radius. Auth uses an inset-label field: a tiny uppercase-ish label sits above the value inside the bordered box.
-- **Focus:** Violet border + 3px violet glow (`rgba(124,58,237,0.20)`). This is the only place violet touches an input.
+- **Focus:** Flame border + 3px flame glow (`rgba(232,68,10,0.20)`).
 
 ### Navigation
-- **Style:** Sticky, Paper at 92% opacity with 12px backdrop blur; the marketing nav carries a 1px Ink bottom border. Logo lockup is the layers mark in an Ink (or white, inverted) rounded square plus the "Slidezz" wordmark in Bebas.
+- **Style:** Sticky, Paper at 92% opacity with 12px backdrop blur; the marketing nav carries a 1px Ink bottom border. Logo lockup is the layers mark in an Ink (or white, inverted) rounded square plus the "Slidezz" wordmark in Euclid Circular A.
 - **Links:** Outfit 600, Ink Faint default, Ink on hover. Primary CTA pill sits at the right.
 
 ### Signature Component — Split Hero
-A two-column hero on the `#F9F6F4` ground. Left: an outlined badge pill, a large Bebas headline with one phrase in Flame, a lean subhead, an email-capture row (pill input + ink pill button), and a small social-proof row (overlapping initial avatars + one line). Right: a tall image card (`rounded-[2rem]`, 1px ink border, soft float shadow, 4:5 portrait, grayscale by default) with a small white floating stat card overlapping its lower-left (icon + bold stat + sublabel, two stacked rows) and a row of pager dots beneath. The only grid on the page sits behind this image, radially masked to fade.
+A two-column hero on the `#F9F6F4` ground. Left: an outlined badge pill, a large Euclid Circular A headline with one phrase in Flame, a lean subhead, an email-capture row (pill input + ink pill button), and a small social-proof row (overlapping initial avatars + one line). Right: a tall image card (`rounded-[2rem]`, 1px ink border, soft float shadow, 4:5 portrait, grayscale by default) with a small white floating stat card overlapping its lower-left (icon + bold stat + sublabel, two stacked rows) and a row of pager dots beneath. The only grid on the page sits behind this image, radially masked to fade.
 
 ### Signature Component — Inverted Comparison / Proof Sections
 Full-bleed `#1A1A1A` bands that interrupt the warm paper flow: Panel Raised cards, Flame eyebrows, white display headlines, and X-marks (`#666660`) for the "old way" vs. Flame checks for the Slidezz way. This light→dark→light rhythm is core to the page cadence; use it to mark a shift from problem to payoff.
@@ -210,8 +209,8 @@ An edge-to-edge, auto-scrolling row of white, Ink-bordered quote cards (`testimo
 - **Do** ground brand pages in Paper (`#F9F6F4`); reserve white for cards on top, and confine the 40px ink grid to the hero-right accent.
 - **Do** structure with 1px Ink (`#1A1A1A`) borders before reaching for any shadow.
 - **Do** keep Flame (`#E8440A`) to ~10% of a screen and only on actions.
-- **Do** set headlines in Bebas Neue caps, large, with tight leading and at most one phrase in Flame.
-- **Do** keep the in-app violet (`#7C3AED`) strictly inside product/auth surfaces.
+- **Do** set headlines in Euclid Circular A, bold and large, with tight leading and at most one phrase in Flame.
+- **Do** use Flame (`#E8440A`) as the single action accent on both brand and product/auth surfaces.
 - **Do** write copy that earns its place: outcomes (saves, DMs, consulting closes), lean and direct, confident without hype.
 
 ### Don't:

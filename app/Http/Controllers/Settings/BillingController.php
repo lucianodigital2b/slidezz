@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Services\Billing\BillingCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -11,7 +12,7 @@ use Laravel\Cashier\Exceptions\IncompletePayment;
 
 class BillingController extends Controller
 {
-    public function edit(Request $request): Response
+    public function edit(Request $request, BillingCatalog $catalog): Response
     {
         $user = $request->user();
         $subscription = $user->subscription();
@@ -28,7 +29,7 @@ class BillingController extends Controller
         }
 
         return Inertia::render('settings/billing', [
-            'plans' => config('plans'),
+            'plans' => $catalog->plans($catalog->currencyFor($request)),
             'subscription' => $subscription ? [
                 'name' => $subscription->name,
                 'stripe_status' => $subscription->stripe_status,
@@ -43,7 +44,7 @@ class BillingController extends Controller
         ]);
     }
 
-    public function subscribe(Request $request): RedirectResponse
+    public function subscribe(Request $request, BillingCatalog $catalog): RedirectResponse
     {
         $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
@@ -51,8 +52,9 @@ class BillingController extends Controller
         ]);
 
         $cycle = $request->input('cycle', 'monthly');
-        $plan = config('plans.'.$request->plan);
-        $priceId = $plan[$cycle]['price_id'];
+        $priceId = $catalog->subscriptionPriceId($request->plan, $cycle, $catalog->currencyFor($request));
+
+        abort_if(! $priceId, 404, 'Plan price not configured for this currency.');
 
         try {
             $checkout = $request->user()

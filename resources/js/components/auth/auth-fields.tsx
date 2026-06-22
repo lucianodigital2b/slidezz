@@ -3,7 +3,7 @@ import { type ComponentProps, type ReactNode, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const shellClasses =
-    'group rounded-xl border border-input bg-white px-3.5 py-2 shadow-xs transition-[color,box-shadow] focus-within:border-violet-500 focus-within:ring-[3px] focus-within:ring-violet-500/20';
+    'group rounded-xl border border-input bg-white px-3.5 py-2 shadow-xs transition-[color,box-shadow] focus-within:border-[#E8440A] focus-within:ring-[3px] focus-within:ring-[#E8440A]/20';
 
 const labelClasses = 'block text-[11px] font-medium tracking-wide text-muted-foreground';
 
@@ -72,7 +72,7 @@ export function GoogleButton({ href, children }: { href: string; children: React
     return (
         <a
             href={href}
-            className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-input bg-white text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-muted/60 focus-visible:ring-[3px] focus-visible:ring-violet-500/30 focus-visible:outline-none"
+            className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-input bg-white text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-muted/60 focus-visible:ring-[3px] focus-visible:ring-[#E8440A]/30 focus-visible:outline-none"
         >
             <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
                 <path

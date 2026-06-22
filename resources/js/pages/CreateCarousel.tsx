@@ -10,6 +10,7 @@ import {
     Image,
     ImageOff,
     Layers,
+    LayoutTemplate,
     Loader2,
     X,
 } from 'lucide-react';
@@ -48,8 +49,16 @@ interface WorkspaceConfig {
     archetype?: ArchetypeId;
 }
 
+interface SavedTemplate {
+    id: number;
+    title: string;
+    format: 'post' | 'stories';
+    thumbnail: string | null;
+}
+
 interface PageProps extends Record<string, unknown> {
     workspaceConfig: WorkspaceConfig | null;
+    savedTemplates: SavedTemplate[];
     auth: { credits: number };
 }
 
@@ -220,7 +229,7 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
 
 export default function CreateCarousel() {
     const { t } = useTranslation();
-    const { workspaceConfig, auth } = usePage<PageProps>().props;
+    const { workspaceConfig, savedTemplates, auth } = usePage<PageProps>().props;
 
     const [step, setStep]                   = useState(1);
     const [title, setTitle]                 = useState('');
@@ -231,6 +240,7 @@ export default function CreateCarousel() {
     const [slideCount, setSlideCount]       = useState(3);
     const [imageMode, setImageMode] = useState<ImageMode>('background');
     const [saveConfig, setSaveConfig]       = useState(false);
+    const [saveAsTemplate, setSaveAsTemplate] = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
@@ -260,6 +270,13 @@ export default function CreateCarousel() {
         if (importedTopic) setTopic(importedTopic);
     }
 
+    function applySavedTemplate(id: number) {
+        if (submitting) return;
+        setSubmitting(true);
+        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+        router.post(`/slide-templates/${id}/use`, {}, { headers: { 'X-CSRF-TOKEN': csrfToken } });
+    }
+
     function handleSubmit() {
         if (submitting) return;
         if (auth.credits <= 0) {
@@ -270,7 +287,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, format, custom_prompt: customPrompt, image_mode: imageMode },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -314,6 +331,41 @@ export default function CreateCarousel() {
                                 <h2 className="text-xl font-bold text-gray-900">{t('createCarousel.step1.title')}</h2>
                                 <p className="text-sm text-gray-500 mt-1">{t('createCarousel.step1.subtitle')}</p>
                             </div>
+
+                            {/* Start from a saved template */}
+                            {savedTemplates.length > 0 && (
+                                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                        {t('createCarousel.step3.savedTemplatesTitle')}
+                                    </h3>
+                                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                                        {savedTemplates.map((tpl) => (
+                                            <button
+                                                key={tpl.id}
+                                                type="button"
+                                                onClick={() => applySavedTemplate(tpl.id)}
+                                                disabled={submitting}
+                                                title={`${tpl.title} — ${t('createCarousel.step3.useTemplate')}`}
+                                                className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 p-1.5 text-left hover:border-[#E8440A] disabled:opacity-60 transition-colors"
+                                            >
+                                                <div
+                                                    className="relative w-full overflow-hidden rounded-lg bg-gray-100"
+                                                    style={{ aspectRatio: tpl.format === 'stories' ? '9 / 16' : '4 / 5' }}
+                                                >
+                                                    {tpl.thumbnail ? (
+                                                        <img src={tpl.thumbnail} alt={tpl.title} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-gray-300">
+                                                            <LayoutTemplate className="h-6 w-6" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <p className="truncate px-1 text-[11px] font-medium text-gray-700">{tpl.title}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
                                 {/* Title */}
@@ -564,6 +616,25 @@ export default function CreateCarousel() {
                                 <div>
                                     <p className="text-sm font-semibold text-gray-800">{t('createCarousel.step3.saveConfigLabel')}</p>
                                     <p className="text-xs text-gray-500 mt-0.5">{t('createCarousel.step3.saveConfigDesc')}</p>
+                                </div>
+                            </button>
+
+                            {/* Save generated result as a reusable template */}
+                            <button
+                                type="button"
+                                onClick={() => setSaveAsTemplate((v) => !v)}
+                                className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                                    saveAsTemplate ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                                    saveAsTemplate ? 'border-[#E8440A] bg-[#E8440A]' : 'border-gray-300'
+                                }`}>
+                                    {saveAsTemplate && <Check className="h-3 w-3 text-white" />}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-800">{t('createCarousel.step3.saveAsTemplateLabel')}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{t('createCarousel.step3.saveAsTemplateDesc')}</p>
                                 </div>
                             </button>
                         </div>

@@ -228,6 +228,8 @@
     "prev": "Ant",
     "next": "Próx",
     "recentLabel": "Projetos Recentes",
+    "heroEyebrow": "Painel",
+    "heroSubtitle": "Gere um carrossel completo em menos de 1 minuto, ou comece do zero no editor.",
     "searchPlaceholder": "Buscar projetos...",
     "noResults": "Nenhum projeto encontrado para sua busca.",
     "clearSearch": "Limpar busca",
@@ -340,6 +342,8 @@
       "saved": "Salvo",
       "saveError": "Erro ao salvar",
       "save": "Salvar",
+      "saveAsTemplate": "Salvar como template",
+      "templateSaved": "Template salvo",
       "exportPng": "Exportar PNG",
       "undo": "Desfazer (Ctrl+Z)",
       "redo": "Refazer (Ctrl+Y)"
@@ -700,6 +704,11 @@
       "customPromptPlaceholder": "ex: Use um tom formal, foque em dados e estatísticas, evite jargões...",
       "saveConfigLabel": "Salvar como padrão do autopiloto IA",
       "saveConfigDesc": "Este template e arquétipo serão usados automaticamente nas próximas gerações do autopiloto.",
+      "saveAsTemplateLabel": "Salvar resultado como template",
+      "saveAsTemplateDesc": "Quando a IA terminar de gerar, o carrossel será salvo como um template reutilizável.",
+      "savedTemplatesTitle": "Seus templates salvos",
+      "savedTemplatesEmpty": "Você ainda não salvou nenhum template.",
+      "useTemplate": "Usar este template",
       "generateBtn": "Gerar Carrossel"
     },
     "import": {

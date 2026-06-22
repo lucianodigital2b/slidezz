@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Billing\BillingCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class CreditController extends Controller
 {
-    public function purchase(Request $request): RedirectResponse
+    public function purchase(Request $request, BillingCatalog $catalog): RedirectResponse
     {
         $request->validate([
             'pack' => ['required', 'string'],
@@ -15,10 +16,11 @@ class CreditController extends Controller
 
         $packs = collect(config('credits.packs'));
         $pack = $packs->firstWhere('key', $request->input('pack'));
+        $priceId = $catalog->creditPackPriceId($request->input('pack'), $catalog->currencyFor($request));
 
-        abort_if(! $pack || ! $pack['price_id'], 404, 'Credit pack not found.');
+        abort_if(! $pack || ! $priceId, 404, 'Credit pack not found.');
 
-        $checkout = $request->user()->checkout($pack['price_id'], [
+        $checkout = $request->user()->checkout($priceId, [
             'success_url' => route('dashboard').'?credits_purchased=1',
             'cancel_url' => route('dashboard'),
             'metadata' => [

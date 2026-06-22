@@ -79,10 +79,14 @@ class BillingControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('billing.edit'))
             ->assertInertia(fn ($page) => $page
+                ->has('plans.starter')
                 ->has('plans.pro')
-                ->has('plans.business')
                 ->where('plans.pro.name', 'Pro')
-                ->where('plans.business.name', 'Business')
+                ->where('plans.starter.name', 'Starter')
+                // Plans are flattened per currency by BillingCatalog.
+                ->where('plans.pro.currency', 'usd')
+                ->has('plans.pro.price_label')
+                ->has('plans.pro.monthly.price_id')
             );
     }
 

@@ -15,6 +15,7 @@ export interface SlideData {
     imagePrompt: string;
     highlightWords?: string[];
     highlightColor?: string;
+    highlightGradient?: string[];
     stat?: string;
     ctaPill?: string;
 }
@@ -54,19 +55,25 @@ export function useAiGeneration(
         setAiStatus('idle');
     }
 
-    function buildRichText(text: string, highlightWords: string[], normalColor: string, highlightColor: string): RichSpan[] {
+    function buildRichText(text: string, highlightWords: string[], normalColor: string, highlightColor: string, highlightGradient?: string[]): RichSpan[] {
         if (!highlightWords.length) return [{ text, color: normalColor }];
         const escaped = highlightWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
         const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+        const gradient = highlightGradient && highlightGradient.length >= 2 ? highlightGradient : undefined;
         const spans: RichSpan[] = [];
         let lastIndex = 0;
         for (const match of text.matchAll(pattern)) {
             if (match.index! > lastIndex) spans.push({ text: text.slice(lastIndex, match.index), color: normalColor });
-            spans.push({ text: match[0], color: highlightColor });
+            spans.push({ text: match[0], color: highlightColor, ...(gradient ? { gradient } : {}) });
             lastIndex = match.index! + match[0].length;
         }
         if (lastIndex < text.length) spans.push({ text: text.slice(lastIndex), color: normalColor });
         return spans.length > 0 ? spans : [{ text, color: normalColor }];
+    }
+
+    function resolveAccessibleGradient(gradient: string[] | undefined, background: string): string[] | undefined {
+        if (!gradient || gradient.length < 2) return undefined;
+        return gradient.map((stop) => resolveAccessibleHighlightColor(stop, background));
     }
 
     function pickSingleHighlightWord(title: string, highlightWords: string[] | undefined): string[] {
@@ -118,6 +125,7 @@ export function useAiGeneration(
             const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides);
 
             const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, scene.background);
+            const highlightGradient = resolveAccessibleGradient(data.highlightGradient, scene.background);
             const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
 
             if (highlightWords.length > 0) {
@@ -125,7 +133,7 @@ export function useAiGeneration(
                     (el): el is TextEl => el.type === 'text' && el.text === data.title,
                 );
                 if (titleEl) {
-                    titleEl.richText = buildRichText(data.title, highlightWords, titleEl.fill, highlightColor);
+                    titleEl.richText = buildRichText(data.title, highlightWords, titleEl.fill, highlightColor, highlightGradient);
                 }
             }
 
@@ -214,11 +222,12 @@ export function useAiGeneration(
         const titleLetterSpacing = template?.letterSpacing ?? -1;
 
         const highlightColor = resolveAccessibleHighlightColor(data.highlightColor, backgroundColor);
+        const highlightGradient = resolveAccessibleGradient(data.highlightGradient, backgroundColor);
         const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
         const titlePadding = 28;
         const descriptionPadding = 16;
         const titleRichText = highlightWords.length > 0
-            ? buildRichText(data.title, highlightWords, textColor, highlightColor)
+            ? buildRichText(data.title, highlightWords, textColor, highlightColor, highlightGradient)
             : undefined;
 
         const titleFontSize = fitTextFontSize(data.title, titleFont, titleFontStyle, 80, 1.15, titleLetterSpacing, contentWidth, titleHeight, titlePadding);
@@ -364,6 +373,8 @@ export function useAiGeneration(
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
 
+        const aspectRatio = format === 'stories' ? '9:16' : '4:5';
+
         if (shouldGenerateImages) {
             imageResults = await Promise.allSettled(
                 parsedSlides.map(async (s) => {
@@ -372,7 +383,7 @@ export function useAiGeneration(
                         const r = await fetch(CarouselGenerationController.generateImage().url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                            body: JSON.stringify({ prompt: s.imagePrompt }),
+                            body: JSON.stringify({ prompt: s.imagePrompt, aspect_ratio: aspectRatio }),
                         });
                         if (!r.ok) return null;
                         const data = await r.json() as { base64?: string };
@@ -403,6 +414,8 @@ export function useAiGeneration(
         setAiModalOpen(false);
         setAiStatus('idle');
         isGeneratingRef.current = false;
+
+        return newSlides;
     }
 
     return {

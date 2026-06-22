@@ -1,8 +1,9 @@
 import '@/i18n';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { trackPageView } from '@/lib/meta';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
@@ -39,6 +40,10 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+// Fire a Meta Pixel PageView on every Inertia (SPA) navigation. The initial
+// page load is already tracked by the base code in app.blade.php.
+router.on('navigate', () => trackPageView());
 
 // This will set light / dark mode on load...
 initializeTheme();

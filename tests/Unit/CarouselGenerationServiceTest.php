@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use App\Services\AI\CarouselGenerationService;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Testing\ImageResponseFake;
 use Prism\Prism\Testing\TextResponseFake;
@@ -18,6 +20,8 @@ class CarouselGenerationServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = new CarouselGenerationService;
+        config(['services.unsplash.access_key' => 'test-access-key']);
+        config(['services.carousel_image.driver' => 'unsplash']);
     }
 
     // ─── buildStyle ──────────────────────────────────────────────────────────
@@ -64,27 +68,33 @@ class CarouselGenerationServiceTest extends TestCase
         $this->assertInstanceOf(StreamedResponse::class, $response);
     }
 
-    // ─── generateImage ───────────────────────────────────────────────────────
+    // ─── generateImage (Unsplash) ─────────────────────────────────────────────
 
     public function test_generate_image_returns_base64_data_uri(): void
     {
-        Prism::fake([
-            ImageResponseFake::make()->withImages([
-                new GeneratedImage(base64: 'abc123def456'),
+        Http::fake([
+            'api.unsplash.com/*' => Http::response([
+                'results' => [
+                    ['urls' => ['regular' => 'https://images.unsplash.com/photo-1.jpg']],
+                ],
+            ]),
+            'images.unsplash.com/*' => Http::response('binary-image-bytes', 200, [
+                'Content-Type' => 'image/jpeg',
             ]),
         ]);
 
         $result = $this->service->generateImage('a scenic mountain landscape');
 
-        $this->assertEquals('data:image/png;base64,abc123def456', $result);
+        $this->assertEquals(
+            'data:image/jpeg;base64,'.base64_encode('binary-image-bytes'),
+            $result,
+        );
     }
 
-    public function test_generate_image_throws_when_base64_is_missing(): void
+    public function test_generate_image_throws_when_no_results_found(): void
     {
-        Prism::fake([
-            ImageResponseFake::make()->withImages([
-                new GeneratedImage(url: 'https://example.com/image.png'),
-            ]),
+        Http::fake([
+            'api.unsplash.com/*' => Http::response(['results' => []]),
         ]);
 
         $this->expectException(\RuntimeException::class);
@@ -93,16 +103,111 @@ class CarouselGenerationServiceTest extends TestCase
         $this->service->generateImage('a scenic mountain landscape');
     }
 
-    public function test_generate_image_passes_prompt_to_prism(): void
+    public function test_generate_image_throws_when_access_key_is_missing(): void
     {
-        $fake = Prism::fake([
-            ImageResponseFake::make()->withImages([
-                new GeneratedImage(base64: 'xyz'),
+        config(['services.unsplash.access_key' => null]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Image generation failed');
+
+        $this->service->generateImage('a scenic mountain landscape');
+    }
+
+    public function test_generate_image_sends_prompt_as_unsplash_query(): void
+    {
+        Http::fake([
+            'api.unsplash.com/*' => Http::response([
+                'results' => [
+                    ['urls' => ['regular' => 'https://images.unsplash.com/photo-1.jpg']],
+                ],
+            ]),
+            'images.unsplash.com/*' => Http::response('img', 200, [
+                'Content-Type' => 'image/jpeg',
             ]),
         ]);
 
         $this->service->generateImage('bright neon city at night');
 
-        $fake->assertPrompt('bright neon city at night');
+        Http::assertSent(function (Request $request) {
+            return str_starts_with($request->url(), 'https://api.unsplash.com/search/photos')
+                && ($request->data()['query'] ?? null) === 'bright neon city at night';
+        });
+    }
+
+    // ─── generateImage (OpenAI driver via config switch) ──────────────────────
+
+    public function test_generate_image_uses_openai_when_driver_is_openai(): void
+    {
+        config(['services.carousel_image.driver' => 'openai']);
+
+        $fake = Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage(base64: 'abc123def456'),
+            ]),
+        ]);
+
+        $result = $this->service->generateImage('a scenic mountain landscape');
+
+        $this->assertEquals('data:image/png;base64,abc123def456', $result);
+        $fake->assertPrompt('a scenic mountain landscape');
+    }
+
+    public function test_generate_image_with_openai_throws_when_no_image_data(): void
+    {
+        Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage,
+            ]),
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Image generation failed');
+
+        $this->service->generateImageWithOpenAi('a scenic mountain landscape');
+    }
+
+    // ─── generateImage (Gemini driver) ────────────────────────────────────────
+
+    public function test_generate_image_uses_gemini_when_driver_is_gemini(): void
+    {
+        config(['services.carousel_image.driver' => 'gemini']);
+
+        $fake = Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage(base64: 'geminibytes', mimeType: 'image/png'),
+            ]),
+        ]);
+
+        $result = $this->service->generateImage('cinematic portrait of an athlete');
+
+        $this->assertEquals('data:image/png;base64,geminibytes', $result);
+        $fake->assertPrompt('cinematic portrait of an athlete');
+    }
+
+    public function test_generate_image_with_gemini_uses_returned_mime_type(): void
+    {
+        Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage(base64: 'jpegbytes', mimeType: 'image/jpeg'),
+            ]),
+        ]);
+
+        $result = $this->service->generateImageWithGemini('a neon city skyline', '9:16');
+
+        $this->assertEquals('data:image/jpeg;base64,jpegbytes', $result);
+    }
+
+    public function test_generate_image_with_gemini_throws_when_no_image_data(): void
+    {
+        Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage,
+            ]),
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Image generation failed');
+
+        $this->service->generateImageWithGemini('a scenic mountain landscape');
     }
 }

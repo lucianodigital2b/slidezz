@@ -52,6 +52,16 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'unsplash' => [
+        'access_key' => env('UNSPLASH_ACCESS_KEY'),
+    ],
+
+    'carousel_image' => [
+        // Image generation driver: 'gemini' (gemini-2.5-flash-image, cinematic
+        // subject-accurate), 'openai' (gpt-image-1, paid), or 'unsplash' (free stock search).
+        'driver' => env('CAROUSEL_IMAGE_DRIVER', 'gemini'),
+    ],
+
     'deepseek' => [
         'api_key' => env('DEEPSEEK_API_KEY'),
     ],
@@ -63,6 +73,16 @@ return [
     'elevenlabs' => [
         'api_key' => env('ELEVENLABS_API_KEY'),
         'voice_id' => env('ELEVENLABS_VOICE_ID'),
+    ],
+
+    'meta' => [
+        // Browser Pixel id (also used by the Conversions API endpoint).
+        'pixel_id' => env('META_PIXEL_ID'),
+        // Conversions API system-user access token.
+        'capi_token' => env('META_CAPI_TOKEN'),
+        // Optional: set while validating events in Events Manager > Test events.
+        'test_event_code' => env('META_TEST_EVENT_CODE'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v21.0'),
     ],
 
 ];
