@@ -102,7 +102,12 @@
       "exportAllZip": "All slides (ZIP, {{count}})",
       "exportMetadata": "Debug: export metadata (JSON)",
       "undo": "Undo (Ctrl+Z)",
-      "redo": "Redo (Ctrl+Y)"
+      "redo": "Redo (Ctrl+Y)",
+      "overview": "Overview",
+      "editView": "Edit"
+    },
+    "strip": {
+      "clickToEdit": "Click a slide to edit it"
     },
     "slides": {
       "panel": "SLIDES",

@@ -25,7 +25,7 @@ import { createZip } from '@/components/SlideEditor/zip';
 import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/SlideEditor/templates';
 
 import { EditorToolbar } from '@/components/SlideEditor/EditorToolbar';
-import { CanvasArea } from '@/components/SlideEditor/CanvasArea';
+import { CanvasArea, SLIDE_GAP, slideOffsetX } from '@/components/SlideEditor/CanvasArea';
 import { SlideGlobalPanel } from '@/components/SlideEditor/SlideGlobalPanel';
 import { SlideRightPanel } from '@/components/SlideEditor/SlideRightPanel';
 
@@ -129,7 +129,6 @@ export default function SlideEditor() {
     const trRef = useRef<Konva.Transformer>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [displayW, setDisplayW] = useState(600);
-    const [displayH, setDisplayH] = useState(600);
     const [showSafeAreaGuide, setShowSafeAreaGuide] = useState(false);
 
     const safeIdx = Math.max(0, Math.min(currentIdx, slides.length - 1));
@@ -150,23 +149,27 @@ export default function SlideEditor() {
     const safeAreaPadding = useMemo(() => getSafeAreaPadding(format), [format]);
 
     // ── Canvas sizing ────────────────────────────────────────────────────────
+    // `displayW` describes a single slide; the row is laid out from it plus
+    // SLIDE_GAP. We size so up to 3 slides fit across the visible width (and
+    // within the height); any beyond that scroll horizontally.
     useEffect(() => {
         const recalc = () => {
             if (!containerRef.current) return;
             const { width, height } = containerRef.current.getBoundingClientRect();
-            const pad = 64;
+            const pad = 96;
             const fmt = FORMATS[format];
-            const scaleByW = (width - pad) / fmt.w;
+            const visible = Math.min(Math.max(1, slides.length), 3);
+            const visibleRowW = fmt.w * visible + SLIDE_GAP * (visible - 1);
             const scaleByH = (height - pad) / fmt.h;
-            const s = Math.min(scaleByW, scaleByH, 720 / Math.max(fmt.w, fmt.h));
-            setDisplayW(Math.max(200, Math.round(fmt.w * s)));
-            setDisplayH(Math.max(200, Math.round(fmt.h * s)));
+            const scaleByW = (width - pad) / visibleRowW;
+            const s = Math.min(scaleByH, scaleByW);
+            setDisplayW(Math.max(80, Math.round(fmt.w * s)));
         };
         const obs = new ResizeObserver(recalc);
         if (containerRef.current) obs.observe(containerRef.current);
         recalc();
         return () => obs.disconnect();
-    }, [format]);
+    }, [format, slides.length]);
 
     // ── Transformer sync ─────────────────────────────────────────────────────
     useEffect(() => {
@@ -174,7 +177,8 @@ export default function SlideEditor() {
         if (!selectedId) { trRef.current.nodes([]); trRef.current.getLayer()?.batchDraw(); return; }
         const node = stageRef.current.findOne(`#${selectedId}`);
         if (node) { trRef.current.nodes([node]); trRef.current.getLayer()?.batchDraw(); }
-    }, [selectedId, slide.elements]);
+        else { trRef.current.nodes([]); trRef.current.getLayer()?.batchDraw(); }
+    }, [selectedId, slides]);
 
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
     useEffect(() => {
@@ -193,8 +197,7 @@ export default function SlideEditor() {
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCornerId) {
                 handleCornerElDelete();
             } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-                updateSlide({ elements: slide.elements.filter((el) => el.id !== selectedId) });
-                setSelectedId(null);
+                deleteElement(selectedId);
             }
             if (e.key === 'Escape') { setSelectedId(null); setEditingId(null); setSelectedCornerId(null); }
             if (e.ctrlKey || e.metaKey) {
@@ -269,7 +272,9 @@ export default function SlideEditor() {
 
         let thumbnail: string | null = null;
         try {
-            thumbnail = stageRef.current?.toDataURL({ pixelRatio: 0.35, mimeType: 'image/jpeg', quality: 0.7 }) ?? null;
+            thumbnail = stageRef.current
+                ? renderSlideDataURL(0, { mimeType: 'image/jpeg', quality: 0.7, pixelRatio: 0.35 / scale })
+                : null;
         } catch { /* thumbnail is best-effort */ }
 
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
@@ -367,19 +372,27 @@ export default function SlideEditor() {
     function handleStageClick(e: Konva.KonvaEventObject<MouseEvent>) {
         if (elementsOpen) { setElementsOpen(false); return; }
         const target = e.target;
+        const targetId = target.id?.() ?? '';
         const groupId = (target.parent as Konva.Node | null)?.id?.() ?? '';
-        const isBackgroundImage = slide.elements.some(
-            (el): el is ImageEl => el.type === 'image' && el.isBackground && el.id === groupId,
+        const isBackgroundImage = slides.some(
+            (s) => s.elements.some((el): el is ImageEl => el.type === 'image' && el.isBackground && el.id === groupId),
         );
         const clickedOnEmpty =
             target === target.getStage() ||
-            (target.getClassName() === 'Rect' && target.id() === 'bg') ||
+            (target.getClassName() === 'Rect' && targetId.startsWith('bg-')) ||
             (isBackgroundImage && tool !== 'select');
         if (tool === 'select') { if (clickedOnEmpty) { setSelectedId(null); setSelectedCornerId(null); } return; }
         if (!clickedOnEmpty) return;
 
+        // Map the pointer to a slide in the row and to that slide's local coords.
         const pos = stageRef.current!.getPointerPosition()!;
-        const x = pos.x / scale, y = pos.y / scale;
+        const worldX = pos.x / scale;
+        const span = SLIDE_W + SLIDE_GAP;
+        const idx = Math.max(0, Math.min(slides.length - 1, Math.floor(worldX / span)));
+        const x = worldX - slideOffsetX(idx);
+        const y = pos.y / scale;
+        if (x < 0 || x > SLIDE_W) return; // clicked in the gap between slides
+        setCurrentIdx(idx);
 
         if (tool === 'text') {
             addElement({
@@ -390,7 +403,7 @@ export default function SlideEditor() {
                 strokeWidth: 0, padding: 12, wrap: 'word',
                 accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
                 ...SHADOW_DEFAULTS,
-            });
+            }, idx);
             loadGoogleFont('Space Mono');
         } else if (tool === 'rect') {
             addElement({
@@ -398,14 +411,14 @@ export default function SlideEditor() {
                 rotation: 0, opacity: 1, fill: '#E8440A', stroke: '#000000', strokeWidth: 0,
                 cornerRadius: 0, borderStyle: 'solid', dashEnabled: false,
                 ...SHADOW_DEFAULTS,
-            });
+            }, idx);
         } else if (tool === 'circle') {
             addElement({
                 id: uid(), type: 'circle', x: x - 60, y: y - 60, width: 120, height: 120,
                 rotation: 0, opacity: 1, fill: '#E8440A', stroke: '#000000', strokeWidth: 0,
                 cornerRadius: 0, borderStyle: 'solid', dashEnabled: false,
                 ...SHADOW_DEFAULTS,
-            });
+            }, idx);
         } else if (tool === 'button') {
             addElement({
                 id: uid(), type: 'button',
@@ -418,7 +431,7 @@ export default function SlideEditor() {
                 paddingX: 60, paddingY: 0, align: 'center',
                 iconEnabled: false, icon: '→', iconPosition: 'right',
                 ...SHADOW_DEFAULTS,
-            });
+            }, idx);
             loadGoogleFont('Space Mono');
         }
     }
@@ -427,7 +440,7 @@ export default function SlideEditor() {
         const target = e.target;
         const targetId = target.id();
         const parentId = target.parent?.id?.() ?? '';
-        const isElementDrag = slide.elements.some((el) => el.id === targetId || el.id === parentId);
+        const isElementDrag = slides.some((s) => s.elements.some((el) => el.id === targetId || el.id === parentId));
         setShowSafeAreaGuide(isElementDrag);
     }
 
@@ -552,13 +565,43 @@ export default function SlideEditor() {
 
     // ─── Export ───────────────────────────────────────────────────────────────
 
+    /**
+     * Render a single slide from the overview row to a data URL at full
+     * resolution. Crops the slide's region out of the wide stage and hides the
+     * slide frames / selection handles so they never bleed into the export.
+     */
+    function renderSlideDataURL(
+        idx: number,
+        opts: { mimeType?: string; quality?: number; pixelRatio?: number } = {},
+    ): string {
+        const stage = stageRef.current!;
+        const frames = stage.find('.slide-frame');
+        frames.forEach((n) => n.hide());
+        trRef.current?.nodes([]);
+        stage.batchDraw();
+        try {
+            return stage.toDataURL({
+                x: slideOffsetX(idx) * scale,
+                y: 0,
+                width: SLIDE_W * scale,
+                height: slideH * scale,
+                pixelRatio: opts.pixelRatio ?? (1 / scale),
+                mimeType: opts.mimeType,
+                quality: opts.quality,
+            });
+        } finally {
+            frames.forEach((n) => n.show());
+            stage.batchDraw();
+        }
+    }
+
     function exportPNG() {
         if (!stageRef.current) return;
         setSelectedId(null);
         setTimeout(() => {
-            const uri = stageRef.current!.toDataURL({ pixelRatio: SLIDE_W / displayW });
+            const uri = renderSlideDataURL(safeIdx);
             const link = document.createElement('a');
-            link.download = `slide-${currentIdx + 1}.png`;
+            link.download = `slide-${safeIdx + 1}.png`;
             link.href = uri;
             link.click();
         }, 50);
@@ -566,21 +609,14 @@ export default function SlideEditor() {
 
     async function exportAllSlidesJpeg(): Promise<Blob[]> {
         if (!stageRef.current) return [];
-        const prevIdx = currentIdx;
         setSelectedId(null);
+        await new Promise((r) => setTimeout(r, 60));
         const blobs: Blob[] = [];
         for (let i = 0; i < slides.length; i++) {
-            setCurrentIdx(i);
-            await new Promise((r) => setTimeout(r, 120));
-            const dataUrl = stageRef.current.toDataURL({
-                pixelRatio: SLIDE_W / displayW,
-                mimeType: 'image/jpeg',
-                quality: 0.92,
-            });
+            const dataUrl = renderSlideDataURL(i, { mimeType: 'image/jpeg', quality: 0.92 });
             const blob = await fetch(dataUrl).then((res) => res.blob());
             blobs.push(blob);
         }
-        setCurrentIdx(prevIdx);
         return blobs;
     }
 
@@ -918,23 +954,20 @@ export default function SlideEditor() {
                         />
                     </div>
 
-                    {/* Center: Canvas */}
+                    {/* Center: Canvas — every slide in a row, all editable */}
                     <CanvasArea
-                        slide={slide}
+                        slides={slides}
+                        currentIdx={safeIdx}
                         slideH={slideH}
                         scale={scale}
-                        displayW={displayW}
-                        displayH={displayH}
                         containerRef={containerRef}
                         stageRef={stageRef}
                         trRef={trRef}
                         tool={tool}
                         onToolChange={setTool}
                         selectedId={selectedId}
-                        onSelectElement={setSelectedId}
+                        onSelectElement={(idx, id) => { setCurrentIdx(idx); setSelectedId(id); setSelectedCornerId(null); }}
                         editingId={editingId}
-                        safeIdx={safeIdx}
-                        slidesCount={slides.length}
                         showSafeAreaGuide={showSafeAreaGuide}
                         safeAreaBounds={safeAreaBounds}
                         safeAreaPadding={safeAreaPadding}
@@ -946,11 +979,10 @@ export default function SlideEditor() {
                         onAddPath={addPathElement}
                         onStartEditing={startEditing}
                         onElementChange={(id, patch) => updateElement(id, patch)}
-                        onPrevSlide={() => { if (safeIdx > 0) { setCurrentIdx(safeIdx - 1); setSelectedId(null); } }}
-                        onNextSlide={() => { if (safeIdx < slides.length - 1) { setCurrentIdx(safeIdx + 1); setSelectedId(null); } }}
-                        corners={slide.corners}
-                        onBadgeMove={(x, y) => {
-                            if (slide.profileBadge) updateSlide({ profileBadge: { ...slide.profileBadge, x, y } });
+                        onBadgeMove={(idx, x, y) => {
+                            setSlides((prev) => prev.map((s, i) => (
+                                i === idx && s.profileBadge ? { ...s, profileBadge: { ...s.profileBadge, x, y } } : s
+                            )));
                         }}
                     />
 

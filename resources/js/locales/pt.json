@@ -350,7 +350,12 @@
       "exportAllZip": "Todos os slides (ZIP, {{count}})",
       "exportMetadata": "Debug: exportar metadados (JSON)",
       "undo": "Desfazer (Ctrl+Z)",
-      "redo": "Refazer (Ctrl+Y)"
+      "redo": "Refazer (Ctrl+Y)",
+      "overview": "Visão geral",
+      "editView": "Editar"
+    },
+    "strip": {
+      "clickToEdit": "Clique em um slide para editá-lo"
     },
     "slides": {
       "panel": "SLIDES",

@@ -118,7 +118,14 @@ export function buildSceneFromLayoutGeneric(
     slideH: number,
     slideIndex: number,
 ): TemplateScene {
-    const topPad = slideH > 1400 ? 250 : 180;
+    // Keep all content inside the Instagram profile-grid crop. The grid shows a
+    // 1:1 centre square of the post, so the top/bottom (slideH - SLIDE_W) / 2 of a
+    // portrait slide is cut off there. Anchor the content band to that square
+    // (plus a small inner margin) so generated titles/bodies stay visible in the
+    // grid. For 4:5 posts this resolves to ~180 (unchanged); for taller formats
+    // it tightens so content no longer lands in the cropped bands.
+    const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
+    const topPad = gridCropInset + 45;
     const safeY = topPad;
     const safeH = slideH - topPad * 2;
     const pad = 80;

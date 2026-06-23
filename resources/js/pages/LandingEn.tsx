@@ -467,7 +467,7 @@ export default function LandingEn({
                         <p className="mb-4 font-bold tracking-widest text-[#E8440A] uppercase">
                             The truth no one tells you
                         </p>
-                        <h2 className="mb-8 font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
+                        <h2 className="mb-8 font-display font-bold text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
                             Here's the brutal truth about Instagram in 2026
                         </h2>
                         <div className="mx-auto max-w-2xl space-y-5 text-left">
@@ -522,7 +522,7 @@ export default function LandingEn({
                         <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
                             In 3 steps
                         </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                        <h2 className="font-display font-bold text-5xl leading-none tracking-normal lg:text-6xl">
                             So simple it feels like magic
                         </h2>
                     </FadeIn>
@@ -595,7 +595,7 @@ export default function LandingEn({
                             <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
                                 What's inside
                             </p>
-                            <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                            <h2 className="font-display font-bold text-5xl leading-none tracking-normal lg:text-6xl">
                                 AI trained to grab attention
                             </h2>
                             <p className="mx-auto mt-3 max-w-lg text-lg leading-relaxed font-medium text-[#555550]">
@@ -622,7 +622,7 @@ export default function LandingEn({
                             <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
                                 Do the math
                             </p>
-                            <h2 className="font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-6xl">
+                            <h2 className="font-display font-bold text-5xl leading-[0.95] tracking-normal text-white lg:text-6xl">
                                 How much would you pay
                                 <br />
                                 for all this separately?
@@ -684,7 +684,7 @@ export default function LandingEn({
                 {/* ── PRICING ── */}
                 <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
                     <FadeIn className="mb-12 text-center">
-                        <h2 className="mb-3 font-display text-6xl tracking-normal text-[#1A1A1A]">
+                        <h2 className="mb-3 font-display font-bold text-6xl tracking-normal text-[#1A1A1A]">
                             Simple, the way it should be
                         </h2>
                         <p className="text-lg font-medium text-[#666660]">
@@ -1009,7 +1009,7 @@ export default function LandingEn({
                             <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
                                 Results from those who publish
                             </p>
-                            <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                            <h2 className="font-display font-bold text-5xl leading-none tracking-normal lg:text-6xl">
                                 See what our clients say
                             </h2>
                         </FadeIn>
@@ -1024,7 +1024,7 @@ export default function LandingEn({
                         <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
                             FAQ
                         </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                        <h2 className="font-display font-bold text-5xl leading-none tracking-normal lg:text-6xl">
                             Frequently asked questions
                         </h2>
                     </FadeIn>
@@ -1062,7 +1062,7 @@ export default function LandingEn({
                             AI-powered carousel generator
                         </div>
 
-                        <h2 className="mb-4 font-display text-6xl leading-[0.95] tracking-normal text-white lg:text-[80px]">
+                        <h2 className="mb-4 font-display font-bold text-6xl leading-[0.95] tracking-normal text-white lg:text-[80px]">
                             Start going viral today.
                         </h2>
                         <p className="mx-auto mb-10 max-w-sm text-lg leading-relaxed font-medium text-zinc-300">

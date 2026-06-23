@@ -46,20 +46,38 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     const lineH = el.fontSize * el.lineHeight;
     const innerWidth = Math.max(10, el.width - el.padding * 2);
 
-    // Tokenize spans into words/spaces/newlines
-    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; isSpace: boolean; isNewline: boolean }[] = [];
+    // `el.text` is the source of truth for the characters to render — including
+    // line breaks. The rich spans only supply per-word styling (colour/highlight/
+    // gradient), and can drift out of sync with el.text (e.g. when newlines are
+    // added in the content field). So derive per-word styles from the spans, then
+    // tokenise el.text itself, splitting on real newlines first so a line break
+    // is never swallowed by an adjacent space.
+    const wordStyles: { color: string; highlight?: string; gradient?: string[] }[] = [];
     for (const span of spans) {
-        const parts = span.text.split(/(\n|\s+)/);
-        for (const part of parts) {
+        const matches = span.text.match(/\S+/g);
+        if (!matches) continue;
+        for (let i = 0; i < matches.length; i++) {
+            wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient });
+        }
+    }
+
+    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; isSpace: boolean; isNewline: boolean }[] = [];
+    let wordIdx = 0;
+    for (const segment of el.text.split(/(\n)/)) {
+        if (segment === '\n') {
+            tokens.push({ text: '\n', color: defaultColor, isSpace: false, isNewline: true });
+            continue;
+        }
+        if (!segment) continue;
+        for (const part of segment.split(/(\s+)/)) {
             if (!part) continue;
-            tokens.push({
-                text: part,
-                color: span.color ?? defaultColor,
-                highlight: span.highlight,
-                gradient: span.gradient,
-                isNewline: part === '\n',
-                isSpace: /^\s+$/.test(part) && part !== '\n',
-            });
+            if (/^\s+$/.test(part)) {
+                tokens.push({ text: part, color: defaultColor, isSpace: true, isNewline: false });
+                continue;
+            }
+            const style = wordStyles[wordIdx] ?? { color: defaultColor };
+            tokens.push({ text: part, color: style.color, highlight: style.highlight, gradient: style.gradient, isSpace: false, isNewline: false });
+            wordIdx++;
         }
     }
 
@@ -170,7 +188,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
     const layout = useMemo(
         () => (el.richText && el.richText.length > 0 ? layoutRichText(el.richText, el, effectiveFill) : null),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [el.richText, el.width, el.fontSize, el.fontFamily, el.fontStyle, effectiveFill, el.lineHeight, el.letterSpacing, el.align, fontRevision],
+        [el.richText, el.text, el.width, el.fontSize, el.fontFamily, el.fontStyle, effectiveFill, el.lineHeight, el.letterSpacing, el.align, fontRevision],
     );
     const richTotalH = layout ? layout.reduce((s, l) => s + l.height, 0) : 0;
 

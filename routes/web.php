@@ -109,7 +109,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 // ->with('wizardStyle', 'high-energy, pop-culture, attention-grabbing voice. Hook archetype: authoritative prophecy fulfilled hook, revelation that surprises everyone.')
                 ->with('wizardTemplate', 'pop-magazine')
                 ->with('wizardSlideCount', 5)
-                ->with('wizardImageMode', 'none')
+                ->with('wizardImageMode', 'background')
                 ->with('wizardWordHighlight', true);
         })->name('dev.test-wizard-competitor');
     }

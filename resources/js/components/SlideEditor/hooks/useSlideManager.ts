@@ -35,34 +35,47 @@ export function useSlideManager(
         setCurrentIdx(idx + 1);
     }
 
+    /**
+     * Apply an element-list transform to whichever slide currently owns `id`.
+     * In the multi-slide overview every slide is live, so element ops must target
+     * the slide that holds the element rather than assuming the "current" one.
+     */
+    function updateSlideOwning(id: string, mapElements: (els: SlideEl[]) => SlideEl[]) {
+        setSlides((prev) => prev.map((s) => (
+            s.elements.some((e) => e.id === id) ? { ...s, elements: mapElements([...s.elements]) } : s
+        )));
+    }
+
     function bringToFront(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [...els, el]; })() });
+        updateSlideOwning(id, (els) => { const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [...els, el]; });
     }
 
     function bringForward(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1 || i === els.length - 1) return els; [els[i], els[i + 1]] = [els[i + 1], els[i]]; return els; })() });
+        updateSlideOwning(id, (els) => { const i = els.findIndex(e => e.id === id); if (i === -1 || i === els.length - 1) return els; [els[i], els[i + 1]] = [els[i + 1], els[i]]; return els; });
     }
 
     function sendBackward(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i <= 0) return els; [els[i], els[i - 1]] = [els[i - 1], els[i]]; return els; })() });
+        updateSlideOwning(id, (els) => { const i = els.findIndex(e => e.id === id); if (i <= 0) return els; [els[i], els[i - 1]] = [els[i - 1], els[i]]; return els; });
     }
 
     function sendToBack(id: string) {
-        updateSlide({ elements: (() => { const els = [...slide.elements]; const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [el, ...els]; })() });
+        updateSlideOwning(id, (els) => { const i = els.findIndex(e => e.id === id); if (i === -1) return els; const [el] = els.splice(i, 1); return [el, ...els]; });
     }
 
-    function addElement(el: SlideEl) {
-        updateSlide({ elements: [...slide.elements, el] });
+    function addElement(el: SlideEl, slideIdx: number = currentIdx) {
+        setSlides((prev) => prev.map((s, i) => (i === slideIdx ? { ...s, elements: [...s.elements, el] } : s)));
         setSelectedId(el.id);
         setTool('select');
     }
 
     function updateElement(id: string, patch: Partial<SlideEl>) {
-        updateSlide({ elements: slide.elements.map((el) => (el.id === id ? ({ ...el, ...patch } as unknown as SlideEl) : el)) });
+        updateSlideOwning(id, (els) => els.map((el) => (el.id === id ? ({ ...el, ...patch } as unknown as SlideEl) : el)));
     }
 
     function deleteElement(id: string) {
-        updateSlide({ elements: slide.elements.filter((el) => el.id !== id) });
+        setSlides((prev) => prev.map((s) => (
+            s.elements.some((e) => e.id === id) ? { ...s, elements: s.elements.filter((el) => el.id !== id) } : s
+        )));
         setSelectedId(null);
     }
 

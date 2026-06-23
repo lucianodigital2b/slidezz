@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { MousePointer, Type, RectangleHorizontal, Square, Circle as CircleIcon, Shapes, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MousePointer, Type, RectangleHorizontal, Square, Circle as CircleIcon, Shapes } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     Circle as KonvaCircle,
@@ -14,29 +14,34 @@ import {
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, SlideCorners, TextReadabilityStyle,
+    SLIDE_W, Tool, Slide, SlideEl, TextEl, ShapeEl, GradientEl, PathEl, TextReadabilityStyle,
 } from './types';
 import { borderStyleToDash, contrastRatio, gradientLinearProps, normalizeHexColor } from './utils';
 import { KonvaTextEl, KonvaImageEl, KonvaButtonEl, KonvaBadgeEl } from './KonvaElements';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { ShapeDef, SHAPE_CATEGORIES } from './shapes';
 
+/** Horizontal gap between slides in the overview row, in world (pre-scale) units. */
+export const SLIDE_GAP = 120;
+
+/** World-space x offset of slide `idx` within the overview row. */
+export function slideOffsetX(idx: number): number {
+    return idx * (SLIDE_W + SLIDE_GAP);
+}
+
 interface CanvasAreaProps {
-    slide: Slide;
+    slides: Slide[];
+    currentIdx: number;
     slideH: number;
     scale: number;
-    displayW: number;
-    displayH: number;
     containerRef: React.RefObject<HTMLDivElement>;
     stageRef: React.RefObject<Konva.Stage>;
     trRef: React.RefObject<Konva.Transformer>;
     tool: Tool;
     onToolChange: (tool: Tool) => void;
     selectedId: string | null;
-    onSelectElement: (id: string) => void;
+    onSelectElement: (slideIdx: number, id: string) => void;
     editingId: string | null;
-    safeIdx: number;
-    slidesCount: number;
     showSafeAreaGuide: boolean;
     safeAreaBounds: { x: number; y: number; width: number; height: number };
     safeAreaPadding: { top: number; right: number; bottom: number; left: number };
@@ -48,10 +53,7 @@ interface CanvasAreaProps {
     onAddPath: (shape: ShapeDef) => void;
     onStartEditing: (el: TextEl) => void;
     onElementChange: (id: string, patch: Partial<SlideEl>) => void;
-    onPrevSlide: () => void;
-    onNextSlide: () => void;
-    corners?: SlideCorners;
-    onBadgeMove?: (x: number, y: number) => void;
+    onBadgeMove?: (slideIdx: number, x: number, y: number) => void;
 }
 
 const CORNER_PAD = 50;
@@ -63,6 +65,9 @@ const READABLE_TEXT_DARK = '#111111';
 const READABLE_TEXT_LIGHT = '#F5F7FA';
 const MIN_TEXT_CONTRAST = 4.5;
 const BUSY_BACKDROP_VARIANCE = 900;
+// Auto-contrast assist for title/body text (colour swap + support outline/shadow).
+// Disabled for now — render the author's chosen colours verbatim.
+const READABILITY_ENABLED = false;
 const ICON_CHAR: Record<string, string> = {
     none: '',
     bookmark: '🔖',
@@ -71,6 +76,7 @@ const ICON_CHAR: Record<string, string> = {
 };
 
 interface DragGuideState {
+    slideIdx: number;
     showVertical: boolean;
     showHorizontal: boolean;
 }
@@ -171,9 +177,6 @@ function resolveTextReadability(fill: string, sample: CanvasSampleStats): TextRe
     const autoFill = darkContrast >= lightContrast ? READABLE_TEXT_DARK : READABLE_TEXT_LIGHT;
     const resolvedFill = preferredContrast >= MIN_TEXT_CONTRAST ? preferredFill! : autoFill;
     const resolvedContrast = contrastRatio(resolvedFill, sample.backgroundHex);
-    // Only add the support outline/shadow when the backdrop is genuinely busy (e.g. a
-    // photo) or contrast is below the AA minimum. On flat backgrounds with adequate
-    // contrast this assist just renders as an unwanted grey ring around the glyphs.
     const lowContrast = resolvedContrast < MIN_TEXT_CONTRAST;
     const useOutline = sample.variance >= BUSY_BACKDROP_VARIANCE || lowContrast;
     const useShadow = sample.variance >= 320 || lowContrast;
@@ -193,20 +196,20 @@ function resolveTextReadability(fill: string, sample: CanvasSampleStats): TextRe
 }
 
 export function CanvasArea({
-    slide, slideH, scale, displayW, displayH,
+    slides, currentIdx, slideH, scale,
     containerRef, stageRef, trRef,
     tool, onToolChange,
     selectedId, onSelectElement,
-    editingId, safeIdx, slidesCount,
+    editingId,
     showSafeAreaGuide, safeAreaBounds, safeAreaPadding,
     elementsOpen, onElementsOpenChange,
     onStageClick, onStageDragStart, onStageDragEnd,
     onAddPath, onStartEditing, onElementChange,
-    onPrevSlide, onNextSlide,
-    corners, onBadgeMove,
+    onBadgeMove,
 }: CanvasAreaProps) {
     const { t } = useTranslation();
     const [dragGuides, setDragGuides] = useState<DragGuideState>({
+        slideIdx: -1,
         showVertical: false,
         showHorizontal: false,
     });
@@ -216,35 +219,50 @@ export function CanvasArea({
     const isSamplingTextReadabilityRef = useRef(false);
     const readabilitySignatureRef = useRef('');
 
-    const sortedElements = useMemo(() => [...slide.elements].sort((a, b) => {
-        const aIsBg = a.type === 'image' && a.isBackground ? -1 : 0;
-        const bIsBg = b.type === 'image' && b.isBackground ? -1 : 0;
-        return aIsBg - bIsBg;
-    }), [slide.elements]);
-    const textElements = useMemo(
-        () => sortedElements.filter((el): el is TextEl => el.type === 'text'),
-        [sortedElements],
-    );
+    const slidesCount = slides.length;
 
-    // Load corner fonts and re-render when ready
+    // Flat list of every text element across all slides, tagged with its slide
+    // index and whether that slide has a photo backdrop (only then does the
+    // readability assist run — see resolveTextReadability).
+    const textEntries = useMemo(() => {
+        const out: { el: TextEl; slideIdx: number; slideHasImage: boolean }[] = [];
+        slides.forEach((s, idx) => {
+            const slideHasImage = s.elements.some((e) => e.type === 'image');
+            for (const e of s.elements) {
+                if (e.type === 'text') out.push({ el: e, slideIdx: idx, slideHasImage });
+            }
+        });
+        return out;
+    }, [slides]);
+
+    const stageW = (SLIDE_W * Math.max(1, slidesCount) + SLIDE_GAP * Math.max(0, slidesCount - 1)) * scale;
+    const stageH = slideH * scale;
+
+    // Top/bottom band hidden by the Instagram profile-grid 1:1 centre crop.
+    const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
+
+    // Load every corner font used across slides and re-render when ready.
     useEffect(() => {
-        if (!corners?.show) return;
         const fonts = new Set<string>();
-        for (const key of ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const) {
-            const f = corners[key].fontFamily;
-            if (f) fonts.add(f);
+        for (const s of slides) {
+            if (!s.corners?.show) continue;
+            for (const key of ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const) {
+                const f = s.corners[key].fontFamily;
+                if (f) fonts.add(f);
+            }
         }
         if (fonts.size === 0) fonts.add('Poppins');
-        Promise.all([...fonts].map(f => loadGoogleFont(f))).then(() => {
-            setCornerFontRevision(r => r + 1);
+        Promise.all([...fonts].map((f) => loadGoogleFont(f))).then(() => {
+            setCornerFontRevision((r) => r + 1);
         });
-    }, [corners?.show, corners?.topLeft.fontFamily, corners?.topRight.fontFamily, corners?.bottomLeft.fontFamily, corners?.bottomRight.fontFamily]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [slides]);
 
     const clearDragGuides = useCallback(() => {
-        setDragGuides({ showVertical: false, showHorizontal: false });
+        setDragGuides({ slideIdx: -1, showVertical: false, showHorizontal: false });
     }, []);
 
-    const updateDragGuides = useCallback((el: SlideEl, node: Konva.Node) => {
+    const updateDragGuides = useCallback((el: SlideEl, node: Konva.Node, slideIdx: number) => {
         const frame = el.type === 'circle'
             ? { x: node.x() - el.width / 2, y: node.y() - el.height / 2, width: el.width, height: el.height }
             : { x: node.x(), y: node.y(), width: el.width, height: el.height };
@@ -253,6 +271,7 @@ export function CanvasArea({
         const centerY = frame.y + frame.height / 2;
 
         setDragGuides({
+            slideIdx,
             showVertical: Math.abs(centerX - SLIDE_W / 2) <= DRAG_GUIDE_THRESHOLD,
             showHorizontal: Math.abs(centerY - slideH / 2) <= DRAG_GUIDE_THRESHOLD,
         });
@@ -265,22 +284,8 @@ export function CanvasArea({
 
     const sampleTextReadability = useCallback(() => {
         const stage = stageRef.current;
-        const enabledCorners = (['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const).filter(
-            (key) => corners?.show && corners[key].enabled && corners[key].text,
-        );
-        if (!stage || (textElements.length === 0 && enabledCorners.length === 0)) {
-            readabilitySignatureRef.current = '';
-            setTextReadabilityMap({});
-            return;
-        }
-
-        // The readability assist (colour swap + support outline/shadow) only exists to
-        // keep text legible over photo backdrops. On flat slides (solid colour /
-        // gradient templates) there is no image to fight, so honour the author's
-        // chosen colours verbatim — otherwise a brand accent that dips just below the
-        // AA ratio gets repainted black with a grey ring.
-        const hasImageBackdrop = sortedElements.some((el) => el.type === 'image');
-        if (!hasImageBackdrop) {
+        const targets = READABILITY_ENABLED ? textEntries.filter((entry) => entry.slideHasImage) : [];
+        if (!stage || targets.length === 0) {
             if (readabilitySignatureRef.current !== '') {
                 readabilitySignatureRef.current = '';
                 setTextReadabilityMap({});
@@ -292,7 +297,7 @@ export function CanvasArea({
         const nextReadabilityMap: Record<string, TextReadabilityStyle> = {};
 
         try {
-            for (const el of textElements) {
+            for (const { el } of targets) {
                 const node = stage.findOne(`#${el.id}`) as Konva.Node | null;
                 if (!node) continue;
 
@@ -316,31 +321,6 @@ export function CanvasArea({
 
                 nextReadabilityMap[el.id] = resolveTextReadability(el.fill, sample);
             }
-
-            for (const key of enabledCorners) {
-                const node = stage.findOne(`#corner-${key}`) as Konva.Node | null;
-                if (!node) continue;
-
-                const rect = node.getClientRect({ relativeTo: stage, skipShadow: true });
-                if (rect.width < 1 || rect.height < 1) continue;
-
-                const wasVisible = node.visible();
-                node.visible(false);
-                stage.batchDraw();
-
-                const canvas = stage.toCanvas();
-                const ctx = canvas.getContext('2d');
-
-                node.visible(wasVisible);
-                stage.batchDraw();
-
-                if (!ctx) continue;
-
-                const sample = sampleCanvasRegion(ctx, rect);
-                if (!sample) continue;
-
-                nextReadabilityMap[`corner-${key}`] = resolveTextReadability(corners![key].color, sample);
-            }
         } finally {
             isSamplingTextReadabilityRef.current = false;
         }
@@ -350,7 +330,7 @@ export function CanvasArea({
             readabilitySignatureRef.current = nextSignature;
             setTextReadabilityMap(nextReadabilityMap);
         }
-    }, [stageRef, textElements, sortedElements, corners]);
+    }, [stageRef, textEntries]);
 
     const scheduleTextReadabilitySampling = useCallback(() => {
         if (sampleFrameRef.current !== null || isSamplingTextReadabilityRef.current) return;
@@ -368,7 +348,7 @@ export function CanvasArea({
                 sampleFrameRef.current = null;
             }
         };
-    }, [scheduleTextReadabilitySampling, slide.background, sortedElements, displayW, displayH, scale, corners]);
+    }, [scheduleTextReadabilitySampling, slides, scale]);
 
     useEffect(() => {
         const stage = stageRef.current;
@@ -383,6 +363,272 @@ export function CanvasArea({
         };
     }, [stageRef, scheduleTextReadabilitySampling]);
 
+    const renderElement = useCallback((el: SlideEl, idx: number) => {
+        const select = () => { if (tool === 'select') onSelectElement(idx, el.id); };
+        const common = {
+            key: el.id,
+            id: el.id,
+            draggable: tool === 'select',
+            onClick: select,
+            onTap: select,
+            onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => updateDragGuides(el, e.target, idx),
+            shadowEnabled: el.shadowEnabled,
+            shadowColor: el.shadowColor,
+            shadowBlur: el.shadowBlur,
+            shadowOffsetX: el.shadowOffsetX,
+            shadowOffsetY: el.shadowOffsetY,
+            shadowOpacity: el.shadowOpacity,
+        };
+
+        if (el.type === 'text') {
+            return (
+                <KonvaTextEl
+                    key={el.id}
+                    el={el}
+                    hidden={editingId === el.id}
+                    draggable={tool === 'select'}
+                    onSelect={select}
+                    onDblClick={() => onStartEditing(el)}
+                    onDragMove={(e) => updateDragGuides(el, e.target, idx)}
+                    readability={READABILITY_ENABLED ? textReadabilityMap[el.id] : undefined}
+                    onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
+                />
+            );
+        }
+
+        if (el.type === 'rect') {
+            const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
+            return (
+                <Rect {...common}
+                    x={el.x} y={el.y} width={el.width} height={el.height}
+                    rotation={el.rotation} opacity={el.opacity}
+                    fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth}
+                    cornerRadius={el.cornerRadius}
+                    dash={dash.length ? dash : undefined}
+                    dashEnabled={el.dashEnabled}
+                    onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<ShapeEl>)}
+                    onTransformEnd={(e) => {
+                        const node = e.target;
+                        onElementChange(el.id, { x: node.x(), y: node.y(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()), rotation: node.rotation() } as Partial<ShapeEl>);
+                        node.scaleX(1); node.scaleY(1);
+                    }}
+                />
+            );
+        }
+
+        if (el.type === 'circle') {
+            const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
+            return (
+                <KonvaCircle {...common}
+                    x={el.x + el.width / 2} y={el.y + el.height / 2}
+                    radiusX={el.width / 2} radiusY={el.height / 2}
+                    rotation={el.rotation} opacity={el.opacity}
+                    fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth}
+                    dash={dash.length ? dash : undefined}
+                    dashEnabled={el.dashEnabled}
+                    onDragEnd={(e) => onElementChange(el.id, { x: e.target.x() - el.width / 2, y: e.target.y() - el.height / 2 } as Partial<ShapeEl>)}
+                    onTransformEnd={(e) => {
+                        const node = e.target;
+                        const nw = Math.max(10, el.width * node.scaleX());
+                        const nh = Math.max(10, el.height * node.scaleY());
+                        onElementChange(el.id, { x: node.x() - nw / 2, y: node.y() - nh / 2, width: nw, height: nh, rotation: node.rotation() } as Partial<ShapeEl>);
+                        node.scaleX(1); node.scaleY(1);
+                    }}
+                />
+            );
+        }
+
+        if (el.type === 'image') {
+            return (
+                <KonvaImageEl
+                    key={el.id}
+                    el={el}
+                    slideW={SLIDE_W}
+                    slideH={slideH}
+                    draggable={tool === 'select'}
+                    onSelect={select}
+                    onDragMove={(e) => updateDragGuides(el, e.target, idx)}
+                    onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
+                />
+            );
+        }
+
+        if (el.type === 'button') {
+            return (
+                <KonvaButtonEl
+                    key={el.id}
+                    el={el}
+                    draggable={tool === 'select'}
+                    onSelect={select}
+                    onDblClick={() => {
+                        const textInput = prompt('Edit button text:', el.text);
+                        if (textInput !== null) onElementChange(el.id, { text: textInput } as Partial<SlideEl>);
+                    }}
+                    onDragMove={(e) => updateDragGuides(el, e.target, idx)}
+                    onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
+                />
+            );
+        }
+
+        if (el.type === 'gradient') {
+            const gp = gradientLinearProps(el);
+            return (
+                <Rect {...common}
+                    x={el.x} y={el.y} width={el.width} height={el.height}
+                    rotation={el.rotation} opacity={el.opacity}
+                    fillLinearGradientStartPoint={gp.start}
+                    fillLinearGradientEndPoint={gp.end}
+                    fillLinearGradientColorStops={gp.stops}
+                    onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<GradientEl>)}
+                    onTransformEnd={(e) => {
+                        const node = e.target;
+                        onElementChange(el.id, { x: node.x(), y: node.y(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()), rotation: node.rotation() } as Partial<GradientEl>);
+                        node.scaleX(1); node.scaleY(1);
+                    }}
+                />
+            );
+        }
+
+        if (el.type === 'path') {
+            return (
+                <Group
+                    key={el.id}
+                    id={el.id}
+                    x={el.x} y={el.y}
+                    rotation={el.rotation} opacity={el.opacity}
+                    draggable={tool === 'select'}
+                    onClick={select}
+                    onTap={select}
+                    shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
+                    shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
+                    shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
+                    onDragMove={(e) => updateDragGuides(el, e.target, idx)}
+                    onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<PathEl>)}
+                    onTransformEnd={(e) => {
+                        const node = e.target;
+                        onElementChange(el.id, {
+                            x: node.x(), y: node.y(),
+                            width: Math.max(4, el.width * node.scaleX()),
+                            height: Math.max(4, el.height * node.scaleY()),
+                            rotation: node.rotation(),
+                        } as Partial<PathEl>);
+                        node.scaleX(1); node.scaleY(1);
+                    }}
+                >
+                    <KonvaPath
+                        data={el.data}
+                        scaleX={el.width / el.dataW}
+                        scaleY={el.height / el.dataH}
+                        fill={el.fill === 'none' ? undefined : el.fill}
+                        stroke={el.strokeWidth > 0 ? el.stroke : undefined}
+                        strokeWidth={el.strokeWidth}
+                        strokeScaleEnabled={false}
+                    />
+                </Group>
+            );
+        }
+
+        return null;
+    }, [tool, editingId, slideH, textReadabilityMap, onSelectElement, onStartEditing, onElementChange, updateDragGuides]);
+
+    const renderCorners = (slide: Slide, idx: number) => {
+        const corners = slide.corners;
+        if (!corners?.show) return null;
+        return (
+            <>
+                {corners.topLeft.enabled && corners.topLeft.text && (
+                    <KonvaText
+                        key={`corner-${idx}-topLeft-${cornerFontRevision}`}
+                        id={`corner-${idx}-topLeft`}
+                        x={CORNER_PAD} y={CORNER_PAD}
+                        text={corners.topLeft.text}
+                        fontSize={corners.topLeft.fontSize ?? CORNER_FS}
+                        fontFamily={corners.topLeft.fontFamily ?? 'Poppins'}
+                        fontStyle={corners.topLeft.fontStyle ?? ''}
+                        letterSpacing={corners.topLeft.letterSpacing ?? 0}
+                        fill={corners.topLeft.color}
+                        listening={false}
+                    />
+                )}
+                {corners.topRight.enabled && corners.topRight.text && (
+                    <KonvaText
+                        key={`corner-${idx}-topRight-${cornerFontRevision}`}
+                        id={`corner-${idx}-topRight`}
+                        x={CORNER_PAD} y={CORNER_PAD}
+                        width={SLIDE_W - CORNER_PAD * 2}
+                        align="right"
+                        text={corners.topRight.text}
+                        fontSize={corners.topRight.fontSize ?? CORNER_FS}
+                        fontFamily={corners.topRight.fontFamily ?? 'Poppins'}
+                        fontStyle={corners.topRight.fontStyle ?? ''}
+                        letterSpacing={corners.topRight.letterSpacing ?? 0}
+                        fill={corners.topRight.color}
+                        listening={false}
+                    />
+                )}
+                {corners.bottomLeft.enabled && corners.bottomLeft.text && (
+                    <KonvaText
+                        key={`corner-${idx}-bottomLeft-${cornerFontRevision}`}
+                        id={`corner-${idx}-bottomLeft`}
+                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS)}
+                        text={corners.bottomLeft.text}
+                        fontSize={corners.bottomLeft.fontSize ?? CORNER_FS}
+                        fontFamily={corners.bottomLeft.fontFamily ?? 'Poppins'}
+                        fontStyle={corners.bottomLeft.fontStyle ?? ''}
+                        letterSpacing={corners.bottomLeft.letterSpacing ?? 0}
+                        fill={corners.bottomLeft.color}
+                        listening={false}
+                    />
+                )}
+                {corners.bottomRight.enabled && corners.bottomRight.text && (
+                    <KonvaText
+                        key={`corner-${idx}-bottomRight-${cornerFontRevision}`}
+                        id={`corner-${idx}-bottomRight`}
+                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS)}
+                        width={SLIDE_W - CORNER_PAD * 2}
+                        align="right"
+                        text={corners.bottomRight.text}
+                        fontSize={corners.bottomRight.fontSize ?? CORNER_FS}
+                        fontFamily={corners.bottomRight.fontFamily ?? 'Poppins'}
+                        fontStyle={corners.bottomRight.fontStyle ?? ''}
+                        letterSpacing={corners.bottomRight.letterSpacing ?? 0}
+                        fill={corners.bottomRight.color}
+                        listening={false}
+                    />
+                )}
+                {corners.bottomRightIcon !== 'none' && (
+                    <KonvaText
+                        x={CORNER_PAD} y={slideH - CORNER_PAD - CORNER_FS - 48}
+                        width={SLIDE_W - CORNER_PAD * 2}
+                        align="right"
+                        text={ICON_CHAR[corners.bottomRightIcon]}
+                        fontSize={36} fontFamily="sans-serif"
+                        listening={false}
+                    />
+                )}
+                {corners.showDots && slidesCount > 1 && (
+                    Array.from({ length: slidesCount }, (_, i) => {
+                        const dotR = 8;
+                        const gap = 20;
+                        const totalW = slidesCount * dotR * 2 + (slidesCount - 1) * (gap - dotR * 2);
+                        const startX = (SLIDE_W - totalW) / 2;
+                        const cx = startX + i * gap + dotR;
+                        const cy = slideH - CORNER_PAD + 8;
+                        return (
+                            <KonvaCircle
+                                key={`dot-${idx}-${i}`}
+                                x={cx} y={cy}
+                                radius={dotR}
+                                fill={i === idx ? '#E8440A' : 'rgba(0,0,0,0.25)'}
+                                listening={false}
+                            />
+                        );
+                    })
+                )}
+            </>
+        );
+    };
+
     const toolBtn = (tool_: Tool, icon: React.ReactNode, label: string) => (
         <button
             title={label}
@@ -394,7 +640,7 @@ export function CanvasArea({
     );
 
     return (
-        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-hidden bg-gray-100">
+        <div ref={containerRef} className="relative flex flex-1 overflow-hidden bg-gray-100">
 
             {/* Elements library popup */}
             {elementsOpen && (
@@ -433,18 +679,8 @@ export function CanvasArea({
                 </div>
             )}
 
-            {/* Floating navigation + tool palette */}
+            {/* Floating tool palette */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
-                <button
-                    type="button"
-                    title={t('slideEditor.slides.prevSlide')}
-                    onClick={onPrevSlide}
-                    disabled={safeIdx === 0}
-                    className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                </button>
-
                 <div className="flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
                     {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
                     {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
@@ -460,24 +696,16 @@ export function CanvasArea({
                         <Shapes className="w-4 h-4" />
                     </button>
                 </div>
-
-                <button
-                    type="button"
-                    title={t('slideEditor.slides.nextSlide')}
-                    onClick={onNextSlide}
-                    disabled={safeIdx >= slidesCount - 1}
-                    className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
-                >
-                    <ChevronRight className="w-4 h-4" />
-                </button>
             </div>
 
-            {/* Konva Stage */}
-            <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: displayW, height: displayH }}>
+            {/* Konva Stage — all slides in a row (scrolls horizontally; the tool
+                palette above stays fixed because it lives outside this scroller). */}
+            <div className="flex flex-1 overflow-auto">
+              <div className="m-auto p-8" style={{ width: stageW + 64, height: stageH + 64 }}>
                 <Stage
                     ref={stageRef}
-                    width={displayW}
-                    height={displayH}
+                    width={stageW}
+                    height={stageH}
                     scaleX={scale}
                     scaleY={scale}
                     onClick={onStageClick}
@@ -486,334 +714,97 @@ export function CanvasArea({
                     style={{ cursor: tool === 'select' ? 'default' : 'crosshair' }}
                 >
                     <Layer>
-                        <Rect id="bg" x={0} y={0} width={SLIDE_W} height={slideH} fill={slide.background} listening={true} />
+                        {slides.map((slide, idx) => {
+                            const ox = slideOffsetX(idx);
+                            const isCurrent = idx === currentIdx;
+                            const sorted = [...slide.elements].sort((a, b) => {
+                                const aIsBg = a.type === 'image' && a.isBackground ? -1 : 0;
+                                const bIsBg = b.type === 'image' && b.isBackground ? -1 : 0;
+                                return aIsBg - bIsBg;
+                            });
+                            return (
+                                <Group
+                                    key={slide.id ?? idx}
+                                    id={`slidegroup-${idx}`}
+                                    x={ox} y={0}
+                                    clipX={0} clipY={0} clipWidth={SLIDE_W} clipHeight={slideH}
+                                >
+                                    <Rect id={`bg-${idx}`} x={0} y={0} width={SLIDE_W} height={slideH} fill={slide.background} listening={true} />
 
-                        {sortedElements.map((el) => {
-                            const common = {
-                                key: el.id,
-                                id: el.id,
-                                draggable: tool === 'select',
-                                onClick: () => { if (tool === 'select') onSelectElement(el.id); },
-                                onTap: () => { if (tool === 'select') onSelectElement(el.id); },
-                                onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => updateDragGuides(el, e.target),
-                                shadowEnabled: el.shadowEnabled,
-                                shadowColor: el.shadowColor,
-                                shadowBlur: el.shadowBlur,
-                                shadowOffsetX: el.shadowOffsetX,
-                                shadowOffsetY: el.shadowOffsetY,
-                                shadowOpacity: el.shadowOpacity,
-                            };
+                                    {sorted.map((el) => renderElement(el, idx))}
 
-                            if (el.type === 'text') {
-                                return (
-                                    <KonvaTextEl
-                                        key={el.id}
-                                        el={el}
-                                        hidden={editingId === el.id}
-                                        draggable={tool === 'select'}
-                                        onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
-                                        onDblClick={() => onStartEditing(el)}
-                                        onDragMove={(e) => updateDragGuides(el, e.target)}
-                                        readability={textReadabilityMap[el.id]}
-                                        onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
-                                    />
-                                );
-                            }
+                                    {renderCorners(slide, idx)}
 
-                            if (el.type === 'rect') {
-                                const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
-                                return (
-                                    <Rect {...common}
-                                        x={el.x} y={el.y} width={el.width} height={el.height}
-                                        rotation={el.rotation} opacity={el.opacity}
-                                        fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth}
-                                        cornerRadius={el.cornerRadius}
-                                        dash={dash.length ? dash : undefined}
-                                        dashEnabled={el.dashEnabled}
-                                        onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<ShapeEl>)}
-                                        onTransformEnd={(e) => {
-                                            const node = e.target;
-                                            onElementChange(el.id, { x: node.x(), y: node.y(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()), rotation: node.rotation() } as Partial<ShapeEl>);
-                                            node.scaleX(1); node.scaleY(1);
-                                        }}
-                                    />
-                                );
-                            }
-
-                            if (el.type === 'circle') {
-                                const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
-                                return (
-                                    <KonvaCircle {...common}
-                                        x={el.x + el.width / 2} y={el.y + el.height / 2}
-                                        radiusX={el.width / 2} radiusY={el.height / 2}
-                                        rotation={el.rotation} opacity={el.opacity}
-                                        fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth}
-                                        dash={dash.length ? dash : undefined}
-                                        dashEnabled={el.dashEnabled}
-                                        onDragEnd={(e) => onElementChange(el.id, { x: e.target.x() - el.width / 2, y: e.target.y() - el.height / 2 } as Partial<ShapeEl>)}
-                                        onTransformEnd={(e) => {
-                                            const node = e.target;
-                                            const nw = Math.max(10, el.width * node.scaleX());
-                                            const nh = Math.max(10, el.height * node.scaleY());
-                                            onElementChange(el.id, { x: node.x() - nw / 2, y: node.y() - nh / 2, width: nw, height: nh, rotation: node.rotation() } as Partial<ShapeEl>);
-                                            node.scaleX(1); node.scaleY(1);
-                                        }}
-                                    />
-                                );
-                            }
-
-                            if (el.type === 'image') {
-                                return (
-                                    <KonvaImageEl
-                                        key={el.id}
-                                        el={el}
-                                        slideW={SLIDE_W}
-                                        slideH={slideH}
-                                        draggable={tool === 'select'}
-                                        onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
-                                        onDragMove={(e) => updateDragGuides(el, e.target)}
-                                        onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
-                                    />
-                                );
-                            }
-
-                            if (el.type === 'button') {
-                                return (
-                                    <KonvaButtonEl
-                                        key={el.id}
-                                        el={el}
-                                        draggable={tool === 'select'}
-                                        onSelect={() => { if (tool === 'select') onSelectElement(el.id); }}
-                                        onDblClick={() => {
-                                            const textInput = prompt('Edit button text:', el.text);
-                                            if (textInput !== null) onElementChange(el.id, { text: textInput } as Partial<SlideEl>);
-                                        }}
-                                        onDragMove={(e) => updateDragGuides(el, e.target)}
-                                        onChange={(patch) => onElementChange(el.id, patch as Partial<SlideEl>)}
-                                    />
-                                );
-                            }
-
-                            if (el.type === 'gradient') {
-                                const gp = gradientLinearProps(el);
-                                return (
-                                    <Rect {...common}
-                                        x={el.x} y={el.y} width={el.width} height={el.height}
-                                        rotation={el.rotation} opacity={el.opacity}
-                                        fillLinearGradientStartPoint={gp.start}
-                                        fillLinearGradientEndPoint={gp.end}
-                                        fillLinearGradientColorStops={gp.stops}
-                                        onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<GradientEl>)}
-                                        onTransformEnd={(e) => {
-                                            const node = e.target;
-                                            onElementChange(el.id, { x: node.x(), y: node.y(), width: Math.max(10, node.width() * node.scaleX()), height: Math.max(10, node.height() * node.scaleY()), rotation: node.rotation() } as Partial<GradientEl>);
-                                            node.scaleX(1); node.scaleY(1);
-                                        }}
-                                    />
-                                );
-                            }
-
-                            if (el.type === 'path') {
-                                return (
-                                    <Group
-                                        key={el.id}
-                                        id={el.id}
-                                        x={el.x} y={el.y}
-                                        rotation={el.rotation} opacity={el.opacity}
-                                        draggable={tool === 'select'}
-                                        onClick={() => { if (tool === 'select') onSelectElement(el.id); }}
-                                        onTap={() => { if (tool === 'select') onSelectElement(el.id); }}
-                                        shadowEnabled={el.shadowEnabled} shadowColor={el.shadowColor}
-                                        shadowBlur={el.shadowBlur} shadowOffsetX={el.shadowOffsetX}
-                                        shadowOffsetY={el.shadowOffsetY} shadowOpacity={el.shadowOpacity}
-                                        onDragEnd={(e) => onElementChange(el.id, { x: e.target.x(), y: e.target.y() } as Partial<PathEl>)}
-                                        onTransformEnd={(e) => {
-                                            const node = e.target;
-                                            onElementChange(el.id, {
-                                                x: node.x(), y: node.y(),
-                                                width: Math.max(4, el.width * node.scaleX()),
-                                                height: Math.max(4, el.height * node.scaleY()),
-                                                rotation: node.rotation(),
-                                            } as Partial<PathEl>);
-                                            node.scaleX(1); node.scaleY(1);
-                                        }}
-                                    >
-                                        <KonvaPath
-                                            data={el.data}
-                                            scaleX={el.width / el.dataW}
-                                            scaleY={el.height / el.dataH}
-                                            fill={el.fill === 'none' ? undefined : el.fill}
-                                            stroke={el.strokeWidth > 0 ? el.stroke : undefined}
-                                            strokeWidth={el.strokeWidth}
-                                            strokeScaleEnabled={false}
+                                    {slide.profileBadge && (
+                                        <KonvaBadgeEl
+                                            badge={slide.profileBadge}
+                                            slideW={SLIDE_W}
+                                            slideH={slideH}
+                                            onBadgeMove={(x, y) => onBadgeMove?.(idx, x, y)}
                                         />
-                                    </Group>
-                                );
-                            }
+                                    )}
 
-                            return null;
+                                    {/* Safe area guide (current slide only) */}
+                                    {isCurrent && showSafeAreaGuide && (
+                                        <>
+                                            {safeAreaPadding.top > 0 && (
+                                                <Rect x={0} y={0} width={SLIDE_W} height={safeAreaPadding.top} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            )}
+                                            {safeAreaPadding.bottom > 0 && (
+                                                <Rect x={0} y={slideH - safeAreaPadding.bottom} width={SLIDE_W} height={safeAreaPadding.bottom} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            )}
+                                            {safeAreaPadding.left > 0 && (
+                                                <Rect x={0} y={0} width={safeAreaPadding.left} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            )}
+                                            {safeAreaPadding.right > 0 && (
+                                                <Rect x={SLIDE_W - safeAreaPadding.right} y={0} width={safeAreaPadding.right} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            )}
+                                            <Rect
+                                                x={safeAreaBounds.x} y={safeAreaBounds.y}
+                                                width={safeAreaBounds.width} height={safeAreaBounds.height}
+                                                stroke="#84cc16" strokeWidth={3} dash={[24, 14]} listening={false}
+                                            />
+                                        </>
+                                    )}
+
+                                    {/* Center drag guides for the slide being dragged */}
+                                    {dragGuides.slideIdx === idx && dragGuides.showVertical && (
+                                        <Rect x={SLIDE_W / 2 - 1} y={0} width={2} height={slideH}
+                                            stroke={DRAG_GUIDE_STROKE} strokeWidth={2} dash={DRAG_GUIDE_DASH} listening={false} />
+                                    )}
+                                    {dragGuides.slideIdx === idx && dragGuides.showHorizontal && (
+                                        <Rect x={0} y={slideH / 2 - 1} width={SLIDE_W} height={2}
+                                            stroke={DRAG_GUIDE_STROKE} strokeWidth={2} dash={DRAG_GUIDE_DASH} listening={false} />
+                                    )}
+
+                                    {/* Instagram profile-grid crop guide: the grid shows only the
+                                        centred 1:1 square, so the top/bottom bands are cut off there.
+                                        Faintly shade them + dash the visible square. Hidden on export. */}
+                                    {gridCropInset > 0 && showSafeAreaGuide && (
+                                        <>
+                                            <Rect name="slide-frame" x={0} y={0} width={SLIDE_W} height={gridCropInset} fill="rgba(15,23,42,0.16)" listening={false} />
+                                            <Rect name="slide-frame" x={0} y={slideH - gridCropInset} width={SLIDE_W} height={gridCropInset} fill="rgba(15,23,42,0.16)" listening={false} />
+                                            <Rect
+                                                name="slide-frame"
+                                                x={0} y={gridCropInset}
+                                                width={SLIDE_W} height={slideH - gridCropInset * 2}
+                                                stroke="rgba(13,153,255,0.55)" strokeWidth={2} dash={[18, 12]}
+                                                listening={false}
+                                            />
+                                        </>
+                                    )}
+
+                                    {/* Slide frame — highlight the current slide (hidden during export) */}
+                                    <Rect
+                                        name="slide-frame"
+                                        x={0} y={0} width={SLIDE_W} height={slideH}
+                                        stroke={isCurrent ? '#E8440A' : 'rgba(0,0,0,0.10)'}
+                                        strokeWidth={isCurrent ? 4 : 2}
+                                        listening={false}
+                                    />
+                                </Group>
+                            );
                         })}
-
-                        {/* Corner texts */}
-                        {corners?.show && (
-                            <>
-                                {corners.topLeft.enabled && corners.topLeft.text && (
-                                    <KonvaText
-                                        key={`corner-topLeft-${cornerFontRevision}`}
-                                        id="corner-topLeft"
-                                        x={CORNER_PAD} y={CORNER_PAD}
-                                        text={corners.topLeft.text}
-                                        fontSize={corners.topLeft.fontSize ?? CORNER_FS}
-                                        fontFamily={corners.topLeft.fontFamily ?? 'Poppins'}
-                                        fontStyle={corners.topLeft.fontStyle ?? ''}
-                                        letterSpacing={corners.topLeft.letterSpacing ?? 0}
-                                        fill={textReadabilityMap['corner-topLeft']?.fill ?? corners.topLeft.color}
-                                        listening={false}
-                                    />
-                                )}
-                                {corners.topRight.enabled && corners.topRight.text && (
-                                    <KonvaText
-                                        key={`corner-topRight-${cornerFontRevision}`}
-                                        id="corner-topRight"
-                                        x={CORNER_PAD} y={CORNER_PAD}
-                                        width={SLIDE_W - CORNER_PAD * 2}
-                                        align="right"
-                                        text={corners.topRight.text}
-                                        fontSize={corners.topRight.fontSize ?? CORNER_FS}
-                                        fontFamily={corners.topRight.fontFamily ?? 'Poppins'}
-                                        fontStyle={corners.topRight.fontStyle ?? ''}
-                                        letterSpacing={corners.topRight.letterSpacing ?? 0}
-                                        fill={textReadabilityMap['corner-topRight']?.fill ?? corners.topRight.color}
-                                        listening={false}
-                                    />
-                                )}
-                                {corners.bottomLeft.enabled && corners.bottomLeft.text && (
-                                    <KonvaText
-                                        key={`corner-bottomLeft-${cornerFontRevision}`}
-                                        id="corner-bottomLeft"
-                                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS)}
-                                        text={corners.bottomLeft.text}
-                                        fontSize={corners.bottomLeft.fontSize ?? CORNER_FS}
-                                        fontFamily={corners.bottomLeft.fontFamily ?? 'Poppins'}
-                                        fontStyle={corners.bottomLeft.fontStyle ?? ''}
-                                        letterSpacing={corners.bottomLeft.letterSpacing ?? 0}
-                                        fill={textReadabilityMap['corner-bottomLeft']?.fill ?? corners.bottomLeft.color}
-                                        listening={false}
-                                    />
-                                )}
-                                {corners.bottomRight.enabled && corners.bottomRight.text && (
-                                    <KonvaText
-                                        key={`corner-bottomRight-${cornerFontRevision}`}
-                                        id="corner-bottomRight"
-                                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS)}
-                                        width={SLIDE_W - CORNER_PAD * 2}
-                                        align="right"
-                                        text={corners.bottomRight.text}
-                                        fontSize={corners.bottomRight.fontSize ?? CORNER_FS}
-                                        fontFamily={corners.bottomRight.fontFamily ?? 'Poppins'}
-                                        fontStyle={corners.bottomRight.fontStyle ?? ''}
-                                        letterSpacing={corners.bottomRight.letterSpacing ?? 0}
-                                        fill={textReadabilityMap['corner-bottomRight']?.fill ?? corners.bottomRight.color}
-                                        listening={false}
-                                    />
-                                )}
-                                {corners.bottomRightIcon !== 'none' && (
-                                    <KonvaText
-                                        x={CORNER_PAD} y={slideH - CORNER_PAD - CORNER_FS - 48}
-                                        width={SLIDE_W - CORNER_PAD * 2}
-                                        align="right"
-                                        text={ICON_CHAR[corners.bottomRightIcon]}
-                                        fontSize={36} fontFamily="sans-serif"
-                                        listening={false}
-                                    />
-                                )}
-                            </>
-                        )}
-
-                        {/* Slide position dots */}
-                        {corners?.show && corners.showDots && slidesCount > 1 && (
-                            <>
-                                {Array.from({ length: slidesCount }, (_, i) => {
-                                    const dotR = 8;
-                                    const gap = 20;
-                                    const totalW = slidesCount * dotR * 2 + (slidesCount - 1) * (gap - dotR * 2);
-                                    const startX = (SLIDE_W - totalW) / 2;
-                                    const cx = startX + i * gap + dotR;
-                                    const cy = slideH - CORNER_PAD + 8;
-                                    return (
-                                        <KonvaCircle
-                                            key={i}
-                                            x={cx} y={cy}
-                                            radius={dotR}
-                                            fill={i === safeIdx ? '#E8440A' : 'rgba(0,0,0,0.25)'}
-                                            listening={false}
-                                        />
-                                    );
-                                })}
-                            </>
-                        )}
-
-                        {/* Safe area guide */}
-                        {showSafeAreaGuide && (
-                            <>
-                                {safeAreaPadding.top > 0 && (
-                                    <Rect x={0} y={0} width={SLIDE_W} height={safeAreaPadding.top} fill="rgba(163,230,53,0.14)" listening={false} />
-                                )}
-                                {safeAreaPadding.bottom > 0 && (
-                                    <Rect x={0} y={slideH - safeAreaPadding.bottom} width={SLIDE_W} height={safeAreaPadding.bottom} fill="rgba(163,230,53,0.14)" listening={false} />
-                                )}
-                                {safeAreaPadding.left > 0 && (
-                                    <Rect x={0} y={0} width={safeAreaPadding.left} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
-                                )}
-                                {safeAreaPadding.right > 0 && (
-                                    <Rect x={SLIDE_W - safeAreaPadding.right} y={0} width={safeAreaPadding.right} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
-                                )}
-                                <Rect
-                                    x={safeAreaBounds.x} y={safeAreaBounds.y}
-                                    width={safeAreaBounds.width} height={safeAreaBounds.height}
-                                    stroke="#84cc16" strokeWidth={3} dash={[24, 14]} listening={false}
-                                />
-                            </>
-                        )}
-
-                        {(dragGuides.showVertical || dragGuides.showHorizontal) && (
-                            <>
-                                {dragGuides.showVertical && (
-                                    <Rect
-                                        x={SLIDE_W / 2 - 1}
-                                        y={0}
-                                        width={2}
-                                        height={slideH}
-                                        stroke={DRAG_GUIDE_STROKE}
-                                        strokeWidth={2}
-                                        dash={DRAG_GUIDE_DASH}
-                                        listening={false}
-                                    />
-                                )}
-                                {dragGuides.showHorizontal && (
-                                    <Rect
-                                        x={0}
-                                        y={slideH / 2 - 1}
-                                        width={SLIDE_W}
-                                        height={2}
-                                        stroke={DRAG_GUIDE_STROKE}
-                                        strokeWidth={2}
-                                        dash={DRAG_GUIDE_DASH}
-                                        listening={false}
-                                    />
-                                )}
-                            </>
-                        )}
-
-                        {/* Profile badge overlay */}
-                        {slide.profileBadge && (
-                            <KonvaBadgeEl
-                                badge={slide.profileBadge}
-                                slideW={SLIDE_W}
-                                slideH={slideH}
-                                onBadgeMove={onBadgeMove}
-                            />
-                        )}
 
                         <Transformer
                             ref={trRef}
@@ -824,6 +815,7 @@ export function CanvasArea({
                         />
                     </Layer>
                 </Stage>
+              </div>
             </div>
         </div>
     );
