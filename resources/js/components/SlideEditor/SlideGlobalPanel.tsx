@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Trash2, ChevronDown, Minus, Bookmark, ArrowRight, Heart, MessageSquare, Smile, X, User, LayoutGrid } from 'lucide-react';
+import { Trash2, ChevronDown, MessageSquare, Smile, X, User, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { Slide, TextEl, SlideCorners, CornerIcon, CornerKey, ProfileBadge, BadgeStyle } from './types';
+import { Slide, TextEl, SlideCorners, CornerKey, ProfileBadge, BadgeStyle } from './types';
 
 const SLIDE_LAYOUTS = [
     {
@@ -120,13 +120,6 @@ const QUICK_PALETTES = [
     ['#FDE68A', '#92400E', '#065F46'],
     ['#BFDBFE', '#1E3A5F', '#F97316'],
     ['#D1FAE5', '#064E3B', '#DC2626'],
-];
-
-const CORNER_ICONS: { id: CornerIcon; icon: React.ReactNode }[] = [
-    { id: 'none', icon: <Minus className="w-3.5 h-3.5" /> },
-    { id: 'bookmark', icon: <Bookmark className="w-3.5 h-3.5" /> },
-    { id: 'arrow', icon: <ArrowRight className="w-3.5 h-3.5" /> },
-    { id: 'heart', icon: <Heart className="w-3.5 h-3.5" /> },
 ];
 
 function makeDefaultCorners(): SlideCorners {
@@ -754,28 +747,6 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         >
                             Apply to all
                         </button>
-
-                        {/* Icon picker */}
-                        <div className="flex flex-col gap-1.5">
-                            <p className="text-[9px] font-medium tracking-wider text-gray-400">
-                                {t('slideEditor.globalPanel.cornerIcon')}
-                            </p>
-                            <div className="flex items-center gap-1.5">
-                                {CORNER_ICONS.map(({ id, icon }) => (
-                                    <motion.button
-                                        key={id}
-                                        whileHover={{ scale: 1.12 }}
-                                        whileTap={{ scale: 0.88 }}
-                                        transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                                        onClick={() => patchCorners({ bottomRightIcon: id })}
-                                        className={`flex items-center justify-center rounded-lg transition-colors ${corners.bottomRightIcon === id ? 'bg-[#E8440A] text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                                        style={{ width: 32, height: 32 }}
-                                    >
-                                        {icon}
-                                    </motion.button>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                     </motion.div>
                 )}

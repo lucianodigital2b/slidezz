@@ -228,37 +228,48 @@ export const GOOGLE_FONTS: string[] = [
     'Zilla Slab Highlight',
 ];
 
-const loaded = new Set<string>();
+// Cache the in-flight load PROMISE per family (not just a "started" flag).
+// Concurrent callers must await the same real load — marking a font "loaded"
+// before the await completes would let later callers resolve immediately while
+// the font is still loading, so they'd measure/lay out text with fallback-font
+// metrics and bake in wrong positions (e.g. extra gaps around words) that never
+// self-correct. Returning the shared promise fixes that for every caller.
+const loadPromises = new Map<string, Promise<void>>();
 
-export async function loadGoogleFont(family: string): Promise<void> {
-    if (loaded.has(family)) return;
-    loaded.add(family);
+export function loadGoogleFont(family: string): Promise<void> {
+    const existing = loadPromises.get(family);
+    if (existing) return existing;
 
-    const key = family.replace(/ /g, '+');
-    const id = `gf-${key}`;
+    const promise = (async () => {
+        const key = family.replace(/ /g, '+');
+        const id = `gf-${key}`;
 
-    if (!document.getElementById(id)) {
-        const link = document.createElement('link');
-        link.id = id;
-        link.rel = 'stylesheet';
-        link.href = `https://fonts.googleapis.com/css2?family=${key}:ital,wght@0,400;0,700;1,400&display=swap`;
+        if (!document.getElementById(id)) {
+            const link = document.createElement('link');
+            link.id = id;
+            link.rel = 'stylesheet';
+            link.href = `https://fonts.googleapis.com/css2?family=${key}:ital,wght@0,400;0,700;1,400&display=swap`;
 
-        // Wait for the stylesheet to be parsed so FontFace objects are registered
-        // before calling document.fonts.load() — otherwise it resolves immediately
-        // with an empty array and the font won't be ready for canvas rendering.
-        await new Promise<void>((resolve) => {
-            link.addEventListener('load', resolve, { once: true });
-            link.addEventListener('error', resolve, { once: true });
-            document.head.appendChild(link);
-        });
-    }
+            // Wait for the stylesheet to be parsed so FontFace objects are registered
+            // before calling document.fonts.load() — otherwise it resolves immediately
+            // with an empty array and the font won't be ready for canvas rendering.
+            await new Promise<void>((resolve) => {
+                link.addEventListener('load', resolve, { once: true });
+                link.addEventListener('error', resolve, { once: true });
+                document.head.appendChild(link);
+            });
+        }
 
-    try {
-        await Promise.all([
-            document.fonts.load(`400 16px "${family}"`),
-            document.fonts.load(`700 16px "${family}"`),
-        ]);
-    } catch {
-        // silently fall back if the font fails
-    }
+        try {
+            await Promise.all([
+                document.fonts.load(`400 16px "${family}"`),
+                document.fonts.load(`700 16px "${family}"`),
+            ]);
+        } catch {
+            // silently fall back if the font fails
+        }
+    })();
+
+    loadPromises.set(family, promise);
+    return promise;
 }
