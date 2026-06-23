@@ -708,6 +708,7 @@
       "format": "Formato",
       "slideCountLabel": "Número de slides",
       "imageModeLabel": "Imagens no carrossel",
+      "languageLabel": "Idioma do conteúdo",
       "customPromptLabel": "Instruções adicionais (opcional)",
       "customPromptHint": "Adicione detalhes específicos, tom ou restrições para a IA seguir.",
       "customPromptPlaceholder": "ex: Use um tom formal, foque em dados e estatísticas, evite jargões...",

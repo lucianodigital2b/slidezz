@@ -143,7 +143,7 @@ function ConnectedAccounts({ accounts }: { accounts: SocialAccount[] }) {
             />
 
             <div className="rounded-xl border border-border bg-card divide-y divide-border">
-                <PlatformRow provider="tiktok" accounts={accounts} />
+                {/* <PlatformRow provider="tiktok" accounts={accounts} /> */}
                 <PlatformRow provider="instagram" accounts={accounts} />
             </div>
         </div>

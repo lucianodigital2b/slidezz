@@ -242,6 +242,7 @@ export default function CreateCarousel() {
     const [saveConfig, setSaveConfig]       = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
+    const [language, setLanguage]           = useState('Portuguese (Brazil)');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
     const [creditsModalOpen, setCreditsModalOpen] = useState(false);
@@ -287,7 +288,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode, language },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -594,6 +595,35 @@ export default function CreateCarousel() {
                                             }`}
                                         >
                                             <Icon className="h-4 w-4 shrink-0" />
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Language Selector */}
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('createCarousel.step3.languageLabel')}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                        { id: 'Portuguese (Brazil)', label: 'Português (BR)' },
+                                        { id: 'English',             label: 'English' },
+                                        { id: 'Spanish',             label: 'Español' },
+                                        { id: 'French',              label: 'Français' },
+                                        { id: 'German',              label: 'Deutsch' },
+                                        { id: 'Italian',             label: 'Italiano' },
+                                    ] as { id: string; label: string }[]).map(({ id, label }) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            onClick={() => setLanguage(id)}
+                                            className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
+                                                language === id
+                                                    ? 'border-[#E8440A] bg-[#E8440A]/5 text-[#E8440A]'
+                                                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            {language === id && <Check className="h-4 w-4 shrink-0" />}
                                             {label}
                                         </button>
                                     ))}

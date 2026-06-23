@@ -18,6 +18,7 @@ class CarouselGenerationController extends Controller
             'style' => ['nullable', 'string', 'max:200'],
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'word_highlight' => ['nullable', 'boolean'],
+            'language' => ['nullable', 'string', 'max:50'],
         ]);
 
         if (! $request->user()->deductCredit()) {
@@ -32,6 +33,7 @@ class CarouselGenerationController extends Controller
             style: $validated['style'] ?? 'modern and professional',
             slideCount: $validated['slide_count'] ?? 5,
             wordHighlight: $validated['word_highlight'] ?? true,
+            language: $validated['language'] ?? 'Portuguese (Brazil)',
         );
     }
 

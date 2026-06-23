@@ -80,6 +80,7 @@ class SlideProjectController extends Controller
             'slideCount' => session('wizardSlideCount', 3),
             'imageMode' => session('wizardImageMode', 'background'),
             'wordHighlight' => session('wizardWordHighlight', true),
+            'language' => session('wizardLanguage', 'Portuguese (Brazil)'),
             'saveAsTemplate' => session('wizardSaveAsTemplate', false),
         ] : null;
 

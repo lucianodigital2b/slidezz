@@ -46,6 +46,7 @@ interface WizardConfig {
     slideCount: number;
     imageMode: ImageMode;
     wordHighlight: boolean;
+    language?: string;
     saveAsTemplate?: boolean;
 }
 
@@ -117,6 +118,7 @@ export default function SlideEditor() {
         aiSlideCount, setAiSlideCount,
         aiImageMode, setAiImageMode,
         aiWordHighlight, setAiWordHighlight,
+        aiLanguage, setAiLanguage,
         aiTemplateId, setAiTemplateId,
         aiStatus,
         aiProgress, aiError,
@@ -313,11 +315,13 @@ export default function SlideEditor() {
         setAiImageMode(mode);
         const hl = wizardConfig.wordHighlight ?? true;
         setAiWordHighlight(hl);
+        const lang = wizardConfig.language ?? 'Portuguese (Brazil)';
+        setAiLanguage(lang);
         const templateId = wizardConfig.template ?? null;
         setAiTemplateId(templateId);
         setAiModalOpen(true);
         const shouldSaveTemplate = wizardConfig.saveAsTemplate ?? false;
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId)
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId, lang)
             .then((generated) => {
                 if (shouldSaveTemplate && generated && generated.length > 0) {
                     // Let the canvas paint the generated slides before snapshotting the thumbnail.
@@ -668,6 +672,7 @@ export default function SlideEditor() {
                 slideCount: aiSlideCount,
                 imageMode: aiImageMode,
                 wordHighlight: aiWordHighlight,
+                language: aiLanguage,
                 wizardConfig: wizardConfig ?? null,
             },
             slides: sanitizedSlides,

@@ -34,6 +34,7 @@ export function useAiGeneration(
     const [aiSlideCount, setAiSlideCount] = useState(5);
     const [aiImageMode, setAiImageMode] = useState<ImageMode>('background');
     const [aiWordHighlight, setAiWordHighlight] = useState(true);
+    const [aiLanguage, setAiLanguage] = useState('Portuguese (Brazil)');
     const [aiTemplateId, setAiTemplateId] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
     const [aiProgress, setAiProgress] = useState<string[]>([]);
@@ -76,22 +77,30 @@ export function useAiGeneration(
         return gradient.map((stop) => resolveAccessibleHighlightColor(stop, background));
     }
 
-    function pickSingleHighlightWord(title: string, highlightWords: string[] | undefined): string[] {
+    /**
+     * Keep the highlight terms (words or multi-word phrases) that actually appear
+     * in the title, in the order given, deduped and capped. Multiple terms are
+     * allowed — `buildRichText` emphasizes every matching term.
+     */
+    function pickHighlightTerms(title: string, highlightWords: string[] | undefined): string[] {
         if (!highlightWords?.length) return [];
 
-        for (const candidate of highlightWords) {
-            const parts = candidate
-                .split(/\s+/)
-                .map((part) => part.trim())
-                .filter(Boolean);
+        const terms: string[] = [];
+        const seen = new Set<string>();
 
-            for (const part of parts) {
-                const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                if (new RegExp(`\\b${escaped}\\b`, 'i').test(title)) return [part];
+        for (const candidate of highlightWords) {
+            const term = candidate.trim();
+            if (!term) continue;
+            const key = term.toLowerCase();
+            if (seen.has(key)) continue;
+            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (new RegExp(escaped, 'i').test(title)) {
+                terms.push(term);
+                seen.add(key);
             }
         }
 
-        return [];
+        return terms.slice(0, 4);
     }
 
     function buildSlideFromData(
@@ -149,7 +158,7 @@ export function useAiGeneration(
             const accent = template.accentColor;
             const highlightColor = resolveAccessibleHighlightColor(accent ?? data.highlightColor, colorReference);
             const highlightGradient = accent ? undefined : resolveAccessibleGradient(data.highlightGradient, colorReference);
-            const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
+            const highlightWords = pickHighlightTerms(data.title, data.highlightWords);
 
             if (highlightWords.length > 0) {
                 // Match case-insensitively: some layouts (hook_hero, stat_callout) render the
@@ -250,7 +259,7 @@ export function useAiGeneration(
         const accent = template?.accentColor;
         const highlightColor = resolveAccessibleHighlightColor(accent ?? data.highlightColor, backgroundColor);
         const highlightGradient = accent ? undefined : resolveAccessibleGradient(data.highlightGradient, backgroundColor);
-        const highlightWords = pickSingleHighlightWord(data.title, data.highlightWords);
+        const highlightWords = pickHighlightTerms(data.title, data.highlightWords);
         const titlePadding = 28;
         const descriptionPadding = 16;
         const titleRichText = highlightWords.length > 0
@@ -311,13 +320,14 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null, languageOverride?: string) {
         if (isGeneratingRef.current) return;
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
         const slideCount = slideCountOverride ?? aiSlideCount;
         const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
         const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
+        const language = languageOverride ?? aiLanguage;
         const templateId = templateIdOverride !== undefined ? templateIdOverride : aiTemplateId;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
@@ -334,7 +344,7 @@ export function useAiGeneration(
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
-                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight }),
+                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language }),
             });
         } catch {
             isGeneratingRef.current = false;
@@ -459,6 +469,8 @@ export function useAiGeneration(
         setAiImageMode,
         aiWordHighlight,
         setAiWordHighlight,
+        aiLanguage,
+        setAiLanguage,
         aiTemplateId,
         setAiTemplateId,
         aiStatus,

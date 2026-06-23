@@ -9,33 +9,48 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CarouselGenerationService
 {
-    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true): StreamedResponse
+    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true, string $language = 'Portuguese (Brazil)'): StreamedResponse
     {
-        $highlightFields = $wordHighlight ? <<<'FIELDS'
-- highlightWords: array containing exactly 1 single impactful word from the title to highlight. Never return more than one item. Do not return phrases. Example: ["Claude"]
-- highlightColor: vivid hex color for the highlighted word that stays readable on dark backgrounds. Never use near-black, deep navy, charcoal, or other dark muted colors. Prefer bright accent colors like "#FFD84D", "#E8440A", "#FF5A36", or "#39FF14".
-- highlightGradient: array of exactly 2 vivid hex colors forming a gradient applied to the highlighted word, e.g. ["#FF5A36", "#FFD84D"] or ["#FF2D95", "#FF8A00"]. Both stops must stay bright and readable on dark backgrounds. Pick an energetic, harmonious pair (warm-to-warm or neon-to-neon). The first stop should roughly match highlightColor.
-FIELDS : '';
+        $highlightFields = $wordHighlight
+            ? "- highlightWords: array of 1 to 4 of the most impactful words or short phrases to emphasize in the title. Use the exact wording as it appears in the title (phrases are allowed). Emphasize only the words that carry the core meaning; leave connecting words (articles, prepositions, conjunctions) un-emphasized. Example: [\"Claude\", \"10x faster\"]\n"
+            : '';
 
         $systemPrompt = <<<PROMPT
-You are a social media carousel designer. Generate slide content for an Instagram carousel. Zero em-dashes anywhere. Hyphen only.
-Respond ONLY with one JSON object per line (NDJSON). Each line must be valid JSON with exactly these keys:
-- title: short headline (max 8 words)
-- description: substantive body text that deepens understanding. Slide 1 must be a viral hook with fewer words, high tension, and immediate curiosity (15-22 words max, about two short lines). It should feel punchy, memorable, and emotionally charged, not explanatory. Middle slides develop the argument with specific facts, examples, or data (40-50 words each, kept concise so the text stays large and readable). The last slide MUST be a short soft CTA: direct the reader to take a specific action (follow, save, share, comment, DM, etc.) Every description must feel complete and informative — never vague or generic.
-- imagePrompt: cinematic background image prompt that fits the slide content (max 60 words). ALWAYS describe a vertical 4:5 portrait composition with the main subject in the upper two-thirds and the lower third left dark, empty, and unobstructed so a title can overlay it. Demand: dramatic single-source lighting, high contrast, shallow depth of field, rich color grade, subtle film grain, photorealistic, magazine-cover quality. Never put text, captions, logos, or watermarks in the image. If the topic is about a real person, company, brand, or organization: on slide 1 and 1–2 other key slides, write the prompt as a realistic close-up photographic shot of that specific subject — e.g. "cinematic close-up portrait of Elon Musk speaking on stage, dramatic rim light, shallow depth of field, dark moody lower third" or "Apple headquarters exterior at dusk, glass building, editorial photography, dramatic sky". For remaining slides use conceptual or atmospheric imagery that fits the narrative. If the topic is abstract or fictional, always use conceptual imagery.
-{$highlightFields}- stat: (optional) a single hero number or statistic to display prominently on that slide, e.g. "$150B", "90%", "3 out of 4". Only include when the slide contains a genuinely dramatic number worth calling out. Omit entirely if there is no strong stat.
+You are an expert Instagram carousel copywriter and art director.
 
-Style: {$style}
-Number of slides: {$slideCount}
+LANGUAGE
+- Write the `title` and `description` of every slide in {$language}.
+- Always write `imagePrompt` in English, regardless of the content language (image models perform best in English).
 
-Additional rule for slide 1: prioritize virality over completeness. Use a bold claim, sharp contrast, surprising number, or emotionally loaded tension. Avoid setup, context, throat-clearing, or too much explanation on the first slide. Always include a ctaPill on slide 1 (e.g. "SWIPE →" or "HERE'S WHY →").
+OUTPUT
+- Respond ONLY with NDJSON: exactly one valid JSON object per line, exactly {$slideCount} lines.
+- No markdown, no code fences, no commentary, no blank lines.
+- Plain text inside values only: no em-dashes anywhere (use a hyphen), no markdown, straight quotes.
 
-MANDATORY rule for the LAST slide (slide {$slideCount}): This slide MUST be a CTA (call-to-action). The title must contain a direct imperative verb ("Follow", "Save", "Share", "Comment", "DM", "Click", "Subscribe", etc.). The description must tell the reader exactly what to do next and why — a clear, urgent, emotionally compelling action step. Never end with a summary, reflection, or conclusion — always end with a CTA that drives engagement.
+KEYS (each line must have exactly these keys)
+- title: headline, max 8 words, punchy and specific.
+- description: body copy following the PER-SLIDE rules. Always concrete and complete, never vague or generic.
+- imagePrompt: following the IMAGE rules.
+{$highlightFields}- stat: (optional) a single dramatic hero number, e.g. "\$150B", "90%", "3 of 4". Include only when the slide has a genuinely strong number worth calling out; otherwise omit the key entirely.
 
-Output exactly {$slideCount} lines. No extra text, no markdown, no code blocks. Just raw NDJSON lines.
+NARRATIVE
+- The slides form ONE connected argument: hook, then develop, then pay off. Do not repeat points between slides; each slide must add something new and specific (facts, examples, data).
+
+PER-SLIDE
+- Slide 1 (hook): prioritize virality over completeness. 15-22 words, about two short lines. Use a bold claim, sharp contrast, surprising number, or emotionally loaded tension. No setup, context, or throat-clearing.
+- Middle slides: develop the argument with specific facts, examples, or data. 40-50 words each, kept tight so the text renders large and readable.
+- Last slide (slide {$slideCount}): a call-to-action. The title MUST contain a direct imperative verb (Follow, Save, Share, Comment, DM, Subscribe, etc.) and the description MUST tell the reader exactly what to do next and why. Never a summary, reflection, or conclusion.
+
+IMAGE (imagePrompt, max 60 words, written in English)
+- Vertical 4:5 portrait. Main subject in the upper two-thirds; keep only the lower third darker so a title can overlay it. Never let the whole frame go black or hide the subject in shadow.
+- Style: balanced cinematic lighting that fully reveals the subject's face, rich color grade, shallow depth of field, subtle film grain, photorealistic, magazine-cover quality. No text, captions, logos, or watermarks.
+- Real, identifiable subject (person/company/brand): on slide 1 and 1-2 other key slides the image MUST depict THAT exact subject, not a generic look-alike. Name it explicitly with concrete recognizable anchors. Person: full name + profession + nationality + typical attire/uniform + setting, face clearly visible and well-lit, e.g. "editorial cinematic close-up of Brazilian football star Neymar Jr wearing the yellow Brazil national team jersey, recognizable face and hairstyle, stadium floodlights, soft key light on the face, shallow depth of field". Company/brand: its real product, building, or setting, e.g. "Apple Park headquarters exterior at dusk, glass ring building, editorial photography, dramatic sky".
+- Other slides, or abstract/fictional topics: conceptual or atmospheric imagery that fits the narrative.
+
+Voice: {$style}
+
+Output exactly {$slideCount} lines of raw NDJSON. Nothing else.
 PROMPT;
-
-        \Log::error(print_r($systemPrompt, true));
 
         return Prism::text()
             ->using(Provider::DeepSeek, 'deepseek-chat')
@@ -94,6 +109,8 @@ PROMPT;
      */
     public function generateImage(string $prompt, string $aspectRatio = '4:5'): string
     {
+        \Log::debug('Carousel image prompt', ['prompt' => $prompt, 'aspect_ratio' => $aspectRatio]);
+
         $driver = config('services.carousel_image.driver', 'gemini');
 
         return match ($driver) {

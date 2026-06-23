@@ -314,7 +314,7 @@ export default function LandingEn({
                                 AI-powered content at scale
                             </div>
 
-                            <h1 className="font-display text-[58px] leading-[0.92] tracking-normal sm:text-[72px] lg:text-[74px]">
+                            <h1 className="font-bold font-display text-[58px] leading-[0.92] tracking-normal sm:text-[72px] lg:text-[74px]">
                                 Generate viral carousels{' '}
                                 <TextShimmer
                                     as="span"

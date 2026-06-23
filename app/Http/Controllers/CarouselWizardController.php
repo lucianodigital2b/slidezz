@@ -84,6 +84,7 @@ class CarouselWizardController extends Controller
             'format' => ['nullable', 'string', 'in:post,stories'],
             'image_mode' => ['nullable', 'string', 'in:none,background,grid,alternate'],
             'word_highlight' => ['nullable', 'boolean'],
+            'language' => ['nullable', 'string', 'max:50'],
         ]);
 
         $workspace = Workspace::where('owner_id', $request->user()->id)->firstOrFail();
@@ -116,6 +117,7 @@ class CarouselWizardController extends Controller
             ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
             ->with('wizardImageMode', $validated['image_mode'] ?? 'background')
             ->with('wizardWordHighlight', $validated['word_highlight'] ?? true)
+            ->with('wizardLanguage', $validated['language'] ?? 'Portuguese (Brazil)')
             ->with('wizardSaveAsTemplate', $request->boolean('save_as_template'));
     }
 }

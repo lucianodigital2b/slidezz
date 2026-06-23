@@ -460,6 +460,7 @@
       "format": "Format",
       "slideCountLabel": "Number of slides",
       "imageModeLabel": "Images in carousel",
+      "languageLabel": "Content language",
       "customPromptLabel": "Additional instructions (optional)",
       "customPromptHint": "Add specific details, tone, or constraints for the AI to follow.",
       "customPromptPlaceholder": "e.g. Use a formal tone, focus on data and statistics, avoid jargon...",
