@@ -827,13 +827,13 @@ export default function Welcome({
                                             : 'bg-[#E8F5E9] text-[#28CA41]'
                                     }`}
                                 >
-                                    até 50% OFF
+                                    até 30% OFF
                                 </span>
                             </button>
                         </div>
                     </div>
 
-                    <FadeIn className="mx-auto grid w-full max-w-3xl items-stretch gap-6 md:grid-cols-2">
+                    <FadeIn className="mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-3">
                         {/* Starter */}
                         <div className="relative flex flex-col rounded-[24px] border border-[#E8E7E2] bg-white p-8 shadow-sm">
                             <div className="mb-4 flex items-center justify-between">
@@ -842,7 +842,7 @@ export default function Welcome({
                                 </h3>
                                 {billingCycle === 'annual' && (
                                     <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        20% OFF
+                                        30% OFF
                                     </span>
                                 )}
                             </div>
@@ -850,11 +850,11 @@ export default function Welcome({
                                 {billingCycle === 'annual' ? (
                                     <>
                                         <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            $36/mês
+                                            R$67/mês
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $29
+                                                R$47
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mês
@@ -871,7 +871,7 @@ export default function Welcome({
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $36
+                                                R$67
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mês
@@ -886,17 +886,17 @@ export default function Welcome({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                Carrosséis ilimitados
+                                30 carrosséis / mês
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
-                                Recursos básicos:
+                                Inclui:
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'Sugestões ilimitadas de posts',
-                                    'Geração de carrossel',
-                                    'Exportar carrosséis',
+                                    'Copy e hooks com IA',
+                                    'Todos os templates',
+                                    'Imagens IA incluídas',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -927,7 +927,7 @@ export default function Welcome({
                                 </h3>
                                 {billingCycle === 'annual' && (
                                     <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        35% OFF
+                                        31% OFF
                                     </span>
                                 )}
                             </div>
@@ -935,11 +935,11 @@ export default function Welcome({
                                 {billingCycle === 'annual' ? (
                                     <>
                                         <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            $120/mês
+                                            R$127/mês
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $79
+                                                R$87
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mês
@@ -956,7 +956,7 @@ export default function Welcome({
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $120
+                                                R$127
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mês
@@ -971,7 +971,7 @@ export default function Welcome({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                Carrosséis ilimitados
+                                100 carrosséis / mês
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -979,16 +979,99 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'Transformar notícias em posts',
-                                    'Suas fotos no conteúdo',
-                                    'Gestão de equipe',
-                                    'Assistente WhatsApp (em breve)',
+                                    'BYOK: imagens IA ilimitadas',
+                                    'Suporte prioritário',
+                                    'Acesso antecipado',
+                                    'Salvar seus templates',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
                                         className="flex items-start gap-3 text-lg font-medium text-[#555550]"
                                     >
                                         <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#E8440A]" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link
+                                href={ctaHref}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
+                            >
+                                Testar agora <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+
+                        {/* Agency */}
+                        <div className="relative flex flex-col rounded-[24px] border border-[#333330] bg-[#1A1A1A] p-8 shadow-lg">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-2xl font-extrabold text-white">
+                                    Agency
+                                </h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="rounded-full bg-[#FCD34D]/15 px-2.5 py-1 text-xs font-bold tracking-wide text-[#FCD34D] uppercase">
+                                        28% OFF
+                                    </span>
+                                )}
+                            </div>
+                            <div className="mb-6">
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
+                                            R$247/mês
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] leading-none font-extrabold text-white">
+                                                R$177
+                                            </span>
+                                            <span className="text-lg font-medium text-[#AAAAAA]">
+                                                /mês
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 text-sm font-medium text-[#888880]">
+                                            cobrado anualmente
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="mb-1 text-lg font-semibold text-transparent select-none">
+                                            &nbsp;
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] leading-none font-extrabold text-white">
+                                                R$247
+                                            </span>
+                                            <span className="text-lg font-medium text-[#AAAAAA]">
+                                                /mês
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 text-sm font-medium text-[#888880]">
+                                            cobrado mensalmente
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="mb-6 flex items-center gap-3 border-b border-[#333330] pb-6 text-lg font-bold text-[#FCD34D]">
+                                <Check className="h-4 w-4 text-[#FCD34D]" />
+                                300 carrosséis / mês
+                            </div>
+
+                            <div className="mb-4 text-sm font-bold text-[#AAAAAA]">
+                                Tudo no Pro, mais:
+                            </div>
+                            <ul className="mb-8 flex flex-1 flex-col gap-3">
+                                {[
+                                    'BYOK: imagens IA ilimitadas',
+                                    'Múltiplos projetos',
+                                    'Gestão de equipe',
+                                    'API (em breve)',
+                                ].map((feature) => (
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]"
+                                    >
+                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#FCD34D]" />
                                         {feature}
                                     </li>
                                 ))}

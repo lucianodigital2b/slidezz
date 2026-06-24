@@ -10,6 +10,7 @@ use App\Services\AI\UrlContentExtractorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,7 +35,52 @@ class CarouselWizardController extends Controller
         return Inertia::render('CreateCarousel', [
             'workspaceConfig' => $carouselConfig,
             'savedTemplates' => $templates,
+            // Prefill when arriving from the dashboard "Ideias do dia" picker.
+            'initialTopic' => $request->string('topic')->toString() ?: null,
+            'initialTitle' => $request->string('title')->toString() ?: null,
         ]);
+    }
+
+    /**
+     * AI-generated "ideas of the day" from the workspace's brand DNA. Cached once
+     * per user per day to keep the dashboard cheap; `?refresh=1` forces a fresh set.
+     */
+    public function ideas(Request $request): JsonResponse
+    {
+        $workspace = Workspace::where('owner_id', $request->user()->id)->first();
+        $profile = $workspace?->profile ?? [];
+
+        if (blank($profile['brand_name'] ?? null)) {
+            return response()->json(['ideas' => []]);
+        }
+
+        // The lang param feeds the LLM prompt, so accept only the supported
+        // locales (never the raw string) to avoid prompt injection.
+        $allowed = ['Portuguese (Brazil)', 'English'];
+        $language = in_array($request->string('lang')->toString(), $allowed, true)
+            ? $request->string('lang')->toString()
+            : 'Portuguese (Brazil)';
+
+        // Language is part of the key so PT and EN sets are cached separately.
+        $cacheKey = "carousel_ideas:{$request->user()->id}:".now()->toDateString().':'.md5($language);
+
+        if ($request->boolean('refresh')) {
+            Cache::forget($cacheKey);
+        }
+
+        try {
+            $ideas = Cache::remember(
+                $cacheKey,
+                now()->endOfDay(),
+                fn () => $this->carouselGenerationService->generateIdeas($profile, $language),
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Carousel idea generation failed', ['message' => $e->getMessage()]);
+
+            return response()->json(['ideas' => [], 'error' => true]);
+        }
+
+        return response()->json(['ideas' => $ideas]);
     }
 
     public function extractUrl(Request $request): JsonResponse

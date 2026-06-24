@@ -60,6 +60,8 @@ interface PageProps extends Record<string, unknown> {
     workspaceConfig: WorkspaceConfig | null;
     savedTemplates: SavedTemplate[];
     auth: { credits: number };
+    initialTopic: string | null;
+    initialTitle: string | null;
 }
 
 // ─── SelectionCard ────────────────────────────────────────────────────────────
@@ -229,11 +231,11 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
 
 export default function CreateCarousel() {
     const { t } = useTranslation();
-    const { workspaceConfig, savedTemplates, auth } = usePage<PageProps>().props;
+    const { workspaceConfig, savedTemplates, auth, initialTopic, initialTitle } = usePage<PageProps>().props;
 
     const [step, setStep]                   = useState(1);
-    const [title, setTitle]                 = useState('');
-    const [topic, setTopic]                 = useState('');
+    const [title, setTitle]                 = useState(initialTitle ?? '');
+    const [topic, setTopic]                 = useState(initialTopic ?? '');
     const [customPrompt, setCustomPrompt]   = useState('');
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
@@ -397,22 +399,23 @@ export default function CreateCarousel() {
                                     />
                                 </div>
 
+                                {/* TODO: Import from a URL — feature to be implemented later */}
                                 {/* Import divider */}
-                                <div className="flex items-center gap-3">
+                                {/* <div className="flex items-center gap-3">
                                     <div className="flex-1 h-px bg-gray-100" />
                                     <span className="text-xs text-gray-400">{t('createCarousel.step1.or')}</span>
                                     <div className="flex-1 h-px bg-gray-100" />
-                                </div>
+                                </div> */}
 
                                 {/* Import URL button */}
-                                <button
+                                {/* <button
                                     type="button"
                                     onClick={() => setImportOpen(true)}
                                     className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 hover:border-[#E8440A] hover:text-[#E8440A] transition-colors"
                                 >
                                     <ExternalLink className="h-4 w-4" />
                                     {t('createCarousel.step1.importBtn')}
-                                </button>
+                                </button> */}
                             </div>
 
                             {/* Format */}

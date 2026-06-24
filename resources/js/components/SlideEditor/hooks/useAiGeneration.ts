@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
-import { Slide, SlideEl, TextEl, ImageEl, GradientEl, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
+import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
@@ -220,7 +220,24 @@ export function useAiGeneration(
                 }
             }
 
-            return { id: uid(), background: scene.background, elements: scene.elements };
+            // Tweet-style templates ship a "tweet" ProfileBadge header by default so
+            // the generated deck reads like a real Twitter/X post. The placeholder
+            // name/handle/photo are meant to be edited in the badge panel.
+            const profileBadge: ProfileBadge | undefined = scene.badgeStyle === 'tweet'
+                ? {
+                    enabled: true,
+                    style: 'tweet',
+                    name: 'Seu Nome',
+                    handle: 'seu.perfil',
+                    photoUrl: '',
+                    size: 96,
+                    verified: true,
+                    x: scene.badgeX,
+                    y: scene.badgeY,
+                }
+                : undefined;
+
+            return { id: uid(), background: scene.background, elements: scene.elements, ...(profileBadge ? { profileBadge } : {}) };
         }
 
         // Fallback: legacy layout-agnostic rendering (background images only; grid slides get no image)

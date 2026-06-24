@@ -337,6 +337,9 @@
       "profileBadgeStyleSolid": "Solid",
       "profileBadgeStyleMinimal": "Minimal",
       "profileBadgeStyleDivider": "Divider",
+      "profileBadgeStyleTweet": "Tweet",
+      "profileBadgeName": "DISPLAY NAME",
+      "profileBadgeNamePlaceholder": "Your Name",
       "profileBadgeHandle": "@ HANDLE",
       "profileBadgeHandlePlaceholder": "your.handle",
       "profileBadgePhoto": "BADGE PHOTO",
@@ -356,13 +359,34 @@
       "layout": "Layout",
       "layoutSlide": "Slide {{index}}",
       "layouts": {
-        "bg_photo":        { "name": "Photo background",   "desc": "Full-bleed photo, text overlay" },
-        "text_photo_text": { "name": "Text · photo · text", "desc": "Title, photo card, body below" },
-        "photo_top":       { "name": "Photo on top",        "desc": "Photo above, text below" },
-        "photo_bottom":    { "name": "Photo on bottom",     "desc": "Text above, photo below" },
-        "photo_left":      { "name": "Side photo",          "desc": "Photo left, text right" },
-        "text_only":       { "name": "Text only",           "desc": "Text only, no image" },
-        "image_only":      { "name": "Image only",          "desc": "Image only (text hidden)" }
+        "bg_photo": {
+          "name": "Photo background",
+          "desc": "Full-bleed photo, text overlay"
+        },
+        "text_photo_text": {
+          "name": "Text · photo · text",
+          "desc": "Title, photo card, body below"
+        },
+        "photo_top": {
+          "name": "Photo on top",
+          "desc": "Photo above, text below"
+        },
+        "photo_bottom": {
+          "name": "Photo on bottom",
+          "desc": "Text above, photo below"
+        },
+        "photo_left": {
+          "name": "Side photo",
+          "desc": "Photo left, text right"
+        },
+        "text_only": {
+          "name": "Text only",
+          "desc": "Text only, no image"
+        },
+        "image_only": {
+          "name": "Image only",
+          "desc": "Image only (text hidden)"
+        }
       }
     },
     "rightPanel": {
@@ -577,7 +601,8 @@
         "softCoral": "Soft Coral",
         "forest": "Forest",
         "mint": "Mint"
-      }
+      },
+      "paletteApply": "Apply"
     },
     "plans": {
       "title": "Choose your plan",
@@ -585,7 +610,8 @@
       "afterTrial": "after 14 days free",
       "startFree": "Start {{plan}} free",
       "terms": "By subscribing, you agree to our terms of use. You can cancel before the end of the free period at no cost.",
-      "logout": "Log out"
+      "logout": "Log out",
+      "popular": "Most popular"
     },
     "errors": {
       "goalRequired": "Please select your main goal.",
@@ -610,22 +636,50 @@
     "plans": {
       "starter": {
         "annualSub": "/mo, billed annually",
-        "features": ["10 carousels per month", "All templates", "Email support"]
+        "features": [
+          "10 carousels per month",
+          "All templates",
+          "Email support"
+        ]
       },
       "pro": {
         "annualSub": "/mo, billed annually",
-        "features": ["30 carousels per month", "All templates", "Priority support", "Early access"]
+        "features": [
+          "30 carousels per month",
+          "All templates",
+          "Priority support",
+          "Early access"
+        ]
       }
     }
   },
   "sidebar": {
+    "generate": "Generate Ideas",
+    "newAutomation": "New Automation",
+    "home": "Home",
+    "library": "Library",
+    "analytics": "Analytics",
     "schedule": "Schedule",
+    "slideshows": "Slideshows",
     "automations": "Automations",
     "slideshowEditor": "Slideshow Editor",
+    "imageCollections": "Image Collections",
+    "database": "Database",
     "settings": "Settings",
     "credits": "Credits"
   },
+  "generate": {
+    "pageTitle": "Generate Ideas",
+    "eyebrow": "Create with AI",
+    "question": "What do you want to post today?",
+    "subtitle": "Pick one of today's ideas or describe your own."
+  },
   "dashboard": {
+    "title": "Home",
+    "slideshowDatabase": "Slideshow Database",
+    "tabSlideshows": "Slideshows ({{count}})",
+    "tabUgc": "UGC Videos ({{count}})",
+    "pageInfo": "Page {{current}} of {{total}}",
     "pageTitle": "Dashboard",
     "promptLabel": "Prompt",
     "copy": "Copy",
@@ -633,9 +687,24 @@
     "duplicate": "Duplicate",
     "prev": "Prev",
     "next": "Next",
+    "question": "What are you creating today?",
     "recentLabel": "Recent Projects",
     "heroEyebrow": "Dashboard",
     "heroSubtitle": "Generate a complete carousel in under a minute, or start from scratch in the editor.",
+    "ideas": {
+      "label": "Ideas of the day",
+      "regenerate": "Generate others",
+      "generatingShort": "Generating…",
+      "generating": "Reading your brand DNA…",
+      "generatingCount": "Generating 3 ideas",
+      "ideaLabel": "Idea {{n}}",
+      "error": "Couldn't generate ideas right now.",
+      "retry": "Try again",
+      "or": "or",
+      "describeLabel": "Describe your idea",
+      "describePlaceholder": "Ex: why customers stop following you after the first purchase…",
+      "create": "Create carousel"
+    },
     "searchPlaceholder": "Search projects...",
     "noResults": "No projects found for your search.",
     "clearSearch": "Clear search",
@@ -663,5 +732,182 @@
       "credits": "3 free credits",
       "cta": "Create my first carousel"
     }
+  },
+  "library": {
+    "title": "Library",
+    "subtitle": "Manage all your videos and content in one place",
+    "empty": "Your library is empty. Import or create content to get started."
+  },
+  "automations": {
+    "title": "Automations",
+    "subtitle": "Create automated flows to publish content effortlessly",
+    "newAutomation": "New Automation",
+    "empty": "No automations created yet. Create your first automation to get started."
+  },
+  "database": {
+    "title": "Database",
+    "subtitle": "Manage the data used in your slideshows and automations",
+    "newEntry": "New Entry",
+    "empty": "No data yet. Add entries to the database to use in your slideshows."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "or": "Or",
+    "password": "Password",
+    "email": "Email",
+    "name": "Name"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your profile and account settings",
+    "nav": {
+      "profile": "Profile",
+      "security": "Security",
+      "appearance": "Appearance",
+      "integrations": "Integrations",
+      "billing": "Billing"
+    },
+    "profile": {
+      "title": "Profile settings",
+      "infoTitle": "Profile information",
+      "infoDescription": "Update your name and email address",
+      "name": "Name",
+      "namePlaceholder": "Full name",
+      "email": "Email",
+      "emailPlaceholder": "Email",
+      "emailUnverified": "Your email address is not verified.",
+      "resendVerification": "Click here to resend the verification email.",
+      "verificationSent": "A new verification link has been sent to your email address.",
+      "save": "Save",
+      "connectedAccounts": {
+        "title": "Connected Accounts",
+        "description": "Connect your social accounts to schedule posts",
+        "connect": "Add {{platform}}",
+        "disconnect": "Disconnect",
+        "confirmDisconnect": "Disconnect @{{handle}}?"
+      }
+    },
+    "security": {
+      "title": "Security settings",
+      "passwordTitle": "Update password",
+      "passwordDescription": "Make sure to use a long, random password to keep your account secure",
+      "currentPassword": "Current password",
+      "currentPasswordPlaceholder": "Current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "New password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "savePassword": "Save password",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorDescription": "Manage your two-factor authentication settings",
+      "twoFactorEnabledInfo": "You will be prompted for a secure, random PIN during login, available from your phone's TOTP-compatible app.",
+      "twoFactorDisabledInfo": "When you enable two-factor authentication, you will be prompted for a secure PIN during login. This PIN can be retrieved from a TOTP-compatible app on your phone.",
+      "disable2FA": "Disable 2FA",
+      "enable2FA": "Enable 2FA",
+      "continueSetup": "Continue setup",
+      "2fa": {
+        "enabledTitle": "Two-factor authentication enabled",
+        "enabledDescription": "Two-factor authentication is active. Scan the QR code or enter the setup key in your authenticator app.",
+        "verifyTitle": "Verify authentication code",
+        "verifyDescription": "Enter the 6-digit code from your authenticator app",
+        "setupTitle": "Enable two-factor authentication",
+        "setupDescription": "To finish enabling, scan the QR code or enter the setup key in your authenticator app",
+        "close": "Close",
+        "continue": "Continue",
+        "confirm": "Confirm",
+        "orEnterManually": "Or enter the code manually"
+      },
+      "recoveryCodes": {
+        "title": "2FA recovery codes",
+        "description": "Recovery codes let you regain access if you lose your 2FA device. Store them in a secure password manager.",
+        "view": "View recovery codes",
+        "hide": "Hide recovery codes",
+        "regenerate": "Regenerate codes",
+        "loading": "Loading recovery codes",
+        "warning": "Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate codes above."
+      }
+    },
+    "appearance": {
+      "title": "Appearance settings",
+      "description": "Update your account's appearance settings"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "geminiTitle": "Gemini key (BYOK)",
+      "geminiDescription": "Connect your own Google Gemini key to generate unlimited images. Images are billed directly to your Google account.",
+      "keyLabel": "Gemini API key",
+      "keyHint": "Get it at ai.google.dev. We store the key encrypted and never show it back.",
+      "keyConnected": "Key connected. Unlimited images active.",
+      "save": "Save",
+      "lockedTitle": "Available on the Pro and Agency plans",
+      "lockedDescription": "BYOK (your own Gemini key) unlocks unlimited images. Upgrade to enable it.",
+      "upgradeCta": "View plans"
+    },
+    "deleteAccount": {
+      "title": "Delete account",
+      "description": "Delete your account and all of its resources",
+      "warning": "Warning",
+      "warningText": "Please proceed with caution, this cannot be undone.",
+      "deleteButton": "Delete account",
+      "dialogTitle": "Are you sure you want to delete your account?",
+      "dialogDescription": "Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you want to permanently delete your account.",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Password",
+      "cancelButton": "Cancel",
+      "confirmButton": "Delete account"
+    }
+  },
+  "analytics": {
+    "title": "Analytics Overview",
+    "subtitle": "Track your performance and engagement metrics",
+    "sync": "Refresh",
+    "tableView": "Table",
+    "gridView": "Grid",
+    "totalViews": "Total Views",
+    "totalLikes": "Total Likes",
+    "totalComments": "Total Comments",
+    "avgEngagement": "Avg. Engagement",
+    "colAccount": "Account",
+    "colViews": "Views",
+    "colLikes": "Likes",
+    "colComments": "Comments",
+    "colShares": "Shares",
+    "colBookmarks": "Bookmarks",
+    "colEngagement": "Engagement Rate",
+    "colPublished": "Published",
+    "colActions": "Actions",
+    "emptyTitle": "You don't have any posts published through Slidezz yet.",
+    "emptySubtitle": "Once you publish through Slidezz, your data will appear here.",
+    "period7": "7 days",
+    "period30": "30 days",
+    "period90": "90 days",
+    "cardViews": "Views",
+    "cardLikes": "Likes",
+    "cardEngagement": "Engagement"
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Manage and track your scheduled TikTok posts",
+    "searchPlaceholder": "Search ...",
+    "createSchedule": "Create Schedule",
+    "connectTikTok": "Connect TikTok",
+    "video": "Video",
+    "noProjects": "No content projects yet",
+    "noProjectsHint": "Create a content project to schedule it",
+    "scheduling": "Scheduling...",
+    "scheduleButton": "Schedule",
+    "yourSchedule": "Your Schedule",
+    "today": "Today",
+    "allStatuses": "All statuses",
+    "statusPending": "Pending",
+    "statusPublishing": "Publishing",
+    "statusPublished": "Published",
+    "statusFailed": "Failed",
+    "weekDays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "months": "January,February,March,April,May,June,July,August,September,October,November,December"
   }
 }

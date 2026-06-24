@@ -560,7 +560,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         <div className="flex flex-col gap-1.5">
                             <p className="text-[9px] font-medium tracking-wider text-gray-400">{t('slideEditor.globalPanel.profileBadgeStyle')}</p>
                             <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
-                                {(['glass', 'solid', 'minimal', 'divider'] as BadgeStyle[]).map((s) => (
+                                {(['glass', 'solid', 'minimal', 'divider', 'tweet'] as BadgeStyle[]).map((s) => (
                                     <button
                                         key={s}
                                         onClick={() => patchBadge({ style: s })}
@@ -569,6 +569,20 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                         {t(`slideEditor.globalPanel.profileBadgeStyle${s.charAt(0).toUpperCase() + s.slice(1)}`)}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Display name */}
+                        <div className="flex flex-col gap-1">
+                            <p className="text-[9px] font-medium tracking-wider text-gray-400">{t('slideEditor.globalPanel.profileBadgeName')}</p>
+                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 focus-within:border-[#E8440A] transition-colors">
+                                <input
+                                    type="text"
+                                    value={badge.name ?? ''}
+                                    onChange={(e) => patchBadge({ name: e.target.value })}
+                                    placeholder={t('slideEditor.globalPanel.profileBadgeNamePlaceholder')}
+                                    className="flex-1 text-xs outline-none text-gray-800 placeholder:text-gray-300"
+                                />
                             </div>
                         </div>
 

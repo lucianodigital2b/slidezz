@@ -400,13 +400,68 @@ export function fitTextFontSize(
         }
         
         const totalHeight = lines * (fontSize * lineHeight);
-        
+
         if (totalHeight <= innerMaxHeight) {
             break;
         }
-        
+
         fontSize -= 2;
     }
-    
+
     return fontSize;
+}
+
+/**
+ * Counts how many lines `text` wraps to at the given font/width, mirroring the
+ * word-wrapping used by fitTextFontSize (and the Konva text renderer). Honors
+ * explicit "\n" newlines.
+ */
+export function measureWrappedLineCount(
+    text: string,
+    fontFamily: string,
+    fontStyle: string,
+    fontSize: number,
+    letterSpacing: number,
+    maxWidth: number,
+): number {
+    if (!text) return 0;
+    const ctx = getMeasureCtx();
+    ctx.font = `${fontStyle ? fontStyle + ' ' : ''}${fontSize}px "${fontFamily}"`;
+
+    const innerMaxWidth = Math.max(10, maxWidth);
+    let lines = 1;
+    let currentLineWidth = 0;
+    for (const word of text.split(/(\s+)/)) {
+        if (word === '\n') {
+            lines++;
+            currentLineWidth = 0;
+            continue;
+        }
+        const wordWidth = measureTextWidthWithLetterSpacing(ctx, word, letterSpacing, true);
+        if (currentLineWidth + wordWidth > innerMaxWidth && currentLineWidth > 0) {
+            lines++;
+            currentLineWidth = /^\s+$/.test(word) ? 0 : wordWidth;
+        } else {
+            currentLineWidth += wordWidth;
+        }
+    }
+    return lines;
+}
+
+/**
+ * The real rendered height of a wrapped text block (line count × line box). Lets
+ * callers place the next element flush below a title instead of after a fixed gap,
+ * so a short headline doesn't leave a large hole before the body copy.
+ */
+export function measuredTextHeight(
+    text: string,
+    fontFamily: string,
+    fontStyle: string,
+    fontSize: number,
+    lineHeight: number,
+    letterSpacing: number,
+    maxWidth: number,
+): number {
+    const lines = measureWrappedLineCount(text, fontFamily, fontStyle, fontSize, letterSpacing, maxWidth);
+    return Math.ceil(lines * fontSize * lineHeight);
 }

@@ -14,7 +14,7 @@ import {
     SLIDE_W, FORMATS, Format, Tool,
     SlideEl, Slide, TextEl, ImageEl, CornerKey, SlideCorners, ProfileBadge,
 } from '@/components/SlideEditor/types';
-import { uid, makeSlide, SHADOW_DEFAULTS, getSafeAreaBounds, getSafeAreaPadding, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
+import { uid, makeSlide, SHADOW_DEFAULTS, getSafeAreaBounds, getSafeAreaPadding, measuredTextHeight, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
 
 import { useUndoRedo } from '@/components/SlideEditor/hooks/useUndoRedo';
 import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager';
@@ -762,37 +762,67 @@ export default function SlideEditor() {
         const pTitle = (p: Partial<TextEl>)  => { if (titleEl) Object.assign(titleEl, p); };
         const pDesc  = (p: Partial<TextEl>)  => { if (descEl)  Object.assign(descEl,  p); };
 
+        // Where the description should start so it sits flush under the title's REAL
+        // (measured) height — keeps title + body tight instead of a fixed gap that
+        // leaves a hole under short titles. Uses the title's current font.
+        const STACK_GAP = Math.round(H * 0.018);
+        const descTopBelowTitle = (titleY: number, titleW: number) =>
+            titleEl
+                ? titleY + measuredTextHeight(titleEl.text, titleEl.fontFamily, titleEl.fontStyle, titleEl.fontSize, titleEl.lineHeight, titleEl.letterSpacing, titleW) + STACK_GAP
+                : titleY;
+
+        const fullW = SLIDE_W - PAD * 2;
+
         switch (layoutId) {
-            case 'bg_photo':
+            case 'bg_photo': {
+                const tY = Math.round(H * 0.52);
                 pImg({ x: 0, y: 0, width: SLIDE_W, height: H, isBackground: true, bgSize: 'cover', opacity: 1, cornerRadius: 0 });
-                pTitle({ x: PAD, y: Math.round(H * 0.52), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
-                pDesc({ x: PAD, y: Math.round(H * 0.82), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.13), opacity: 1 });
+                pTitle({ x: PAD, y: tY, width: fullW, height: Math.round(H * 0.28), opacity: 1 });
+                const dY = descTopBelowTitle(tY, fullW);
+                pDesc({ x: PAD, y: dY, width: fullW, height: Math.max(60, (H - PAD) - dY), opacity: 1 });
                 break;
-            case 'photo_top':
-                pImg({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.40), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
-                pTitle({ x: PAD, y: Math.round(H * 0.46), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.24), opacity: 1 });
-                pDesc({ x: PAD, y: Math.round(H * 0.73), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.20), opacity: 1 });
+            }
+            case 'photo_top': {
+                const tY = Math.round(H * 0.46);
+                pImg({ x: PAD, y: PAD, width: fullW, height: Math.round(H * 0.40), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+                pTitle({ x: PAD, y: tY, width: fullW, height: Math.round(H * 0.24), opacity: 1 });
+                const dY = descTopBelowTitle(tY, fullW);
+                pDesc({ x: PAD, y: dY, width: fullW, height: Math.max(60, (H - PAD) - dY), opacity: 1 });
                 break;
-            case 'photo_bottom':
-                pTitle({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.22), opacity: 1 });
-                pDesc({ x: PAD, y: Math.round(H * 0.28), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.22), opacity: 1 });
-                pImg({ x: PAD, y: Math.round(H * 0.55), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+            }
+            case 'photo_bottom': {
+                const tY = PAD;
+                const imgY = Math.round(H * 0.55);
+                pTitle({ x: PAD, y: tY, width: fullW, height: Math.round(H * 0.22), opacity: 1 });
+                const dY = descTopBelowTitle(tY, fullW);
+                pDesc({ x: PAD, y: dY, width: fullW, height: Math.max(60, imgY - STACK_GAP - dY), opacity: 1 });
+                pImg({ x: PAD, y: imgY, width: fullW, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
                 break;
+            }
             case 'text_photo_text':
-                pTitle({ x: PAD, y: PAD, width: SLIDE_W - PAD * 2, height: Math.round(H * 0.16), opacity: 1 });
-                pImg({ x: PAD, y: Math.round(H * 0.22), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
-                pDesc({ x: PAD, y: Math.round(H * 0.64), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
+                // Title and description are deliberately split by the image — left as-is.
+                pTitle({ x: PAD, y: PAD, width: fullW, height: Math.round(H * 0.16), opacity: 1 });
+                pImg({ x: PAD, y: Math.round(H * 0.22), width: fullW, height: Math.round(H * 0.38), isBackground: false, cornerRadius: 40, bgSize: 'cover', opacity: 1 });
+                pDesc({ x: PAD, y: Math.round(H * 0.64), width: fullW, height: Math.round(H * 0.28), opacity: 1 });
                 break;
-            case 'photo_left':
+            case 'photo_left': {
+                const tX = Math.round(SLIDE_W * 0.54);
+                const tW = Math.round(SLIDE_W * 0.42);
+                const tY = Math.round(H * 0.28);
                 pImg({ x: 0, y: 0, width: Math.round(SLIDE_W * 0.48), height: H, isBackground: false, cornerRadius: 0, bgSize: 'cover', opacity: 1 });
-                pTitle({ x: Math.round(SLIDE_W * 0.54), y: Math.round(H * 0.28), width: Math.round(SLIDE_W * 0.42), height: Math.round(H * 0.24), opacity: 1 });
-                pDesc({ x: Math.round(SLIDE_W * 0.54), y: Math.round(H * 0.56), width: Math.round(SLIDE_W * 0.42), height: Math.round(H * 0.26), opacity: 1 });
+                pTitle({ x: tX, y: tY, width: tW, height: Math.round(H * 0.24), opacity: 1 });
+                const dY = descTopBelowTitle(tY, tW);
+                pDesc({ x: tX, y: dY, width: tW, height: Math.max(60, (H - PAD) - dY), opacity: 1 });
                 break;
-            case 'text_only':
+            }
+            case 'text_only': {
+                const tY = Math.round(H * 0.20);
                 pImg({ opacity: 0 });
-                pTitle({ x: PAD, y: Math.round(H * 0.20), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.28), opacity: 1 });
-                pDesc({ x: PAD, y: Math.round(H * 0.52), width: SLIDE_W - PAD * 2, height: Math.round(H * 0.32), opacity: 1 });
+                pTitle({ x: PAD, y: tY, width: fullW, height: Math.round(H * 0.28), opacity: 1 });
+                const dY = descTopBelowTitle(tY, fullW);
+                pDesc({ x: PAD, y: dY, width: fullW, height: Math.max(60, (H - PAD) - dY), opacity: 1 });
                 break;
+            }
             case 'image_only':
                 pImg({ x: 0, y: 0, width: SLIDE_W, height: H, isBackground: true, bgSize: 'cover', opacity: 1, cornerRadius: 0 });
                 pTitle({ opacity: 0 });

@@ -53,7 +53,7 @@ Output exactly {$slideCount} lines of raw NDJSON. Nothing else.
 PROMPT;
 
         return Prism::text()
-            ->using(Provider::DeepSeek, 'deepseek-chat')
+            ->using(Provider::DeepSeek, 'deepseek-v4-pro')
             ->withSystemPrompt($systemPrompt)
             ->withPrompt("Create a {$slideCount}-slide Instagram carousel about: {$topic}")
             ->asEventStreamResponse();
@@ -101,15 +101,112 @@ PROMPT;
     }
 
     /**
+     * Generate 3 fresh carousel ideas tailored to the workspace's brand DNA
+     * (the onboarding profile). Each idea is a ready-to-use hook headline plus a
+     * short snake_case content angle.
+     *
+     * @param  array<string, mixed>  $profile  The workspace profile (brand_name, brand_description, target_audience, goal, tone_of_voice, ...).
+     * @return array<int, array{title: string, angle: string}>
+     */
+    public function generateIdeas(array $profile, string $language = 'Portuguese (Brazil)'): array
+    {
+        $brand = (string) ($profile['brand_name'] ?? '');
+        $description = (string) ($profile['brand_description'] ?? '');
+        $audience = (string) ($profile['target_audience'] ?? '');
+        $goal = (string) ($profile['goal'] ?? '');
+        $tone = implode(', ', (array) ($profile['tone_of_voice'] ?? []));
+        $visualStyle = (string) ($profile['visual_style'] ?? '');
+
+        $systemPrompt = <<<PROMPT
+You are a senior Instagram content strategist who turns a brand's DNA into scroll-stopping carousel ideas.
+
+OUTPUT
+- Respond ONLY with a JSON array of EXACTLY 3 objects. No markdown, no code fences, no commentary.
+- Each object has exactly these keys:
+  - "title": a punchy hook headline written in {$language}, max 12 words, specific to this brand and audience. No em-dashes.
+  - "angle": a short snake_case label for the content angle, in English, e.g. "mito_verdade", "pergunta_frequente", "comparacao_metodos", "erro_comum", "passo_a_passo", "bastidores".
+- The 3 ideas must be distinct angles, fresh, and immediately postable today.
+
+BRAND DNA
+- Brand: {$brand}
+- What it does: {$description}
+- Target audience: {$audience}
+- Main goal: {$goal}
+- Tone of voice: {$tone}
+- Visual style: {$visualStyle}
+PROMPT;
+
+        $response = Prism::text()
+            ->using(Provider::DeepSeek, 'deepseek-v4-pro')
+            ->withSystemPrompt($systemPrompt)
+            ->withPrompt('Generate 3 fresh carousel ideas for today.')
+            ->generate();
+
+        return $this->parseIdeas($response->text);
+    }
+
+    /**
+     * Parse the model's JSON-array response into a normalized ideas list,
+     * tolerating code fences and surrounding prose.
+     *
+     * @return array<int, array{title: string, angle: string}>
+     */
+    private function parseIdeas(string $raw): array
+    {
+        $text = trim($raw);
+        $start = strpos($text, '[');
+        $end = strrpos($text, ']');
+
+        if ($start === false || $end === false || $end < $start) {
+            throw new \RuntimeException('Idea generation failed: no JSON array in response');
+        }
+
+        $decoded = json_decode(substr($text, $start, $end - $start + 1), true);
+
+        if (! is_array($decoded)) {
+            throw new \RuntimeException('Idea generation failed: invalid JSON');
+        }
+
+        $ideas = [];
+        foreach ($decoded as $item) {
+            $title = trim((string) (is_array($item) ? ($item['title'] ?? '') : ''));
+
+            if ($title === '') {
+                continue;
+            }
+
+            $angle = trim((string) (is_array($item) ? ($item['angle'] ?? '') : '')) ?: 'ideia';
+            $ideas[] = ['title' => $title, 'angle' => $angle];
+
+            if (count($ideas) >= 3) {
+                break;
+            }
+        }
+
+        if ($ideas === []) {
+            throw new \RuntimeException('Idea generation failed: no usable ideas');
+        }
+
+        return $ideas;
+    }
+
+    /**
      * Generate a background image as a base64 data URI, dispatching to the
      * driver configured via `services.carousel_image.driver`
      * (gemini / openai / unsplash). Defaults to Gemini image generation.
      *
      * @param  string  $aspectRatio  Portrait ratio for generative drivers, e.g. "4:5" (post) or "9:16" (stories).
+     * @param  string|null  $byokApiKey  A user-provided Gemini key (BYOK). When set, image generation is billed to the user's key instead of the platform key.
      */
-    public function generateImage(string $prompt, string $aspectRatio = '4:5'): string
+    public function generateImage(string $prompt, string $aspectRatio = '4:5', ?string $byokApiKey = null): string
     {
-        \Log::debug('Carousel image prompt', ['prompt' => $prompt, 'aspect_ratio' => $aspectRatio]);
+        \Log::debug('Carousel image prompt', ['prompt' => $prompt, 'aspect_ratio' => $aspectRatio, 'byok' => $byokApiKey !== null]);
+
+        // BYOK always routes to Gemini (the only driver the user supplies a key
+        // for); without a key, fall back to the platform-configured driver.
+        if ($byokApiKey !== null) {
+            return $this->generateImageWithGemini($prompt, $aspectRatio, $byokApiKey);
+        }
 
         $driver = config('services.carousel_image.driver', 'gemini');
 
@@ -126,10 +223,10 @@ PROMPT;
      * Instagram carousels, with subject-accurate results for real people/brands
      * that keyword-based stock search cannot match.
      */
-    public function generateImageWithGemini(string $prompt, string $aspectRatio = '4:5'): string
+    public function generateImageWithGemini(string $prompt, string $aspectRatio = '4:5', ?string $apiKey = null): string
     {
         $response = Prism::image()
-            ->using(Provider::Gemini, 'gemini-2.5-flash-image')
+            ->using(Provider::Gemini, 'gemini-2.5-flash-image', $apiKey ? ['api_key' => $apiKey] : [])
             ->withPrompt($prompt)
             ->withProviderOptions(['aspect_ratio' => $aspectRatio])
             ->withClientOptions(['timeout' => 120])

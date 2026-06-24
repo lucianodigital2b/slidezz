@@ -48,6 +48,7 @@ class CarouselGenerationController extends Controller
             $base64 = $this->carouselGenerationService->generateImage(
                 $validated['prompt'],
                 $validated['aspect_ratio'] ?? '4:5',
+                $request->user()->byokGeminiKey(),
             );
         } catch (\Throwable $e) {
             \Log::error('Image generation failed', [

@@ -96,6 +96,7 @@
       "profile": "Perfil",
       "security": "Segurança",
       "appearance": "Aparência",
+      "integrations": "Integrações",
       "billing": "Assinatura"
     },
     "profile": {
@@ -162,6 +163,18 @@
       "title": "Configurações de aparência",
       "description": "Atualize as configurações de aparência da sua conta"
     },
+    "integrations": {
+      "title": "Integrações",
+      "geminiTitle": "Chave Gemini (BYOK)",
+      "geminiDescription": "Conecte sua própria chave do Google Gemini para gerar imagens ilimitadas. As imagens são cobradas direto na sua conta Google.",
+      "keyLabel": "Chave da API Gemini",
+      "keyHint": "Pegue em ai.google.dev. Armazenamos a chave criptografada e nunca a exibimos de volta.",
+      "keyConnected": "Chave conectada — imagens ilimitadas ativas.",
+      "save": "Salvar",
+      "lockedTitle": "Disponível nos planos Pro e Agency",
+      "lockedDescription": "O BYOK (sua própria chave Gemini) libera imagens ilimitadas. Faça upgrade para ativar.",
+      "upgradeCta": "Ver planos"
+    },
     "deleteAccount": {
       "title": "Excluir conta",
       "description": "Exclua sua conta e todos os seus recursos",
@@ -200,6 +213,7 @@
     }
   },
   "sidebar": {
+    "generate": "Gerar Ideias",
     "newAutomation": "Nova Automação",
     "home": "Início",
     "library": "Biblioteca",
@@ -210,7 +224,14 @@
     "slideshowEditor": "Editor de Slideshow",
     "imageCollections": "Coleções de Imagens",
     "database": "Banco de Dados",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "credits": "Créditos"
+  },
+  "generate": {
+    "pageTitle": "Gerar Ideias",
+    "eyebrow": "Criar com IA",
+    "question": "O que você quer postar hoje?",
+    "subtitle": "Escolha uma das ideias do dia ou descreva a sua própria."
   },
   "dashboard": {
     "title": "Início",
@@ -230,6 +251,20 @@
     "recentLabel": "Projetos Recentes",
     "heroEyebrow": "Painel",
     "heroSubtitle": "Gere um carrossel completo em menos de 1 minuto, ou comece do zero no editor.",
+    "ideas": {
+      "label": "Ideias do dia",
+      "regenerate": "Gerar outras",
+      "generatingShort": "Gerando…",
+      "generating": "Consultando seu DNA de marca…",
+      "generatingCount": "Gerando 3 ideias",
+      "ideaLabel": "Ideia {{n}}",
+      "error": "Não consegui gerar ideias agora.",
+      "retry": "Tentar de novo",
+      "or": "ou",
+      "describeLabel": "Descreva sua ideia",
+      "describePlaceholder": "Ex: por que clientes deixam de te seguir após a primeira compra…",
+      "create": "Criar carrossel"
+    },
     "searchPlaceholder": "Buscar projetos...",
     "noResults": "Nenhum projeto encontrado para sua busca.",
     "clearSearch": "Limpar busca",
@@ -585,6 +620,9 @@
       "profileBadgeStyleSolid": "Sólido",
       "profileBadgeStyleMinimal": "Minimal",
       "profileBadgeStyleDivider": "Divisor",
+      "profileBadgeStyleTweet": "Tweet",
+      "profileBadgeName": "NOME DE EXIBIÇÃO",
+      "profileBadgeNamePlaceholder": "Seu Nome",
       "profileBadgeHandle": "@ DO PERFIL",
       "profileBadgeHandlePlaceholder": "seu.perfil",
       "profileBadgePhoto": "FOTO DO BADGE",
@@ -815,6 +853,7 @@
       "paletteSecondary": "Secundária",
       "paletteAccent": "Destaque",
       "paletteMorePalettes": "Ver outras paletas",
+      "paletteApply": "Aplicar",
       "visualStyleTitle": "Descrição do estilo visual",
       "visualStyleHint": "Descreva o estilo visual que você quer para seu conteúdo.",
       "visualStylePlaceholder": "Ex: Estilo corporativo e contemporâneo, usando tipografia sans-serif...",
@@ -830,6 +869,7 @@
     "plans": {
       "title": "Escolha seu plano",
       "subtitle": "14 dias grátis. Sem cobrança agora. Cancele a qualquer momento.",
+      "popular": "Mais popular",
       "afterTrial": "após 14 dias grátis",
       "startFree": "Começar {{plan}} grátis",
       "terms": "Ao assinar, você concorda com nossos termos de uso. Você pode cancelar antes do término do período gratuito sem nenhum custo.",

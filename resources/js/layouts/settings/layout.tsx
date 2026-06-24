@@ -8,6 +8,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editBilling } from '@/routes/billing';
+import { edit as editIntegrations } from '@/routes/integrations';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
@@ -20,6 +21,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         { title: t('settings.nav.profile'), href: edit(), icon: null },
         { title: t('settings.nav.security'), href: editSecurity(), icon: null },
         { title: t('settings.nav.appearance'), href: editAppearance(), icon: null },
+        { title: t('settings.nav.integrations'), href: editIntegrations(), icon: null },
         { title: t('settings.nav.billing'), href: editBilling(), icon: null },
     ];
 

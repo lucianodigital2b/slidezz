@@ -68,6 +68,56 @@ class CarouselGenerationServiceTest extends TestCase
         $this->assertInstanceOf(StreamedResponse::class, $response);
     }
 
+    // ─── generateIdeas ────────────────────────────────────────────────────────
+
+    public function test_generate_ideas_parses_a_json_array(): void
+    {
+        Prism::fake([
+            TextResponseFake::make()->withText('[{"title":"Ideia A","angle":"mito_verdade"},{"title":"Ideia B","angle":"pergunta_frequente"},{"title":"Ideia C","angle":"comparacao_metodos"}]'),
+        ]);
+
+        $ideas = $this->service->generateIdeas(['brand_name' => 'Acme']);
+
+        $this->assertCount(3, $ideas);
+        $this->assertSame('Ideia A', $ideas[0]['title']);
+        $this->assertSame('mito_verdade', $ideas[0]['angle']);
+    }
+
+    public function test_generate_ideas_tolerates_code_fences_and_prose(): void
+    {
+        Prism::fake([
+            TextResponseFake::make()->withText("Sure!\n```json\n[{\"title\":\"X\",\"angle\":\"erro_comum\"}]\n```"),
+        ]);
+
+        $ideas = $this->service->generateIdeas(['brand_name' => 'Acme']);
+
+        $this->assertCount(1, $ideas);
+        $this->assertSame('X', $ideas[0]['title']);
+    }
+
+    public function test_generate_ideas_caps_to_three_skips_empty_and_defaults_angle(): void
+    {
+        Prism::fake([
+            TextResponseFake::make()->withText('[{"title":"1"},{"title":""},{"title":"2"},{"title":"3"},{"title":"4"}]'),
+        ]);
+
+        $ideas = $this->service->generateIdeas(['brand_name' => 'Acme']);
+
+        $this->assertCount(3, $ideas);
+        $this->assertSame(['1', '2', '3'], array_column($ideas, 'title'));
+        $this->assertSame('ideia', $ideas[0]['angle']);
+    }
+
+    public function test_generate_ideas_throws_without_a_json_array(): void
+    {
+        Prism::fake([TextResponseFake::make()->withText('no json here')]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Idea generation failed');
+
+        $this->service->generateIdeas(['brand_name' => 'Acme']);
+    }
+
     // ─── generateImage (Unsplash) ─────────────────────────────────────────────
 
     public function test_generate_image_returns_base64_data_uri(): void

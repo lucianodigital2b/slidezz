@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Align, BadgeStyle, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
-import { SHADOW_DEFAULTS, fitTextFontSize, uid } from './utils';
+import { SHADOW_DEFAULTS, fitTextFontSize, measuredTextHeight, uid } from './utils';
 import { LayoutDefinition } from './layouts';
 
 export interface TemplateContent {
@@ -193,6 +193,14 @@ export function buildSceneFromLayoutGeneric(
         }));
     }
 
+    // When the title is top-anchored, the body copy is re-stacked flush under the
+    // title's REAL (measured) height instead of sitting at its fixed slot Y — so a
+    // short headline doesn't leave a big hole before the text. Centered/bottom
+    // compositions (hook_hero, stat_callout, cta_closing) keep their slot positions.
+    const stackGap = Math.round(slideH * 0.02);
+    const safeBottom = safeY + safeH;
+    let stackCursorY: number | null = null;
+
     if (layout.title.visible) {
         const rect = slotToRect(layout.title);
         // All display titles are uppercased for a consistent impact look across the
@@ -202,9 +210,10 @@ export function buildSceneFromLayoutGeneric(
         // valid font-weight, so passing it to fitTextFontSize corrupts measurement
         // (the canvas rejects the font string). Fit and render must use the same value.
         const titleFontStyle = fontStyleHintToStyle(layout.title.fontStyleHint);
+        const titleFont = fontForRole(layout.title.fontRole);
         const fontSize = fitTextFontSize(
             titleText,
-            fontForRole(layout.title.fontRole),
+            titleFont,
             titleFontStyle,
             layout.title.maxFontSize,
             layout.title.lineHeight,
@@ -216,7 +225,7 @@ export function buildSceneFromLayoutGeneric(
         elements.push(createText({
             ...rect,
             text: titleText,
-            fontFamily: fontForRole(layout.title.fontRole),
+            fontFamily: titleFont,
             fontSize,
             fontStyle: titleFontStyle,
             fill: textColor,
@@ -226,6 +235,11 @@ export function buildSceneFromLayoutGeneric(
             letterSpacing: layout.title.letterSpacing,
             opacity: layout.title.opacity,
         }));
+
+        if (layout.title.verticalAlign === 'top') {
+            const titleMeasuredH = measuredTextHeight(titleText, titleFont, titleFontStyle, fontSize, layout.title.lineHeight, layout.title.letterSpacing, rect.width);
+            stackCursorY = rect.y + titleMeasuredH;
+        }
     }
 
     if (layout.subtitle.visible && content.subtitle) {
@@ -233,21 +247,26 @@ export function buildSceneFromLayoutGeneric(
         const subtitleText = layout.type === 'cta_closing'
             ? content.subtitle.toUpperCase()
             : content.subtitle;
+        const subtitleFont = fontForRole(layout.subtitle.fontRole);
+        const y = stackCursorY !== null ? stackCursorY + stackGap : rect.y;
+        const availH = stackCursorY !== null ? Math.max(40, safeBottom - y) : rect.height;
         const fontSize = fitTextFontSize(
             subtitleText,
-            fontForRole(layout.subtitle.fontRole),
+            subtitleFont,
             '',
             layout.subtitle.maxFontSize,
             layout.subtitle.lineHeight,
             layout.subtitle.letterSpacing,
             rect.width,
-            rect.height,
+            availH,
             20,
         );
         elements.push(createText({
             ...rect,
+            y,
+            height: availH,
             text: subtitleText,
-            fontFamily: fontForRole(layout.subtitle.fontRole),
+            fontFamily: subtitleFont,
             fontSize,
             fill: textColor,
             align: layout.subtitle.align,
@@ -256,26 +275,36 @@ export function buildSceneFromLayoutGeneric(
             letterSpacing: layout.subtitle.letterSpacing,
             opacity: layout.subtitle.opacity,
         }));
+
+        if (stackCursorY !== null) {
+            const subMeasuredH = measuredTextHeight(subtitleText, subtitleFont, '', fontSize, layout.subtitle.lineHeight, layout.subtitle.letterSpacing, rect.width);
+            stackCursorY = y + subMeasuredH;
+        }
     }
 
     const descriptionText = content.description ?? content.caption;
     if (layout.description.visible && descriptionText) {
         const rect = slotToRect(layout.description);
+        const descFont = fontForRole(layout.description.fontRole);
+        const y = stackCursorY !== null ? stackCursorY + stackGap : rect.y;
+        const availH = stackCursorY !== null ? Math.max(60, safeBottom - y) : rect.height;
         const fontSize = fitTextFontSize(
             descriptionText,
-            fontForRole(layout.description.fontRole),
+            descFont,
             '',
             layout.description.maxFontSize,
             layout.description.lineHeight,
             0,
             rect.width,
-            rect.height,
+            availH,
             16,
         );
         elements.push(createText({
             ...rect,
+            y,
+            height: availH,
             text: descriptionText,
-            fontFamily: fontForRole(layout.description.fontRole),
+            fontFamily: descFont,
             fontSize,
             fill: textColor,
             align: layout.description.align,
@@ -670,122 +699,164 @@ function buildPopMagazine(content: TemplateContent, slideH: number): TemplateSce
 }
 
 function buildTwitterX(content: TemplateContent, slideH: number): TemplateScene {
-    const cardY = Math.round(slideH * 0.14);
-    const cardH = Math.round(slideH * 0.66);
+    // Real Twitter/X post look: white background, the profile header rendered by
+    // the slide's "tweet"-style ProfileBadge (avatar + name + verified + @handle),
+    // then the tweet body, and a media card at the bottom. Content roles map to:
+    //   title    → main tweet paragraph(s)   (regular weight, dark)
+    //   subtitle → emphasized line            (bold, dark — e.g. "Zero vendas.")
+    //   caption  → closing paragraph          (regular weight, dark)
+    const pad = 72;
+    const contentW = SLIDE_W - pad * 2;
+    const dark = '#0f1419';
+    const bodyFont = 'Albert Sans';
+    const bodySize = Math.max(30, Math.round(slideH * 0.031));
+    const lineHeight = 1.45;
+
+    const headerY = Math.round(slideH * 0.065);
+
+    const titleY = Math.round(slideH * 0.185);
+    const titleH = Math.round(slideH * 0.185);
+    const subtitleY = titleY + titleH;
+    const subtitleH = Math.round(slideH * 0.05);
+    const captionY = subtitleY + subtitleH + Math.round(slideH * 0.012);
+    const captionH = Math.round(slideH * 0.10);
+
+    const imageX = 96;
+    const imageW = SLIDE_W - imageX * 2;
+    const imageY = captionY + captionH + Math.round(slideH * 0.01);
+    const imageH = slideH - imageY - Math.round(slideH * 0.12);
 
     return {
-        background: '#f3f4f6',
+        background: '#ffffff',
+        badgeX: pad,
+        badgeY: headerY,
+        badgeStyle: 'tweet',
         elements: [
-            createRect({
-                type: 'rect',
-                x: 96,
-                y: cardY,
-                width: 888,
-                height: cardH,
-                fill: '#ffffff',
-                stroke: '#dbe1e8',
-                strokeWidth: 2,
-                cornerRadius: 34,
-                shadowEnabled: true,
-                shadowColor: '#cbd5e1',
-                shadowBlur: 18,
-                shadowOffsetY: 12,
-                shadowOffsetX: 0,
-                shadowOpacity: 0.3,
-            }),
-            createRect({
-                type: 'circle',
-                x: 144,
-                y: cardY + 42,
-                width: 76,
-                height: 76,
-                fill: '#111827',
-            }),
             createText({
-                x: 242,
-                y: cardY + 46,
-                width: 360,
-                height: 28,
-                text: content.eyebrow,
-                fontFamily: 'Inter',
-                fontSize: 26,
-                fontStyle: '700',
-                fill: '#111827',
-            }),
-            createText({
-                x: 242,
-                y: cardY + 82,
-                width: 420,
-                height: 24,
-                text: '@slidezz  •  now',
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontStyle: '500',
-                fill: '#6b7280',
-            }),
-            createRect({
-                type: 'rect',
-                x: 146,
-                y: cardY + 150,
-                width: 792,
-                height: 2,
-                fill: '#eef2f7',
-            }),
-            createText({
-                x: 146,
-                y: cardY + 192,
-                width: 792,
-                height: slideH > 1400 ? 430 : 300,
+                x: pad,
+                y: titleY,
+                width: contentW,
+                height: titleH,
                 text: content.title,
-                fontFamily: 'Inter',
-                fontSize: slideH > 1400 ? 84 : 64,
-                fontStyle: '800',
-                fill: '#0f172a',
-                lineHeight: 1.12,
-            }),
-            createRect({
-                type: 'rect',
-                x: 146,
-                y: cardY + cardH - 188,
-                width: 10,
-                height: 96,
-                fill: '#2563eb',
-                cornerRadius: 999,
+                fontFamily: bodyFont,
+                fontSize: bodySize,
+                fontStyle: '400',
+                fill: dark,
+                lineHeight,
             }),
             createText({
-                x: 180,
-                y: cardY + cardH - 194,
-                width: 720,
-                height: 70,
+                x: pad,
+                y: subtitleY,
+                width: contentW,
+                height: subtitleH,
                 text: content.subtitle,
-                fontFamily: 'Inter',
-                fontSize: slideH > 1400 ? 30 : 24,
-                fontStyle: '500',
-                fill: '#475569',
-                lineHeight: 1.25,
+                fontFamily: bodyFont,
+                fontSize: bodySize,
+                fontStyle: '700',
+                fill: dark,
+                lineHeight,
+            }),
+            createText({
+                x: pad,
+                y: captionY,
+                width: contentW,
+                height: captionH,
+                text: content.caption,
+                fontFamily: bodyFont,
+                fontSize: bodySize,
+                fontStyle: '400',
+                fill: dark,
+                lineHeight,
             }),
             createRect({
                 type: 'rect',
-                x: 146,
-                y: cardY + cardH - 82,
-                width: 792,
-                height: 2,
-                fill: '#eef2f7',
-            }),
-            createText({
-                x: 146,
-                y: cardY + cardH - 58,
-                width: 792,
-                height: 24,
-                text: content.caption,
-                fontFamily: 'Inter',
-                fontSize: 18,
-                fontStyle: '600',
-                fill: '#64748b',
-                letterSpacing: 0.3,
+                x: imageX,
+                y: imageY,
+                width: imageW,
+                height: imageH,
+                fill: '#15131f',
+                cornerRadius: 28,
+                shadowEnabled: true,
+                shadowColor: '#94a3b8',
+                shadowBlur: 22,
+                shadowOffsetY: 10,
+                shadowOffsetX: 0,
+                shadowOpacity: 0.25,
             }),
         ],
     };
+}
+
+/**
+ * Twitter/X scene for AI-generated slides. Renders each slide as a tweet: white
+ * background, tweet body copy (no ALL-CAPS), reserving the top band for the
+ * "tweet"-style ProfileBadge header (attached by the generator).
+ *
+ * With no media in the post, the title + description grow to fill the freed space
+ * and sit tight together: the title is sized as large as it fits and the
+ * description is placed flush below the title's real (measured) height — no big
+ * fixed gap.
+ */
+function buildTwitterXFromLayout(
+    content: TemplateContent & { stat?: string; ctaPill?: string },
+    slideH: number,
+): TemplateScene {
+    const pad = 72;
+    const contentW = SLIDE_W - pad * 2;
+    const dark = '#0f1419';
+    const font = 'Albert Sans';
+
+    const headerY = Math.round(slideH * 0.065);
+    const bodyTop = Math.round(slideH * 0.185);
+    const blockBottom = slideH - Math.round(slideH * 0.09);
+
+    const titleLs = -0.5;
+    const titleLh = 1.3;
+    const descLh = 1.4;
+    const gap = Math.round(slideH * 0.022);
+
+    const desc = content.description ?? content.caption;
+
+    // Title: as large as it fits in up to ~60% of the body band, then measure its
+    // real height so the description can sit directly beneath it.
+    const titleMaxH = Math.round((blockBottom - bodyTop) * (desc ? 0.6 : 1));
+    const titleSize = fitTextFontSize(content.title, font, '700', 84, titleLh, titleLs, contentW, titleMaxH, 0);
+    const titleH = measuredTextHeight(content.title, font, '700', titleSize, titleLh, titleLs, contentW);
+
+    const elements: SlideEl[] = [
+        createText({
+            x: pad,
+            y: bodyTop,
+            width: contentW,
+            height: titleH,
+            text: content.title,
+            fontFamily: font,
+            fontSize: titleSize,
+            fontStyle: '700',
+            fill: dark,
+            lineHeight: titleLh,
+            letterSpacing: titleLs,
+        }),
+    ];
+
+    if (desc) {
+        const descY = bodyTop + titleH + gap;
+        const descMaxH = Math.max(60, blockBottom - descY);
+        const descSize = fitTextFontSize(desc, font, '400', 56, descLh, 0, contentW, descMaxH, 0);
+        elements.push(createText({
+            x: pad,
+            y: descY,
+            width: contentW,
+            height: descMaxH,
+            text: desc,
+            fontFamily: font,
+            fontSize: descSize,
+            fill: dark,
+            lineHeight: descLh,
+        }));
+    }
+
+    return { background: '#ffffff', elements, badgeStyle: 'tweet', badgeX: pad, badgeY: headerY };
 }
 
 function buildAcidBrutalist(content: TemplateContent, slideH: number): TemplateScene {
@@ -1117,23 +1188,23 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'twitter-x',
         name: 'Twitter/X Style',
-        description: 'Clean white cover with large bold headline and blue accent divider. Inner slides with minimal editorial layout for maximum readability.',
-        background: '#f3f4f6',
-        backgroundAlt: '#f8fafc',
-        textColor: '#0f172a',
-        textColorAlt: '#0f172a',
-        accentColor: '#2563eb',
-        font: 'Inter',
-        bodyFont: 'Inter',
-        captionFont: 'Inter',
+        description: 'Authentic Twitter/X post: white background with a profile header (avatar, name, verified badge, @handle), tweet body copy, and a media card. Uses the Chirp-like Albert Sans typeface.',
+        background: '#ffffff',
+        backgroundAlt: '#ffffff',
+        textColor: '#0f1419',
+        textColorAlt: '#0f1419',
+        accentColor: '#1d9bf0',
+        font: 'Albert Sans',
+        bodyFont: 'Albert Sans',
+        captionFont: 'Albert Sans',
         fontStyle: 'bold',
-        letterSpacing: -0.5,
+        letterSpacing: -0.2,
         align: 'left',
-        fonts: ['Inter'],
+        fonts: ['Albert Sans'],
         buildScene: buildTwitterX,
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
-            // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+        buildSceneFromLayout(content, _layout, slideH) {
+            // Tweet-specific layout: profile header + body copy (no ALL-CAPS grid).
+            return buildTwitterXFromLayout(content, slideH);
         },
     },
     {
@@ -1235,11 +1306,23 @@ export function TemplatePreview({ id }: { id: string }) {
             );
         case 'twitter-x':
             return (
-                <div className="w-full h-full flex flex-col justify-center px-2.5 py-2" style={{ background: '#fff', textAlign: 'left' }}>
-                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>{t('slideEditor.elements.largeText')}</div>
-                    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: 9, fontWeight: 900, color: '#000', lineHeight: 1.2 }}>{t('slideEditor.elements.cleanHere')}</div>
-                    <div style={{ height: 1, background: '#e5e7eb', width: '100%', margin: '5px 0' }} />
-                    <div style={{ fontSize: 5, color: '#9ca3af' }}>{t('slideEditor.elements.slideDescription')}</div>
+                <div className="w-full h-full flex flex-col px-2 py-2" style={{ background: '#fff', textAlign: 'left', fontFamily: 'Albert Sans, Arial, sans-serif' }}>
+                    {/* Profile header */}
+                    <div className="flex items-center gap-1 mb-1.5">
+                        <div className="rounded-full shrink-0" style={{ width: 12, height: 12, background: '#cbd5e1' }} />
+                        <div>
+                            <div className="flex items-center gap-0.5">
+                                <div style={{ fontSize: 5.5, fontWeight: 700, color: '#0f1419', lineHeight: 1 }}>{t('slideEditor.elements.title')}</div>
+                                <div className="rounded-full" style={{ width: 4, height: 4, background: '#1d9bf0' }} />
+                            </div>
+                            <div style={{ fontSize: 4.5, color: '#536471', lineHeight: 1.1 }}>@handle</div>
+                        </div>
+                    </div>
+                    {/* Tweet body */}
+                    <div style={{ fontSize: 5, color: '#0f1419', lineHeight: 1.35 }}>{t('slideEditor.elements.largeText')}</div>
+                    <div style={{ fontSize: 5, fontWeight: 700, color: '#0f1419', lineHeight: 1.35, margin: '2px 0' }}>{t('slideEditor.elements.cleanHere')}</div>
+                    {/* Media card */}
+                    <div className="rounded-md mt-auto" style={{ width: '100%', height: '34%', background: '#15131f' }} />
                 </div>
             );
         case 'acid-brutalist':

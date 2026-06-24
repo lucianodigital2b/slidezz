@@ -96,7 +96,7 @@ const faqs = [
     },
     {
         q: 'How many carousels can I create?',
-        a: "Unlimited. There's no lock. Create as many as you want, whenever you want.",
+        a: 'Each plan includes a monthly carousel allowance (30 on Starter, 100 on Pro, 300 on Agency). AI images are included — and on Pro and Agency you can connect your own Gemini key (BYOK) for unlimited images.',
     },
     {
         q: 'Does it work on mobile?',
@@ -187,7 +187,7 @@ export default function LandingEn({
 
     // Guest checkout: the user picks a plan here and creates their account on
     // Stripe Checkout itself. Cycle follows the monthly/annual toggle.
-    const startCheckout = (plan: 'starter' | 'pro') => {
+    const startCheckout = (plan: 'starter' | 'pro' | 'agency') => {
         router.post('/checkout', { plan, cycle: billingCycle });
     };
 
@@ -776,7 +776,7 @@ export default function LandingEn({
                                 </h3>
                                 {billingCycle === 'annual' && (
                                     <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        20% OFF
+                                        34% OFF
                                     </span>
                                 )}
                             </div>
@@ -784,11 +784,11 @@ export default function LandingEn({
                                 {billingCycle === 'annual' ? (
                                     <>
                                         <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            $36/mo
+                                            $29/mo
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $29
+                                                $19
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mo
@@ -805,7 +805,7 @@ export default function LandingEn({
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $36
+                                                $29
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mo
@@ -820,18 +820,18 @@ export default function LandingEn({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                Unlimited carousels
+                                30 carousels / month
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
-                                Basic features:
+                                Includes:
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'Unlimited post suggestions',
-                                    'Carousel generation',
+                                    'AI copywriting & hooks',
+                                    'All templates',
+                                    'AI images included',
                                     'Instagram integration (coming soon)',
-                                    'AutoFeed (100% automatic)',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -863,7 +863,7 @@ export default function LandingEn({
                                 </h3>
                                 {billingCycle === 'annual' && (
                                     <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        35% OFF
+                                        34% OFF
                                     </span>
                                 )}
                             </div>
@@ -871,11 +871,11 @@ export default function LandingEn({
                                 {billingCycle === 'annual' ? (
                                     <>
                                         <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            $120/mo
+                                            $59/mo
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $79
+                                                $39
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mo
@@ -892,7 +892,7 @@ export default function LandingEn({
                                         </div>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                $120
+                                                $59
                                             </span>
                                             <span className="text-lg font-medium text-[#666660]">
                                                 /mo
@@ -907,7 +907,7 @@ export default function LandingEn({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                Unlimited carousels
+                                100 carousels / month
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -915,10 +915,10 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'Turn news into posts',
-                                    'Team management',
-                                    'Priority Support',
-                                    'WhatsApp assistant (coming soon)',
+                                    'BYOK: unlimited AI images',
+                                    'Priority support',
+                                    'Early access to features',
+                                    'Save your own templates',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -939,30 +939,59 @@ export default function LandingEn({
                             </button>
                         </div>
 
-                        {/* Enterprise */}
+                        {/* Agency */}
                         <div className="relative flex flex-col rounded-[24px] border border-[#333330] bg-[#1A1A1A] p-8 shadow-lg">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-2xl font-extrabold text-white">
-                                    Enterprise
+                                    Agency
                                 </h3>
+                                {billingCycle === 'annual' && (
+                                    <span className="rounded-full bg-[#FCD34D]/15 px-2.5 py-1 text-xs font-bold tracking-wide text-[#FCD34D] uppercase">
+                                        23% OFF
+                                    </span>
+                                )}
                             </div>
                             <div className="mb-6">
-                                <div className="mb-1 text-lg font-semibold text-[#AAAAAA]">
-                                    Custom pricing
-                                </div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[40px] leading-none font-extrabold text-white">
-                                        Custom
-                                    </span>
-                                </div>
-                                <div className="mt-2 text-sm font-medium text-[#888880]">
-                                    billed annually
-                                </div>
+                                {billingCycle === 'annual' ? (
+                                    <>
+                                        <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
+                                            $129/mo
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] leading-none font-extrabold text-white">
+                                                $99
+                                            </span>
+                                            <span className="text-lg font-medium text-[#AAAAAA]">
+                                                /mo
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 text-sm font-medium text-[#888880]">
+                                            billed annually
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="mb-1 text-lg font-semibold text-transparent select-none">
+                                            &nbsp;
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[40px] leading-none font-extrabold text-white">
+                                                $129
+                                            </span>
+                                            <span className="text-lg font-medium text-[#AAAAAA]">
+                                                /mo
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 text-sm font-medium text-[#888880]">
+                                            billed monthly
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#333330] pb-6 text-lg font-bold text-[#FCD34D]">
                                 <Check className="h-4 w-4 text-[#FCD34D]" />
-                                On-demand content
+                                300 carousels / month
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#AAAAAA]">
@@ -970,10 +999,10 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
+                                    'BYOK: unlimited AI images',
                                     'Multiple projects',
-                                    'API access',
-                                    'Client area & approval',
-                                    'Team training',
+                                    'Team management',
+                                    'API access (coming soon)',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -985,12 +1014,13 @@ export default function LandingEn({
                                 ))}
                             </ul>
 
-                            <a
-                                href="https://wa.me/5527997798070?text=Hi%21%20I%27m%20interested%20in%20the%20Slidezz%20Enterprise%20plan."
+                            <button
+                                type="button"
+                                onClick={() => startCheckout('agency')}
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
                             >
-                                Contact us <ArrowRight className="h-4 w-4" />
-                            </a>
+                                Try it now <ArrowRight className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
                 </section>

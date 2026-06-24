@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarDays, Layers, Zap, Settings, MessageCircle } from 'lucide-react';
+import { CalendarDays, Layers, Sparkles, Zap, Settings, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
@@ -25,6 +25,7 @@ export function AppSidebar() {
     const [creditsOpen, setCreditsOpen] = useState(false);
 
     const navItems = [
+        { title: t('sidebar.generate'), href: '/generate', icon: Sparkles },
         // { title: t('sidebar.schedule'), href: '/schedule', icon: CalendarDays },
         // { title: t('sidebar.automations'), href: '/automations', icon: Zap },
         { title: t('sidebar.slideshowEditor'), href: '/slideshow-editor', icon: Layers },

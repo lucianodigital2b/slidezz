@@ -46,6 +46,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // AI generator entry: "Ideias do dia" — picks brand-DNA ideas or a custom topic.
+    Route::inertia('generate', 'Generate')->name('generate');
+
     Route::inertia('library', 'Library')->name('library');
     Route::inertia('automations', 'Automations')->name('automations');
     Route::get('slideshow-editor', [SlideProjectController::class, 'index'])->name('slideshow-editor.index');
@@ -83,6 +86,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('carousel/generate-image', [CarouselGenerationController::class, 'generateImage'])->name('carousel.generate-image');
 
     Route::get('carousel/create', [CarouselWizardController::class, 'create'])->name('carousel.create');
+    Route::get('carousel/ideas', [CarouselWizardController::class, 'ideas'])->name('carousel.ideas');
     Route::post('carousel/extract-url', [CarouselWizardController::class, 'extractUrl'])->name('carousel.extract-url');
     Route::post('carousel/save-config', [CarouselWizardController::class, 'saveConfig'])->name('carousel.save-config');
     Route::post('carousel', [CarouselWizardController::class, 'store'])->name('carousel.store');
@@ -112,6 +116,20 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 ->with('wizardImageMode', 'background')
                 ->with('wizardWordHighlight', true);
         })->name('dev.test-wizard-competitor');
+
+        // Twitter/X-style thread: white background, profile header (avatar, name,
+        // verified badge, @handle), tweet body copy, and a media card — rendered
+        // with the Chirp-like Albert Sans typeface.
+        Route::get('dev/test-wizard-twitter/{slideProject}', function (SlideProject $slideProject) {
+            return redirect()
+                ->route('slideshow-editor.edit', $slideProject)
+                ->with('wizardTopic', 'Mandei meu SaaS pra um amigo e ele achou 5 erros que explicam por que eu tinha zero vendas')
+                ->with('wizardStyle', 'direct, first-person founder voice, like a viral Twitter/X thread. Hook archetype: personal confession that reveals a costly mistake.')
+                ->with('wizardTemplate', 'twitter-x')
+                ->with('wizardSlideCount', 5)
+                ->with('wizardImageMode', 'none')
+                ->with('wizardWordHighlight', false);
+        })->name('dev.test-wizard-twitter');
     }
 });
 

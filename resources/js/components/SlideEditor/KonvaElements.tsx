@@ -744,7 +744,11 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
     const [fontReady, setFontReady] = useState(false);
 
     useEffect(() => {
-        loadGoogleFont('Poppins').then(() => setFontReady(true)).catch(() => setFontReady(true));
+        // Poppins drives the classic badge styles; Albert Sans is the Chirp-like
+        // face used by the Twitter/X "tweet" header.
+        Promise.all([loadGoogleFont('Poppins'), loadGoogleFont('Albert Sans')])
+            .then(() => setFontReady(true))
+            .catch(() => setFontReady(true));
     }, []);
 
     if (!badge.enabled) return null;
@@ -753,6 +757,90 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
     const photoR = photoSize / 2;
     const fontSize = Math.max(16, Math.round(photoSize * 0.36));
     const handleText = badge.handle ? `@${badge.handle}` : '';
+
+    // ── Tweet style — Twitter/X post header: avatar left, display name + verified
+    // on the first line, @handle in muted gray on the second line. Dark text on a
+    // light background, no container chrome. ──────────────────────────────────────
+    if (badge.style === 'tweet') {
+        const tweetFont = fontReady ? '"Albert Sans"' : 'sans-serif';
+        const nameSize = Math.max(22, Math.round(photoSize * 0.42));
+        const tweetHandleSize = Math.max(18, Math.round(photoSize * 0.36));
+        const nameText = badge.name ?? '';
+
+        const measure = getMeasureCtx();
+        measure.font = `700 ${nameSize}px ${tweetFont}, sans-serif`;
+        const nameW = nameText ? Math.ceil(measure.measureText(nameText).width) : 0;
+
+        const tweetGap = Math.round(photoSize * 0.26);
+        const textX = photoSize + tweetGap;
+        const tweetVerifiedSize = Math.round(nameSize * 0.92);
+        const tweetVerifiedGap = 12;
+
+        const lineGap = Math.round(nameSize * 0.18);
+        const blockH = nameSize + lineGap + tweetHandleSize;
+        const textTop = Math.max(0, Math.round((photoSize - blockH) / 2));
+        const nameY = textTop;
+        const tweetHandleY = textTop + nameSize + lineGap;
+
+        const tbx = badge.x ?? 72;
+        const tby = badge.y ?? 96;
+
+        return (
+            <Group
+                x={tbx} y={tby}
+                draggable
+                onDragEnd={(e) => onBadgeMove?.(Math.round(e.target.x()), Math.round(e.target.y()))}
+                onClick={(e) => { e.cancelBubble = true; }}
+                onTap={(e) => { e.cancelBubble = true; }}
+            >
+                {img ? (
+                    <Group
+                        x={0} y={0}
+                        clipFunc={(ctx: Konva.Context) => { ctx.arc(photoR, photoR, photoR, 0, Math.PI * 2); }}
+                    >
+                        <KonvaImage image={img!} width={photoSize} height={photoSize} />
+                    </Group>
+                ) : (
+                    <Rect x={0} y={0} width={photoSize} height={photoSize} cornerRadius={999} fill="#cbd5e1" listening={false} />
+                )}
+
+                {nameText && (
+                    <Text
+                        x={textX} y={nameY}
+                        text={nameText}
+                        fontSize={nameSize}
+                        fontFamily="Albert Sans"
+                        fontStyle="700"
+                        fill="#0f1419"
+                        listening={false}
+                    />
+                )}
+
+                {nameText && badge.verified && verifiedImg && (
+                    <KonvaImage
+                        x={textX + nameW + tweetVerifiedGap}
+                        y={nameY + Math.round((nameSize - tweetVerifiedSize) / 2)}
+                        width={tweetVerifiedSize}
+                        height={tweetVerifiedSize}
+                        image={verifiedImg}
+                        listening={false}
+                    />
+                )}
+
+                {handleText && (
+                    <Text
+                        x={textX} y={tweetHandleY}
+                        text={handleText}
+                        fontSize={tweetHandleSize}
+                        fontFamily="Albert Sans"
+                        fontStyle="400"
+                        fill="#536471"
+                        listening={false}
+                    />
+                )}
+            </Group>
+        );
+    }
 
     const measureCtx = getMeasureCtx();
     measureCtx.font = `500 ${fontSize}px ${fontReady ? '"Poppins"' : 'sans-serif'}, sans-serif`;

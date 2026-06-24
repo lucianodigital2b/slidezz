@@ -197,12 +197,13 @@ export interface SlideCorners {
     bottomRightIcon: CornerIcon;
 }
 
-export type BadgeStyle = 'glass' | 'solid' | 'minimal' | 'divider';
+export type BadgeStyle = 'glass' | 'solid' | 'minimal' | 'divider' | 'tweet';
 
 export interface ProfileBadge {
     enabled: boolean;
     style: BadgeStyle;
     handle: string;
+    name?: string;
     photoUrl: string;
     size: number;
     verified?: boolean;
