@@ -3,8 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "build:ssr": "vite build && vite build --ssr",
+        "wayfinder": "php artisan wayfinder:generate --with-form",
+        "build": "npm run wayfinder && vite build",
+        "build:ssr": "npm run wayfinder && vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
