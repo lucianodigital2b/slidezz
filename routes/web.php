@@ -26,6 +26,9 @@ Route::inertia('/br', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home.br');
 
+Route::inertia('/privacy-policy', 'Policy')->name('privacy-policy');
+Route::inertia('/terms', 'Terms')->name('terms');
+
 // Meta Pixel browser events mirrored to the Conversions API (works for guests too).
 Route::post('meta/event', [MetaEventController::class, 'store'])
     ->middleware('throttle:60,1')

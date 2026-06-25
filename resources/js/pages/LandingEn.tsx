@@ -542,7 +542,7 @@ export default function LandingEn({
                             {
                                 step: '03',
                                 title: 'Publish and go viral',
-                                body: 'Export in Full HD or schedule directly. Done. Your carousel is live, gaining followers.',
+                                body: 'Export in Full HD or schedule directly(soon). Done. Your carousel is live, gaining followers.',
                             },
                         ].map(({ step, title, body }) => (
                             <div
@@ -1145,9 +1145,8 @@ export default function LandingEn({
                     socialLabel="Social Media"
                     rights="© 2026 Slidezz. All rights reserved."
                     legal={[
-                        { label: 'Terms of Service', href: '#' },
-                        { label: 'Privacy Policy', href: '#' },
-                        { label: 'Cookies Policy', href: '#' },
+                        { label: 'Terms of Service', href: '/terms' },
+                        { label: 'Privacy Policy', href: '/privacy-policy' },
                     ]}
                 />
             </div>
