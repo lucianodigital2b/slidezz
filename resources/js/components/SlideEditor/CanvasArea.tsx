@@ -219,6 +219,11 @@ export function CanvasArea({
     const isSamplingTextReadabilityRef = useRef(false);
     const readabilitySignatureRef = useRef('');
 
+    // Horizontal scroller for the slide row, plus the last focused slide so we can
+    // nudge it when an adjacent slide is selected.
+    const scrollerRef = useRef<HTMLDivElement>(null);
+    const prevIdxRef = useRef(currentIdx);
+
     const slidesCount = slides.length;
 
     // Flat list of every text element across all slides, tagged with its slide
@@ -237,6 +242,19 @@ export function CanvasArea({
 
     const stageW = (SLIDE_W * Math.max(1, slidesCount) + SLIDE_GAP * Math.max(0, slidesCount - 1)) * scale;
     const stageH = slideH * scale;
+
+    // When the user selects a neighbouring slide (one apart), scroll the row a
+    // little in that direction so the selection stays in view. Larger jumps are
+    // left alone — they come from the thumbnail strip where the canvas can stay put.
+    useEffect(() => {
+        const diff = currentIdx - prevIdxRef.current;
+        prevIdxRef.current = currentIdx;
+
+        if (Math.abs(diff) !== 1) return;
+
+        const step = (SLIDE_W + SLIDE_GAP) * scale;
+        scrollerRef.current?.scrollBy({ left: Math.sign(diff) * step, behavior: 'smooth' });
+    }, [currentIdx, scale]);
 
     // Top/bottom band hidden by the Instagram profile-grid 1:1 centre crop.
     const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
@@ -700,7 +718,7 @@ export function CanvasArea({
 
             {/* Konva Stage — all slides in a row (scrolls horizontally; the tool
                 palette above stays fixed because it lives outside this scroller). */}
-            <div className="flex flex-1 overflow-auto">
+            <div ref={scrollerRef} className="flex flex-1 overflow-auto">
               <div className="m-auto p-8" style={{ width: stageW + 64, height: stageH + 64 }}>
                 <Stage
                     ref={stageRef}
