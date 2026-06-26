@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Services\AI\CarouselGenerationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CarouselGenerationController extends Controller
 {
     public function __construct(private readonly CarouselGenerationService $carouselGenerationService) {}
 
-    public function generate(Request $request): StreamedResponse|JsonResponse
+    public function generate(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'topic' => ['required', 'string', 'max:500'],
@@ -28,13 +27,30 @@ class CarouselGenerationController extends Controller
             ], 402);
         }
 
-        return $this->carouselGenerationService->generateSlides(
-            topic: $validated['topic'],
-            style: $validated['style'] ?? 'modern and professional',
-            slideCount: $validated['slide_count'] ?? 5,
-            wordHighlight: $validated['word_highlight'] ?? true,
-            language: $validated['language'] ?? 'Portuguese (Brazil)',
-        );
+        try {
+            $ndjson = $this->carouselGenerationService->generateSlides(
+                topic: $validated['topic'],
+                style: $validated['style'] ?? 'modern and professional',
+                slideCount: $validated['slide_count'] ?? 5,
+                wordHighlight: $validated['word_highlight'] ?? true,
+                language: $validated['language'] ?? 'Portuguese (Brazil)',
+            );
+        } catch (\Throwable $e) {
+            // Every provider failed — refund the credit we deducted up front.
+            $request->user()->addCredits(1);
+
+            \Log::error('Carousel generation failed', [
+                'message' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
+
+            return response()->json([
+                'error' => 'generation_failed',
+                'message' => 'Não foi possível gerar o carrossel. Seu crédito foi devolvido.',
+            ], 503);
+        }
+
+        return response()->json(['ndjson' => $ndjson]);
     }
 
     public function generateImage(Request $request): JsonResponse

@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\AI\CarouselGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Testing\TextResponseFake;
 use Tests\TestCase;
 
 class CarouselCreditTest extends TestCase
@@ -24,17 +27,34 @@ class CarouselCreditTest extends TestCase
         $this->assertEquals(0, $user->fresh()->credits);
     }
 
-    public function test_generate_deducts_one_credit_before_streaming(): void
+    public function test_generate_deducts_one_credit_on_success(): void
     {
+        Prism::fake([TextResponseFake::make()->withText('{"title":"A","imagePrompt":"x"}')]);
+
         $user = User::factory()->create(['credits' => 3]);
 
-        // The endpoint will try to call the AI service and likely fail in tests,
-        // but credit deduction happens before the service call
         $this->actingAs($user)->postJson('/carousel/generate', [
             'topic' => 'Test topic',
-        ]);
+        ])->assertOk()->assertJsonStructure(['ndjson']);
 
         $this->assertEquals(2, $user->fresh()->credits);
+    }
+
+    public function test_generate_refunds_the_credit_when_all_providers_fail(): void
+    {
+        // Force the generation service to fail (as a provider timeout would).
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateSlides')->andThrow(new \RuntimeException('all providers down'));
+        });
+
+        $user = User::factory()->create(['credits' => 3]);
+
+        $this->actingAs($user)->postJson('/carousel/generate', [
+            'topic' => 'Test topic',
+        ])->assertStatus(503)->assertJsonFragment(['error' => 'generation_failed']);
+
+        // The credit deducted up front is returned, so the balance is unchanged.
+        $this->assertEquals(3, $user->fresh()->credits);
     }
 
     public function test_deduct_credit_is_atomic_and_cannot_go_below_zero(): void

@@ -5,11 +5,16 @@ namespace App\Services\AI;
 use Illuminate\Support\Facades\Http;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Facades\Prism;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CarouselGenerationService
 {
-    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true, string $language = 'Portuguese (Brazil)'): StreamedResponse
+    /**
+     * Generate the carousel slides as raw NDJSON (one JSON object per line).
+     *
+     * Runs buffered (not streamed) so a provider timeout can be caught and
+     * retried against the fallback provider in the same request.
+     */
+    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true, string $language = 'Portuguese (Brazil)'): string
     {
         $highlightFields = $wordHighlight
             ? "- highlightWords: array of 1 to 4 of the most impactful words or short phrases to emphasize in the title. Use the exact wording as it appears in the title (phrases are allowed). Emphasize only the words that carry the core meaning; leave connecting words (articles, prepositions, conjunctions) un-emphasized. Example: [\"Claude\", \"10x faster\"]\n"
@@ -52,11 +57,43 @@ Voice: {$style}
 Output exactly {$slideCount} lines of raw NDJSON. Nothing else.
 PROMPT;
 
-        return Prism::text()
-            ->using(Provider::DeepSeek, 'deepseek-v4-pro')
+        return $this->runTextWithFallback(
+            $systemPrompt,
+            "Create a {$slideCount}-slide Instagram carousel about: {$topic}",
+        );
+    }
+
+    /**
+     * Run a text generation against the primary provider, falling back to the
+     * secondary provider on any failure (timeout, connection error, etc.).
+     */
+    private function runTextWithFallback(string $systemPrompt, string $userPrompt): string
+    {
+        try {
+            return $this->runText(Provider::DeepSeek, 'deepseek-chat', $systemPrompt, $userPrompt);
+        } catch (\Throwable $e) {
+            \Log::warning('[Carousel] Primary text provider failed; falling back to OpenAI', [
+                'provider' => 'deepseek',
+                'message' => $e->getMessage(),
+            ]);
+
+            return $this->runText(Provider::OpenAI, 'gpt-4o', $systemPrompt, $userPrompt);
+        }
+    }
+
+    /**
+     * Run a single buffered text generation and return the model's raw text.
+     */
+    private function runText(Provider $provider, string $model, string $systemPrompt, string $userPrompt): string
+    {
+        $response = Prism::text()
+            ->using($provider, $model)
             ->withSystemPrompt($systemPrompt)
-            ->withPrompt("Create a {$slideCount}-slide Instagram carousel about: {$topic}")
-            ->asEventStreamResponse();
+            ->withPrompt($userPrompt)
+            ->withClientOptions(['timeout' => 120])
+            ->generate();
+
+        return $response->text;
     }
 
     /**
@@ -136,13 +173,9 @@ BRAND DNA
 - Visual style: {$visualStyle}
 PROMPT;
 
-        $response = Prism::text()
-            ->using(Provider::DeepSeek, 'deepseek-v4-pro')
-            ->withSystemPrompt($systemPrompt)
-            ->withPrompt('Generate 3 fresh carousel ideas for today.')
-            ->generate();
+        $text = $this->runTextWithFallback($systemPrompt, 'Generate 3 fresh carousel ideas for today.');
 
-        return $this->parseIdeas($response->text);
+        return $this->parseIdeas($text);
     }
 
     /**

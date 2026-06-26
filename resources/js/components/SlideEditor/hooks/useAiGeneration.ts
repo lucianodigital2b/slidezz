@@ -360,7 +360,7 @@ export function useAiGeneration(
         try {
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'text/event-stream' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
                 body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language }),
             });
         } catch {
@@ -370,7 +370,7 @@ export function useAiGeneration(
             return;
         }
 
-        if (!response.ok || !response.body) {
+        if (!response.ok) {
             isGeneratingRef.current = false;
             setAiStatus('error');
             if (response.status === 402) {
@@ -381,27 +381,15 @@ export function useAiGeneration(
             return;
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let sseBuffer = '';
         let assembled = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            sseBuffer += decoder.decode(value, { stream: true });
-
-            const lines = sseBuffer.split('\n');
-            sseBuffer = lines.pop() ?? '';
-
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) continue;
-                try {
-                    const payload = JSON.parse(line.slice(6)) as { delta?: string; text?: string };
-                    const chunk = payload.delta ?? payload.text ?? '';
-                    if (chunk) assembled += chunk;
-                } catch { /* ignore malformed SSE lines */ }
-            }
+        try {
+            const data = await response.json() as { ndjson?: string };
+            assembled = data.ndjson ?? '';
+        } catch {
+            isGeneratingRef.current = false;
+            setAiStatus('error');
+            setAiError(t('slideEditor.ai.errorParsing'));
+            return;
         }
 
         setAiStatus('imaging');

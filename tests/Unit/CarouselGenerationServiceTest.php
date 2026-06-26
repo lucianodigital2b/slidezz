@@ -9,7 +9,6 @@ use Prism\Prism\Facades\Prism;
 use Prism\Prism\Testing\ImageResponseFake;
 use Prism\Prism\Testing\TextResponseFake;
 use Prism\Prism\ValueObjects\GeneratedImage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tests\TestCase;
 
 class CarouselGenerationServiceTest extends TestCase
@@ -59,14 +58,16 @@ class CarouselGenerationServiceTest extends TestCase
 
     // ─── generateSlides ──────────────────────────────────────────────────────
 
-    public function test_generate_slides_returns_a_streamed_response(): void
+    public function test_generate_slides_returns_ndjson_text_from_the_primary_provider(): void
     {
-        Prism::fake([TextResponseFake::make()->withText('{"title":"Test"}')]);
+        Prism::fake([TextResponseFake::make()->withText('{"title":"Test","imagePrompt":"x"}')]);
 
-        $response = $this->service->generateSlides('marketing tips', 'modern and professional', 3);
+        $result = $this->service->generateSlides('marketing tips', 'modern and professional', 3);
 
-        $this->assertInstanceOf(StreamedResponse::class, $response);
+        $this->assertIsString($result);
+        $this->assertStringContainsString('"title":"Test"', $result);
     }
+
 
     // ─── generateIdeas ────────────────────────────────────────────────────────
 
