@@ -156,7 +156,7 @@ export default function Profile({
     socialAccounts: SocialAccount[];
 }) {
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, igEnabled } = usePage().props;
 
     return (
         <>
@@ -244,9 +244,12 @@ export default function Profile({
                 </Form>
             </div>
 
-            <Separator />
-
-            <ConnectedAccounts accounts={socialAccounts} />
+            {igEnabled && (
+                <>
+                    <Separator />
+                    <ConnectedAccounts accounts={socialAccounts} />
+                </>
+            )}
 
             <DeleteUser />
         </>

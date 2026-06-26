@@ -75,10 +75,11 @@ function loadSavedState(): { slides: Slide[]; currentIdx: number; format: Format
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SlideEditor() {
-    const { slideProject, wizardConfig, instagramAccounts } = usePage<{
+    const { slideProject, wizardConfig, instagramAccounts, igEnabled } = usePage<{
         slideProject: SlideProjectProp | null;
         wizardConfig?: WizardConfig | null;
         instagramAccounts: InstagramAccount[];
+        igEnabled: boolean;
     }>().props;
 
     const saved = slideProject ?? loadSavedState();
@@ -958,6 +959,7 @@ export default function SlideEditor() {
                     onExportMetadata={exportMetadata}
                     exportingZip={exportingZip}
                     instagramAccounts={instagramAccounts}
+                    igEnabled={igEnabled}
                     igPosting={igPosting}
                     slidesCount={slides.length}
                     publishAt={publishAt}
@@ -980,6 +982,7 @@ export default function SlideEditor() {
                             onApplyCornersToAll={applyCornersToAll}
                             caption={caption}
                             onCaptionChange={setCaption}
+                            igEnabled={igEnabled}
                             selectedCornerId={selectedCornerId}
                             onCornerSelect={selectCorner}
                             defaultHandle={instagramAccounts?.[0]?.handle ?? null}

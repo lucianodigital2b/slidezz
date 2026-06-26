@@ -45,6 +45,7 @@ interface EditorToolbarProps {
     onExportMetadata: () => void;
     exportingZip: boolean;
     instagramAccounts: InstagramAccount[];
+    igEnabled: boolean;
     igPosting: boolean;
     slidesCount: number;
     publishAt: Date | undefined;
@@ -61,7 +62,7 @@ export function EditorToolbar({
     templateStatus, onSaveAsTemplate,
     format, onFormatChange,
     onExportPNG, onExportAllZip, onExportMetadata, exportingZip,
-    instagramAccounts, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
+    instagramAccounts, igEnabled, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
 }: EditorToolbarProps) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -222,7 +223,7 @@ export function EditorToolbar({
             </Popover>
 
             {/* Instagram */}
-            {instagramAccounts.length > 0 && (
+            {igEnabled && instagramAccounts.length > 0 && (
                 <>
                     <div className="w-px h-6 bg-gray-200 mx-1" />
                     <TooltipProvider delayDuration={200}>

@@ -145,6 +145,7 @@ interface SlideGlobalPanelProps {
     onApplyCornersToAll: (corners: SlideCorners) => void;
     caption: string;
     onCaptionChange: (caption: string) => void;
+    igEnabled: boolean;
     selectedCornerId: CornerKey | null;
     onCornerSelect: (key: CornerKey) => void;
     defaultHandle: string | null;
@@ -164,7 +165,7 @@ const CORNER_ORDER: CornerKey[] = ['topLeft', 'topRight', 'bottomLeft', 'bottomR
 
 const INSTAGRAM_LIMIT = 2200;
 
-export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange, onApplyCornersToAll, caption, onCaptionChange, selectedCornerId, onCornerSelect, defaultHandle, onProfileBadgeChange, onApplyBadgeToAll, onLayoutApply }: SlideGlobalPanelProps) {
+export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddText, onSelectElement, onDeleteElement, onCornersChange, onApplyCornersToAll, caption, onCaptionChange, igEnabled, selectedCornerId, onCornerSelect, defaultHandle, onProfileBadgeChange, onApplyBadgeToAll, onLayoutApply }: SlideGlobalPanelProps) {
     const { t } = useTranslation();
     const textElements = slide.elements.filter((el): el is TextEl => el.type === 'text');
     const isTransparent = slide.background === 'transparent' || slide.background === '';
@@ -182,11 +183,31 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
         handle: defaultHandle ?? '',
         photoUrl: '',
         size: 100,
+        verified: true,
     };
     const badge = slide.profileBadge ?? BADGE_DEFAULTS;
 
     function patchBadge(patch: Partial<ProfileBadge>) {
         onProfileBadgeChange({ ...badge, ...patch });
+    }
+
+    // Place the badge just above the slide's title (its largest text element)
+    // instead of letting it fall back to the bottom-left corner.
+    function badgePositionAboveTitle(size: number): { x: number; y: number } | null {
+        const title = [...textElements].sort((a, b) => b.fontSize - a.fontSize)[0];
+        if (!title) return null;
+        const fontSize = Math.max(16, Math.round(size * 0.36));
+        const badgeHeight = fontSize + 36; // contentH + BADGE_PAD * 2
+        return { x: title.x, y: Math.max(0, Math.round(title.y - badgeHeight - 24)) };
+    }
+
+    function handleBadgeShowToggle(enabled: boolean) {
+        if (enabled && badge.x === undefined && badge.y === undefined) {
+            const pos = badgePositionAboveTitle(badge.size);
+            patchBadge(pos ? { enabled, ...pos } : { enabled });
+        } else {
+            patchBadge({ enabled });
+        }
     }
 
     function handlePhotoFile(file: File) {
@@ -467,8 +488,9 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                 )}
             </div>
 
-            {/* Caption */}
-            {/* <div className="p-4 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
+            {/* Caption — gated behind the Instagram feature flag */}
+            {igEnabled && (
+            <div className="p-4 flex flex-col gap-2.5 bg-white" style={{ borderRadius: '1.35rem' }}>
                 <p className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.caption')}</p>
 
                 <button
@@ -494,7 +516,8 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         </span>
                     )}
                 </button>
-            </div> */}
+            </div>
+            )}
 
             {/* Profile Badge */}
             <div className="overflow-hidden bg-white" style={{ borderRadius: '1.35rem' }}>
@@ -529,7 +552,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                             <input
                                 type="checkbox"
                                 checked={badge.enabled}
-                                onChange={(e) => patchBadge({ enabled: e.target.checked })}
+                                onChange={(e) => handleBadgeShowToggle(e.target.checked)}
                                 className="rounded accent-[#E8440A]"
                             />
                             <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.profileBadgeShow')}</span>

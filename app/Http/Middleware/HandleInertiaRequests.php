@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                 'onboarding_complete' => $request->user()?->hasCompletedOnboarding(),
                 'credits' => $request->user()?->credits ?? 0,
             ],
+            'igEnabled' => (bool) $request->user()?->canUseInstagram(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

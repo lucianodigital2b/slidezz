@@ -18,6 +18,8 @@ class SocialAccountController extends Controller
 
     public function connect(Request $request, string $provider): RedirectResponse
     {
+        abort_if($provider === 'instagram' && ! $request->user()->canUseInstagram(), 403);
+
         $workspace = Workspace::firstOrCreate(
             ['owner_id' => $request->user()->id],
             ['name' => $request->user()->name."'s Workspace"]
