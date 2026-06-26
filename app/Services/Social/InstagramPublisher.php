@@ -9,6 +9,7 @@ use App\Models\SocialAccount;
 use App\Services\Social\Instagram\InstagramSdk;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class InstagramPublisher implements SocialPublisher
@@ -44,7 +45,9 @@ class InstagramPublisher implements SocialPublisher
 
         // Encode workspace_id + nonce in state so the callback works even if the
         // session is reset during the Instagram OAuth redirect (common in local dev).
-        $state = base64_encode(json_encode([
+        // Use URL-safe base64: Instagram's authorize endpoint drops the state
+        // parameter when it contains "+", "/" or "=" characters.
+        $state = $this->base64UrlEncode(json_encode([
             'workspace_id' => $workspaceId,
             'nonce' => $nonce,
             'hmac' => hash_hmac('sha256', $workspaceId.'|'.$nonce, config('app.key')),
@@ -57,9 +60,11 @@ class InstagramPublisher implements SocialPublisher
             'instagram_business_content_publish',
             'instagram_business_manage_messages',
             'instagram_business_manage_comments',
+            'instagram_business_manage_insights',
         ];
 
         $query = http_build_query([
+            'force_reauth' => 'true',
             'client_id' => $this->appId,
             'redirect_uri' => url($this->redirectUri),
             'scope' => implode(',', $scopes),
@@ -83,10 +88,12 @@ class InstagramPublisher implements SocialPublisher
     {
         Log::info('[Instagram] handleCallback received', ['keys' => array_keys($data), 'has_code' => isset($data['code']), 'has_state' => isset($data['state'])]);
 
-        $rawState = $data['state'] ?? null;
-        $decoded = $rawState ? json_decode(base64_decode($rawState), true) : null;
+        // Instagram occasionally omits the state on the callback redirect; fall
+        // back to the value we stashed in the session before redirecting out.
+        $rawState = $data['state'] ?? session('instagram_oauth_state');
+        $decoded = $rawState ? json_decode($this->base64UrlDecode($rawState), true) : null;
 
-        Log::debug('[Instagram] State decoded', ['decoded_keys' => $decoded ? array_keys($decoded) : null]);
+        Log::debug('[Instagram] State decoded', ['from_session' => ! isset($data['state']) && $rawState !== null, 'decoded_keys' => $decoded ? array_keys($decoded) : null]);
 
         if (! $decoded || ! isset($decoded['workspace_id'], $decoded['nonce'], $decoded['hmac'])) {
             Log::error('[Instagram] Invalid or missing state parameter', ['raw_state' => $rawState]);
@@ -166,7 +173,7 @@ class InstagramPublisher implements SocialPublisher
             [
                 'workspace_id' => $workspaceId,
                 'handle' => $igDetails['username'] ?? ($igDetails['name'] ?? null),
-                'avatar' => $igDetails['profile_picture_url'] ?? null,
+                'avatar' => $this->storeAvatar($igDetails['profile_picture_url'] ?? null, (string) $igUserId),
                 'access_token' => $userToken,
                 'refresh_token' => $userToken,
                 'expires_at' => now()->addSeconds($expiresIn),
@@ -331,5 +338,59 @@ class InstagramPublisher implements SocialPublisher
     private function publishContainer(string $accessToken, string $igUserId, string $containerId): string
     {
         return $this->sdk->publishContainer($accessToken, $igUserId, $containerId);
+    }
+
+    /**
+     * Download the Instagram profile picture and store it on the media disk so
+     * the saved avatar URL does not expire. Falls back to the original (expiring)
+     * URL if the download or upload fails for any reason.
+     */
+    private function storeAvatar(?string $remoteUrl, string $providerId): ?string
+    {
+        if (! $remoteUrl) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(15)->get($remoteUrl);
+
+            if ($response->failed()) {
+                Log::warning('[Instagram] Failed to download avatar, keeping original URL', ['status' => $response->status(), 'provider_id' => $providerId]);
+
+                return $remoteUrl;
+            }
+
+            $disk = env('MEDIA_DISK', 'public');
+            $path = "instagram/avatars/{$providerId}.jpg";
+
+            Storage::disk($disk)->put($path, $response->body(), 'public');
+
+            $url = Storage::disk($disk)->url($path);
+
+            Log::info('[Instagram] Avatar stored on media disk', ['provider_id' => $providerId, 'disk' => $disk, 'url' => $url]);
+
+            return $url;
+        } catch (\Throwable $e) {
+            Log::warning('[Instagram] Avatar storage failed, keeping original URL', ['provider_id' => $providerId, 'message' => $e->getMessage()]);
+
+            return $remoteUrl;
+        }
+    }
+
+    /**
+     * Encode a string as URL-safe base64 (RFC 4648 §5) with padding stripped.
+     */
+    private function base64UrlEncode(string $value): string
+    {
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+    }
+
+    /**
+     * Decode a URL-safe base64 string. Tolerates standard base64 input too, so
+     * states issued before the URL-safe change still decode correctly.
+     */
+    private function base64UrlDecode(string $value): string
+    {
+        return base64_decode(strtr($value, '-_', '+/')) ?: '';
     }
 }

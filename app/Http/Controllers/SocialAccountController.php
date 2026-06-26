@@ -7,6 +7,7 @@ use App\Models\Workspace;
 use App\Services\Social\SocialPublisherFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SocialAccountController extends Controller
 {
@@ -41,6 +42,12 @@ class SocialAccountController extends Controller
             $publisher = SocialPublisherFactory::make($provider);
             $publisher->handleCallback($request->all());
         } catch (\Throwable $e) {
+            Log::error('[SocialAccount] Failed to connect account', [
+                'provider' => $provider,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
+
             return redirect()->route('profile.edit')
                 ->with('error', 'Failed to connect account: '.$e->getMessage());
         }

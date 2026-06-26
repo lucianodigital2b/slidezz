@@ -117,11 +117,7 @@ function PlatformRow({ provider, accounts }: { provider: Provider; accounts: Soc
                 size="sm"
                 className={`gap-1.5 rounded-full text-white ${config.connectBg}`}
                 onClick={() => {
-                    if (provider === 'instagram') {
-                        window.location.href = 'https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=2607166723018659&redirect_uri=https://slidezz.test/social-accounts/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights';
-                    } else {
-                        window.location.href = connect.url(provider);
-                    }
+                    window.location.href = connect.url(provider);
                 }}
             >
                 <Plus className="h-3.5 w-3.5" />
