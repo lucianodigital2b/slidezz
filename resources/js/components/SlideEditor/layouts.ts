@@ -202,33 +202,107 @@ export const LAYOUT_DEFINITIONS: Record<LayoutType, LayoutDefinition> = {
     cta_closing: CTA_CLOSING,
 };
 
-const MIDDLE_POOL: LayoutType[] = ['standard', 'stat_callout', 'split_text', 'quote_block'];
+/**
+ * The content shape of a single slide, used to pick the layout that best fits
+ * that slide's actual title/description/stat rather than a fixed rotation.
+ */
+export interface SlideContentShape {
+    title: string;
+    description?: string;
+    hasStat?: boolean;
+}
 
-export function generateLayoutSequence(slideCount: number, hasStats = true): LayoutType[] {
-    if (slideCount <= 1) return ['hook_hero'];
-    if (slideCount === 2) return ['hook_hero', 'cta_closing'];
+export type SlidePosition = 'cover' | 'middle' | 'closing';
 
-    const middle: LayoutType[] = [];
-    const middleCount = slideCount - 2;
-    let lastPicked: LayoutType | null = null;
+// Character thresholds that classify a title/description as short / long. Tuned
+// for IG carousel copy (a few words of headline, a sentence or two of body).
+const TITLE_SHORT_CHARS = 24;
+const TITLE_LONG_CHARS = 60;
+const DESC_LONG_CHARS = 160;
 
-    const mustInclude: LayoutType[] = [];
-    if (hasStats && middleCount >= 2) mustInclude.push('stat_callout');
+function textLength(value?: string): number {
+    return (value ?? '').trim().length;
+}
 
-    for (let i = 0; i < middleCount; i++) {
-        const forced = mustInclude.shift();
-
-        if (forced && forced !== lastPicked) {
-            middle.push(forced);
-            lastPicked = forced;
-            continue;
-        }
-
-        const available = MIDDLE_POOL.filter(l => l !== lastPicked);
-        const pick = available[i % available.length];
-        middle.push(pick);
-        lastPicked = pick;
+/**
+ * Pick the layout that best fits a single slide's content. The cover and closing
+ * slides are fixed (hook_hero / cta_closing); middle slides are chosen from the
+ * typographic pool based on how much title and body copy they carry.
+ */
+export function pickLayoutForSlide(content: SlideContentShape, position: SlidePosition): LayoutType {
+    if (position === 'cover') {
+        return 'hook_hero';
     }
 
-    return ['hook_hero', ...middle, 'cta_closing'];
+    if (position === 'closing') {
+        return 'cta_closing';
+    }
+
+    // A stat is the strongest signal: render it as the oversized callout number.
+    if (content.hasStat) {
+        return 'stat_callout';
+    }
+
+    const titleLen = textLength(content.title);
+    const descLen = textLength(content.description);
+
+    // No body copy → let the title carry the slide. A tight headline fills the
+    // big split layout; a longer one reads better as a quote block.
+    if (descLen === 0) {
+        return titleLen <= TITLE_SHORT_CHARS ? 'split_text' : 'quote_block';
+    }
+
+    // Lots of body copy → a layout with a dedicated, roomy description band.
+    if (descLen >= DESC_LONG_CHARS) {
+        return 'standard';
+    }
+
+    // Short/medium body: a long title needs the stacked 'standard' header; a
+    // tight title pairs well with the large split headline above the body.
+    return titleLen >= TITLE_LONG_CHARS ? 'standard' : 'split_text';
+}
+
+// Fallback used to break up two identical middle layouts in a row (stat_callout
+// is exempt — it is genuinely content-driven and shouldn't be substituted).
+const MIDDLE_ALTERNATE: Record<LayoutType, LayoutType> = {
+    standard: 'split_text',
+    split_text: 'standard',
+    quote_block: 'split_text',
+    stat_callout: 'stat_callout',
+    hook_hero: 'split_text',
+    cta_closing: 'split_text',
+};
+
+/**
+ * Build the per-slide layout sequence from the deck's actual content. Each slide
+ * gets the layout that fits its copy (see {@link pickLayoutForSlide}), with a
+ * variety guard so the same middle layout never repeats back-to-back.
+ */
+export function generateLayoutSequenceFromContent(slides: SlideContentShape[]): LayoutType[] {
+    const count = slides.length;
+
+    if (count <= 1) {
+        return ['hook_hero'];
+    }
+
+    if (count === 2) {
+        return ['hook_hero', 'cta_closing'];
+    }
+
+    const sequence: LayoutType[] = [];
+    let lastPicked: LayoutType | null = null;
+
+    slides.forEach((slide, i) => {
+        const position: SlidePosition = i === 0 ? 'cover' : i === count - 1 ? 'closing' : 'middle';
+        let pick = pickLayoutForSlide(slide, position);
+
+        if (position === 'middle' && pick === lastPicked && pick !== 'stat_callout') {
+            pick = MIDDLE_ALTERNATE[pick];
+        }
+
+        sequence.push(pick);
+        lastPicked = pick;
+    });
+
+    return sequence;
 }

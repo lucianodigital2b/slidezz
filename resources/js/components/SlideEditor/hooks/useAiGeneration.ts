@@ -5,7 +5,7 @@ import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Fo
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
-import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequence } from '../layouts';
+import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent } from '../layouts';
 
 export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
 
@@ -423,8 +423,9 @@ export function useAiGeneration(
             return;
         }
 
-        const hasStats = parsedSlides.some(s => Boolean(s.stat));
-        const layoutSequence = generateLayoutSequence(parsedSlides.length, hasStats);
+        const layoutSequence = generateLayoutSequenceFromContent(
+            parsedSlides.map(s => ({ title: s.title, description: s.description, hasStat: Boolean(s.stat) })),
+        );
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
 
