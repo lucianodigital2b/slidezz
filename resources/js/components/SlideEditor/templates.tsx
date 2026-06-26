@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Align, BadgeStyle, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
 import { SHADOW_DEFAULTS, fitTextFontSize, measuredTextHeight, uid } from './utils';
-import { LayoutDefinition } from './layouts';
+import { LayoutDefinition, computeSafeArea, slotToBox } from './layouts';
 
 export interface TemplateContent {
     eyebrow: string;
@@ -124,14 +124,8 @@ export function buildSceneFromLayoutGeneric(
     // (plus a small inner margin) so generated titles/bodies stay visible in the
     // grid. For 4:5 posts this resolves to ~180 (unchanged); for taller formats
     // it tightens so content no longer lands in the cropped bands.
-    const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
-    const topPad = gridCropInset + 45;
-    const safeY = topPad;
-    const safeH = slideH - topPad * 2;
-    const pad = 80;
-    const leftPad = Math.round(pad * 1.3); // 30% more breathing room from the left border
-    const safeX = leftPad;
-    const safeW = SLIDE_W - leftPad - pad;
+    const safe = computeSafeArea(slideH);
+    const { x: safeX, y: safeY, height: safeH } = safe;
 
     const useAlt = slideIndex % 2 === 1 && Boolean(template.backgroundAlt);
     const bg = useAlt ? template.backgroundAlt! : template.background;
@@ -146,12 +140,7 @@ export function buildSceneFromLayoutGeneric(
     }
 
     function slotToRect(slot: LayoutDefinition['title']) {
-        return {
-            x: Math.round(safeX + slot.x * safeW),
-            y: Math.round(safeY + slot.y * safeH),
-            width: Math.round(slot.width * safeW),
-            height: Math.round(slot.height * safeH),
-        };
+        return slotToBox(slot, slideH);
     }
 
     if (layout.gradientIntensity > 0.2) {
