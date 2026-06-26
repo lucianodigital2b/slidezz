@@ -373,11 +373,15 @@ export function fitTextFontSize(
 
     while (fontSize >= minFontSize) {
         ctx.font = `${fontStyle ? fontStyle + ' ' : ''}${fontSize}px "${fontFamily}"`;
-        
+
         const words = text.split(/(\s+)/);
         let lines = 1;
         let currentLineWidth = 0;
-        
+        // The widest single word: a word longer than the box can't wrap, so it
+        // overflows horizontally (and clips) no matter how the lines fit. Track it
+        // so the font shrinks until even the longest word fits the width.
+        let widestWord = 0;
+
         for (const word of words) {
             if (word === '\n') {
                 lines++;
@@ -386,7 +390,11 @@ export function fitTextFontSize(
             }
 
             const wordWidth = measureTextWidthWithLetterSpacing(ctx, word, letterSpacing, true);
-            
+
+            if (! /^\s+$/.test(word)) {
+                widestWord = Math.max(widestWord, wordWidth);
+            }
+
             if (currentLineWidth + wordWidth > innerMaxWidth && currentLineWidth > 0) {
                 lines++;
                 if (/^\s+$/.test(word)) {
@@ -398,10 +406,10 @@ export function fitTextFontSize(
                 currentLineWidth += wordWidth;
             }
         }
-        
+
         const totalHeight = lines * (fontSize * lineHeight);
 
-        if (totalHeight <= innerMaxHeight) {
+        if (totalHeight <= innerMaxHeight && widestWord <= innerMaxWidth) {
             break;
         }
 
