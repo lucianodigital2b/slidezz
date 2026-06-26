@@ -5,7 +5,7 @@ import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Fo
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
-import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent } from '../layouts';
+import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, slotToBox, TitleFitter } from '../layouts';
 
 export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
 
@@ -423,8 +423,24 @@ export function useAiGeneration(
             return;
         }
 
+        const slideH = FORMATS[format].h;
+        const template = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
+
+        // Load the template fonts before measuring so the title fit reflects real
+        // glyph metrics rather than the canvas fallback font.
+        await Promise.all((template ? [...new Set(template.fonts)] : ['Space Mono', 'Inter']).map(f => loadGoogleFont(f)));
+
+        const titleFont = template?.font ?? 'Inter';
+        const fitTitle: TitleFitter = (text, slot) => {
+            const box = slotToBox(slot, slideH);
+            const style = slot.fontStyleHint === 'normal' ? '' : slot.fontStyleHint === 'black' ? '900' : slot.fontStyleHint;
+
+            return fitTextFontSize(text.toUpperCase(), titleFont, style, slot.maxFontSize, slot.lineHeight, slot.letterSpacing, box.width, box.height, 28);
+        };
+
         const layoutSequence = generateLayoutSequenceFromContent(
             parsedSlides.map(s => ({ title: s.title, description: s.description, hasStat: Boolean(s.stat) })),
+            fitTitle,
         );
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
@@ -450,9 +466,6 @@ export function useAiGeneration(
                 }),
             );
         }
-
-        const template = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
-        await Promise.all((template ? [...new Set(template.fonts)] : ['Space Mono', 'Inter']).map(f => loadGoogleFont(f)));
 
         const newSlides = parsedSlides.map((s, i) => {
             const imgResult = shouldGenerateImages ? imageResults[i] : null;

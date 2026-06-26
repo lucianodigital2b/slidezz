@@ -1,3 +1,5 @@
+import { SLIDE_W } from './types';
+
 export type LayoutType =
     | 'hook_hero'
     | 'standard'
@@ -193,6 +195,45 @@ const CTA_CLOSING: LayoutDefinition = {
     imageCardPosition: 'top',
 };
 
+export interface LayoutBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * The content safe area for a slide of height `slideH`: the band that stays
+ * visible inside the Instagram profile-grid 1:1 centre crop, plus side padding.
+ * Single source of truth shared by the scene builder and the layout selector so
+ * a measured font size matches what is actually rendered.
+ */
+export function computeSafeArea(slideH: number): LayoutBox {
+    const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
+    const topPad = gridCropInset + 45;
+    const pad = 80;
+    const leftPad = Math.round(pad * 1.3); // 30% more breathing room from the left border
+
+    return {
+        x: leftPad,
+        y: topPad,
+        width: SLIDE_W - leftPad - pad,
+        height: slideH - topPad * 2,
+    };
+}
+
+/** Resolve a layout slot's fractional rect to an absolute box for `slideH`. */
+export function slotToBox(slot: LayoutSlot, slideH: number): LayoutBox {
+    const safe = computeSafeArea(slideH);
+
+    return {
+        x: Math.round(safe.x + slot.x * safe.width),
+        y: Math.round(safe.y + slot.y * safe.height),
+        width: Math.round(slot.width * safe.width),
+        height: Math.round(slot.height * safe.height),
+    };
+}
+
 export const LAYOUT_DEFINITIONS: Record<LayoutType, LayoutDefinition> = {
     hook_hero: HOOK_HERO,
     standard: STANDARD,
@@ -262,6 +303,47 @@ export function pickLayoutForSlide(content: SlideContentShape, position: SlidePo
     return titleLen >= TITLE_LONG_CHARS ? 'standard' : 'split_text';
 }
 
+/**
+ * Measures the font size a title would render at inside a layout's title slot.
+ * Injected by the caller (the browser builds it over fitTextFontSize with the
+ * active template font + slide height) so this module stays free of canvas/DOM.
+ */
+export type TitleFitter = (text: string, slot: LayoutSlot) => number;
+
+// Roomy title layouts considered when the heuristic pick crams the title.
+const TITLE_LED_CANDIDATES: LayoutType[] = ['split_text', 'standard', 'quote_block'];
+// A title is "cramped" when it must shrink below this fraction of its slot's max
+// font size — i.e. it is overflowing and a roomier layout would read better.
+const CRAMPED_TITLE_RATIO = 0.5;
+
+/**
+ * Refine a title-led middle slide's layout using measurement: keep the heuristic
+ * pick when its title reads at a comfortable size (preserving variety), otherwise
+ * switch to whichever candidate renders the title largest (most legible).
+ */
+function refineTitleLedLayout(content: SlideContentShape, heuristicPick: LayoutType, fitTitle: TitleFitter): LayoutType {
+    const cap = LAYOUT_DEFINITIONS[heuristicPick].title.maxFontSize;
+    const heuristicSize = fitTitle(content.title, LAYOUT_DEFINITIONS[heuristicPick].title);
+
+    if (heuristicSize >= cap * CRAMPED_TITLE_RATIO) {
+        return heuristicPick;
+    }
+
+    let best = heuristicPick;
+    let bestSize = heuristicSize;
+
+    for (const type of TITLE_LED_CANDIDATES) {
+        const size = fitTitle(content.title, LAYOUT_DEFINITIONS[type].title);
+
+        if (size > bestSize) {
+            best = type;
+            bestSize = size;
+        }
+    }
+
+    return best;
+}
+
 // Fallback used to break up two identical middle layouts in a row (stat_callout
 // is exempt — it is genuinely content-driven and shouldn't be substituted).
 const MIDDLE_ALTERNATE: Record<LayoutType, LayoutType> = {
@@ -278,7 +360,7 @@ const MIDDLE_ALTERNATE: Record<LayoutType, LayoutType> = {
  * gets the layout that fits its copy (see {@link pickLayoutForSlide}), with a
  * variety guard so the same middle layout never repeats back-to-back.
  */
-export function generateLayoutSequenceFromContent(slides: SlideContentShape[]): LayoutType[] {
+export function generateLayoutSequenceFromContent(slides: SlideContentShape[], fitTitle?: TitleFitter): LayoutType[] {
     const count = slides.length;
 
     if (count <= 1) {
@@ -295,6 +377,12 @@ export function generateLayoutSequenceFromContent(slides: SlideContentShape[]): 
     slides.forEach((slide, i) => {
         const position: SlidePosition = i === 0 ? 'cover' : i === count - 1 ? 'closing' : 'middle';
         let pick = pickLayoutForSlide(slide, position);
+
+        // Measurement refinement: for title-led middle slides, swap to the layout
+        // that renders the title largest when the heuristic pick crams it.
+        if (position === 'middle' && fitTitle && !slide.hasStat && textLength(slide.description) < DESC_LONG_CHARS) {
+            pick = refineTitleLedLayout(slide, pick, fitTitle);
+        }
 
         if (position === 'middle' && pick === lastPicked && pick !== 'stat_callout') {
             pick = MIDDLE_ALTERNATE[pick];
