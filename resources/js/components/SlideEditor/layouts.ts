@@ -251,6 +251,9 @@ export interface SlideContentShape {
     title: string;
     description?: string;
     hasStat?: boolean;
+    // True when this slide will carry a generated image. Solid-background layouts
+    // discard the image (see the scene builder), so image slides must avoid them.
+    hasImage?: boolean;
 }
 
 export type SlidePosition = 'cover' | 'middle' | 'closing';
@@ -288,9 +291,14 @@ export function pickLayoutForSlide(content: SlideContentShape, position: SlidePo
     const descLen = textLength(content.description);
 
     // No body copy → let the title carry the slide. A tight headline fills the
-    // big split layout; a longer one reads better as a quote block.
+    // big split layout; a longer one reads better as a quote block — unless the
+    // slide has an image, since quote_block's solid background would discard it.
     if (descLen === 0) {
-        return titleLen <= TITLE_SHORT_CHARS ? 'split_text' : 'quote_block';
+        if (titleLen <= TITLE_SHORT_CHARS) {
+            return 'split_text';
+        }
+
+        return content.hasImage ? 'split_text' : 'quote_block';
     }
 
     // Lots of body copy → a layout with a dedicated, roomy description band.
@@ -316,6 +324,11 @@ const TITLE_LED_CANDIDATES: LayoutType[] = ['split_text', 'standard', 'quote_blo
 // font size — i.e. it is overflowing and a roomier layout would read better.
 const CRAMPED_TITLE_RATIO = 0.5;
 
+/** A layout keeps a generated image (solid-background layouts discard it). */
+function keepsImage(type: LayoutType): boolean {
+    return LAYOUT_DEFINITIONS[type].backgroundPreference !== 'solid';
+}
+
 /**
  * Refine a title-led middle slide's layout using measurement: keep the heuristic
  * pick when its title reads at a comfortable size (preserving variety), otherwise
@@ -333,6 +346,11 @@ function refineTitleLedLayout(content: SlideContentShape, heuristicPick: LayoutT
     let bestSize = heuristicSize;
 
     for (const type of TITLE_LED_CANDIDATES) {
+        // Skip layouts that would discard this slide's image.
+        if (content.hasImage && !keepsImage(type)) {
+            continue;
+        }
+
         const size = fitTitle(content.title, LAYOUT_DEFINITIONS[type].title);
 
         if (size > bestSize) {

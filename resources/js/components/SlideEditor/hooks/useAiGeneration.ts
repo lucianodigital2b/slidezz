@@ -439,7 +439,7 @@ export function useAiGeneration(
         };
 
         const layoutSequence = generateLayoutSequenceFromContent(
-            parsedSlides.map(s => ({ title: s.title, description: s.description, hasStat: Boolean(s.stat) })),
+            parsedSlides.map(s => ({ title: s.title, description: s.description, hasStat: Boolean(s.stat), hasImage: shouldGenerateImages })),
             fitTitle,
         );
 
