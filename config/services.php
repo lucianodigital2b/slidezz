@@ -39,6 +39,9 @@ return [
         'client_id' => env('INSTAGRAM_CLIENT_ID'),
         'client_secret' => env('INSTAGRAM_CLIENT_SECRET'),
         'redirect' => env('INSTAGRAM_REDIRECT_URI', '/social-accounts/instagram/callback'),
+        // Comma-separated user IDs allowed to see/use the Instagram integration
+        // while it is gated for Meta App Review (empty = nobody).
+        'feature_user_ids' => env('INSTAGRAM_FEATURE_USER_IDS', ''),
     ],
 
     'tiktok' => [

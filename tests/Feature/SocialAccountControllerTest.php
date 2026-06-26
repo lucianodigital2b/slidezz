@@ -50,6 +50,27 @@ class SocialAccountControllerTest extends TestCase
         $this->get('/social-accounts/tiktok/connect')->assertRedirect('/login');
     }
 
+    public function test_instagram_connect_is_forbidden_for_non_allowed_user(): void
+    {
+        config(['services.instagram.feature_user_ids' => '']);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/social-accounts/instagram/connect')
+            ->assertForbidden();
+    }
+
+    public function test_instagram_connect_is_allowed_for_listed_user(): void
+    {
+        $user = User::factory()->create();
+        config(['services.instagram.feature_user_ids' => "999,{$user->id}"]);
+
+        $this->actingAs($user)
+            ->get('/social-accounts/instagram/connect')
+            ->assertRedirect();
+    }
+
     public function test_connect_creates_workspace_if_none_exists(): void
     {
         $user = User::factory()->create();

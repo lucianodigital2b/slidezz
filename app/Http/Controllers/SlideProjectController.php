@@ -142,6 +142,8 @@ class SlideProjectController extends Controller
 
     public function publishInstagram(Request $request, SlideProject $slideProject): JsonResponse
     {
+        abort_unless($request->user()->canUseInstagram(), 403);
+
         $this->authorizeWorkspace($request, $slideProject);
 
         $validated = $request->validate([

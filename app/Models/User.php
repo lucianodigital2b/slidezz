@@ -45,6 +45,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether the user is allowed to see and use the Instagram integration.
+     *
+     * Gated behind INSTAGRAM_FEATURE_USER_IDS while the integration is in Meta
+     * App Review: only the listed user IDs (e.g. Meta reviewers) get access.
+     */
+    public function canUseInstagram(): bool
+    {
+        $ids = collect(explode(',', (string) config('services.instagram.feature_user_ids')))
+            ->map(fn (string $id): string => trim($id))
+            ->filter()
+            ->map(fn (string $id): int => (int) $id);
+
+        return $ids->contains($this->id);
+    }
+
+    /**
      * The plan key ('starter', 'pro', 'agency') of the user's active subscription,
      * or null when there is no active/trialing subscription.
      */
