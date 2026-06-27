@@ -347,9 +347,9 @@ export function buildSceneFromLayoutGeneric(
     // Anchor the badge above the title BOX top (titleEl.y). For top-aligned titles that
     // IS the text top; for bottom-aligned titles (cover) the box top is at/above the text
     // top, so the badge clears the title regardless of line count — robust against canvas
-    // line-measurement drift on condensed fonts. Reserve the badge height (96 + 2×18 =
-    // 132) plus a gap.
-    const BADGE_BLOCK_ABOVE_TITLE = 156;
+    // line-measurement drift on condensed fonts. Reserve the badge height (size 48 + 2×18
+    // pad = 84) plus a gap.
+    const BADGE_BLOCK_ABOVE_TITLE = 108;
     const badgeY = titleEl ? Math.max(30, titleEl.y - BADGE_BLOCK_ABOVE_TITLE) : undefined;
     const badgeX = isCentered
         ? Math.round(SLIDE_W * 0.15)

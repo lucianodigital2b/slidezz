@@ -220,13 +220,15 @@ export interface LayoutBox {
 export function computeSafeArea(slideH: number): LayoutBox {
     const gridCropInset = Math.max(0, Math.round((slideH - SLIDE_W) / 2));
     const topPad = gridCropInset + 45;
-    const pad = 80;
-    const leftPad = Math.round(pad * 1.3); // 30% more breathing room from the left border
+    // Lateral safe zone, tripled and standardized symmetrically to ~168px (the
+    // competitor reference). Drives both layout placement and text fitting, and is
+    // kept in sync with SAFE_AREA_PADDINGS (the editor's safe-area guide).
+    const pad = 168;
 
     return {
-        x: leftPad,
+        x: pad,
         y: topPad,
-        width: SLIDE_W - leftPad - pad,
+        width: SLIDE_W - pad * 2,
         height: slideH - topPad * 2,
     };
 }

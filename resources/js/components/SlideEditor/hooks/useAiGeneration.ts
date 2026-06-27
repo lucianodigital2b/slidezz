@@ -233,7 +233,7 @@ export function useAiGeneration(
                     name: scene.badgeStyle === 'tweet' ? 'Your name' : '',
                     handle: badgeIdentity.handle || '',
                     photoUrl: badgeIdentity.photoUrl,
-                    size: 96,
+                    size: 48,
                     verified: scene.badgeStyle === 'tweet',
                     x: scene.badgeX,
                     y: scene.badgeY,

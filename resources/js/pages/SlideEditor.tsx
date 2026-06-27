@@ -365,7 +365,7 @@ export default function SlideEditor() {
                 enabled: true,
                 handle: instagramAccounts?.[0]?.handle ?? '',
                 photoUrl: instagramAccounts?.[0]?.avatar ?? '',
-                size: 60,
+                size: 30,
                 ...slide.profileBadge,
                 style: scene.badgeStyle ?? slide.profileBadge?.style ?? 'glass',
                 x: scene.badgeX,
