@@ -47,10 +47,14 @@ export interface LayoutDefinition {
 
 const HOOK_HERO: LayoutDefinition = {
     type: 'hook_hero',
+    // Title is top-aligned and the body stacks flush beneath it, then the whole group
+    // is anchored to the bottom — so the headline (and the badge above it) sit tight
+    // to the description instead of floating with a gap above it.
+    contentAnchor: 'bottom',
     title: {
         x: 0, y: 0.36, width: 1, height: 0.36,
-        align: 'left', verticalAlign: 'bottom',
-        maxFontSize: 132, fontRole: 'display', fontStyleHint: 'black',
+        align: 'left', verticalAlign: 'top',
+        maxFontSize: 112, fontRole: 'display', fontStyleHint: 'black',
         lineHeight: 1.0, letterSpacing: 0, visible: true, opacity: 1,
     },
     subtitle: {

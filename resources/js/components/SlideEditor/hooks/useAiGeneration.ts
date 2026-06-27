@@ -225,7 +225,8 @@ export function useAiGeneration(
             // like a real Twitter/X post, and any template with a defaultBadgeStyle gets a
             // handle chip above the title. Placeholder name/handle/photo are edited in the
             // badge panel.
-            const wantsBadge = scene.badgeStyle === 'tweet' || Boolean(template?.defaultBadgeStyle);
+            // Profile badge only on the hero (cover) slide — never on inner/closing slides.
+            const wantsBadge = slideIndex === 0 && (scene.badgeStyle === 'tweet' || Boolean(template?.defaultBadgeStyle));
             const profileBadge: ProfileBadge | undefined = wantsBadge && scene.badgeStyle
                 ? {
                     enabled: true,

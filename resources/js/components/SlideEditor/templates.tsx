@@ -1214,7 +1214,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Anton', 'Inter'],
         buildScene: buildPopMagazine,
-        defaultBadgeStyle: 'glass',
+        defaultBadgeStyle: 'solid',
         buildSceneFromLayout(content, layout, slideH, slideIndex) {
             // Decorations removed for now — focusing on typography + imaging.
             return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
