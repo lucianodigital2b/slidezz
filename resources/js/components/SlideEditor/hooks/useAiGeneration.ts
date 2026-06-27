@@ -25,7 +25,8 @@ export function useAiGeneration(
     setSlides: React.Dispatch<React.SetStateAction<Slide[]>>,
     setCurrentIdx: (idx: number) => void,
     setSelectedId: (id: string | null) => void,
-    format: Format
+    format: Format,
+    badgeIdentity: { handle: string; photoUrl: string } = { handle: '', photoUrl: '' },
 ) {
     const { t } = useTranslation();
     const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -220,18 +221,20 @@ export function useAiGeneration(
                 }
             }
 
-            // Tweet-style templates ship a "tweet" ProfileBadge header by default so
-            // the generated deck reads like a real Twitter/X post. The placeholder
-            // name/handle/photo are meant to be edited in the badge panel.
-            const profileBadge: ProfileBadge | undefined = scene.badgeStyle === 'tweet'
+            // Templates can ship an active ProfileBadge by default: tweet-style decks read
+            // like a real Twitter/X post, and any template with a defaultBadgeStyle gets a
+            // handle chip above the title. Placeholder name/handle/photo are edited in the
+            // badge panel.
+            const wantsBadge = scene.badgeStyle === 'tweet' || Boolean(template?.defaultBadgeStyle);
+            const profileBadge: ProfileBadge | undefined = wantsBadge && scene.badgeStyle
                 ? {
                     enabled: true,
-                    style: 'tweet',
-                    name: 'Seu Nome',
-                    handle: 'seu.perfil',
-                    photoUrl: '',
+                    style: scene.badgeStyle,
+                    name: scene.badgeStyle === 'tweet' ? 'Your name' : '',
+                    handle: badgeIdentity.handle || '',
+                    photoUrl: badgeIdentity.photoUrl,
                     size: 96,
-                    verified: true,
+                    verified: scene.badgeStyle === 'tweet',
                     x: scene.badgeX,
                     y: scene.badgeY,
                 }

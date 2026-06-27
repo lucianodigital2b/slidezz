@@ -45,6 +45,8 @@ export interface SlideTemplate {
         totalSlides: number,
     ) => TemplateScene;
     buildScene: (content: TemplateContent, slideH: number) => TemplateScene;
+    /** When set, generated slides ship an active ProfileBadge above the title in this style. */
+    defaultBadgeStyle?: BadgeStyle;
 }
 
 function createText(overrides: Partial<TextEl> & Pick<TextEl, 'text' | 'x' | 'y' | 'width' | 'height'>): TextEl {
@@ -110,6 +112,15 @@ function fontStyleHintToStyle(hint: LayoutDefinition['title']['fontStyleHint']):
     if (hint === 'black') return '900';
     return hint; // 'bold' | 'italic'
 }
+
+// Horizontal inset used when BOTH fitting and rendering display titles. Konva
+// insets text by its `padding`, so the value passed to fitTextFontSize must equal
+// the rendered `padding` or the measured size won't match what is drawn. Kept
+// small so headlines fill the box edge-to-edge like the reference competitor cover.
+const TITLE_BOX_PADDING = 8;
+// Same fit/render-consistency inset for body copy, also used to measure the body's
+// real height so bottom-anchored layouts translate the group by the correct amount.
+const BODY_BOX_PADDING = 16;
 
 export function buildSceneFromLayoutGeneric(
     template: SlideTemplate,
@@ -189,6 +200,13 @@ export function buildSceneFromLayoutGeneric(
     const stackGap = Math.round(slideH * 0.02);
     const safeBottom = safeY + safeH;
     let stackCursorY: number | null = null;
+    // First index of the title+body group, so it can be translated as a block when
+    // the layout anchors content to the bottom (gradient/stat pushed before stay put).
+    const groupStart = elements.length;
+    // Captured for badge placement: the rendered title element and its measured text
+    // height, so the badge anchors to where the title actually draws (after any shift).
+    let titleEl: TextEl | null = null;
+    let titleMeasuredH = 0;
 
     if (layout.title.visible) {
         const rect = slotToRect(layout.title);
@@ -209,7 +227,7 @@ export function buildSceneFromLayoutGeneric(
             layout.title.letterSpacing,
             rect.width,
             rect.height,
-            28,
+            TITLE_BOX_PADDING,
         );
         elements.push(createText({
             ...rect,
@@ -223,10 +241,13 @@ export function buildSceneFromLayoutGeneric(
             lineHeight: layout.title.lineHeight,
             letterSpacing: layout.title.letterSpacing,
             opacity: layout.title.opacity,
+            padding: TITLE_BOX_PADDING,
         }));
 
+        titleEl = elements[elements.length - 1] as TextEl;
+        titleMeasuredH = measuredTextHeight(titleText, titleFont, titleFontStyle, fontSize, layout.title.lineHeight, layout.title.letterSpacing, rect.width - TITLE_BOX_PADDING * 2);
+
         if (layout.title.verticalAlign === 'top') {
-            const titleMeasuredH = measuredTextHeight(titleText, titleFont, titleFontStyle, fontSize, layout.title.lineHeight, layout.title.letterSpacing, rect.width);
             stackCursorY = rect.y + titleMeasuredH;
         }
     }
@@ -286,7 +307,7 @@ export function buildSceneFromLayoutGeneric(
             0,
             rect.width,
             availH,
-            16,
+            BODY_BOX_PADDING,
         );
         elements.push(createText({
             ...rect,
@@ -300,16 +321,40 @@ export function buildSceneFromLayoutGeneric(
             verticalAlign: layout.description.verticalAlign,
             lineHeight: layout.description.lineHeight,
             opacity: layout.description.opacity,
+            padding: BODY_BOX_PADDING,
         }));
+
+        if (stackCursorY !== null) {
+            const descMeasuredH = measuredTextHeight(descriptionText, descFont, '', fontSize, layout.description.lineHeight, 0, rect.width - BODY_BOX_PADDING * 2);
+            stackCursorY = y + descMeasuredH;
+        }
     }
 
-    const titleRect = layout.title.visible ? slotToRect(layout.title) : null;
-    const badgeY = titleRect ? Math.max(30, titleRect.y - 116) : undefined;
+    // Bottom-anchored layouts: the group was built top-down from the title slot;
+    // translate the whole block down so its content bottom rests on safeBottom,
+    // sitting over the bottom gradient instead of floating high. stackCursorY holds
+    // the measured content bottom (set for top-aligned titles, which these layouts use).
+    if (layout.contentAnchor === 'bottom' && stackCursorY !== null) {
+        const shift = safeBottom - stackCursorY;
+        if (shift > 0) {
+            for (let i = groupStart; i < elements.length; i++) {
+                elements[i].y += shift;
+            }
+        }
+    }
+
     const isCentered = template.align === 'center';
+    // Anchor the badge above the title BOX top (titleEl.y). For top-aligned titles that
+    // IS the text top; for bottom-aligned titles (cover) the box top is at/above the text
+    // top, so the badge clears the title regardless of line count — robust against canvas
+    // line-measurement drift on condensed fonts. Reserve the badge height (96 + 2×18 =
+    // 132) plus a gap.
+    const BADGE_BLOCK_ABOVE_TITLE = 156;
+    const badgeY = titleEl ? Math.max(30, titleEl.y - BADGE_BLOCK_ABOVE_TITLE) : undefined;
     const badgeX = isCentered
         ? Math.round(SLIDE_W * 0.15)
-        : (titleRect ? titleRect.x : safeX);
-    const badgeStyle: BadgeStyle | undefined = isCentered ? 'divider' : undefined;
+        : (titleEl ? titleEl.x : safeX);
+    const badgeStyle: BadgeStyle | undefined = template.defaultBadgeStyle ?? (isCentered ? 'divider' : undefined);
 
     return { background: bg, elements, badgeX, badgeY, badgeStyle };
 }
@@ -1169,6 +1214,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Anton', 'Inter'],
         buildScene: buildPopMagazine,
+        defaultBadgeStyle: 'glass',
         buildSceneFromLayout(content, layout, slideH, slideIndex) {
             // Decorations removed for now — focusing on typography + imaging.
             return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);

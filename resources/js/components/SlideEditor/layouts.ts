@@ -37,6 +37,12 @@ export interface LayoutDefinition {
     backgroundPreference: 'image' | 'solid' | 'either';
     gradientIntensity: number;
     imageCardPosition: 'top' | 'bottom';
+    /**
+     * Where the title+body group sits vertically. 'bottom' anchors the block to the
+     * bottom of the safe area (over the bottom gradient) instead of letting it float
+     * from the top. Defaults to 'top'.
+     */
+    contentAnchor?: 'top' | 'bottom';
 }
 
 const HOOK_HERO: LayoutDefinition = {
@@ -45,7 +51,7 @@ const HOOK_HERO: LayoutDefinition = {
         x: 0, y: 0.36, width: 1, height: 0.36,
         align: 'left', verticalAlign: 'bottom',
         maxFontSize: 132, fontRole: 'display', fontStyleHint: 'black',
-        lineHeight: 1.15, letterSpacing: 1, visible: true, opacity: 1,
+        lineHeight: 1.0, letterSpacing: 0, visible: true, opacity: 1,
     },
     subtitle: {
         x: 0, y: 0, width: 0, height: 0,
@@ -57,7 +63,7 @@ const HOOK_HERO: LayoutDefinition = {
         x: 0.01, y: 0.73, width: 0.94, height: 0.23,
         align: 'left', verticalAlign: 'top',
         maxFontSize: 44, fontRole: 'body', fontStyleHint: 'normal',
-        lineHeight: 1.5, letterSpacing: 0, visible: true, opacity: 0.85,
+        lineHeight: 1.35, letterSpacing: 0, visible: true, opacity: 0.85,
     },
     backgroundPreference: 'image',
     gradientIntensity: 0.85,
@@ -66,6 +72,7 @@ const HOOK_HERO: LayoutDefinition = {
 
 const STANDARD: LayoutDefinition = {
     type: 'standard',
+    contentAnchor: 'bottom',
     title: {
         x: 0, y: 0.12, width: 1, height: 0.28,
         align: 'left', verticalAlign: 'top',
@@ -122,6 +129,7 @@ const STAT_CALLOUT: LayoutDefinition = {
 
 const SPLIT_TEXT: LayoutDefinition = {
     type: 'split_text',
+    contentAnchor: 'bottom',
     title: {
         x: 0, y: 0.05, width: 1, height: 0.5,
         align: 'left', verticalAlign: 'top',
@@ -147,6 +155,7 @@ const SPLIT_TEXT: LayoutDefinition = {
 
 const QUOTE_BLOCK: LayoutDefinition = {
     type: 'quote_block',
+    contentAnchor: 'bottom',
     title: {
         x: 0.05, y: 0.12, width: 0.9, height: 0.4,
         align: 'left', verticalAlign: 'top',

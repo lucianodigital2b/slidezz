@@ -125,7 +125,10 @@ export default function SlideEditor() {
         aiProgress, aiError,
         closeAiModal,
         generateCarousel,
-    } = useAiGeneration(slides, setSlides, setCurrentIdx, setSelectedId, format);
+    } = useAiGeneration(slides, setSlides, setCurrentIdx, setSelectedId, format, {
+        handle: instagramAccounts?.[0]?.handle ?? '',
+        photoUrl: instagramAccounts?.[0]?.avatar ?? '',
+    });
 
     // ── Refs ────────────────────────────────────────────────────────────────
     const stageRef = useRef<Konva.Stage>(null);
