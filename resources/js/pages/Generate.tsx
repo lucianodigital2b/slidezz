@@ -118,6 +118,7 @@ function IdeasOfTheDay() {
     const [ideas, setIdeas] = useState<Idea[] | null>(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [rateLimited, setRateLimited] = useState(false);
     const [topic, setTopic] = useState('');
 
     // Slot-machine state: which of the 3 cards are still spinning (the reel
@@ -160,15 +161,22 @@ function IdeasOfTheDay() {
         }
 
         setError(false);
+        setRateLimited(false);
         setSpin([true, true, true]);
         const startedAt = Date.now();
 
         let next: Idea[] = previous;
         try {
             const res = await fetch(ideasUrl(true), { headers: { Accept: 'application/json' } });
-            const data = (await res.json()) as { ideas?: Idea[]; error?: boolean };
-            if (!data.error && Array.isArray(data.ideas) && data.ideas.length >= 3) {
-                next = data.ideas;
+            if (res.status === 429) {
+                // Rate limited — keep the current ideas and tell the user to wait a moment.
+                setRateLimited(true);
+                window.setTimeout(() => setRateLimited(false), 5000);
+            } else if (res.ok) {
+                const data = (await res.json()) as { ideas?: Idea[]; error?: boolean };
+                if (!data.error && Array.isArray(data.ideas) && data.ideas.length >= 3) {
+                    next = data.ideas;
+                }
             }
         } catch {
             // On failure the reel simply lands back on the previous ideas.
@@ -216,6 +224,10 @@ function IdeasOfTheDay() {
                     {initialLoading || rolling ? t('dashboard.ideas.generatingShort') : t('dashboard.ideas.regenerate')}
                 </button>
             </div>
+
+            {rateLimited && (
+                <p className="text-right text-xs font-medium text-[#E8440A]">{t('dashboard.ideas.rateLimited')}</p>
+            )}
 
             {/* Initial loading */}
             {initialLoading && (

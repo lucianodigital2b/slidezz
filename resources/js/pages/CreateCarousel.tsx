@@ -29,6 +29,7 @@ const TEMPLATE_IDS = [
     'twitter-x',
     'acid-brutalist',
     'documentary',
+    'ticket',
 ] as const;
 
 const ARCHETYPE_IDS = [
@@ -241,6 +242,7 @@ export default function CreateCarousel() {
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
     const [imageMode, setImageMode] = useState<ImageMode>('background');
+    const [imageStyle, setImageStyle]       = useState('');
     const [saveConfig, setSaveConfig]       = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
@@ -290,7 +292,7 @@ export default function CreateCarousel() {
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
-            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode, language },
+            { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode, image_style: imageStyle, language },
             { headers: { 'X-CSRF-TOKEN': csrfToken } },
         );
     }
@@ -604,10 +606,28 @@ export default function CreateCarousel() {
                                 </div>
                             </div>
 
+                            {/* Image Style Refinement */}
+                            {imageMode !== 'none' && (
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('createCarousel.step3.imageStyleLabel')}</p>
+                                    <textarea
+                                        value={imageStyle}
+                                        onChange={(e) => setImageStyle(e.target.value)}
+                                        placeholder={t('createCarousel.step3.imageStylePlaceholder')}
+                                        rows={2}
+                                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors focus:border-[#E8440A] focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20"
+                                    />
+                                </div>
+                            )}
+
                             {/* Language Selector */}
                             <div>
                                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('createCarousel.step3.languageLabel')}</p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <select
+                                    value={language}
+                                    onChange={(e) => setLanguage(e.target.value)}
+                                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors focus:border-[#E8440A] focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20"
+                                >
                                     {([
                                         { id: 'Portuguese (Brazil)', label: 'Português (BR)' },
                                         { id: 'English',             label: 'English' },
@@ -616,21 +636,9 @@ export default function CreateCarousel() {
                                         { id: 'German',              label: 'Deutsch' },
                                         { id: 'Italian',             label: 'Italiano' },
                                     ] as { id: string; label: string }[]).map(({ id, label }) => (
-                                        <button
-                                            key={id}
-                                            type="button"
-                                            onClick={() => setLanguage(id)}
-                                            className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
-                                                language === id
-                                                    ? 'border-[#E8440A] bg-[#E8440A]/5 text-[#E8440A]'
-                                                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}
-                                        >
-                                            {language === id && <Check className="h-4 w-4 shrink-0" />}
-                                            {label}
-                                        </button>
+                                        <option key={id} value={id}>{label}</option>
                                     ))}
-                                </div>
+                                </select>
                             </div>
 
                             {/* Save as workspace default */}

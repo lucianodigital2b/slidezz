@@ -244,6 +244,8 @@
       "styleLabel": "Style (optional)",
       "visualStyleLabel": "Visual Style",
       "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
+      "imageStyleLabel": "Image style (optional)",
+      "imageStylePlaceholder": "e.g. black & white, cinematic, film grain...",
       "slideCountLabel": "Number of slides",
       "generateBtn": "Generate",
       "generateImagesLabel": "Images in carousel",
@@ -266,7 +268,8 @@
       "errorNetwork": "Network error. Please try again.",
       "errorServer": "Server error. Please try again.",
       "errorParsing": "Could not parse the generated content. Please try again.",
-      "errorNoCredits": "You have no credits. Purchase more credits to continue."
+      "errorNoCredits": "You have no image credits. Purchase more to continue.",
+      "errorNoImageCredits": "You ran out of image credits, so some slides were generated without an image. The carousel text is unaffected."
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -308,6 +311,9 @@
       "published": "Posted to Instagram.",
       "publishFailed": "Failed to publish to Instagram.",
       "slidesCountError": "Instagram carousels require between 2 and 10 slides."
+    },
+    "dragDrop": {
+      "hint": "Drop images to add them to the slide"
     },
     "globalPanel": {
       "background": "Background",
@@ -439,6 +445,10 @@
       "documentary": {
         "name": "Documentary",
         "description": "Vintage investigative journalism cover with Playfair serif and archive stamp. Inner slides with sepia tones, editorial frames, and caption strips."
+      },
+      "ticket": {
+        "name": "Ticket",
+        "description": "Aesthetic serif headline on a die-cut ticket shape. Cover uses your workspace brand color; inner tickets are white. Corners carry the deck title, slide number, handle and logo."
       }
     },
     "archetypes": {
@@ -484,6 +494,8 @@
       "format": "Format",
       "slideCountLabel": "Number of slides",
       "imageModeLabel": "Images in carousel",
+      "imageStyleLabel": "Image style (optional)",
+      "imageStylePlaceholder": "e.g. black & white, cinematic, film grain...",
       "languageLabel": "Content language",
       "customPromptLabel": "Additional instructions (optional)",
       "customPromptHint": "Add specific details, tone, or constraints for the AI to follow.",
@@ -626,7 +638,7 @@
     "subtitle": "Each carousel generation uses 1 credit.",
     "monthly": "Monthly",
     "annual": "Annual",
-    "carouselsPerMonth": "{{count}} carousels/month",
+    "imagesPerMonth": "{{count}} AI images/month",
     "subscribeTo": "Subscribe to {{plan}}",
     "redirecting": "Redirecting…",
     "noSubscription": "Prefer no subscription? Buy individual credits.",
@@ -695,6 +707,7 @@
       "label": "Ideas of the day",
       "regenerate": "Generate others",
       "generatingShort": "Generating…",
+      "rateLimited": "Too many tries. Wait a moment and try again.",
       "generating": "Reading your brand DNA…",
       "generatingCount": "Generating 3 ideas",
       "ideaLabel": "Idea {{n}}",
@@ -728,8 +741,8 @@
     },
     "welcome": {
       "title": "Welcome to Slidezz!",
-      "description": "To get you started, we've given you 3 free credits to create your first carousels.",
-      "credits": "3 free credits",
+      "description": "To get you started, we've given you 15 free image credits (carousels are unlimited).",
+      "credits": "15 free image credits",
       "cta": "Create my first carousel"
     }
   },

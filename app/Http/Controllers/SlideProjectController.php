@@ -59,6 +59,7 @@ class SlideProjectController extends Controller
         return Inertia::render('SlideEditor', [
             'slideProject' => null,
             'instagramAccounts' => $instagramAccounts,
+            'brand' => $this->brandProfile($workspace),
         ]);
     }
 
@@ -79,6 +80,7 @@ class SlideProjectController extends Controller
             'template' => session('wizardTemplate'),
             'slideCount' => session('wizardSlideCount', 3),
             'imageMode' => session('wizardImageMode', 'background'),
+            'imageStyle' => session('wizardImageStyle', ''),
             'wordHighlight' => session('wizardWordHighlight', true),
             'language' => session('wizardLanguage', 'Portuguese (Brazil)'),
             'saveAsTemplate' => session('wizardSaveAsTemplate', false),
@@ -88,7 +90,29 @@ class SlideProjectController extends Controller
             'slideProject' => $slideProject->only('id', 'title', 'caption', 'format', 'slides'),
             'wizardConfig' => $wizardConfig,
             'instagramAccounts' => $instagramAccounts,
+            'brand' => $this->brandProfile($workspace),
         ]);
+    }
+
+    /**
+     * The workspace's brand identity used by templates (e.g. the Ticket template's
+     * hero color and corner logo): the onboarding palette primary (falling back to
+     * the legacy brand_color column) and a public URL for the uploaded logo.
+     *
+     * @return array{color: ?string, logoUrl: ?string}
+     */
+    private function brandProfile(?Workspace $workspace): array
+    {
+        if (! $workspace) {
+            return ['color' => null, 'logoUrl' => null];
+        }
+
+        $logoPath = $workspace->logo_path ?? data_get($workspace->profile, 'logo_path');
+
+        return [
+            'color' => data_get($workspace->profile, 'palette.primary') ?? $workspace->brand_color,
+            'logoUrl' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
+        ];
     }
 
     public function store(Request $request): JsonResponse

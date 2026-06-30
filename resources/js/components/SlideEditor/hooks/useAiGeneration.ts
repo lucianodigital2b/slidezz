@@ -4,10 +4,23 @@ import CarouselGenerationController from '@/actions/App/Http/Controllers/Carouse
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
-import { SLIDE_TEMPLATES, SlideTemplate } from '../templates';
-import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, slotToBox, TitleFitter } from '../layouts';
+import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners } from '../templates';
+import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, slotToBox, computeSafeArea, TitleFitter } from '../layouts';
 
 export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
+
+/** Loads an image just to read its natural width/height aspect (w / h). */
+function loadImageAspect(url: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        if (!url.startsWith('data:')) {
+            img.crossOrigin = 'Anonymous';
+        }
+        img.onload = () => resolve(img.naturalHeight > 0 ? img.naturalWidth / img.naturalHeight : 1);
+        img.onerror = reject;
+        img.src = url;
+    });
+}
 
 export interface SlideData {
     title: string;
@@ -27,6 +40,7 @@ export function useAiGeneration(
     setSelectedId: (id: string | null) => void,
     format: Format,
     badgeIdentity: { handle: string; photoUrl: string } = { handle: '', photoUrl: '' },
+    brand: { color: string | null; logoUrl: string | null } = { color: null, logoUrl: null },
 ) {
     const { t } = useTranslation();
     const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -36,6 +50,9 @@ export function useAiGeneration(
     const [aiImageMode, setAiImageMode] = useState<ImageMode>('background');
     const [aiWordHighlight, setAiWordHighlight] = useState(true);
     const [aiLanguage, setAiLanguage] = useState('Portuguese (Brazil)');
+    // Free-text refinement appended to every generated image prompt (e.g. "preto e
+    // branco, cinematográfico, grão de filme"). Empty = no refinement.
+    const [aiImageStyle, setAiImageStyle] = useState('');
     const [aiTemplateId, setAiTemplateId] = useState<string | null>(null);
     const [aiStatus, setAiStatus] = useState<'idle' | 'generating' | 'imaging' | 'done' | 'error'>('idle');
     const [aiProgress, setAiProgress] = useState<string[]>([]);
@@ -112,6 +129,8 @@ export function useAiGeneration(
         slideIndex: number,
         totalSlides: number,
         imageMode: ImageMode = 'background',
+        topic: string = '',
+        logo: { url: string; aspect: number } | null = null,
     ): Slide {
         const slideH = FORMATS[format].h;
         const layout = LAYOUT_DEFINITIONS[layoutType];
@@ -120,6 +139,23 @@ export function useAiGeneration(
             imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
             imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
             imageMode as 'background' | 'grid';
+
+        // A grid image card occupies the top or bottom of the slide. Compute its box up
+        // front so we can (a) reserve the opposite band for the text content and (b) place
+        // the card itself further down, from the same geometry.
+        const willPlaceGridCard = Boolean(bgBase64) && effectiveMode === 'grid' && layout.backgroundPreference !== 'solid';
+        const GRID_CARD_PAD = 80;
+        const GRID_CARD_GAP = 48;
+        const gridCardH = Math.round(slideH * (layout.type === 'hook_hero' ? 0.50 : 0.40));
+        const gridCardY = layout.imageCardPosition === 'bottom'
+            ? slideH - GRID_CARD_PAD - gridCardH
+            : GRID_CARD_PAD;
+        const safeArea = computeSafeArea(slideH, slideIndex);
+        const contentBand: ContentBand | undefined = willPlaceGridCard
+            ? (layout.imageCardPosition === 'bottom'
+                ? { top: safeArea.y, bottom: gridCardY - GRID_CARD_GAP }
+                : { top: gridCardY + gridCardH + GRID_CARD_GAP, bottom: safeArea.y + safeArea.height })
+            : undefined;
 
         if (template?.buildSceneFromLayout) {
             const content = {
@@ -132,7 +168,37 @@ export function useAiGeneration(
                 ctaPill: data.ctaPill,
             };
 
-            const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides);
+            const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides, contentBand);
+
+            // Ticket template: the serif title/body is already laid out. Drop a ticket-shaped
+            // surface behind it (workspace brand color on the cover, white on inner slides),
+            // the workspace logo in the bottom-right, and the corner chrome (deck title, slide
+            // number, handle). No images, badge or word-highlight — the ticket stays flat.
+            if (template.id === 'ticket') {
+                const ticketColor = slideIndex === 0 && brand.color ? brand.color : '#ffffff';
+                scene.elements.unshift(createTicketShape(slideH, ticketColor));
+
+                if (logo) {
+                    const logoH = 52;
+                    const logoW = Math.max(logoH, Math.min(240, Math.round(logoH * logo.aspect)));
+                    const r = ticketRect(slideH);
+                    scene.elements.push({
+                        id: uid(), type: 'image', src: logo.url,
+                        x: r.x + r.width - logoW - 50, y: r.y + r.height - logoH - 50,
+                        width: logoW, height: logoH,
+                        rotation: 0, opacity: 1,
+                        brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
+                        hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
+                        red: 255, green: 255, blue: 255,
+                        overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+                        isBackground: false, bgSize: 'contain', bgPositionX: 50, bgPositionY: 50,
+                        ...SHADOW_DEFAULTS,
+                    } as ImageEl);
+                }
+
+                const corners = buildTicketCorners({ topic, handle: badgeIdentity.handle || '', slideIndex });
+                return { id: uid(), background: scene.background, elements: scene.elements, corners };
+            }
 
             // Full-bleed photographic slides get a cinematic dark treatment regardless of
             // the template's palette: a dark overlay (so the photo stays vivid instead of
@@ -199,16 +265,12 @@ export function useAiGeneration(
                         ...SHADOW_DEFAULTS,
                     } as ImageEl);
                 } else {
-                    // Grid: image as a contained card, position driven by layout
-                    const cardPad = 80;
-                    const cardH = Math.round(slideH * (layout.type === 'hook_hero' ? 0.50 : 0.40));
-                    const cardY = layout.imageCardPosition === 'bottom'
-                        ? slideH - cardPad - cardH
-                        : cardPad;
+                    // Grid: image as a contained card, position driven by layout. The text
+                    // content was already confined to the opposite band via contentBand.
                     scene.elements.unshift({
                         id: uid(), type: 'image', src: bgBase64,
-                        x: cardPad, y: cardY,
-                        width: SLIDE_W - cardPad * 2, height: cardH,
+                        x: GRID_CARD_PAD, y: gridCardY,
+                        width: SLIDE_W - GRID_CARD_PAD * 2, height: gridCardH,
                         cornerRadius: 40,
                         rotation: 0, opacity: 1,
                         brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
@@ -341,7 +403,7 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null, languageOverride?: string) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null, languageOverride?: string, imageStyleOverride?: string) {
         if (isGeneratingRef.current) return;
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
@@ -349,6 +411,7 @@ export function useAiGeneration(
         const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
         const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
         const language = languageOverride ?? aiLanguage;
+        const imageStyle = (imageStyleOverride ?? aiImageStyle).trim();
         const templateId = templateIdOverride !== undefined ? templateIdOverride : aiTemplateId;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
@@ -365,7 +428,7 @@ export function useAiGeneration(
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language }),
+                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language, template: templateId || undefined, image_style: imageStyle || undefined }),
             });
         } catch {
             isGeneratingRef.current = false;
@@ -423,8 +486,8 @@ export function useAiGeneration(
         await Promise.all((template ? [...new Set(template.fonts)] : ['Space Mono', 'Inter']).map(f => loadGoogleFont(f)));
 
         const titleFont = template?.font ?? 'Inter';
-        const fitTitle: TitleFitter = (text, slot) => {
-            const box = slotToBox(slot, slideH);
+        const fitTitle: TitleFitter = (text, slot, slideIndex) => {
+            const box = slotToBox(slot, slideH, slideIndex);
             const style = slot.fontStyleHint === 'normal' ? '' : slot.fontStyleHint === 'black' ? '900' : slot.fontStyleHint;
 
             return fitTextFontSize(text.toUpperCase(), titleFont, style, slot.maxFontSize, slot.lineHeight, slot.letterSpacing, box.width, box.height, 28);
@@ -436,6 +499,9 @@ export function useAiGeneration(
         );
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
+        // Each managed (non-BYOK) image costs one credit server-side; track when the
+        // balance runs out so we can tell the user some slides came back without an image.
+        let ranOutOfImageCredits = false;
 
         const aspectRatio = format === 'stories' ? '9:16' : '4:5';
 
@@ -447,8 +513,11 @@ export function useAiGeneration(
                         const r = await fetch(CarouselGenerationController.generateImage().url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            // imageStyle is already folded into imagePrompt server-side (it
+                            // overrides the template aesthetics during composition).
                             body: JSON.stringify({ prompt: s.imagePrompt, aspect_ratio: aspectRatio }),
                         });
+                        if (r.status === 402) { ranOutOfImageCredits = true; return null; }
                         if (!r.ok) return null;
                         const data = await r.json() as { base64?: string };
                         return data.base64 ?? null;
@@ -459,10 +528,21 @@ export function useAiGeneration(
             );
         }
 
+        // The Ticket template renders the workspace logo in the corner — preload it once
+        // to get its aspect so the corner box isn't stretched.
+        let logo: { url: string; aspect: number } | null = null;
+        if (template?.id === 'ticket' && brand.logoUrl) {
+            try {
+                logo = { url: brand.logoUrl, aspect: await loadImageAspect(brand.logoUrl) };
+            } catch {
+                logo = null;
+            }
+        }
+
         const newSlides = parsedSlides.map((s, i) => {
             const imgResult = shouldGenerateImages ? imageResults[i] : null;
             const base64 = imgResult?.status === 'fulfilled' ? imgResult.value : null;
-            return buildSlideFromData(s, base64, template, layoutSequence[i], i, parsedSlides.length, imageMode);
+            return buildSlideFromData(s, base64, template, layoutSequence[i], i, parsedSlides.length, imageMode, topic, logo);
         });
 
         if (replaceSlides) {
@@ -475,6 +555,12 @@ export function useAiGeneration(
         setAiModalOpen(false);
         setAiStatus('idle');
         isGeneratingRef.current = false;
+
+        // The deck still generated (text is free) — only some images were skipped for
+        // lack of image credits. Surface it without blocking the result.
+        if (ranOutOfImageCredits) {
+            window.alert(t('slideEditor.ai.errorNoImageCredits'));
+        }
 
         return newSlides;
     }
@@ -494,6 +580,8 @@ export function useAiGeneration(
         setAiWordHighlight,
         aiLanguage,
         setAiLanguage,
+        aiImageStyle,
+        setAiImageStyle,
         aiTemplateId,
         setAiTemplateId,
         aiStatus,

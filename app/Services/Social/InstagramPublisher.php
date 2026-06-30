@@ -58,9 +58,6 @@ class InstagramPublisher implements SocialPublisher
         $scopes = [
             'instagram_business_basic',
             'instagram_business_content_publish',
-            'instagram_business_manage_messages',
-            'instagram_business_manage_comments',
-            'instagram_business_manage_insights',
         ];
 
         $query = http_build_query([
@@ -231,6 +228,14 @@ class InstagramPublisher implements SocialPublisher
 
     public function getAnalytics(string $platformPostId): array
     {
+        $empty = [
+            'views' => 0,
+            'likes' => 0,
+            'comments' => 0,
+            'shares' => 0,
+            'bookmarks' => 0,
+        ];
+
         // Resolve the access token via the published schedule for this post.
         $schedule = Schedule::where('platform_post_id', $platformPostId)
             ->where('status', 'published')
@@ -240,21 +245,34 @@ class InstagramPublisher implements SocialPublisher
 
         $account = $schedule->socialAccount;
 
-        $response = $this->sdk->getMediaInsights($account->access_token, $platformPostId, 'impressions,reach,engagement,saved');
+        // Insights require the `instagram_business_manage_insights` scope, which is
+        // not currently requested during OAuth. Until it is granted, the insights
+        // call fails — degrade gracefully to zeroed metrics instead of throwing.
+        try {
+            $response = $this->sdk->getMediaInsights($account->access_token, $platformPostId, 'impressions,reach,engagement,saved');
 
-        $metrics = collect($response['data'] ?? [])
-            ->keyBy('name')
-            ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
+            $metrics = collect($response['data'] ?? [])
+                ->keyBy('name')
+                ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
 
-        $mediaData = $this->sdk->getMedia($account->access_token, $platformPostId, 'like_count,comments_count');
+            $mediaData = $this->sdk->getMedia($account->access_token, $platformPostId, 'like_count,comments_count');
 
-        return [
-            'views' => $metrics->get('impressions', 0),
-            'likes' => $mediaData['like_count'] ?? 0,
-            'comments' => $mediaData['comments_count'] ?? 0,
-            'shares' => 0,
-            'bookmarks' => $metrics->get('saved', 0),
-        ];
+            return [
+                'views' => $metrics->get('impressions', 0),
+                'likes' => $mediaData['like_count'] ?? 0,
+                'comments' => $mediaData['comments_count'] ?? 0,
+                'shares' => 0,
+                'bookmarks' => $metrics->get('saved', 0),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('[Instagram] Failed to fetch analytics, returning empty metrics', [
+                'platform_post_id' => $platformPostId,
+                'social_account_id' => $account->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return $empty;
+        }
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────

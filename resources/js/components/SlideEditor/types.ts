@@ -185,6 +185,8 @@ export interface CornerConfig {
     fontSize?: number;
     fontStyle?: string;
     letterSpacing?: number;
+    /** Extra inset from the edge, pushing top corners down / bottom corners up. */
+    offsetY?: number;
 }
 
 export interface SlideCorners {

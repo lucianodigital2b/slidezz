@@ -68,6 +68,87 @@ class CarouselGenerationServiceTest extends TestCase
         $this->assertStringContainsString('"title":"Test"', $result);
     }
 
+    public function test_generate_slides_composes_structured_image_into_a_flat_image_prompt(): void
+    {
+        $line = json_encode([
+            'title' => 'T',
+            'description' => 'D',
+            'image' => [
+                'main_description' => 'A scientist at a lab bench',
+                'subjects' => [[
+                    'identity' => 'Marie Curie',
+                    'appearance' => 'focused expression',
+                    'attire' => 'white lab coat',
+                    'pose' => 'holding a glass vial',
+                    'placement' => 'center frame, medium shot',
+                ]],
+                'environment' => [
+                    'scene' => 'laboratory',
+                    'elements' => ['microscope: brass', 'shelves: glass bottles'],
+                ],
+            ],
+        ]);
+
+        Prism::fake([TextResponseFake::make()->withText($line)]);
+
+        $result = $this->service->generateSlides('Marie Curie', 'serious', 1, true, 'English', 'documentary');
+
+        // Structured object is flattened away into a single string prompt.
+        $this->assertStringNotContainsString('"image":', $result);
+        $this->assertStringContainsString('"imagePrompt":', $result);
+
+        $decoded = json_decode($result, true);
+        $prompt = $decoded['imagePrompt'];
+
+        // Variable scene content survives...
+        $this->assertStringContainsString('Marie Curie', $prompt);
+        $this->assertStringContainsString('Setting: laboratory', $prompt);
+        $this->assertStringContainsString('glass bottles', $prompt);
+        // ...and the template's fixed aesthetics + shared constraints are pinned on.
+        $this->assertStringContainsString('documentary photography on film', $prompt);
+        $this->assertStringContainsString('no text, captions, logos, or watermarks', $prompt);
+    }
+
+    public function test_image_style_overrides_the_template_aesthetics(): void
+    {
+        $line = json_encode([
+            'title' => 'T',
+            'description' => 'D',
+            'image' => [
+                'main_description' => 'A scientist at a lab bench',
+                'subjects' => [['identity' => 'Marie Curie', 'placement' => 'center frame']],
+                'environment' => ['scene' => 'laboratory', 'elements' => []],
+            ],
+        ]);
+
+        Prism::fake([TextResponseFake::make()->withText($line)]);
+
+        $result = $this->service->generateSlides('Marie Curie', 'serious', 1, true, 'English', 'pop-magazine', 'black and white watercolor illustration');
+
+        $prompt = json_decode($result, true)['imagePrompt'];
+
+        // The user's look wins...
+        $this->assertStringContainsString('black and white watercolor illustration', $prompt);
+        // ...replacing the template's art direction...
+        $this->assertStringNotContainsString('high-saturation', $prompt);
+        $this->assertStringNotContainsString('Bright punchy pop', $prompt);
+        // ...while scene content and the universal constraints remain.
+        $this->assertStringContainsString('Marie Curie', $prompt);
+        $this->assertStringContainsString('no text, captions, logos, or watermarks', $prompt);
+    }
+
+    public function test_generate_slides_pins_aesthetics_onto_a_plain_image_prompt_fallback(): void
+    {
+        Prism::fake([TextResponseFake::make()->withText('{"title":"T","imagePrompt":"a red bicycle"}')]);
+
+        $result = $this->service->generateSlides('bikes', 'fun', 1, true, 'English', 'pop-magazine');
+
+        $decoded = json_decode($result, true);
+
+        $this->assertStringContainsString('a red bicycle', $decoded['imagePrompt']);
+        $this->assertStringContainsString('high-saturation', $decoded['imagePrompt']);
+        $this->assertStringContainsString('no text, captions, logos, or watermarks', $decoded['imagePrompt']);
+    }
 
     // ─── generateIdeas ────────────────────────────────────────────────────────
 
@@ -260,5 +341,38 @@ class CarouselGenerationServiceTest extends TestCase
         $this->expectExceptionMessage('Image generation failed');
 
         $this->service->generateImageWithGemini('a scenic mountain landscape');
+    }
+
+    // ─── generateImage (Unsplash failsafe) ────────────────────────────────────
+
+    public function test_generate_image_falls_back_to_unsplash_when_gemini_fails(): void
+    {
+        config(['services.carousel_image.driver' => 'gemini']);
+
+        // Gemini returns no usable image, so generateImageWithGemini throws.
+        Prism::fake([
+            ImageResponseFake::make()->withImages([
+                new GeneratedImage,
+            ]),
+        ]);
+
+        // The failsafe pulls a stock photo from Unsplash instead.
+        Http::fake([
+            'api.unsplash.com/*' => Http::response([
+                'results' => [
+                    ['urls' => ['regular' => 'https://images.unsplash.com/photo-1.jpg']],
+                ],
+            ]),
+            'images.unsplash.com/*' => Http::response('fallback-bytes', 200, [
+                'Content-Type' => 'image/jpeg',
+            ]),
+        ]);
+
+        $result = $this->service->generateImage('cinematic portrait of an athlete');
+
+        $this->assertEquals(
+            'data:image/jpeg;base64,'.base64_encode('fallback-bytes'),
+            $result,
+        );
     }
 }

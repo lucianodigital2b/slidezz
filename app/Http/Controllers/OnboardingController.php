@@ -88,7 +88,8 @@ class OnboardingController extends Controller
     {
         $user->onboarding_completed_at = now();
         $user->save();
-        $user->addCredits(3);
+        // Welcome grant: free managed-image credits to try the generator (1 credit = 1 image).
+        $user->addCredits(15);
 
         return redirect()->route('dashboard');
     }

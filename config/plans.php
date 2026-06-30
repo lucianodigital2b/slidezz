@@ -1,18 +1,26 @@
 <?php
 
+/*
+ * Credits meter the only real COGS: platform-paid ("managed") AI image generation.
+ * `credits_per_cycle` is the number of MANAGED images included per billing cycle.
+ * Carousels/text are unlimited. BYOK images (the user's own Gemini key) are free and
+ * never consume a credit, so the mid/top tiers are effectively "unlimited with BYOK".
+ * These numbers are a business lever — tune them here.
+ */
+
 return [
 
     'starter' => [
         'name' => 'Starter',
         'description' => 'Para criadores individuais',
-        'credits_per_cycle' => 30,
+        'credits_per_cycle' => 60,
         // BYOK (bring-your-own Gemini key) is reserved for paid mid/top tiers so
         // the entry plan can't be used as an "unlimited images" backdoor.
         'byok_enabled' => false,
         'features' => [
-            '30 carrosséis por mês',
+            'Carrosséis ilimitados',
+            '60 imagens IA por mês',
             'Todos os templates',
-            'Imagens IA incluídas',
             'Suporte por e-mail',
         ],
         'prices' => [
@@ -30,12 +38,13 @@ return [
     'pro' => [
         'name' => 'Pro',
         'description' => 'Para criadores em volume',
-        'credits_per_cycle' => 100,
+        'credits_per_cycle' => 150,
         'byok_enabled' => true,
         'features' => [
-            '100 carrosséis por mês',
+            'Carrosséis ilimitados',
+            '150 imagens IA por mês',
+            'Imagens ilimitadas com sua chave Gemini (BYOK)',
             'Todos os templates',
-            'Imagens IA ilimitadas com sua chave Gemini (BYOK)',
             'Suporte prioritário',
             'Acesso antecipado',
         ],
@@ -54,12 +63,13 @@ return [
     'agency' => [
         'name' => 'Agency',
         'description' => 'Para times e agências',
-        'credits_per_cycle' => 300,
+        'credits_per_cycle' => 400,
         'byok_enabled' => true,
         'features' => [
-            '300 carrosséis por mês',
+            'Carrosséis ilimitados',
+            '400 imagens IA por mês',
+            'Imagens ilimitadas com sua chave Gemini (BYOK)',
             'Todos os templates',
-            'Imagens IA ilimitadas com sua chave Gemini (BYOK)',
             'Múltiplos projetos',
             'Suporte prioritário',
         ],

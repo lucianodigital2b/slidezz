@@ -194,7 +194,7 @@
     "subtitle": "Cada geração de carousel consome 1 crédito.",
     "monthly": "Mensal",
     "annual": "Anual",
-    "carouselsPerMonth": "{{count}} carousels/mês",
+    "imagesPerMonth": "{{count}} imagens IA/mês",
     "subscribeTo": "Assinar {{plan}}",
     "redirecting": "Redirecionando…",
     "noSubscription": "Prefere sem assinatura? Compre créditos avulsos.",
@@ -255,6 +255,7 @@
       "label": "Ideias do dia",
       "regenerate": "Gerar outras",
       "generatingShort": "Gerando…",
+      "rateLimited": "Muitas tentativas. Aguarde um instante e tente de novo.",
       "generating": "Consultando seu DNA de marca…",
       "generatingCount": "Gerando 3 ideias",
       "ideaLabel": "Ideia {{n}}",
@@ -287,8 +288,8 @@
     },
     "welcome": {
       "title": "Bem-vindo ao Slidezz!",
-      "description": "Para você começar, ganhamos 3 créditos grátis para criar seus primeiros carrosséis.",
-      "credits": "3 créditos grátis",
+      "description": "Para você começar, demos 15 créditos de imagem grátis (carrosséis são ilimitados).",
+      "credits": "15 créditos de imagem grátis",
       "cta": "Criar meu primeiro carrossel"
     }
   },
@@ -527,6 +528,8 @@
       "styleLabel": "Estilo (opcional)",
       "visualStyleLabel": "Estilo Visual",
       "stylePlaceholder": "ex: minimalista, vibrante, corporativo...",
+      "imageStyleLabel": "Estilo das imagens (opcional)",
+      "imageStylePlaceholder": "ex: preto e branco, cinematográfico, grão de filme...",
       "slideCountLabel": "Número de slides",
       "generateBtn": "Gerar",
       "generateImagesLabel": "Imagens no carrossel",
@@ -549,7 +552,8 @@
       "errorNetwork": "Erro de rede. Por favor, tente novamente.",
       "errorServer": "Erro no servidor. Por favor, tente novamente.",
       "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente.",
-      "errorNoCredits": "Você não tem créditos. Adquira mais créditos para continuar."
+      "errorNoCredits": "Você não tem créditos de imagem. Adquira mais para continuar.",
+      "errorNoImageCredits": "Seus créditos de imagem acabaram, então alguns slides foram gerados sem imagem. O texto do carrossel não foi afetado."
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -591,6 +595,9 @@
       "published": "Publicado no Instagram.",
       "publishFailed": "Falha ao publicar no Instagram.",
       "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides."
+    },
+    "dragDrop": {
+      "hint": "Solte as imagens para adicionar ao slide"
     },
     "globalPanel": {
       "background": "Fundo",
@@ -701,6 +708,10 @@
       "documentary": {
         "name": "Documentary",
         "description": "Capa estilo jornalismo investigativo vintage com Playfair serif e carimbo de arquivo. Slides internos com tons sépia e molduras editoriais."
+      },
+      "ticket": {
+        "name": "Ticket",
+        "description": "Título em serifa aesthetic sobre uma forma de ticket recortado. A capa usa a cor primary do seu workspace; os tickets internos são brancos. Os cantos trazem o título do deck, número do slide, handle e logo."
       }
     },
     "archetypes": {
@@ -746,6 +757,8 @@
       "format": "Formato",
       "slideCountLabel": "Número de slides",
       "imageModeLabel": "Imagens no carrossel",
+      "imageStyleLabel": "Estilo das imagens (opcional)",
+      "imageStylePlaceholder": "ex: preto e branco, cinematográfico, grão de filme...",
       "languageLabel": "Idioma do conteúdo",
       "customPromptLabel": "Instruções adicionais (opcional)",
       "customPromptHint": "Adicione detalhes específicos, tom ou restrições para a IA seguir.",

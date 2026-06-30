@@ -130,7 +130,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                         <span className="text-2xl font-bold text-gray-900">{pricing.label}</span>
                                         <span className="text-xs text-gray-400">{sub}</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-0.5">{t('creditsModal.carouselsPerMonth', { count: plan.credits })}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">{t('creditsModal.imagesPerMonth', { count: plan.credits })}</p>
                                 </div>
 
                                 <ul className="space-y-1.5 flex-1">

@@ -121,7 +121,7 @@ class OnboardingControllerTest extends TestCase
 
         $fresh = $user->fresh();
         $this->assertNotNull($fresh->onboarding_completed_at);
-        $this->assertSame(3, $fresh->credits);
+        $this->assertSame(15, $fresh->credits);
     }
 
     public function test_save_profile_stores_logo_and_references_in_profile(): void

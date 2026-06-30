@@ -47,6 +47,7 @@ interface WizardConfig {
     imageMode: ImageMode;
     wordHighlight: boolean;
     language?: string;
+    imageStyle?: string;
     saveAsTemplate?: boolean;
 }
 
@@ -75,11 +76,12 @@ function loadSavedState(): { slides: Slide[]; currentIdx: number; format: Format
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SlideEditor() {
-    const { slideProject, wizardConfig, instagramAccounts, igEnabled } = usePage<{
+    const { slideProject, wizardConfig, instagramAccounts, igEnabled, brand } = usePage<{
         slideProject: SlideProjectProp | null;
         wizardConfig?: WizardConfig | null;
         instagramAccounts: InstagramAccount[];
         igEnabled: boolean;
+        brand?: { color: string | null; logoUrl: string | null } | null;
     }>().props;
 
     const saved = slideProject ?? loadSavedState();
@@ -120,6 +122,7 @@ export default function SlideEditor() {
         aiImageMode, setAiImageMode,
         aiWordHighlight, setAiWordHighlight,
         aiLanguage, setAiLanguage,
+        aiImageStyle, setAiImageStyle,
         aiTemplateId, setAiTemplateId,
         aiStatus,
         aiProgress, aiError,
@@ -128,6 +131,9 @@ export default function SlideEditor() {
     } = useAiGeneration(slides, setSlides, setCurrentIdx, setSelectedId, format, {
         handle: instagramAccounts?.[0]?.handle ?? '',
         photoUrl: instagramAccounts?.[0]?.avatar ?? '',
+    }, {
+        color: brand?.color ?? null,
+        logoUrl: brand?.logoUrl ?? null,
     });
 
     // ── Refs ────────────────────────────────────────────────────────────────
@@ -136,6 +142,8 @@ export default function SlideEditor() {
     const containerRef = useRef<HTMLDivElement>(null);
     const [displayW, setDisplayW] = useState(600);
     const [showSafeAreaGuide, setShowSafeAreaGuide] = useState(false);
+    const [fileDragActive, setFileDragActive] = useState(false);
+    const dragDepthRef = useRef(0);
 
     const safeIdx = Math.max(0, Math.min(currentIdx, slides.length - 1));
     useEffect(() => {
@@ -321,11 +329,13 @@ export default function SlideEditor() {
         setAiWordHighlight(hl);
         const lang = wizardConfig.language ?? 'Portuguese (Brazil)';
         setAiLanguage(lang);
+        const imgStyle = wizardConfig.imageStyle ?? '';
+        setAiImageStyle(imgStyle);
         const templateId = wizardConfig.template ?? null;
         setAiTemplateId(templateId);
         setAiModalOpen(true);
         const shouldSaveTemplate = wizardConfig.saveAsTemplate ?? false;
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId, lang)
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId, lang, imgStyle)
             .then((generated) => {
                 if (shouldSaveTemplate && generated && generated.length > 0) {
                     // Let the canvas paint the generated slides before snapshotting the thumbnail.
@@ -499,27 +509,103 @@ export default function SlideEditor() {
         setElementsOpen(false);
     }
 
-    // ─── Image upload ─────────────────────────────────────────────────────────
+    // ─── Image upload + drag-and-drop ─────────────────────────────────────────
+
+    function makeImageEl(src: string, x: number, y: number, width: number, height: number): ImageEl {
+        return {
+            id: uid(), type: 'image', src,
+            x, y, width, height,
+            rotation: 0, opacity: 1,
+            brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
+            hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
+            red: 255, green: 255, blue: 255,
+            overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+            isBackground: false, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
+            ...SHADOW_DEFAULTS,
+        };
+    }
+
+    // Add an image centered at (centerX, centerY) of slide `idx` (current slide when
+    // undefined), scaled to preserve its aspect ratio within half the slide width.
+    function placeImageFromSrc(src: string, idx: number | undefined, centerX: number, centerY: number) {
+        const img = new Image();
+        const place = (nW: number, nH: number) => {
+            const maxDim = SLIDE_W * 0.5;
+            const r = Math.min(1, maxDim / Math.max(nW, nH));
+            const w = Math.round(nW * r);
+            const h = Math.round(nH * r);
+            const el = makeImageEl(src, Math.round(centerX - w / 2), Math.round(centerY - h / 2), w, h);
+            if (idx === undefined) { addElement(el); } else { addElement(el, idx); }
+        };
+        img.onload = () => place(img.naturalWidth || 400, img.naturalHeight || 400);
+        img.onerror = () => place(400, 400);
+        img.src = src;
+    }
 
     function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = () => {
-            addElement({
-                id: uid(), type: 'image', src: reader.result as string,
-                x: SLIDE_W / 2 - 200, y: slideH / 2 - 200, width: 400, height: 400,
-                rotation: 0, opacity: 1,
-                brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
-                hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
-                red: 255, green: 255, blue: 255,
-                overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
-                isBackground: false, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
-                ...SHADOW_DEFAULTS,
-            });
-        };
+        reader.onload = () => placeImageFromSrc(reader.result as string, undefined, SLIDE_W / 2, slideH / 2);
         reader.readAsDataURL(file);
         e.target.value = '';
+    }
+
+    // Map a screen point (clientX/Y) to a slide index and that slide's local
+    // coordinates, mirroring handleStageClick. Returns null when outside any slide.
+    function mapClientToSlide(clientX: number, clientY: number): { idx: number; x: number; y: number } | null {
+        const stage = stageRef.current;
+        if (!stage) return null;
+        const rect = stage.container().getBoundingClientRect();
+        const px = clientX - rect.left;
+        const py = clientY - rect.top;
+        if (px < 0 || py < 0 || px > rect.width || py > rect.height) return null;
+        const worldX = px / scale;
+        const idx = Math.max(0, Math.min(slides.length - 1, Math.floor(worldX / (SLIDE_W + SLIDE_GAP))));
+        const x = worldX - slideOffsetX(idx);
+        const y = py / scale;
+        if (x < 0 || x > SLIDE_W) return null;
+        return { idx, x, y };
+    }
+
+    function dragHasFiles(e: React.DragEvent): boolean {
+        return Array.from(e.dataTransfer?.items ?? []).some((it) => it.kind === 'file');
+    }
+
+    function handleFileDragEnter(e: React.DragEvent) {
+        if (!dragHasFiles(e)) return;
+        e.preventDefault();
+        dragDepthRef.current += 1;
+        setFileDragActive(true);
+    }
+
+    function handleFileDragOver(e: React.DragEvent) {
+        if (!dragHasFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    }
+
+    function handleFileDragLeave() {
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) setFileDragActive(false);
+    }
+
+    function handleFileDrop(e: React.DragEvent) {
+        dragDepthRef.current = 0;
+        setFileDragActive(false);
+        const files = Array.from(e.dataTransfer?.files ?? []).filter((f) => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+        e.preventDefault();
+        const mapped = mapClientToSlide(e.clientX, e.clientY);
+        const idx = mapped?.idx ?? safeIdx;
+        const baseX = mapped?.x ?? SLIDE_W / 2;
+        const baseY = mapped?.y ?? slideH / 2;
+        files.forEach((file, i) => {
+            const reader = new FileReader();
+            // Stagger multiple drops so they don't land exactly on top of each other.
+            reader.onload = () => placeImageFromSrc(reader.result as string, idx, baseX + i * 24, baseY + i * 24);
+            reader.readAsDataURL(file);
+        });
     }
 
     // ─── Text inline editing ──────────────────────────────────────────────────
@@ -935,7 +1021,14 @@ export default function SlideEditor() {
     return (
         <>
             <Head title={t('slideEditor.pageTitle')} />
-            <div className="flex flex-col overflow-hidden" style={{ height: '100vh' }}>
+            <div
+                className="relative flex flex-col overflow-hidden"
+                style={{ height: '100vh' }}
+                onDragEnter={handleFileDragEnter}
+                onDragOver={handleFileDragOver}
+                onDragLeave={handleFileDragLeave}
+                onDrop={handleFileDrop}
+            >
 
                 <EditorToolbar
                     pastLength={past.length}
@@ -1049,6 +1142,15 @@ export default function SlideEditor() {
                         />
                     </div>
                 </div>
+
+                {/* Drag-and-drop hint while dragging image files over the editor */}
+                {fileDragActive && (
+                    <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center border-2 border-dashed border-violet-400 bg-violet-500/10">
+                        <div className="rounded-xl bg-gray-900/90 px-4 py-2 text-sm font-medium text-white shadow-lg">
+                            {t('slideEditor.dragDrop.hint')}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── AI Generation status bar ─────────────────────────────────── */}
@@ -1157,6 +1259,17 @@ export default function SlideEditor() {
                                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
                                 />
                             </div>
+                            {aiImageMode !== 'none' && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.imageStyleLabel')}</label>
+                                    <input
+                                        value={aiImageStyle}
+                                        onChange={(e) => setAiImageStyle(e.target.value)}
+                                        placeholder={t('slideEditor.ai.imageStylePlaceholder')}
+                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('slideEditor.ai.slideCountLabel')}</label>
                                 <div className="flex items-center gap-3">

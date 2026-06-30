@@ -243,17 +243,26 @@ export function CanvasArea({
     const stageW = (SLIDE_W * Math.max(1, slidesCount) + SLIDE_GAP * Math.max(0, slidesCount - 1)) * scale;
     const stageH = slideH * scale;
 
-    // When the user selects a neighbouring slide (one apart), scroll the row a
-    // little in that direction so the selection stays in view. Larger jumps are
-    // left alone — they come from the thumbnail strip where the canvas can stay put.
+    // Keep the selected slide in view: whenever the current slide changes (a
+    // neighbour step, or a jump from the thumbnail strip), scroll the row just
+    // enough to reveal it. If it's already fully visible the row stays put.
     useEffect(() => {
-        const diff = currentIdx - prevIdxRef.current;
         prevIdxRef.current = currentIdx;
 
-        if (Math.abs(diff) !== 1) return;
+        const scroller = scrollerRef.current;
+        if (!scroller) return;
 
-        const step = (SLIDE_W + SLIDE_GAP) * scale;
-        scrollerRef.current?.scrollBy({ left: Math.sign(diff) * step, behavior: 'smooth' });
+        const margin = SLIDE_GAP * scale;
+        const slideLeft = slideOffsetX(currentIdx) * scale;
+        const slideRight = slideLeft + SLIDE_W * scale;
+        const viewLeft = scroller.scrollLeft;
+        const viewRight = viewLeft + scroller.clientWidth;
+
+        if (slideLeft < viewLeft + margin) {
+            scroller.scrollTo({ left: Math.max(0, slideLeft - margin), behavior: 'smooth' });
+        } else if (slideRight > viewRight - margin) {
+            scroller.scrollTo({ left: slideRight - scroller.clientWidth + margin, behavior: 'smooth' });
+        }
     }, [currentIdx, scale]);
 
     // Top/bottom band hidden by the Instagram profile-grid 1:1 centre crop.
@@ -558,7 +567,7 @@ export function CanvasArea({
                     <KonvaText
                         key={`corner-${idx}-topLeft-${cornerFontRevision}`}
                         id={`corner-${idx}-topLeft`}
-                        x={CORNER_PAD} y={CORNER_PAD}
+                        x={CORNER_PAD} y={CORNER_PAD + (corners.topLeft.offsetY ?? 0)}
                         text={corners.topLeft.text}
                         fontSize={corners.topLeft.fontSize ?? CORNER_FS}
                         fontFamily={corners.topLeft.fontFamily ?? 'Poppins'}
@@ -572,7 +581,7 @@ export function CanvasArea({
                     <KonvaText
                         key={`corner-${idx}-topRight-${cornerFontRevision}`}
                         id={`corner-${idx}-topRight`}
-                        x={CORNER_PAD} y={CORNER_PAD}
+                        x={CORNER_PAD} y={CORNER_PAD + (corners.topRight.offsetY ?? 0)}
                         width={SLIDE_W - CORNER_PAD * 2}
                         align="right"
                         text={corners.topRight.text}
@@ -588,7 +597,7 @@ export function CanvasArea({
                     <KonvaText
                         key={`corner-${idx}-bottomLeft-${cornerFontRevision}`}
                         id={`corner-${idx}-bottomLeft`}
-                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS)}
+                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomLeft.fontSize ?? CORNER_FS) - (corners.bottomLeft.offsetY ?? 0)}
                         text={corners.bottomLeft.text}
                         fontSize={corners.bottomLeft.fontSize ?? CORNER_FS}
                         fontFamily={corners.bottomLeft.fontFamily ?? 'Poppins'}
@@ -602,7 +611,7 @@ export function CanvasArea({
                     <KonvaText
                         key={`corner-${idx}-bottomRight-${cornerFontRevision}`}
                         id={`corner-${idx}-bottomRight`}
-                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS)}
+                        x={CORNER_PAD} y={slideH - CORNER_PAD - (corners.bottomRight.fontSize ?? CORNER_FS) - (corners.bottomRight.offsetY ?? 0)}
                         width={SLIDE_W - CORNER_PAD * 2}
                         align="right"
                         text={corners.bottomRight.text}
@@ -735,6 +744,9 @@ export function CanvasArea({
                         {slides.map((slide, idx) => {
                             const ox = slideOffsetX(idx);
                             const isCurrent = idx === currentIdx;
+                            // Inner slides (2nd onward) use a third of the lateral safe inset,
+                            // matching computeSafeArea() — mirror that here so the guide lines up.
+                            const guideLateral = idx === 0 ? safeAreaPadding.left : Math.round(safeAreaPadding.left / 3);
                             const sorted = [...slide.elements].sort((a, b) => {
                                 const aIsBg = a.type === 'image' && a.isBackground ? -1 : 0;
                                 const bIsBg = b.type === 'image' && b.isBackground ? -1 : 0;
@@ -771,15 +783,15 @@ export function CanvasArea({
                                             {safeAreaPadding.bottom > 0 && (
                                                 <Rect x={0} y={slideH - safeAreaPadding.bottom} width={SLIDE_W} height={safeAreaPadding.bottom} fill="rgba(163,230,53,0.14)" listening={false} />
                                             )}
-                                            {safeAreaPadding.left > 0 && (
-                                                <Rect x={0} y={0} width={safeAreaPadding.left} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            {guideLateral > 0 && (
+                                                <Rect x={0} y={0} width={guideLateral} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
                                             )}
-                                            {safeAreaPadding.right > 0 && (
-                                                <Rect x={SLIDE_W - safeAreaPadding.right} y={0} width={safeAreaPadding.right} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
+                                            {guideLateral > 0 && (
+                                                <Rect x={SLIDE_W - guideLateral} y={0} width={guideLateral} height={slideH} fill="rgba(163,230,53,0.14)" listening={false} />
                                             )}
                                             <Rect
-                                                x={safeAreaBounds.x} y={safeAreaBounds.y}
-                                                width={safeAreaBounds.width} height={safeAreaBounds.height}
+                                                x={guideLateral} y={safeAreaBounds.y}
+                                                width={SLIDE_W - guideLateral * 2} height={safeAreaBounds.height}
                                                 stroke="#84cc16" strokeWidth={3} dash={[24, 14]} listening={false}
                                             />
                                         </>

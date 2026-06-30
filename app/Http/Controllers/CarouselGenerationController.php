@@ -18,15 +18,13 @@ class CarouselGenerationController extends Controller
             'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
             'word_highlight' => ['nullable', 'boolean'],
             'language' => ['nullable', 'string', 'max:50'],
+            'template' => ['nullable', 'string', 'max:100'],
+            'image_style' => ['nullable', 'string', 'max:300'],
         ]);
 
-        if (! $request->user()->deductCredit()) {
-            return response()->json([
-                'error' => 'no_credits',
-                'message' => 'Créditos insuficientes.',
-            ], 402);
-        }
-
+        // Carousels (text) are unlimited and free: credits meter the only real COGS,
+        // which is AI image generation (charged per image in generateImage). So the
+        // text step neither gates on nor deducts credits.
         try {
             $ndjson = $this->carouselGenerationService->generateSlides(
                 topic: $validated['topic'],
@@ -34,11 +32,10 @@ class CarouselGenerationController extends Controller
                 slideCount: $validated['slide_count'] ?? 5,
                 wordHighlight: $validated['word_highlight'] ?? true,
                 language: $validated['language'] ?? 'Portuguese (Brazil)',
+                template: $validated['template'] ?? '',
+                imageStyle: $validated['image_style'] ?? '',
             );
         } catch (\Throwable $e) {
-            // Every provider failed — refund the credit we deducted up front.
-            $request->user()->addCredits(1);
-
             \Log::error('Carousel generation failed', [
                 'message' => $e->getMessage(),
                 'class' => get_class($e),
@@ -46,7 +43,7 @@ class CarouselGenerationController extends Controller
 
             return response()->json([
                 'error' => 'generation_failed',
-                'message' => 'Não foi possível gerar o carrossel. Seu crédito foi devolvido.',
+                'message' => 'Não foi possível gerar o carrossel. Tente novamente.',
             ], 503);
         }
 
@@ -60,13 +57,30 @@ class CarouselGenerationController extends Controller
             'aspect_ratio' => ['nullable', 'string', 'in:1:1,4:5,9:16,3:4,16:9'],
         ]);
 
+        // A credit is spent only when the PLATFORM pays for the image. With BYOK the
+        // user's own Gemini key is billed, so those images are free and unmetered.
+        $byokKey = $request->user()->byokGeminiKey();
+        $managed = $byokKey === null;
+
+        if ($managed && ! $request->user()->deductCredit()) {
+            return response()->json([
+                'error' => 'no_credits',
+                'message' => 'Créditos de imagem insuficientes.',
+            ], 402);
+        }
+
         try {
             $base64 = $this->carouselGenerationService->generateImage(
                 $validated['prompt'],
                 $validated['aspect_ratio'] ?? '4:5',
-                $request->user()->byokGeminiKey(),
+                $byokKey,
             );
         } catch (\Throwable $e) {
+            // Refund the credit we spent up front for this managed image.
+            if ($managed) {
+                $request->user()->addCredits(1);
+            }
+
             \Log::error('Image generation failed', [
                 'message' => $e->getMessage(),
                 'class' => get_class($e),

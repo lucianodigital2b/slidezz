@@ -89,7 +89,11 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('carousel/generate-image', [CarouselGenerationController::class, 'generateImage'])->name('carousel.generate-image');
 
     Route::get('carousel/create', [CarouselWizardController::class, 'create'])->name('carousel.create');
-    Route::get('carousel/ideas', [CarouselWizardController::class, 'ideas'])->name('carousel.ideas');
+    // "Ideias do dia": cached daily, but ?refresh=1 forces a fresh LLM call — throttle
+    // per user so the regenerate button can't be spammed into a pile of LLM requests.
+    Route::get('carousel/ideas', [CarouselWizardController::class, 'ideas'])
+        ->middleware('throttle:10,1')
+        ->name('carousel.ideas');
     Route::post('carousel/extract-url', [CarouselWizardController::class, 'extractUrl'])->name('carousel.extract-url');
     Route::post('carousel/save-config', [CarouselWizardController::class, 'saveConfig'])->name('carousel.save-config');
     Route::post('carousel', [CarouselWizardController::class, 'store'])->name('carousel.store');
@@ -99,11 +103,10 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
             return redirect()
                 ->route('slideshow-editor.edit', $slideProject)
                 ->with('wizardTopic', "AI\'s Economics Don't Make Sense")
-                ->with('wizardStyle', 'bold, cinematic, motivational documentary voice. Hook archetype: shocking social phenomenon that reveals a serious consequence hook.')
-                ->with('wizardTemplate', 'noir-manifesto')
-                ->with('wizardSlideCount', 3)
-                ->with('wizardImageMode', 'none')
-                ->with('wizardWordHighlight', false);
+                ->with('wizardTemplate', 'dark-cards')
+                ->with('wizardSlideCount', 5)
+                ->with('wizardImageMode', 'alternate')
+                ->with('wizardWordHighlight', true);
         })->name('dev.test-wizard');
 
         // Competitor-style carousel: cinematic, subject-accurate Gemini photos
@@ -133,6 +136,19 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
                 ->with('wizardImageMode', 'none')
                 ->with('wizardWordHighlight', false);
         })->name('dev.test-wizard-twitter');
+
+        // Ticket-style deck: aesthetic Fraunces serif on a die-cut ticket shape over a
+        // black canvas. Cover ticket uses the workspace brand color; inner tickets are
+        // white, with corner chrome (deck title, number, handle) and the workspace logo.
+        Route::get('dev/test-wizard-ticket/{slideProject}', function (SlideProject $slideProject) {
+            return redirect()
+                ->route('slideshow-editor.edit', $slideProject)
+                ->with('wizardTopic', 'Como construímos um produto real sem escrever código')
+                ->with('wizardTemplate', 'ticket')
+                ->with('wizardSlideCount', 5)
+                ->with('wizardImageMode', 'none')
+                ->with('wizardWordHighlight', false);
+        })->name('dev.test-wizard-ticket');
     }
 });
 

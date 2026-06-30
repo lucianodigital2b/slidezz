@@ -1,9 +1,19 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Align, BadgeStyle, GradientEl, ShapeEl, SLIDE_W, SlideEl, TextEl } from './types';
+import { Align, BadgeStyle, GradientEl, PathEl, ShapeEl, SLIDE_W, SlideCorners, SlideEl, TextEl } from './types';
 import { SHADOW_DEFAULTS, fitTextFontSize, measuredTextHeight, uid } from './utils';
-import { LayoutDefinition, computeSafeArea, slotToBox } from './layouts';
+import { LayoutDefinition, computeSafeArea } from './layouts';
+
+/**
+ * An absolute (px) vertical band that generated content must stay within. Used to
+ * reserve the half of the slide opposite a grid image card so title/body copy never
+ * sits under the image. When omitted, content fills the whole content safe area.
+ */
+export interface ContentBand {
+    top: number;
+    bottom: number;
+}
 
 export interface TemplateContent {
     eyebrow: string;
@@ -43,10 +53,13 @@ export interface SlideTemplate {
         slideH: number,
         slideIndex: number,
         totalSlides: number,
+        contentBand?: ContentBand,
     ) => TemplateScene;
     buildScene: (content: TemplateContent, slideH: number) => TemplateScene;
     /** When set, generated slides ship an active ProfileBadge above the title in this style. */
     defaultBadgeStyle?: BadgeStyle;
+    /** Defaults to true (ALL-CAPS titles). Set false to render titles in their original case. */
+    uppercaseTitle?: boolean;
 }
 
 function createText(overrides: Partial<TextEl> & Pick<TextEl, 'text' | 'x' | 'y' | 'width' | 'height'>): TextEl {
@@ -107,6 +120,101 @@ function createGradient(overrides: Partial<GradientEl> & Pick<GradientEl, 'x' | 
     };
 }
 
+// ─── Ticket shape ────────────────────────────────────────────────────────────
+// The Ticket template's colored/white surface is an actual ticket: a rounded
+// rectangle with a concave semicircular notch punched out of the top and bottom
+// centre. It sits on the black canvas so the notches reveal the dark background.
+
+/** Inset of the ticket from the canvas edges, and its notch / corner radii. */
+export const TICKET_MARGIN = 28;
+const TICKET_NOTCH_R = 56;
+const TICKET_CORNER_R = 44;
+
+/** The ticket's absolute box for a slide of height `slideH`. */
+export function ticketRect(slideH: number): { x: number; y: number; width: number; height: number } {
+    return {
+        x: TICKET_MARGIN,
+        y: TICKET_MARGIN,
+        width: SLIDE_W - TICKET_MARGIN * 2,
+        height: slideH - TICKET_MARGIN * 2,
+    };
+}
+
+/** SVG path for a `w`×`h` ticket: rounded corners + top/bottom centre notches. */
+function ticketPath(w: number, h: number, r: number, nr: number): string {
+    const cx = w / 2;
+
+    return [
+        `M ${r} 0`,
+        `L ${cx - nr} 0`,
+        `A ${nr} ${nr} 0 0 0 ${cx + nr} 0`,      // top centre notch (dips into the ticket)
+        `L ${w - r} 0`,
+        `A ${r} ${r} 0 0 1 ${w} ${r}`,            // top-right corner
+        `L ${w} ${h - r}`,
+        `A ${r} ${r} 0 0 1 ${w - r} ${h}`,        // bottom-right corner
+        `L ${cx + nr} ${h}`,
+        `A ${nr} ${nr} 0 0 0 ${cx - nr} ${h}`,    // bottom centre notch
+        `L ${r} ${h}`,
+        `A ${r} ${r} 0 0 1 0 ${h - r}`,           // bottom-left corner
+        `L 0 ${r}`,
+        `A ${r} ${r} 0 0 1 ${r} 0`,               // top-left corner
+        'Z',
+    ].join(' ');
+}
+
+/** A filled ticket-shaped PathEl covering the slide (minus the canvas margin). */
+export function createTicketShape(slideH: number, fill: string): PathEl {
+    const rect = ticketRect(slideH);
+
+    return {
+        id: uid(),
+        type: 'path',
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        rotation: 0,
+        opacity: 1,
+        data: ticketPath(rect.width, rect.height, TICKET_CORNER_R, TICKET_NOTCH_R),
+        dataW: rect.width,
+        dataH: rect.height,
+        fill,
+        stroke: '#000000',
+        strokeWidth: 0,
+        borderStyle: 'solid',
+        dashEnabled: false,
+        ...SHADOW_DEFAULTS,
+    };
+}
+
+/**
+ * The Ticket template's corner chrome: deck title (top-left), slide number
+ * (top-right, inner slides only), and handle (bottom-left). The bottom-right is
+ * left for the workspace logo image, attached separately by the generator.
+ */
+export function buildTicketCorners(opts: { topic: string; handle: string; slideIndex: number }): SlideCorners {
+    const dark = '#111111';
+    const isInner = opts.slideIndex > 0;
+    const number = isInner ? String(opts.slideIndex + 1) : '';
+    const handleText = opts.handle ? `Post by @${opts.handle}` : '';
+    // The deck-title header sits only on inner tickets — the cover leads with its headline.
+    const deckTitle = isInner ? opts.topic : '';
+
+    // Push the top corners below the ticket's top-centre notch so the deck title and
+    // number clear the cutout instead of being sliced by it.
+    const topOffset = 58;
+
+    return {
+        topLeft: { text: deckTitle, enabled: Boolean(deckTitle), color: dark, fontFamily: 'Space Mono', fontSize: 22, letterSpacing: 0, offsetY: topOffset },
+        topRight: { text: number, enabled: Boolean(number), color: dark, fontFamily: 'Fraunces', fontSize: 40, fontStyle: '600', offsetY: topOffset },
+        bottomLeft: { text: handleText, enabled: Boolean(handleText), color: dark, fontFamily: 'Space Mono', fontSize: 22, letterSpacing: 0 },
+        bottomRight: { text: '', enabled: false, color: dark },
+        show: true,
+        showDots: false,
+        bottomRightIcon: 'none',
+    };
+}
+
 function fontStyleHintToStyle(hint: LayoutDefinition['title']['fontStyleHint']): string {
     if (hint === 'normal') return '';
     if (hint === 'black') return '900';
@@ -128,6 +236,7 @@ export function buildSceneFromLayoutGeneric(
     layout: LayoutDefinition,
     slideH: number,
     slideIndex: number,
+    contentBand?: ContentBand,
 ): TemplateScene {
     // Keep all content inside the Instagram profile-grid crop. The grid shows a
     // 1:1 centre square of the post, so the top/bottom (slideH - SLIDE_W) / 2 of a
@@ -135,8 +244,14 @@ export function buildSceneFromLayoutGeneric(
     // (plus a small inner margin) so generated titles/bodies stay visible in the
     // grid. For 4:5 posts this resolves to ~180 (unchanged); for taller formats
     // it tightens so content no longer lands in the cropped bands.
-    const safe = computeSafeArea(slideH);
-    const { x: safeX, y: safeY, height: safeH } = safe;
+    const safe = computeSafeArea(slideH, slideIndex);
+    const { x: safeX } = safe;
+    // Content (title/subtitle/description/stat) is mapped into this vertical band.
+    // It defaults to the full content safe area, but a grid image card narrows it to
+    // the opposite half so copy never overlaps the image.
+    const contentTop = contentBand?.top ?? safe.y;
+    const contentBottom = contentBand?.bottom ?? (safe.y + safe.height);
+    const contentH = Math.max(1, contentBottom - contentTop);
 
     const useAlt = slideIndex % 2 === 1 && Boolean(template.backgroundAlt);
     const bg = useAlt ? template.backgroundAlt! : template.background;
@@ -150,8 +265,15 @@ export function buildSceneFromLayoutGeneric(
         return template.captionFont;
     }
 
+    // Map a slot's fractional rect into the (possibly reserved) content band. With no
+    // reservation this is identical to slotToBox over the full safe area.
     function slotToRect(slot: LayoutDefinition['title']) {
-        return slotToBox(slot, slideH);
+        return {
+            x: Math.round(safe.x + slot.x * safe.width),
+            y: Math.round(contentTop + slot.y * contentH),
+            width: Math.round(slot.width * safe.width),
+            height: Math.round(slot.height * contentH),
+        };
     }
 
     if (layout.gradientIntensity > 0.2) {
@@ -198,7 +320,7 @@ export function buildSceneFromLayoutGeneric(
     // short headline doesn't leave a big hole before the text. Centered/bottom
     // compositions (hook_hero, stat_callout, cta_closing) keep their slot positions.
     const stackGap = Math.round(slideH * 0.02);
-    const safeBottom = safeY + safeH;
+    const safeBottom = contentBottom;
     let stackCursorY: number | null = null;
     // First index of the title+body group, so it can be translated as a block when
     // the layout anchors content to the bottom (gradient/stat pushed before stay put).
@@ -210,9 +332,10 @@ export function buildSceneFromLayoutGeneric(
 
     if (layout.title.visible) {
         const rect = slotToRect(layout.title);
-        // All display titles are uppercased for a consistent impact look across the
-        // deck (highlight matching is case-insensitive, so this is safe).
-        const titleText = content.title.toUpperCase();
+        // Display titles are uppercased for a consistent impact look across the deck
+        // (highlight matching is case-insensitive, so this is safe) — unless the template
+        // opts out (e.g. the Ticket template keeps its aesthetic serif in sentence case).
+        const titleText = template.uppercaseTitle === false ? content.title : content.title.toUpperCase();
         // Resolve to a valid CSS font-weight ONCE: the raw hint ("black") is not a
         // valid font-weight, so passing it to fitTextFontSize corrupts measurement
         // (the canvas rejects the font string). Fit and render must use the same value.
@@ -460,7 +583,7 @@ function buildDarkCards(content: TemplateContent, slideH: number): TemplateScene
     const badgeY = innerY + 82;
 
     return {
-        background: '#0f172a',
+        background: '#000000',
         badgeX,
         badgeY,
         badgeStyle: 'divider' as BadgeStyle,
@@ -1139,6 +1262,49 @@ function buildDocumentary(content: TemplateContent, slideH: number): TemplateSce
     };
 }
 
+/** Fallback ticket color when no workspace brand color is available. */
+export const TICKET_DEFAULT_BRAND = '#F0531C';
+
+function buildTicket(content: TemplateContent, slideH: number): TemplateScene {
+    const rect = ticketRect(slideH);
+    const innerX = rect.x + 90;
+    const innerW = rect.width - 180;
+    const titleY = Math.round(slideH * 0.34);
+    const titleFontSize = fitTextFontSize(content.title, 'Fraunces', '600', 124, 1.02, -1, innerW, Math.round(slideH * 0.4), 8);
+
+    return {
+        background: '#000000',
+        elements: [
+            createTicketShape(slideH, TICKET_DEFAULT_BRAND),
+            createText({
+                x: innerX,
+                y: titleY,
+                width: innerW,
+                height: Math.round(slideH * 0.42),
+                text: content.title,
+                fontFamily: 'Fraunces',
+                fontSize: titleFontSize,
+                fontStyle: '600',
+                fill: '#111111',
+                lineHeight: 1.02,
+                letterSpacing: -1,
+            }),
+            createText({
+                x: innerX,
+                y: titleY + Math.round(slideH * 0.44),
+                width: innerW,
+                height: 90,
+                text: content.subtitle,
+                fontFamily: 'Fraunces',
+                fontSize: 44,
+                fontStyle: '500',
+                fill: '#111111',
+                lineHeight: 1.2,
+            }),
+        ],
+    };
+}
+
 // ─── Template definitions ────────────────────────────────────────────────────
 
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
@@ -1158,17 +1324,17 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Anton', 'Inter'],
         buildScene: buildNoirManifesto,
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
             // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
         },
     },
     {
         id: 'dark-cards',
         name: 'Dark Cards',
-        description: 'Full-bleed cover photo with centered title. Inner slides with rounded image cards on a dark background.',
-        background: '#0f172a',
-        backgroundAlt: '#111827',
+        description: 'Full-bleed cover photo with centered title. Inner slides with rounded image cards on a black background.',
+        background: '#000000',
+        backgroundAlt: '#000000',
         textColor: '#ffffff',
         accentColor: '#2563eb',
         font: 'Poppins',
@@ -1179,7 +1345,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'center',
         fonts: ['Poppins', 'Inter'],
         buildScene: buildDarkCards,
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
             // For inner-slide layouts, shift the title element down so it doesn't crowd the top edge
             const titleShiftLayouts: string[] = ['standard', 'split_text'];
             const modifiedLayout = titleShiftLayouts.includes(layout.type)
@@ -1194,7 +1360,12 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
                 : layout;
 
             // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, modifiedLayout, slideH, slideIndex);
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, modifiedLayout, slideH, slideIndex, contentBand);
+            // Dark Cards sits on a pure black background, so the standalone darkening
+            // gradient just paints a visible navy block — drop it. Background-image
+            // slides still get their own image overlay from the generator.
+            scene.elements = scene.elements.filter((el) => el.type !== 'gradient');
+            return scene;
         },
     },
     {
@@ -1215,9 +1386,9 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         fonts: ['Anton', 'Inter'],
         buildScene: buildPopMagazine,
         defaultBadgeStyle: 'solid',
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
             // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
         },
     },
     {
@@ -1258,9 +1429,9 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Montserrat', 'Inter'],
         buildScene: buildAcidBrutalist,
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
             // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
         },
     },
     {
@@ -1280,9 +1451,38 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Playfair Display', 'Inter'],
         buildScene: buildDocumentary,
-        buildSceneFromLayout(content, layout, slideH, slideIndex) {
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
             // Decorations removed for now — focusing on typography + imaging.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex);
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
+        },
+    },
+    {
+        id: 'ticket',
+        name: 'Ticket',
+        description: 'Editorial ticket: an aesthetic serif headline on a die-cut ticket shape. The cover ticket uses your workspace brand color; inner tickets are white. Corners carry the deck title, slide number, handle and logo.',
+        // Black canvas — the ticket shape sits on top and its notches reveal this.
+        background: '#000000',
+        backgroundAlt: '#000000',
+        // Headline/body are dark, reading on the brand/white ticket surface.
+        textColor: '#111111',
+        textColorAlt: '#111111',
+        accentColor: TICKET_DEFAULT_BRAND,
+        font: 'Fraunces',
+        bodyFont: 'Fraunces',
+        captionFont: 'Space Mono',
+        fontStyle: '600',
+        letterSpacing: -1,
+        align: 'left',
+        fonts: ['Fraunces', 'Space Mono'],
+        uppercaseTitle: false,
+        buildScene: buildTicket,
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
+            // Lay out the serif title/body; the ticket shape, logo and corners are
+            // attached by the generator (they depend on the workspace brand + handle).
+            const scene = buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
+            // No darkening gradient — the ticket is a flat surface.
+            scene.elements = scene.elements.filter((el) => el.type !== 'gradient');
+            return scene;
         },
     },
 ];
@@ -1306,7 +1506,7 @@ export function TemplatePreview({ id }: { id: string }) {
         case 'dark-cards':
             return (
                 <div className="w-full h-full flex items-center justify-center"
-                    style={{ background: '#111827' }}>
+                    style={{ background: '#000000' }}>
                     <div className="rounded-lg overflow-hidden" style={{ width: '80%', boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
                         <div className="flex items-center justify-center" style={{ height: 36, background: 'linear-gradient(135deg, #374151, #1f2937)' }}>
                             <div className="rounded-full px-2 py-0.5" style={{ background: '#2563eb' }}>
@@ -1377,6 +1577,19 @@ export function TemplatePreview({ id }: { id: string }) {
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: '#9a8866', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>{t('slideEditor.elements.investigation')}</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 9, fontWeight: 700, color: '#f0e8d8', lineHeight: 1.2 }}>{t('slideEditor.elements.slideTitle')}</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: 5, color: 'rgba(240,232,216,0.5)', marginTop: 2, fontStyle: 'italic' }}>{t('slideEditor.elements.subtitle')}</div>
+                    </div>
+                </div>
+            );
+        case 'ticket':
+            return (
+                <div className="relative w-full h-full flex items-center justify-center" style={{ background: '#000' }}>
+                    {/* Ticket surface with top/bottom centre notches */}
+                    <div className="relative" style={{ width: '84%', height: '88%', background: TICKET_DEFAULT_BRAND, borderRadius: 8 }}>
+                        <div className="absolute rounded-full" style={{ width: 12, height: 12, background: '#000', top: -6, left: '50%', transform: 'translateX(-50%)' }} />
+                        <div className="absolute rounded-full" style={{ width: 12, height: 12, background: '#000', bottom: -6, left: '50%', transform: 'translateX(-50%)' }} />
+                        <div className="absolute" style={{ left: '12%', top: '24%', right: '12%' }}>
+                            <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 13, fontWeight: 600, color: '#111', lineHeight: 1.02, letterSpacing: -0.5 }}>{t('slideEditor.elements.title')}</div>
+                        </div>
                     </div>
                 </div>
             );
