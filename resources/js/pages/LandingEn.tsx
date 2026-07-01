@@ -96,7 +96,7 @@ const faqs = [
     },
     {
         q: 'How many carousels can I create?',
-        a: 'Each plan includes a monthly carousel allowance (30 on Starter, 100 on Pro, 300 on Agency). AI images are included — and on Pro and Agency you can connect your own Gemini key (BYOK) for unlimited images.',
+        a: 'Carousels are unlimited on every plan. What each plan includes is a monthly AI-image allowance (60 on Starter, 150 on Pro, 400 on Agency). On Pro and Agency you can connect your own Gemini key (BYOK) for unlimited images.',
     },
     {
         q: 'Does it work on mobile?',
@@ -820,7 +820,7 @@ export default function LandingEn({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                30 carousels / month
+                                Unlimited carousels
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -828,10 +828,9 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
+                                    '60 viral images / month',
                                     'AI copywriting & hooks',
                                     'All templates',
-                                    'AI images included',
-                                    'Instagram integration (coming soon)',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -907,7 +906,7 @@ export default function LandingEn({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                100 carousels / month
+                                Unlimited carousels
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -915,9 +914,9 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'BYOK: unlimited AI images',
+                                    '150 viral images / month',
+                                    'Unlimited images with your Gemini key (BYOK)',
                                     'Priority support',
-                                    'Early access to features',
                                     'Save your own templates',
                                 ].map((feature) => (
                                     <li
@@ -991,7 +990,7 @@ export default function LandingEn({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#333330] pb-6 text-lg font-bold text-[#FCD34D]">
                                 <Check className="h-4 w-4 text-[#FCD34D]" />
-                                300 carousels / month
+                                Unlimited carousels
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#AAAAAA]">
@@ -999,10 +998,10 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'BYOK: unlimited AI images',
+                                    '400 viral images / month',
+                                    'Unlimited images with your Gemini key (BYOK)',
                                     'Multiple projects',
                                     'Team management',
-                                    'API access (coming soon)',
                                 ].map((feature) => (
                                     <li
                                         key={feature}

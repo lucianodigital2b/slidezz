@@ -1,10 +1,13 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Check, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import CtaButton from '@/components/cta-button';
 import FadeIn from '@/components/fade-in';
+import FeatureBento, {
+    type FeatureBentoCopy,
+} from '@/components/feature-bento';
 import LandingFooter from '@/components/landing-footer';
 import ScrollStack from '@/components/scroll-stack';
 import TestimonialMarquee, {
@@ -14,6 +17,46 @@ import { TextShimmer } from '@/components/text-shimmer';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const comparisonItems = [
+    { label: 'Canva Pro (design)', price: 'R$34,90/mês' },
+    { label: 'ChatGPT Plus (textos e ideias)', price: 'R$110,00/mês' },
+    { label: 'Google Gemini (imagem IA)', price: 'R$97,00/mês' },
+    { label: 'Adobe Photoshop (editor)', price: 'R$115,00/mês' },
+    { label: 'Designer freelancer (layouts)', price: 'R$1.500,00/mês' },
+    { label: 'Copywriter freelancer (roteiros)', price: 'R$800,00/mês' },
+];
+
+const totalComparison = 'R$2.656,90/mês';
+
+const featureBentoCopy: FeatureBentoCopy = {
+    carousels: {
+        title: 'Carrosséis gerados por IA',
+        body: 'Você dá o tema e o tom; a IA monta os slides com layout coerente, prontos pra publicar. Sem começar do zero no Canva.',
+    },
+    script: {
+        title: 'Texto e roteiro prontos',
+        body: 'Títulos, ganchos e o texto dos slides sugeridos pela IA, sem pular pro ChatGPT em outra aba.',
+    },
+    editor: {
+        title: 'Editor visual simples',
+        body: 'Ajuste cores, fontes e imagens no arrastar e soltar. Sem curva de aprendizado.',
+    },
+    export: {
+        title: 'Exportação em Full HD',
+        body: 'Baixe em PNG a 1080px, o tamanho certo pro Instagram. Sem perder qualidade.',
+    },
+    minutes: {
+        title: 'Conteúdo em minutos',
+        body: 'Produza vários carrosséis numa sessão. Menos tempo no design, mais tempo vendendo.',
+    },
+    community: {
+        title: 'Comunidade de criadores',
+        body: 'Troque referências e ritmo de postagem com criadores que querem consistência, não postar no escuro.',
+    },
+};
 
 const testimonials: Testimonial[] = [
     {
@@ -53,6 +96,86 @@ const testimonials: Testimonial[] = [
         initials: 'DR',
     },
 ];
+
+const faqs = [
+    {
+        q: 'Preciso saber design?',
+        a: 'Não. A IA faz tudo. Você só digita o tema e o carrossel sai pronto — texto, layout e design profissional.',
+    },
+    {
+        q: 'Funciona pra qualquer nicho?',
+        a: 'Sim. Marketing digital, fitness, gastronomia, educação, moda, coaching, finanças — a IA se adapta ao seu nicho e tom de voz.',
+    },
+    {
+        q: 'Posso cancelar quando quiser?',
+        a: 'Sim. Sem multa, sem fidelidade. Cancele direto no painel em 2 cliques.',
+    },
+    {
+        q: 'A IA também gera os textos?',
+        a: 'Sim! Títulos, subtítulos, textos persuasivos e CTAs — tudo gerado automaticamente e otimizado pra engajamento.',
+    },
+    {
+        q: 'Quantos carrosséis posso criar?',
+        a: 'Carrosséis são ilimitados em todos os planos. O que cada plano inclui é uma cota de imagens virais por mês (60 no Starter, 150 no Pro, 400 no Agency). No Pro e no Agency você pode conectar sua própria chave Gemini (BYOK) e ter imagens ilimitadas.',
+    },
+    {
+        q: 'Funciona no celular?',
+        a: 'Funciona no navegador em qualquer dispositivo — computador, tablet ou celular. Sem instalar nada.',
+    },
+];
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div
+            className="rounded-2xl bg-white transition-shadow duration-300"
+            style={{
+                border: '1px solid #E8E7E2',
+                boxShadow: open ? '0 14px 36px rgba(0,0,0,0.08)' : 'none',
+            }}
+        >
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className="flex w-full items-center justify-between gap-5 px-7 py-6 text-left sm:px-8 sm:py-7"
+            >
+                <span className="text-xl font-extrabold text-[#1A1A1A]">
+                    {q}
+                </span>
+                <span
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300"
+                    style={{
+                        border: '1px solid #E8E7E2',
+                        background: open ? '#E8440A' : '#F3EEE8',
+                    }}
+                >
+                    <ChevronDown
+                        className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        style={{
+                            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: open ? '#fff' : '#1A1A1A',
+                        }}
+                    />
+                </span>
+            </button>
+            <div
+                className="grid transition-[grid-template-rows] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+            >
+                <div className="overflow-hidden">
+                    <p className="px-7 pb-7 text-lg leading-relaxed font-medium text-[#555550] sm:px-8">
+                        {a}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function Welcome({
     canRegister = true,
@@ -131,7 +254,7 @@ export default function Welcome({
                                     Preços
                                 </a>
                                 <a
-                                    href="#prova"
+                                    href="#depoimentos"
                                     className="transition-colors hover:text-[#1A1A1A]"
                                 >
                                     Resultados
@@ -429,6 +552,60 @@ export default function Welcome({
                     </FadeIn>
                 </section>
 
+                {/* ── PROBLEMA ── */}
+                <section
+                    style={{
+                        borderTop: '1px solid #1A1A1A',
+                        borderBottom: '1px solid #1A1A1A',
+                        background: '#1A1A1A',
+                    }}
+                >
+                    <FadeIn className="mx-auto max-w-4xl px-6 py-24 text-center">
+                        <p className="mb-4 font-bold tracking-widest text-[#E8440A] uppercase">
+                            A verdade que ninguém te conta
+                        </p>
+                        <h2 className="mb-8 font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
+                            A verdade brutal sobre o Instagram em 2026
+                        </h2>
+                        <div className="mx-auto max-w-2xl space-y-5 text-left">
+                            <p className="text-lg leading-relaxed font-medium text-[#AAAAAA]">
+                                O próprio{' '}
+                                <strong className="text-white">
+                                    CEO do Instagram
+                                </strong>{' '}
+                                confirmou: o algoritmo prioriza carrosséis acima
+                                de qualquer outro formato. Quem não posta
+                                carrossel{' '}
+                                <strong className="text-white">
+                                    simplesmente não aparece.
+                                </strong>
+                            </p>
+                            <p className="text-lg leading-relaxed font-medium text-[#AAAAAA]">
+                                Enquanto você gasta{' '}
+                                <strong className="text-white">
+                                    2–3 horas no Canva
+                                </strong>{' '}
+                                tentando montar um post bonito, seus concorrentes
+                                usam IA pra criar 10 carrosséis virais no tempo em
+                                que você faz 1.
+                            </p>
+                            <p className="text-lg leading-relaxed font-medium text-[#AAAAAA]">
+                                A diferença entre quem vende no Instagram e quem
+                                só posta imagem bonita?{' '}
+                                <strong className="text-white">
+                                    Velocidade + Consistência.
+                                </strong>{' '}
+                                E é exatamente isso que o Slidezz entrega.
+                            </p>
+                        </div>
+                        <div className="mt-10 flex justify-center">
+                            <CtaButton href={ctaHref} className="py-2 pr-2 pl-8">
+                                Quero parar de perder tempo
+                            </CtaButton>
+                        </div>
+                    </FadeIn>
+                </section>
+
                 {/* ── COMO FUNCIONA ── */}
                 <section
                     id="como-funciona"
@@ -499,256 +676,105 @@ export default function Welcome({
                     </div>
                 </section>
 
-                {/* ── DIFERENCIAL ── */}
+                {/* ── FEATURES ── */}
                 <section
-                    id="diferencial"
+                    style={{
+                        borderTop: '1px solid #E8E7E2',
+                        background: '#FAFAF7',
+                    }}
+                >
+                    <div className="mx-auto max-w-6xl px-6 py-24">
+                        <FadeIn className="mb-16 text-center">
+                            <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
+                                O que tem dentro
+                            </p>
+                            <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                                IA treinada pra prender atenção
+                            </h2>
+                            <p className="mx-auto mt-3 max-w-lg text-lg leading-relaxed font-medium text-[#555550]">
+                                Você não precisa de um mega prompt de outras IAs:
+                                o fluxo inteiro já é calibrado pra viralizar e se
+                                destacar no feed.
+                            </p>
+                        </FadeIn>
+
+                        <FeatureBento copy={featureBentoCopy} />
+                    </div>
+                </section>
+
+                {/* ── ÂNCORA DE PREÇO ── */}
+                <section
                     style={{
                         borderTop: '1px solid #1A1A1A',
                         borderBottom: '1px solid #1A1A1A',
                         background: '#1A1A1A',
                     }}
                 >
-                    <div className="mx-auto max-w-6xl px-6 py-24">
-                        <FadeIn className="grid items-stretch gap-8 lg:grid-cols-2">
-                            {/* Outros */}
-                            <div
-                                className="rounded-2xl p-8"
-                                style={{
-                                    border: '1px solid #333330',
-                                    background: '#222220',
-                                }}
-                            >
-                                <p className="mb-6 font-bold tracking-widest text-[#666660] uppercase">
-                                    Enquanto outros dependem de criadores…
-                                </p>
-                                <ul className="flex flex-col gap-4">
-                                    {[
-                                        'Aguardam o criador ficar disponível',
-                                        'Briefam cada vídeo manualmente',
-                                        'Pagam por post, sem garantia de resultado',
-                                        'Ficam reféns de atrasos e desculpas',
-                                        'Dependem de humanos para escalar',
-                                    ].map((item) => (
-                                        <li
-                                            key={item}
-                                            className="flex items-start gap-3 text-lg font-semibold text-[#888880]"
-                                        >
-                                            <span
-                                                className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-                                                style={{
-                                                    border: '1px solid #444440',
-                                                    background: '#333330',
-                                                }}
-                                            >
-                                                <X className="h-3 w-3 text-[#666660]" />
-                                            </span>
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                    <div className="mx-auto max-w-3xl px-6 py-24">
+                        <FadeIn className="mb-12 text-center">
+                            <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
+                                Faça as contas
+                            </p>
+                            <h2 className="font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-6xl">
+                                Quanto você pagaria
+                                <br />
+                                por tudo isso separado?
+                            </h2>
+                        </FadeIn>
 
-                            {/* Slidezz */}
+                        <FadeIn
+                            className="overflow-hidden rounded-2xl"
+                            style={{ border: '1px solid #333330' }}
+                        >
+                            {comparisonItems.map(({ label, price }, i) => (
+                                <div
+                                    key={label}
+                                    className="flex items-center justify-between px-6 py-4"
+                                    style={{
+                                        background:
+                                            i % 2 === 0 ? '#222220' : '#1E1E1C',
+                                        borderBottom:
+                                            i < comparisonItems.length - 1
+                                                ? '1px solid #2A2A28'
+                                                : 'none',
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <X className="h-3.5 w-3.5 flex-shrink-0 text-[#555550]" />
+                                        <span className="text-lg font-semibold text-[#AAAAAA]">
+                                            {label}
+                                        </span>
+                                    </div>
+                                    <span className="text-lg font-bold text-[#666660]">
+                                        {price}
+                                    </span>
+                                </div>
+                            ))}
                             <div
-                                className="flex flex-col justify-between rounded-2xl p-8"
+                                className="flex items-center justify-between px-6 py-5"
                                 style={{
-                                    border: '1px solid #E8440A',
-                                    background: '#1E0A00',
+                                    background: '#2A0E00',
+                                    borderTop: '1px solid #E8440A',
                                 }}
                             >
-                                <div>
-                                    <p className="mb-6 font-bold tracking-widest text-[#E8440A] uppercase">
-                                        Você tem um sistema que trabalha 24/7.
-                                    </p>
-                                    <div className="mb-8 flex flex-col gap-5">
-                                        {[
-                                            {
-                                                label: 'Sem atrasos.',
-                                                desc: 'Conteúdo gerado e publicado automaticamente, todos os dias.',
-                                            },
-                                            {
-                                                label: 'Sem gestão.',
-                                                desc: 'Você não precisa briefar, revisar nem aprovar nada.',
-                                            },
-                                            {
-                                                label: 'Sem desculpas.',
-                                                desc: 'O sistema nunca falta, nunca atrasa, nunca para de produzir.',
-                                            },
-                                        ].map((item) => (
-                                            <div
-                                                key={item.label}
-                                                className="flex items-start gap-3"
-                                            >
-                                                <span
-                                                    className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-                                                    style={{
-                                                        border: '1px solid #E8440A',
-                                                        background: '#E8440A',
-                                                    }}
-                                                >
-                                                    <Check className="h-3 w-3 text-white" />
-                                                </span>
-                                                <div>
-                                                    <span className="text-lg font-extrabold text-white">
-                                                        {item.label}
-                                                    </span>
-                                                    <span className="text-lg font-medium text-[#888880]">
-                                                        {' '}
-                                                        {item.desc}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <CtaButton
-                                    href={ctaHref}
-                                    className="w-full justify-between py-2 pl-6"
-                                >
-                                    Criar minha máquina de conteúdo
-                                </CtaButton>
+                                <span className="text-lg font-extrabold text-white">
+                                    Total (se comprado separado)
+                                </span>
+                                <span className="text-xl font-extrabold text-[#E8440A]">
+                                    {totalComparison}
+                                </span>
                             </div>
                         </FadeIn>
+
+                        <p className="mt-6 text-center text-lg leading-relaxed font-medium text-[#666660]">
+                            É isso que você <em>poderia</em> gastar. Com o
+                            Slidezz, tudo num lugar só — por uma fração do custo.
+                        </p>
                     </div>
                 </section>
 
-                {/* ── PROVA ── */}
-                <section id="prova" className="mx-auto max-w-6xl px-6 py-24">
-                    <FadeIn className="mb-14 text-center">
-                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                            Resultados
-                        </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
-                            Números que falam
-                            <br />
-                            por si sós
-                        </h2>
-                    </FadeIn>
-
-                    <FadeIn className="grid gap-5 md:grid-cols-3">
-                        {[
-                            {
-                                value: '+X',
-                                label: 'vídeos gerados',
-                                suffix: '',
-                                placeholder: true,
-                            },
-                            {
-                                value: '+X',
-                                label: 'contas crescendo diariamente',
-                                suffix: '',
-                                placeholder: true,
-                            },
-                            {
-                                value: '+X',
-                                label: 'views geradas',
-                                suffix: '',
-                                placeholder: true,
-                            },
-                        ].map((s) => (
-                            <div
-                                key={s.label}
-                                className="relative overflow-hidden rounded-2xl bg-white p-10 text-center"
-                                style={{ border: '1px solid #E8E7E2' }}
-                            >
-                                {s.placeholder && (
-                                    <span
-                                        className="absolute top-3 right-3 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase"
-                                        style={{
-                                            border: '1px solid #DDDDCC',
-                                            background: '#F5F4EE',
-                                            color: '#AAAAAA',
-                                        }}
-                                    >
-                                        em breve
-                                    </span>
-                                )}
-                                <div className="mb-3 font-display text-6xl text-[#CCCCCC]">
-                                    {s.value}
-                                </div>
-                                <div className="text-lg font-semibold text-[#888880]">
-                                    {s.label}
-                                </div>
-                            </div>
-                        ))}
-                    </FadeIn>
-
-                    <p className="mt-6 text-center text-lg font-medium text-[#AAAAAA]">
-                        Você precisa disso. Dados reais em breve.
-                    </p>
-                </section>
-
-                {/* ── DEPOIMENTOS ── */}
-                <section
-                    id="depoimentos"
-                    className="py-24"
-                    style={{
-                        borderTop: '1px solid #E8E7E2',
-                        background: '#FAFAF7',
-                    }}
-                >
-                    <FadeIn className="mx-auto mb-16 max-w-6xl px-6 text-center">
-                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                            Quem usa, recomenda
-                        </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
-                            O que dizem os criadores
-                        </h2>
-                    </FadeIn>
-
-                    <TestimonialMarquee items={testimonials} />
-                </section>
-
-                {/* ── CTA FINAL ── */}
-                <section id="cta" className="mx-auto max-w-6xl px-6 pb-24">
-                    <FadeIn
-                        className="rounded-2xl p-16 text-center"
-                        style={{
-                            border: '1px solid #1A1A1A',
-                            background: '#1A1A1A',
-                        }}
-                    >
-                        <div
-                            className="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold"
-                            style={{
-                                border: '1px solid #333330',
-                                background: '#222220',
-                                color: '#888880',
-                            }}
-                        >
-                            <svg
-                                className="h-3.5 w-3.5 fill-current"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
-                            </svg>
-                            TikTok · Automação com IA
-                        </div>
-
-                        <h2 className="mb-4 font-display text-6xl leading-[0.95] tracking-normal text-white lg:text-[80px]">
-                            Comece a automatizar
-                            <br />
-                            seu TikTok hoje.
-                        </h2>
-                        <p className="mx-auto mb-10 max-w-sm text-lg leading-relaxed font-medium text-[#666660]">
-                            Pare de depender de criadores. Tenha um sistema que
-                            gera e publica conteúdo viral todos os dias — no
-                            piloto automático.
-                        </p>
-                        <CtaButton
-                            href={ctaHref}
-                            className="py-2.5 pr-2.5 pl-9"
-                        >
-                            Criar minha máquina de conteúdo
-                        </CtaButton>
-                        <p className="mt-5 font-medium text-[#444440]">
-                            Sem cartão de crédito. Cancele quando quiser.
-                        </p>
-                    </FadeIn>
-                </section>
-
                 {/* ── PRICING ── */}
-                <section id="pricing" className="mx-auto max-w-6xl px-6 pb-24">
+                <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
                     <FadeIn className="mb-12 text-center">
                         <h2 className="mb-3 font-display text-6xl tracking-normal text-[#1A1A1A]">
                             Simples, como deve ser
@@ -886,7 +912,7 @@ export default function Welcome({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                30 carrosséis / mês
+                                Carrosséis ilimitados
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -894,9 +920,9 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
+                                    '60 imagens virais por mês',
                                     'Copy e hooks com IA',
                                     'Todos os templates',
-                                    'Imagens IA incluídas',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -971,7 +997,7 @@ export default function Welcome({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
                                 <Check className="h-4 w-4 text-[#E8440A]" />
-                                100 carrosséis / mês
+                                Carrosséis ilimitados
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#888880]">
@@ -979,9 +1005,9 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'BYOK: imagens IA ilimitadas',
+                                    '150 imagens virais por mês',
+                                    'Imagens ilimitadas com sua chave Gemini (BYOK)',
                                     'Suporte prioritário',
-                                    'Acesso antecipado',
                                     'Salvar seus templates',
                                 ].map((feature) => (
                                     <li
@@ -1054,7 +1080,7 @@ export default function Welcome({
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#333330] pb-6 text-lg font-bold text-[#FCD34D]">
                                 <Check className="h-4 w-4 text-[#FCD34D]" />
-                                300 carrosséis / mês
+                                Carrosséis ilimitados
                             </div>
 
                             <div className="mb-4 text-sm font-bold text-[#AAAAAA]">
@@ -1062,10 +1088,10 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    'BYOK: imagens IA ilimitadas',
+                                    '400 imagens virais por mês',
+                                    'Imagens ilimitadas com sua chave Gemini (BYOK)',
                                     'Múltiplos projetos',
                                     'Gestão de equipe',
-                                    'API (em breve)',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -1087,6 +1113,93 @@ export default function Welcome({
                     </FadeIn>
                 </section>
 
+                {/* ── DEPOIMENTOS ── */}
+                <section
+                    id="depoimentos"
+                    className="py-24"
+                    style={{
+                        borderTop: '1px solid #E8E7E2',
+                        background: '#FAFAF7',
+                    }}
+                >
+                    <FadeIn className="mx-auto mb-16 max-w-6xl px-6 text-center">
+                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
+                            Quem usa, recomenda
+                        </p>
+                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                            O que dizem os criadores
+                        </h2>
+                    </FadeIn>
+
+                    <TestimonialMarquee items={testimonials} />
+                </section>
+
+                {/* ── FAQ ── */}
+                <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
+                    <FadeIn className="mb-14 text-center">
+                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
+                            FAQ
+                        </p>
+                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                            Perguntas frequentes
+                        </h2>
+                    </FadeIn>
+
+                    <div className="space-y-4">
+                        {faqs.map(({ q, a }) => (
+                            <FaqItem key={q} q={q} a={a} />
+                        ))}
+                    </div>
+                </section>
+
+                {/* ── CTA FINAL ── */}
+                <section id="cta" className="mx-auto max-w-6xl px-6 pb-24">
+                    <FadeIn
+                        className="rounded-2xl p-16 text-center"
+                        style={{
+                            border: '1px solid #1A1A1A',
+                            background: '#1A1A1A',
+                        }}
+                    >
+                        <div
+                            className="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold"
+                            style={{
+                                border: '1px solid #333330',
+                                background: '#222220',
+                                color: '#888880',
+                            }}
+                        >
+                            <svg
+                                className="h-3.5 w-3.5 fill-current"
+                                viewBox="0 0 24 24"
+                            >
+                                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
+                            </svg>
+                            TikTok · Automação com IA
+                        </div>
+
+                        <h2 className="mb-4 font-display text-6xl leading-[0.95] tracking-normal text-white lg:text-[80px]">
+                            Comece a automatizar
+                            <br />
+                            seu TikTok hoje.
+                        </h2>
+                        <p className="mx-auto mb-10 max-w-sm text-lg leading-relaxed font-medium text-[#666660]">
+                            Pare de depender de criadores. Tenha um sistema que
+                            gera e publica conteúdo viral todos os dias — no
+                            piloto automático.
+                        </p>
+                        <CtaButton
+                            href={ctaHref}
+                            className="py-2.5 pr-2.5 pl-9"
+                        >
+                            Criar minha máquina de conteúdo
+                        </CtaButton>
+                        <p className="mt-5 font-medium text-[#444440]">
+                            Sem cartão de crédito. Cancele quando quiser.
+                        </p>
+                    </FadeIn>
+                </section>
+
                 {/* ── FOOTER ── */}
                 <LandingFooter
                     reachOutTitle="Precisa de ajuda?"
@@ -1104,13 +1217,13 @@ export default function Welcome({
                                     href: '#como-funciona',
                                 },
                                 { label: 'Preços', href: '#pricing' },
-                                { label: 'Resultados', href: '#prova' },
+                                { label: 'Resultados', href: '#depoimentos' },
                             ],
                         },
                         {
                             title: 'Ajuda',
                             links: [
-                                { label: 'Começar', href: '#cta' },
+                                { label: 'Perguntas frequentes', href: '#faq' },
                                 {
                                     label: 'Contato',
                                     href: 'mailto:contato@slidezz.app',

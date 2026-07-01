@@ -6,6 +6,44 @@ const INK = '#1A1A1A';
 const FLAME = '#E8440A';
 const LINE = '#E8E7E2';
 
+type CellCopy = { title: string; body: string };
+
+export interface FeatureBentoCopy {
+    carousels: CellCopy;
+    script: CellCopy;
+    editor: CellCopy;
+    export: CellCopy;
+    minutes: CellCopy;
+    community: CellCopy;
+}
+
+const DEFAULT_FEATURE_BENTO_COPY: FeatureBentoCopy = {
+    carousels: {
+        title: 'AI-Generated Carousels',
+        body: 'You provide the theme and tone; AI assembles the slides with a coherent layout, ready to publish. No starting from scratch in Canva.',
+    },
+    script: {
+        title: 'Ready-Made Text & Script',
+        body: 'Titles, hooks, and slide text suggested by AI, no jumping to ChatGPT in another tab.',
+    },
+    editor: {
+        title: 'Simple Visual Editor',
+        body: 'Adjust colors, fonts, and images with drag and drop. No steep learning curve.',
+    },
+    export: {
+        title: 'Full HD Export',
+        body: 'Download in PNG at 1080px, the right size for Instagram. No quality loss.',
+    },
+    minutes: {
+        title: 'Content in Minutes',
+        body: 'Produce multiple carousels in one session. Less time on design, more time selling.',
+    },
+    community: {
+        title: 'Community for Creators',
+        body: 'Trade references and posting rhythm with creators who want consistency, not posting blindly.',
+    },
+};
+
 const reveal = {
     hidden: { opacity: 0, y: 28 },
     show: {
@@ -366,7 +404,11 @@ function CommunityGraphic({ still }: { still: boolean }) {
 
 // ── Bento ────────────────────────────────────────────────────────────────────
 
-export default function FeatureBento() {
+export default function FeatureBento({
+    copy = DEFAULT_FEATURE_BENTO_COPY,
+}: {
+    copy?: FeatureBentoCopy;
+}) {
     const reduce = useReducedMotion() ?? false;
 
     return (
@@ -389,50 +431,32 @@ export default function FeatureBento() {
                     <Check className="h-4 w-4" />
                 </span>
                 <CarouselsGraphic still={reduce} />
-                <Copy
-                    title="AI-Generated Carousels"
-                    body="You provide the theme and tone; AI assembles the slides with a coherent layout, ready to publish. No starting from scratch in Canva."
-                />
+                <Copy title={copy.carousels.title} body={copy.carousels.body} />
             </Cell>
 
             <Cell>
                 <ScriptGraphic still={reduce} />
-                <Copy
-                    title="Ready-Made Text & Script"
-                    body="Titles, hooks, and slide text suggested by AI, no jumping to ChatGPT in another tab."
-                />
+                <Copy title={copy.script.title} body={copy.script.body} />
             </Cell>
 
             <Cell>
                 <EditorGraphic still={reduce} />
-                <Copy
-                    title="Simple Visual Editor"
-                    body="Adjust colors, fonts, and images with drag and drop. No steep learning curve."
-                />
+                <Copy title={copy.editor.title} body={copy.editor.body} />
             </Cell>
 
             <Cell>
                 <ExportGraphic still={reduce} />
-                <Copy
-                    title="Full HD Export"
-                    body="Download in PNG at 1080px, the right size for Instagram. No quality loss."
-                />
+                <Copy title={copy.export.title} body={copy.export.body} />
             </Cell>
 
             <Cell>
                 <MinutesGraphic still={reduce} />
-                <Copy
-                    title="Content in Minutes"
-                    body="Produce multiple carousels in one session. Less time on design, more time selling."
-                />
+                <Copy title={copy.minutes.title} body={copy.minutes.body} />
             </Cell>
 
             <Cell>
                 <CommunityGraphic still={reduce} />
-                <Copy
-                    title="Community for Creators"
-                    body="Trade references and posting rhythm with creators who want consistency, not posting blindly."
-                />
+                <Copy title={copy.community.title} body={copy.community.body} />
             </Cell>
         </motion.div>
     );

@@ -190,11 +190,11 @@
     }
   },
   "creditsModal": {
-    "title": "Obter mais carousels",
-    "subtitle": "Cada geração de carousel consome 1 crédito.",
+    "title": "Obter mais imagens virais",
+    "subtitle": "Cada imagem viral consome 1 crédito. Carrosséis são ilimitados.",
     "monthly": "Mensal",
     "annual": "Anual",
-    "imagesPerMonth": "{{count}} imagens IA/mês",
+    "imagesPerMonth": "{{count}} imagens virais/mês",
     "subscribeTo": "Assinar {{plan}}",
     "redirecting": "Redirecionando…",
     "noSubscription": "Prefere sem assinatura? Compre créditos avulsos.",
@@ -204,11 +204,11 @@
     "plans": {
       "starter": {
         "annualSub": "/mês, cobrado anualmente",
-        "features": ["10 carousels por mês", "Todos os templates", "Suporte por e-mail"]
+        "features": ["10 imagens virais por mês", "Todos os templates", "Suporte por e-mail"]
       },
       "pro": {
         "annualSub": "/mês, cobrado anualmente",
-        "features": ["30 carousels por mês", "Todos os templates", "Suporte prioritário", "Acesso antecipado"]
+        "features": ["30 imagens virais por mês", "Todos os templates", "Suporte prioritário", "Acesso antecipado"]
       }
     }
   },
@@ -288,8 +288,8 @@
     },
     "welcome": {
       "title": "Bem-vindo ao Slidezz!",
-      "description": "Para você começar, demos 15 créditos de imagem grátis (carrosséis são ilimitados).",
-      "credits": "15 créditos de imagem grátis",
+      "description": "Para você começar, demos 15 imagens virais grátis (carrosséis são ilimitados).",
+      "credits": "15 imagens virais grátis",
       "cta": "Criar meu primeiro carrossel"
     }
   },
@@ -552,8 +552,8 @@
       "errorNetwork": "Erro de rede. Por favor, tente novamente.",
       "errorServer": "Erro no servidor. Por favor, tente novamente.",
       "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente.",
-      "errorNoCredits": "Você não tem créditos de imagem. Adquira mais para continuar.",
-      "errorNoImageCredits": "Seus créditos de imagem acabaram, então alguns slides foram gerados sem imagem. O texto do carrossel não foi afetado."
+      "errorNoCredits": "Suas imagens virais acabaram. Adquira mais para continuar.",
+      "errorNoImageCredits": "Suas imagens virais acabaram, então alguns slides foram gerados sem imagem. O texto do carrossel não foi afetado."
     },
     "templates": {
       "panel": "TEMPLATES",

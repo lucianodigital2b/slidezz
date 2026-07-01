@@ -65,7 +65,7 @@ class CarouselGenerationController extends Controller
         if ($managed && ! $request->user()->deductCredit()) {
             return response()->json([
                 'error' => 'no_credits',
-                'message' => 'Créditos de imagem insuficientes.',
+                'message' => 'Imagens virais insuficientes.',
             ], 402);
         }
 

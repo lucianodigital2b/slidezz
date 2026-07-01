@@ -268,8 +268,8 @@
       "errorNetwork": "Network error. Please try again.",
       "errorServer": "Server error. Please try again.",
       "errorParsing": "Could not parse the generated content. Please try again.",
-      "errorNoCredits": "You have no image credits. Purchase more to continue.",
-      "errorNoImageCredits": "You ran out of image credits, so some slides were generated without an image. The carousel text is unaffected."
+      "errorNoCredits": "You're out of viral images. Purchase more to continue.",
+      "errorNoImageCredits": "You ran out of viral images, so some slides were generated without an image. The carousel text is unaffected."
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -634,11 +634,11 @@
     }
   },
   "creditsModal": {
-    "title": "Get more carousels",
-    "subtitle": "Each carousel generation uses 1 credit.",
+    "title": "Get more viral images",
+    "subtitle": "Each viral image uses 1 credit. Carousels are unlimited.",
     "monthly": "Monthly",
     "annual": "Annual",
-    "imagesPerMonth": "{{count}} AI images/month",
+    "imagesPerMonth": "{{count}} viral images/month",
     "subscribeTo": "Subscribe to {{plan}}",
     "redirecting": "Redirecting…",
     "noSubscription": "Prefer no subscription? Buy individual credits.",
@@ -649,7 +649,7 @@
       "starter": {
         "annualSub": "/mo, billed annually",
         "features": [
-          "10 carousels per month",
+          "10 viral images per month",
           "All templates",
           "Email support"
         ]
@@ -657,7 +657,7 @@
       "pro": {
         "annualSub": "/mo, billed annually",
         "features": [
-          "30 carousels per month",
+          "30 viral images per month",
           "All templates",
           "Priority support",
           "Early access"
@@ -741,8 +741,8 @@
     },
     "welcome": {
       "title": "Welcome to Slidezz!",
-      "description": "To get you started, we've given you 15 free image credits (carousels are unlimited).",
-      "credits": "15 free image credits",
+      "description": "To get you started, we've given you 15 free viral images (carousels are unlimited).",
+      "credits": "15 free viral images",
       "cta": "Create my first carousel"
     }
   },
