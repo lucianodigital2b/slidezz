@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Billing\BillingCatalog;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -45,8 +46,28 @@ class HandleInertiaRequests extends Middleware
                 'onboarding_complete' => $request->user()?->hasCompletedOnboarding(),
                 'credits' => $request->user()?->credits ?? 0,
             ],
+            // Localized pricing (BRL for Brazil, USD otherwise) so the credits modal
+            // and other in-app upsells render the right currency for each user.
+            'pricing' => $request->user() ? $this->pricing($request) : null,
             'igEnabled' => (bool) $request->user()?->canUseInstagram(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * Plans and credit packs resolved to the request's currency.
+     *
+     * @return array{currency: string, plans: array<string, array<string, mixed>>, packs: list<array<string, mixed>>}
+     */
+    private function pricing(Request $request): array
+    {
+        $catalog = app(BillingCatalog::class);
+        $currency = $catalog->currencyFor($request);
+
+        return [
+            'currency' => $currency,
+            'plans' => $catalog->plans($currency),
+            'packs' => $catalog->packs($currency),
         ];
     }
 }

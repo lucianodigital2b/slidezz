@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Check, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,31 +8,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 type BillingCycle = 'monthly' | 'annual';
 
-const PLANS = [
-    {
-        key: 'starter',
-        name: 'Starter',
-        credits: 10,
-        monthly: { label: '$36', sub: '/mo' },
-        annual: { label: '$21.60', annualSubKey: true },
-        highlighted: false,
-    },
-    {
-        key: 'pro',
-        name: 'Pro',
-        credits: 30,
-        monthly: { label: '$120', sub: '/mo' },
-        annual: { label: '$72', annualSubKey: true },
-        highlighted: true,
-    },
+// Which plans to feature in the modal and their visual emphasis. Prices, names
+// and credit counts come from the localized `pricing` shared prop (BRL/USD).
+const FEATURED_PLANS = [
+    { key: 'starter', highlighted: false },
+    { key: 'pro', highlighted: true },
 ] as const;
 
-const PACKS = [
-    { key: 'pack_10',  credits: 10,  label: 'Starter Pack', price: '$15' },
-    { key: 'pack_30',  credits: 30,  label: 'Basic Pack',   price: '$39', badgeKey: 'badgeMostPopular' as const },
-    { key: 'pack_70',  credits: 70,  label: 'Plus Pack',    price: '$79', badgeKey: 'badgeBestValue' as const },
-    { key: 'pack_150', credits: 150, label: 'Pro Pack',     price: '$149' },
-] as const;
+// Map the config-level badge back to a translatable label.
+const PACK_BADGE_KEY: Record<string, 'badgeMostPopular' | 'badgeBestValue'> = {
+    pack_30: 'badgeMostPopular',
+    pack_70: 'badgeBestValue',
+};
 
 interface Props {
     open: boolean;
@@ -41,6 +28,7 @@ interface Props {
 
 export function CreditsModal({ open, onOpenChange }: Props) {
     const { t } = useTranslation();
+    const { pricing } = usePage().props;
     const [cycle, setCycle] = useState<BillingCycle>('monthly');
     const [busy, setBusy] = useState<string | null>(null);
 
@@ -103,16 +91,20 @@ export function CreditsModal({ open, onOpenChange }: Props) {
 
                 {/* Subscription plans */}
                 <div className="px-6 grid grid-cols-2 gap-3">
-                    {PLANS.map((plan) => {
-                        const pricing = cycle === 'monthly' ? plan.monthly : plan.annual;
-                        const sub = cycle === 'monthly' ? pricing.sub : t(`creditsModal.plans.${plan.key}.annualSub`);
-                        const features = t(`creditsModal.plans.${plan.key}.features`, { returnObjects: true }) as string[];
-                        const isBusy = busy === `sub_${plan.key}`;
+                    {FEATURED_PLANS.map(({ key, highlighted }) => {
+                        const plan = pricing?.plans[key];
+                        if (!plan) {
+                            return null;
+                        }
+                        const label = cycle === 'monthly' ? plan.monthly?.price_label : plan.annual?.price_label;
+                        const sub = cycle === 'annual' ? t(`creditsModal.plans.${key}.annualSub`) : null;
+                        const features = t(`creditsModal.plans.${key}.features`, { returnObjects: true }) as string[];
+                        const isBusy = busy === `sub_${key}`;
                         return (
                             <div
-                                key={plan.key}
+                                key={key}
                                 className={`rounded-xl border p-4 flex flex-col gap-3 ${
-                                    plan.highlighted
+                                    highlighted
                                         ? 'border-[#E8440A] bg-orange-50/40'
                                         : 'border-gray-200 bg-white'
                                 }`}
@@ -120,17 +112,17 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="font-semibold text-gray-900 text-sm">{plan.name}</span>
-                                        {plan.highlighted && (
+                                        {highlighted && (
                                             <span className="text-[10px] font-bold text-[#E8440A] bg-orange-100 px-1.5 py-0.5 rounded-full">
                                                 POPULAR
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-baseline gap-0.5">
-                                        <span className="text-2xl font-bold text-gray-900">{pricing.label}</span>
-                                        <span className="text-xs text-gray-400">{sub}</span>
+                                        <span className="text-2xl font-bold text-gray-900">{label}</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-0.5">{t('creditsModal.imagesPerMonth', { count: plan.credits })}</p>
+                                    {sub && <span className="text-xs text-gray-400">{sub}</span>}
+                                    <p className="text-xs text-gray-400 mt-0.5">{t('creditsModal.imagesPerMonth', { count: plan.credits_per_cycle })}</p>
                                 </div>
 
                                 <ul className="space-y-1.5 flex-1">
@@ -144,9 +136,9 @@ export function CreditsModal({ open, onOpenChange }: Props) {
 
                                 <button
                                     disabled={isBusy}
-                                    onClick={() => handleSubscribe(plan.key)}
+                                    onClick={() => handleSubscribe(key)}
                                     className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                                        plan.highlighted
+                                        highlighted
                                             ? 'bg-[#E8440A] text-white hover:bg-[#D13D09]'
                                             : 'bg-gray-900 text-white hover:bg-gray-700'
                                     }`}
@@ -165,8 +157,9 @@ export function CreditsModal({ open, onOpenChange }: Props) {
 
                 {/* Credit packs */}
                 <div className="px-6 pb-6 mt-3 grid grid-cols-2 gap-3">
-                    {PACKS.map((pack) => {
+                    {(pricing?.packs ?? []).map((pack) => {
                         const isBusy = busy === pack.key;
+                        const badgeKey = PACK_BADGE_KEY[pack.key];
                         return (
                             <button
                                 key={pack.key}
@@ -174,9 +167,9 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 onClick={() => handlePack(pack.key)}
                                 className="relative border border-gray-200 rounded-xl p-4 text-left hover:border-[#E8440A] hover:bg-orange-50/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {'badgeKey' in pack && (
+                                {pack.badge && (
                                     <span className="absolute -top-2.5 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8440A] text-white">
-                                        {t(`creditsModal.${pack.badgeKey}`)}
+                                        {badgeKey ? t(`creditsModal.${badgeKey}`) : pack.badge}
                                     </span>
                                 )}
                                 <div className="flex items-center gap-1 mb-1">

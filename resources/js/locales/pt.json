@@ -231,7 +231,8 @@
     "imageCollections": "Coleções de Imagens",
     "database": "Banco de Dados",
     "settings": "Configurações",
-    "credits": "Créditos"
+    "credits": "Créditos",
+    "upgrade": "Fazer upgrade"
   },
   "generate": {
     "pageTitle": "Gerar Ideias",

@@ -684,7 +684,8 @@
     "imageCollections": "Image Collections",
     "database": "Database",
     "settings": "Settings",
-    "credits": "Credits"
+    "credits": "Credits",
+    "upgrade": "Upgrade"
   },
   "generate": {
     "pageTitle": "Generate Ideas",

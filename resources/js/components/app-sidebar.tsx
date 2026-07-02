@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarDays, Layers, Sparkles, Zap, Settings, MessageCircle } from 'lucide-react';
+import { CalendarDays, Layers, Sparkles, Zap, Settings, MessageCircle, Rocket } from 'lucide-react';
+import { edit as billingEdit } from '@/routes/billing';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
@@ -68,6 +69,22 @@ export function AppSidebar() {
 
                 <SidebarGroup className="px-2 mt-auto">
                     <SidebarMenu>
+                        {/* Upgrade button — chamativo, acima dos créditos */}
+                        {auth.user && (
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={{ children: t('sidebar.upgrade') }}
+                                    className="group !text-white bg-gradient-to-r from-[#E8440A] to-[#F97316] hover:from-[#D13D09] hover:to-[#EA6A0C] font-bold rounded-full shadow-lg shadow-[#E8440A]/30 ring-1 ring-white/20 hover:shadow-xl hover:shadow-[#E8440A]/40 transition-all justify-center"
+                                >
+                                    <Link href={billingEdit.url()} prefetch>
+                                        <Rocket className="w-4 h-4 fill-white/20 text-white transition-transform group-hover:-translate-y-0.5 group-hover:rotate-12" />
+                                        <span>{t('sidebar.upgrade')}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        )}
+
                         {/* Credits button */}
                         <SidebarMenuItem>
                             <SidebarMenuButton

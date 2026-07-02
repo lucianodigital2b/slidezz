@@ -50,6 +50,22 @@ class BillingCatalogTest extends TestCase
         $this->assertArrayHasKey('features', $plans['pro']);
     }
 
+    public function test_packs_are_flattened_for_the_given_currency(): void
+    {
+        config(['credits.packs' => [
+            ['key' => 'pack_30', 'credits' => 30, 'label' => 'Basic Pack', 'price' => ['usd' => '$39', 'brl' => 'R$199'], 'badge' => 'MAIS POPULAR'],
+            ['key' => 'pack_10', 'credits' => 10, 'label' => 'Starter Pack', 'price' => ['usd' => '$15', 'brl' => 'R$79']],
+        ]]);
+
+        $packs = $this->catalog->packs('brl');
+
+        $this->assertCount(2, $packs);
+        $this->assertSame('pack_30', $packs[0]['key']);
+        $this->assertSame('R$199', $packs[0]['price']);
+        $this->assertSame('MAIS POPULAR', $packs[0]['badge']);
+        $this->assertNull($packs[1]['badge']);
+    }
+
     public function test_subscription_price_id_resolves_by_plan_cycle_and_currency(): void
     {
         config(['plans.starter.prices.usd.annual.price_id' => 'price_starter_usd_a']);

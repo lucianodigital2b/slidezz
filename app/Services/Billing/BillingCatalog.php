@@ -22,6 +22,10 @@ class BillingCatalog
      */
     public function currencyFor(Request $request): string
     {
+        if ($request->hasSession() && ($cached = $request->session()->get('billing_currency'))) {
+            return $this->normalize($cached);
+        }
+
         $country = $request->header('CF-IPCountry');
 
         if (! $country) {
@@ -32,7 +36,13 @@ class BillingCatalog
             }
         }
 
-        return $country === 'BR' ? 'brl' : self::DEFAULT_CURRENCY;
+        $currency = $country === 'BR' ? 'brl' : self::DEFAULT_CURRENCY;
+
+        if ($request->hasSession()) {
+            $request->session()->put('billing_currency', $currency);
+        }
+
+        return $currency;
     }
 
     /**
@@ -62,6 +72,27 @@ class BillingCatalog
                     'annual' => $prices['annual'] ?? null,
                 ];
             })
+            ->toArray();
+    }
+
+    /**
+     * Credit packs flattened for one currency, in the shape the credits modal expects.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function packs(string $currency): array
+    {
+        $currency = $this->normalize($currency);
+
+        return collect(config('credits.packs'))
+            ->map(fn (array $pack): array => [
+                'key' => $pack['key'],
+                'credits' => $pack['credits'],
+                'label' => $pack['label'],
+                'price' => $pack['price'][$currency] ?? null,
+                'badge' => $pack['badge'] ?? null,
+            ])
+            ->values()
             ->toArray();
     }
 
