@@ -34,6 +34,12 @@
       "emailPlaceholder": "you@example.com",
       "password": "Password",
       "passwordPlaceholder": "Password",
+      "passwordRequirements": {
+        "length": "At least 8 characters",
+        "mixedCase": "Uppercase and lowercase letters",
+        "number": "At least one number",
+        "symbol": "At least one symbol"
+      },
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Confirm password",
       "submit": "Create account",

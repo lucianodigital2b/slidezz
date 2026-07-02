@@ -22,7 +22,7 @@ import { useAiGeneration, ImageMode } from '@/components/SlideEditor/hooks/useAi
 
 import { ShapeDef } from '@/components/SlideEditor/shapes';
 import { createZip } from '@/components/SlideEditor/zip';
-import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview } from '@/components/SlideEditor/templates';
+import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview, resolveTemplateForBrand } from '@/components/SlideEditor/templates';
 
 import { EditorToolbar } from '@/components/SlideEditor/EditorToolbar';
 import { CanvasArea, SLIDE_GAP, slideOffsetX } from '@/components/SlideEditor/CanvasArea';
@@ -81,7 +81,7 @@ export default function SlideEditor() {
         wizardConfig?: WizardConfig | null;
         instagramAccounts: InstagramAccount[];
         igEnabled: boolean;
-        brand?: { color: string | null; logoUrl: string | null } | null;
+        brand?: { color: string | null; accent: string | null; logoUrl: string | null } | null;
     }>().props;
 
     const saved = slideProject ?? loadSavedState();
@@ -133,6 +133,7 @@ export default function SlideEditor() {
         photoUrl: instagramAccounts?.[0]?.avatar ?? '',
     }, {
         color: brand?.color ?? null,
+        accent: brand?.accent ?? null,
         logoUrl: brand?.logoUrl ?? null,
     });
 
@@ -361,7 +362,8 @@ export default function SlideEditor() {
 
     async function applyTemplate(tpl: (typeof SLIDE_TEMPLATES)[number]) {
         await Promise.all([...new Set(tpl.fonts)].map((font) => loadGoogleFont(font)));
-        const scene = tpl.buildScene(getTemplateContent(), slideH);
+        const resolved = resolveTemplateForBrand(tpl, brand?.accent ?? null);
+        const scene = resolved.buildScene(getTemplateContent(), slideH, resolved.accentColor);
         const preservedBackgroundImages = slide.elements
             .filter((el): el is ImageEl => el.type === 'image' && el.isBackground)
             .map((el) => ({ ...el }));

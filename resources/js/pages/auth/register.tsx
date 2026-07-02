@@ -1,7 +1,11 @@
 import { Form, Head } from '@inertiajs/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthField, AuthPasswordField } from '@/components/auth/auth-fields';
+import {
+    AuthField,
+    AuthPasswordField,
+    PasswordRequirements,
+} from '@/components/auth/auth-fields';
 import CtaSubmit from '@/components/cta-submit';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -15,6 +19,7 @@ const REGISTER_IMAGE =
 
 export default function Register() {
     const { t } = useTranslation();
+    const [password, setPassword] = useState('');
 
     return (
         <>
@@ -76,7 +81,10 @@ export default function Register() {
                                 placeholder={t(
                                     'auth.register.passwordPlaceholder',
                                 )}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
+                            <PasswordRequirements value={password} />
                             <InputError
                                 message={errors.password}
                                 className="mt-1.5"

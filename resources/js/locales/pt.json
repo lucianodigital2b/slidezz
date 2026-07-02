@@ -45,6 +45,12 @@
       "emailPlaceholder": "email@exemplo.com",
       "password": "Senha",
       "passwordPlaceholder": "Senha",
+      "passwordRequirements": {
+        "length": "Mínimo de 8 caracteres",
+        "mixedCase": "Letras maiúsculas e minúsculas",
+        "number": "Pelo menos um número",
+        "symbol": "Pelo menos um símbolo"
+      },
       "confirmPassword": "Confirmar senha",
       "confirmPasswordPlaceholder": "Confirmar senha",
       "submit": "Criar conta",

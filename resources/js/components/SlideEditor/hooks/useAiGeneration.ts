@@ -4,7 +4,7 @@ import CarouselGenerationController from '@/actions/App/Http/Controllers/Carouse
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
-import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners } from '../templates';
+import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners, resolveTemplateForBrand } from '../templates';
 import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, slotToBox, computeSafeArea, TitleFitter } from '../layouts';
 
 export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
@@ -40,7 +40,7 @@ export function useAiGeneration(
     setSelectedId: (id: string | null) => void,
     format: Format,
     badgeIdentity: { handle: string; photoUrl: string } = { handle: '', photoUrl: '' },
-    brand: { color: string | null; logoUrl: string | null } = { color: null, logoUrl: null },
+    brand: { color: string | null; accent: string | null; logoUrl: string | null } = { color: null, accent: null, logoUrl: null },
 ) {
     const { t } = useTranslation();
     const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -479,7 +479,8 @@ export function useAiGeneration(
         }
 
         const slideH = FORMATS[format].h;
-        const template = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
+        const rawTemplate = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
+        const template = rawTemplate ? resolveTemplateForBrand(rawTemplate, brand.accent) : null;
 
         // Load the template fonts before measuring so the title fit reflects real
         // glyph metrics rather than the canvas fallback font.

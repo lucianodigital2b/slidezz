@@ -1,18 +1,26 @@
-import { Eye, EyeOff } from 'lucide-react';
+import { Check, Eye, EyeOff, X } from 'lucide-react';
 import { type ComponentProps, type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 const shellClasses =
     'group rounded-xl border border-input bg-white px-3.5 py-2 shadow-xs transition-[color,box-shadow] focus-within:border-[#E8440A] focus-within:ring-[3px] focus-within:ring-[#E8440A]/20';
 
-const labelClasses = 'block text-[11px] font-medium tracking-wide text-muted-foreground';
+const labelClasses =
+    'block text-[11px] font-medium tracking-wide text-muted-foreground';
 
 const controlClasses =
     'w-full border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50';
 
 type FieldProps = ComponentProps<'input'> & { label: string };
 
-export function AuthField({ label, id, name, className, ...props }: FieldProps) {
+export function AuthField({
+    label,
+    id,
+    name,
+    className,
+    ...props
+}: FieldProps) {
     const fieldId = id ?? name;
 
     return (
@@ -20,12 +28,23 @@ export function AuthField({ label, id, name, className, ...props }: FieldProps) 
             <label htmlFor={fieldId} className={labelClasses}>
                 {label}
             </label>
-            <input id={fieldId} name={name} className={cn(controlClasses, className)} {...props} />
+            <input
+                id={fieldId}
+                name={name}
+                className={cn(controlClasses, className)}
+                {...props}
+            />
         </div>
     );
 }
 
-export function AuthPasswordField({ label, id, name, className, ...props }: FieldProps) {
+export function AuthPasswordField({
+    label,
+    id,
+    name,
+    className,
+    ...props
+}: FieldProps) {
     const [show, setShow] = useState(false);
     const fieldId = id ?? name;
 
@@ -49,10 +68,61 @@ export function AuthPasswordField({ label, id, name, className, ...props }: Fiel
                     aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
                     className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {show ? (
+                        <EyeOff className="size-4" />
+                    ) : (
+                        <Eye className="size-4" />
+                    )}
                 </button>
             </div>
         </div>
+    );
+}
+
+const passwordRules = [
+    { key: 'length', test: (value: string) => value.length >= 8 },
+    {
+        key: 'mixedCase',
+        test: (value: string) => /[a-z]/.test(value) && /[A-Z]/.test(value),
+    },
+    { key: 'number', test: (value: string) => /\d/.test(value) },
+    { key: 'symbol', test: (value: string) => /[^A-Za-z0-9]/.test(value) },
+] as const;
+
+export function PasswordRequirements({ value }: { value: string }) {
+    const { t } = useTranslation();
+    const allPassed = passwordRules.every((rule) => rule.test(value));
+
+    return (
+        <ul className="mt-2 space-y-1">
+            {passwordRules.map((rule) => {
+                const passed = rule.test(value);
+
+                return (
+                    <li
+                        key={rule.key}
+                        className={cn(
+                            'flex items-center gap-1.5 text-xs transition-colors',
+                            allPassed
+                                ? 'text-emerald-600'
+                                : 'text-muted-foreground',
+                        )}
+                    >
+                        {passed ? (
+                            <Check
+                                className={cn(
+                                    'size-3.5 shrink-0',
+                                    !allPassed && 'text-muted-foreground/50',
+                                )}
+                            />
+                        ) : (
+                            <X className="size-3.5 shrink-0 text-muted-foreground/50" />
+                        )}
+                        {t(`auth.register.passwordRequirements.${rule.key}`)}
+                    </li>
+                );
+            })}
+        </ul>
     );
 }
 
@@ -68,7 +138,13 @@ export function OrDivider({ label }: { label: string }) {
     );
 }
 
-export function GoogleButton({ href, children }: { href: string; children: ReactNode }) {
+export function GoogleButton({
+    href,
+    children,
+}: {
+    href: string;
+    children: ReactNode;
+}) {
     return (
         <a
             href={href}

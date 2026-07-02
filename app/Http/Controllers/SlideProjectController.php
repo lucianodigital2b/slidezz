@@ -97,20 +97,23 @@ class SlideProjectController extends Controller
     /**
      * The workspace's brand identity used by templates (e.g. the Ticket template's
      * hero color and corner logo): the onboarding palette primary (falling back to
-     * the legacy brand_color column) and a public URL for the uploaded logo.
+     * the legacy brand_color column), the palette accent used to theme generic
+     * templates, and a public URL for the uploaded logo.
      *
-     * @return array{color: ?string, logoUrl: ?string}
+     * @return array{color: ?string, accent: ?string, logoUrl: ?string}
      */
     private function brandProfile(?Workspace $workspace): array
     {
         if (! $workspace) {
-            return ['color' => null, 'logoUrl' => null];
+            return ['color' => null, 'accent' => null, 'logoUrl' => null];
         }
 
         $logoPath = $workspace->logo_path ?? data_get($workspace->profile, 'logo_path');
+        $primary = data_get($workspace->profile, 'palette.primary') ?? $workspace->brand_color;
 
         return [
-            'color' => data_get($workspace->profile, 'palette.primary') ?? $workspace->brand_color,
+            'color' => $primary,
+            'accent' => data_get($workspace->profile, 'palette.accent') ?? $primary,
             'logoUrl' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
         ];
     }

@@ -55,7 +55,12 @@ export interface SlideTemplate {
         totalSlides: number,
         contentBand?: ContentBand,
     ) => TemplateScene;
-    buildScene: (content: TemplateContent, slideH: number) => TemplateScene;
+    buildScene: (content: TemplateContent, slideH: number, accent?: string) => TemplateScene;
+    /**
+     * Generic template: its accent isn't a fixed design choice, so it defaults to
+     * the workspace brand accent (set in onboarding) when one is available.
+     */
+    brandAccent?: boolean;
     /** When set, generated slides ship an active ProfileBadge above the title in this style. */
     defaultBadgeStyle?: BadgeStyle;
     /** Defaults to true (ALL-CAPS titles). Set false to render titles in their original case. */
@@ -484,7 +489,7 @@ export function buildSceneFromLayoutGeneric(
 
 // ─── Legacy scene builders (unchanged) ──────────────────────────────────────
 
-function buildNoirManifesto(content: TemplateContent, slideH: number): TemplateScene {
+function buildNoirManifesto(content: TemplateContent, slideH: number, accent: string = '#E8440A'): TemplateScene {
     const titleY = slideH > 1400 ? slideH - 640 : slideH - 430;
     const subtitleY = slideH > 1400 ? slideH - 180 : slideH - 110;
     const captionY = slideH > 1400 ? slideH - 110 : slideH - 62;
@@ -520,7 +525,7 @@ function buildNoirManifesto(content: TemplateContent, slideH: number): TemplateS
                 y: titleY + 20,
                 width: 18,
                 height: slideH > 1400 ? 280 : 200,
-                fill: '#E8440A',
+                fill: accent,
                 cornerRadius: 999,
             }),
             createText({
@@ -568,7 +573,7 @@ function buildNoirManifesto(content: TemplateContent, slideH: number): TemplateS
                 fontFamily: 'Inter',
                 fontSize: 18,
                 fontStyle: '600',
-                fill: '#E8440A',
+                fill: accent,
                 letterSpacing: 3.2,
             }),
         ],
@@ -1305,17 +1310,33 @@ function buildTicket(content: TemplateContent, slideH: number): TemplateScene {
     };
 }
 
+/**
+ * Resolves a template's accent against the workspace brand. Generic templates
+ * (those flagged `brandAccent`) adopt the workspace accent from onboarding when
+ * available; templates with a deliberate palette keep their own accent.
+ */
+export function resolveTemplateForBrand(
+    template: SlideTemplate,
+    workspaceAccent?: string | null,
+): SlideTemplate {
+    if (template.brandAccent && workspaceAccent) {
+        return { ...template, accentColor: workspaceAccent };
+    }
+    return template;
+}
+
 // ─── Template definitions ────────────────────────────────────────────────────
 
 export const SLIDE_TEMPLATES: SlideTemplate[] = [
     {
         id: 'noir-manifesto',
         name: 'Noir Manifesto',
-        description: 'Full-bleed dark cover with gradient overlay and ALL CAPS impact title. Inner slides with orange accent bars and bold editorial typography.',
+        description: 'Full-bleed dark cover with gradient overlay and ALL CAPS impact title. Inner slides with brand accent bars and bold editorial typography.',
         background: '#090909',
         backgroundAlt: '#0f0f14',
         textColor: '#ffffff',
         accentColor: '#E8440A',
+        brandAccent: true,
         font: 'Anton',
         bodyFont: 'Inter',
         captionFont: 'Inter',
