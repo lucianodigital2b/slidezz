@@ -36,12 +36,10 @@ Guia de tom, posicionamento e mensagens prontas para divulgação. Idioma: **por
 
 ### 1. Curta e direta (lista de transmissão / status)
 
-> 🚀 Cansou de perder horas fazendo carrossel?
->
-> O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, imagens e design prontos em minutos.
->
-> 🎁 Comece grátis com 15 imagens virais.
-> 👉 slidezz.app
+🚀 Cansou de perder horas fazendo carrossel?
+O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, imagens e design prontos em minutos.
+🎁 Comece grátis com 15 imagens virais.
+👉 slidezz.app
 
 ---
 
@@ -100,3 +98,84 @@ Guia de tom, posicionamento e mensagens prontas para divulgação. Idioma: **por
 **Oferta padrão:** 15 imagens virais grátis + 14 dias de teste.
 
 **Hashtags (Instagram/TikTok):** #carrossel #instagram #criadordeconteudo #marketingdigital #IA #slidezz
+
+---
+
+## Variações por canal
+
+### Instagram — legenda de post/reel
+
+> Você não precisa passar 3 horas no Canva pra postar hoje. 🙃
+>
+> O Slidezz cria o carrossel inteiro com IA: você dá a ideia, ele entrega roteiro viral + imagens + design prontos.
+>
+> Salva esse post e testa grátis (link na bio) — você ganha 15 imagens virais pra começar. 🚀
+>
+> #carrossel #criadordeconteudo #marketingdigital #socialmedia #IA #slidezz
+
+### Instagram — Stories (sequência de 3 telas)
+
+> **Tela 1:** Quanto tempo você gasta fazendo UM carrossel? ⏳
+>
+> **Tela 2:** Eu descrevo a ideia e a IA monta tudo — texto, imagem e design. Em minutos. 🤯 *(print/vídeo do app)*
+>
+> **Tela 3:** Testa de graça 👉 *(sticker de link)* slidezz.app · 15 imagens grátis 🎁
+
+### LinkedIn — post profissional
+
+> Consistência é o que separa quem cresce de quem desiste nas redes.
+>
+> O problema? Produzir conteúdo todo dia é caro e demorado. A maioria trava não na estratégia, mas na execução — montar o carrossel slide por slide.
+>
+> Foi por isso que passei a usar o Slidezz: descrevo o tema e a IA gera o carrossel completo (roteiro, imagens e design) pronto para publicar. O que levava horas agora leva minutos.
+>
+> Se você produz conteúdo para posicionar sua marca ou seu negócio, vale testar — dá pra começar de graça: slidezz.app
+>
+> #marketingdigital #conteudo #linkedin #IA
+
+### TikTok — roteiro de vídeo curto (fala/legenda)
+
+> "POV: você precisa postar todo dia mas odeia fazer carrosséis."
+>
+> *(mostra a tela)* Digita a ideia aqui… a IA escreve o roteiro… gera as imagens… e pronto, carrossel completo pra postar.
+>
+> Testa de graça, ganha 15 imagens: slidezz.app
+
+---
+
+## Variações por público-alvo
+
+### Infoprodutores / experts
+
+> Seu conteúdo vende. Mas fazer carrossel todo dia tira seu tempo de… vender. 😅
+>
+> O Slidezz gera o carrossel completo com IA a partir da sua ideia — roteiro, imagens e design. Você foca na estratégia e na oferta.
+>
+> 🎁 15 imagens virais grátis pra testar 👉 slidezz.app
+
+### Social media / agências
+
+> Cliente pedindo volume e o prazo apertando? 🫠
+>
+> Com o Slidezz você entrega carrosséis profissionais em minutos: descreve o briefing, a IA monta roteiro + imagens + design. Mais posts por cliente, menos horas por peça.
+>
+> ✅ Carrosséis ilimitados
+> ✅ Todos os templates
+>
+> Testa grátis 👉 slidezz.app
+
+### Pequenos negócios / lojistas
+
+> Não tem designer nem tempo pra rede social? Sem problema. 💪
+>
+> O Slidezz cria os posts do seu negócio com IA — é só dizer o que você quer divulgar e ele monta o carrossel prontinho pra publicar.
+>
+> Comece grátis com 15 imagens 👉 slidezz.app
+
+### Iniciantes / quem quer começar
+
+> Quer começar a postar mas não sabe nem por onde? 🌱
+>
+> O Slidezz faz o trabalho pesado: você escreve a ideia e a IA cria o carrossel completo — texto, imagens e design. Sem experiência nenhuma.
+>
+> 🎁 Ganhe 15 imagens virais e crie seu primeiro carrossel grátis 👉 slidezz.app
