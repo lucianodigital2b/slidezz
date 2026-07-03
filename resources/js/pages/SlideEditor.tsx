@@ -421,21 +421,21 @@ export default function SlideEditor() {
                 fontStyle: '', align: 'left', verticalAlign: 'top',
                 lineHeight: 1.2, letterSpacing: 0, textDecoration: '', stroke: '#000000',
                 strokeWidth: 0, padding: 12, wrap: 'word',
-                accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+                accentEnabled: false, accentColor: '#FFE156', accentThickness: 6, accentSide: 'left', accentGap: 12,
                 ...SHADOW_DEFAULTS,
             }, idx);
             loadGoogleFont('Space Mono');
         } else if (tool === 'rect') {
             addElement({
                 id: uid(), type: 'rect', x: x - 100, y: y - 60, width: 200, height: 120,
-                rotation: 0, opacity: 1, fill: '#E8440A', stroke: '#000000', strokeWidth: 0,
+                rotation: 0, opacity: 1, fill: '#FFE156', stroke: '#000000', strokeWidth: 0,
                 cornerRadius: 0, borderStyle: 'solid', dashEnabled: false,
                 ...SHADOW_DEFAULTS,
             }, idx);
         } else if (tool === 'circle') {
             addElement({
                 id: uid(), type: 'circle', x: x - 60, y: y - 60, width: 120, height: 120,
-                rotation: 0, opacity: 1, fill: '#E8440A', stroke: '#000000', strokeWidth: 0,
+                rotation: 0, opacity: 1, fill: '#FFE156', stroke: '#000000', strokeWidth: 0,
                 cornerRadius: 0, borderStyle: 'solid', dashEnabled: false,
                 ...SHADOW_DEFAULTS,
             }, idx);
@@ -489,7 +489,7 @@ export default function SlideEditor() {
             fontStyle: '', align: 'center', verticalAlign: 'top',
             lineHeight: 1.2, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: 12, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+            accentEnabled: false, accentColor: '#FFE156', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS,
         });
         loadGoogleFont('Space Mono');
@@ -636,7 +636,7 @@ export default function SlideEditor() {
             lineHeight: String(el.lineHeight),
             letterSpacing: `${el.letterSpacing}px`,
             background: 'transparent',
-            border: '1px dashed #E8440A',
+            border: '1px dashed #FFE156',
             outline: 'none',
             resize: 'none',
             padding: '0',
@@ -949,7 +949,7 @@ export default function SlideEditor() {
             lineHeight: 1.2, letterSpacing: cfg.letterSpacing ?? 0,
             textDecoration: '',
             stroke: '#000000', strokeWidth: 0, padding: 0, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+            accentEnabled: false, accentColor: '#FFE156', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS,
         };
     }

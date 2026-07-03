@@ -72,7 +72,7 @@ export function EditorToolbar({
 
             {/* Logo / home link */}
             <Link href={DashboardController.index().url} className="flex items-center gap-1.5 mr-1 shrink-0 group">
-                <div className="flex size-7 items-center justify-center rounded-md bg-[#E8440A] text-white group-hover:bg-[#D13D09] transition-colors">
+                <div className="flex size-7 items-center justify-center rounded-md bg-[#FFE156] text-[#1A1A1A] group-hover:bg-[#E6CB4D] transition-colors">
                     <AppLogoIcon className="size-4 fill-current" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800 leading-tight">Slidezz</span>
@@ -135,7 +135,7 @@ export function EditorToolbar({
             <input
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className="text-sm font-medium text-gray-700 border-b border-transparent hover:border-gray-300 focus:border-[#E8440A] focus:outline-none bg-transparent px-1 w-44 truncate"
+                className="text-sm font-medium text-gray-700 border-b border-transparent hover:border-gray-300 focus:border-[#FFE156] focus:outline-none bg-transparent px-1 w-44 truncate"
             />
 
             <div className="flex-1" />
@@ -190,7 +190,7 @@ export function EditorToolbar({
             <Popover>
                 <PopoverTrigger asChild>
                     <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#E8440A] text-white hover:bg-[#D13D09] transition-colors disabled:opacity-60"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D] transition-colors disabled:opacity-60"
                         disabled={exportingZip}>
                         {exportingZip ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         {t('slideEditor.toolbar.export')}
@@ -280,7 +280,7 @@ export function EditorToolbar({
                                     <button
                                         onClick={onPublishToInstagram}
                                         disabled={igPosting || slidesCount < 2 || slidesCount > 10}
-                                        className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium text-white bg-[#E8440A] hover:bg-[#D13D09] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium text-[#1A1A1A] bg-[#FFE156] hover:bg-[#E6CB4D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {igPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                         {publishAt ? 'Schedule IG' : 'Post to IG'}

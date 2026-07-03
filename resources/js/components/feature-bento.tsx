@@ -3,7 +3,7 @@ import { motion, type Transition, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 const INK = '#1A1A1A';
-const FLAME = '#E8440A';
+const FLAME = '#FFE156';
 const LINE = '#E8E7E2';
 
 type CellCopy = { title: string; body: string };
@@ -274,7 +274,7 @@ function ExportGraphic({ still }: { still: boolean }) {
                 style={{
                     border: `1px solid ${LINE}`,
                     background:
-                        'linear-gradient(135deg, #FFD93D33, #FF6B6B33, #E8440A33)',
+                        'linear-gradient(135deg, #FFD93D33, #FF6B6B33, #FFE15633)',
                 }}
             >
                 <span

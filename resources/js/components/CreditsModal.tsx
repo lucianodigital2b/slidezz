@@ -105,7 +105,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 key={key}
                                 className={`rounded-xl border p-4 flex flex-col gap-3 ${
                                     highlighted
-                                        ? 'border-[#E8440A] bg-orange-50/40'
+                                        ? 'border-[#FFE156] bg-yellow-50/40'
                                         : 'border-gray-200 bg-white'
                                 }`}
                             >
@@ -113,7 +113,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="font-semibold text-gray-900 text-sm">{plan.name}</span>
                                         {highlighted && (
-                                            <span className="text-[10px] font-bold text-[#E8440A] bg-orange-100 px-1.5 py-0.5 rounded-full">
+                                            <span className="text-[10px] font-bold text-[#1A1A1A] bg-yellow-100 px-1.5 py-0.5 rounded-full">
                                                 POPULAR
                                             </span>
                                         )}
@@ -128,7 +128,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 <ul className="space-y-1.5 flex-1">
                                     {features.map((f) => (
                                         <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600">
-                                            <Check className="w-3 h-3 text-[#E8440A] mt-0.5 shrink-0" />
+                                            <Check className="w-3 h-3 text-[#1A1A1A] mt-0.5 shrink-0" />
                                             {f}
                                         </li>
                                     ))}
@@ -139,7 +139,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                     onClick={() => handleSubscribe(key)}
                                     className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                                         highlighted
-                                            ? 'bg-[#E8440A] text-white hover:bg-[#D13D09]'
+                                            ? 'bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]'
                                             : 'bg-gray-900 text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -165,15 +165,15 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 key={pack.key}
                                 disabled={isBusy}
                                 onClick={() => handlePack(pack.key)}
-                                className="relative border border-gray-200 rounded-xl p-4 text-left hover:border-[#E8440A] hover:bg-orange-50/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="relative border border-gray-200 rounded-xl p-4 text-left hover:border-[#FFE156] hover:bg-yellow-50/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {pack.badge && (
-                                    <span className="absolute -top-2.5 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8440A] text-white">
+                                    <span className="absolute -top-2.5 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFE156] text-[#1A1A1A]">
                                         {badgeKey ? t(`creditsModal.${badgeKey}`) : pack.badge}
                                     </span>
                                 )}
                                 <div className="flex items-center gap-1 mb-1">
-                                    <Zap className="w-3.5 h-3.5 text-[#E8440A] fill-[#E8440A]" />
+                                    <Zap className="w-3.5 h-3.5 text-[#1A1A1A] fill-[#FFE156]" />
                                     <span className="font-semibold text-gray-900 text-sm">{t('creditsModal.credits', { count: pack.credits })}</span>
                                 </div>
                                 <p className="text-xs text-gray-400">{pack.label}</p>

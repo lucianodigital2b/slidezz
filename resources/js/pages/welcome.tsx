@@ -10,9 +10,6 @@ import FeatureBento, {
 } from '@/components/feature-bento';
 import LandingFooter from '@/components/landing-footer';
 import ScrollStack from '@/components/scroll-stack';
-import TestimonialMarquee, {
-    type Testimonial,
-} from '@/components/testimonial-marquee';
 import { TextShimmer } from '@/components/text-shimmer';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { cn } from '@/lib/utils';
@@ -57,45 +54,6 @@ const featureBentoCopy: FeatureBentoCopy = {
         body: 'Troque referências e ritmo de postagem com criadores que querem consistência, não postar no escuro.',
     },
 };
-
-const testimonials: Testimonial[] = [
-    {
-        name: 'Camila Alves',
-        role: 'Marketing B2B',
-        quote: 'Meu carrossel de funil bateu +48% de salvamentos vs. o resto do feed no mesmo mês — sem passar o fim de semana no Canva.',
-        initials: 'CA',
-    },
-    {
-        name: 'Rafael Santos',
-        role: 'Criador de infoproduto',
-        quote: 'Um lead perguntou qual agência fez o layout. Era eu, no Slidezz, de madrugada. Na terça seguinte ele fechou uma consultoria.',
-        initials: 'RS',
-    },
-    {
-        name: 'Juliana Menezes',
-        role: 'Mentora',
-        quote: 'Antes eu gravava Reels na correria. Agora o carrossel da semana fica pronto no domingo — só adapto o gancho pro vídeo.',
-        initials: 'JM',
-    },
-    {
-        name: 'Lucas Pereira',
-        role: 'Fitness',
-        quote: 'Testei o gancho que a IA sugeriu no 1º slide: salvamentos foram de 4% para 11% no mesmo nicho. Não foi sorte.',
-        initials: 'LP',
-    },
-    {
-        name: 'Bianca Ferreira',
-        role: 'Estética',
-        quote: 'Mesmo template, skincare e contador — só troco a paleta. Cliente disse que parecia marca com rebranding.',
-        initials: 'BF',
-    },
-    {
-        name: 'Diego Rocha',
-        role: 'Consultor',
-        quote: 'As DMs de "quanto custa?" triplicaram no mês em que padronizei os carrosséis. Coincidiu com o Slidezz — não foi viralização aleatória.',
-        initials: 'DR',
-    },
-];
 
 const faqs = [
     {
@@ -149,7 +107,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300"
                     style={{
                         border: '1px solid #E8E7E2',
-                        background: open ? '#E8440A' : '#F3EEE8',
+                        background: open ? '#FFE156' : '#F3EEE8',
                     }}
                 >
                     <ChevronDown
@@ -253,12 +211,6 @@ export default function Welcome({
                                 >
                                     Preços
                                 </a>
-                                <a
-                                    href="#depoimentos"
-                                    className="transition-colors hover:text-[#1A1A1A]"
-                                >
-                                    Resultados
-                                </a>
                             </nav>
 
                             <CtaButton
@@ -285,7 +237,7 @@ export default function Welcome({
                             }}
                         >
                             <svg
-                                className="h-3.5 w-3.5 fill-[#E8440A]"
+                                className="h-3.5 w-3.5 fill-[#FFE156]"
                                 viewBox="0 0 24 24"
                             >
                                 <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
@@ -561,7 +513,7 @@ export default function Welcome({
                     }}
                 >
                     <FadeIn className="mx-auto max-w-4xl px-6 py-24 text-center">
-                        <p className="mb-4 font-bold tracking-widest text-[#E8440A] uppercase">
+                        <p className="mb-4 font-bold tracking-widest text-[#1A1A1A] uppercase">
                             A verdade que ninguém te conta
                         </p>
                         <h2 className="mb-8 font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
@@ -754,13 +706,13 @@ export default function Welcome({
                                 className="flex items-center justify-between px-6 py-5"
                                 style={{
                                     background: '#2A0E00',
-                                    borderTop: '1px solid #E8440A',
+                                    borderTop: '1px solid #FFE156',
                                 }}
                             >
                                 <span className="text-lg font-extrabold text-white">
                                     Total (se comprado separado)
                                 </span>
-                                <span className="text-xl font-extrabold text-[#E8440A]">
+                                <span className="text-xl font-extrabold text-[#1A1A1A]">
                                     {totalComparison}
                                 </span>
                             </div>
@@ -794,7 +746,7 @@ export default function Welcome({
                                 {billingCycle === 'monthly' && (
                                     <motion.span
                                         layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#E8440A]"
+                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
                                         transition={
                                             reduceMotion
                                                 ? { duration: 0 }
@@ -824,7 +776,7 @@ export default function Welcome({
                                 {billingCycle === 'annual' && (
                                     <motion.span
                                         layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#E8440A]"
+                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
                                         transition={
                                             reduceMotion
                                                 ? { duration: 0 }
@@ -911,7 +863,7 @@ export default function Welcome({
                             </div>
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#E8440A]" />
+                                <Check className="h-4 w-4 text-[#1A1A1A]" />
                                 Carrosséis ilimitados
                             </div>
 
@@ -928,7 +880,7 @@ export default function Welcome({
                                         key={feature}
                                         className="flex items-start gap-3 text-lg font-medium text-[#555550]"
                                     >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#E8440A]" />
+                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
                                         {feature}
                                     </li>
                                 ))}
@@ -943,7 +895,7 @@ export default function Welcome({
                         </div>
 
                         {/* Pro */}
-                        <div className="relative flex flex-col rounded-[24px] border-2 border-[#E8440A] bg-white p-8 shadow-lg">
+                        <div className="relative flex flex-col rounded-[24px] border-2 border-[#FFE156] bg-white p-8 shadow-lg">
                             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0F766E] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
                                 Mais popular
                             </div>
@@ -996,7 +948,7 @@ export default function Welcome({
                             </div>
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#E8440A]" />
+                                <Check className="h-4 w-4 text-[#1A1A1A]" />
                                 Carrosséis ilimitados
                             </div>
 
@@ -1014,7 +966,7 @@ export default function Welcome({
                                         key={feature}
                                         className="flex items-start gap-3 text-lg font-medium text-[#555550]"
                                     >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#E8440A]" />
+                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
                                         {feature}
                                     </li>
                                 ))}
@@ -1022,7 +974,7 @@ export default function Welcome({
 
                             <Link
                                 href={ctaHref}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
                             >
                                 Testar agora <ArrowRight className="h-4 w-4" />
                             </Link>
@@ -1105,33 +1057,12 @@ export default function Welcome({
 
                             <Link
                                 href={ctaHref}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
                             >
                                 Testar agora <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
                     </FadeIn>
-                </section>
-
-                {/* ── DEPOIMENTOS ── */}
-                <section
-                    id="depoimentos"
-                    className="py-24"
-                    style={{
-                        borderTop: '1px solid #E8E7E2',
-                        background: '#FAFAF7',
-                    }}
-                >
-                    <FadeIn className="mx-auto mb-16 max-w-6xl px-6 text-center">
-                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                            Quem usa, recomenda
-                        </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
-                            O que dizem os criadores
-                        </h2>
-                    </FadeIn>
-
-                    <TestimonialMarquee items={testimonials} />
                 </section>
 
                 {/* ── FAQ ── */}
@@ -1217,7 +1148,6 @@ export default function Welcome({
                                     href: '#como-funciona',
                                 },
                                 { label: 'Preços', href: '#pricing' },
-                                { label: 'Resultados', href: '#depoimentos' },
                             ],
                         },
                         {

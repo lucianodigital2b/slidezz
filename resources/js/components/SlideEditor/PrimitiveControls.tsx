@@ -40,7 +40,7 @@ export function SliderField({
                         const v = parseFloat(e.target.value);
                         if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
                     }}
-                    className="w-12 rounded-md border border-gray-200 bg-white px-1.5 py-1 text-center text-[11px] focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                    className="w-12 rounded-md border border-gray-200 bg-white px-1.5 py-1 text-center text-[11px] focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
                 />
                 {unit && <span className="text-[10px] font-medium text-gray-400">{unit}</span>}
             </div>
@@ -57,7 +57,7 @@ export function ColorField({ value, onChange }: { value: string; onChange: (v: s
             <input
                 type="text" value={value}
                 onChange={(e) => { if (/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value)) onChange(e.target.value); }}
-                className="flex-1 text-[11px] border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-[#E8440A]"
+                className="flex-1 text-[11px] border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
                 maxLength={7}
             />
         </div>
@@ -70,7 +70,7 @@ export function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: 
         <button
             type="button"
             onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors ${checked ? 'bg-[#E8440A]' : 'bg-gray-300'}`}
+            className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors ${checked ? 'bg-[#FFE156]' : 'bg-gray-300'}`}
         >
             <span className={`inline-block h-3 w-3 mt-0.5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
         </button>
@@ -162,7 +162,7 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
         <div ref={containerRef} className="relative w-full">
             <button
                 type="button" onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center justify-between rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8440A] hover:border-gray-300 bg-white"
+                className="flex w-full items-center justify-between rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156] hover:border-gray-300 bg-white"
                 style={{ fontFamily: value }}
             >
                 <span className="truncate">{value}</span>
@@ -180,7 +180,7 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
                     <div className="overflow-y-auto flex-1">
                         {visible.map((family) => (
                             <button key={family} type="button" onClick={() => select(family)}
-                                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${family === value ? 'bg-[#E8440A]/5 text-[#E8440A]' : 'text-gray-700'}`}
+                                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${family === value ? 'bg-[#FFE156]/5 text-[#1A1A1A]' : 'text-gray-700'}`}
                                 style={{ fontFamily: loadedFonts.has(family) ? family : 'inherit' }}>
                                 {family}
                             </button>
@@ -211,7 +211,7 @@ export function PositionGrid({ x, y, onChange }: { x: number; y: number; onChang
                 const active = p.x === x && p.y === y;
                 return (
                     <button key={`${p.x}-${p.y}`} type="button" onClick={() => onChange(p.x, p.y)}
-                        className={`h-8 rounded border text-sm font-medium transition-colors ${active ? 'bg-[#E8440A] text-white border-[#E8440A]' : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}>
+                        className={`h-8 rounded border text-sm font-medium transition-colors ${active ? 'bg-[#FFE156] text-[#1A1A1A] border-[#FFE156]' : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}>
                         {p.label}
                     </button>
                 );

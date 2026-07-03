@@ -87,7 +87,7 @@ function createText(overrides: Partial<TextEl> & Pick<TextEl, 'text' | 'x' | 'y'
         padding: 0,
         wrap: 'word',
         accentEnabled: false,
-        accentColor: '#E8440A',
+        accentColor: '#FFE156',
         accentThickness: 6,
         accentSide: 'left',
         accentGap: 12,
@@ -489,7 +489,7 @@ export function buildSceneFromLayoutGeneric(
 
 // ─── Legacy scene builders (unchanged) ──────────────────────────────────────
 
-function buildNoirManifesto(content: TemplateContent, slideH: number, accent: string = '#E8440A'): TemplateScene {
+function buildNoirManifesto(content: TemplateContent, slideH: number, accent: string = '#FFE156'): TemplateScene {
     const titleY = slideH > 1400 ? slideH - 640 : slideH - 430;
     const subtitleY = slideH > 1400 ? slideH - 180 : slideH - 110;
     const captionY = slideH > 1400 ? slideH - 110 : slideH - 62;
@@ -1335,7 +1335,7 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         background: '#090909',
         backgroundAlt: '#0f0f14',
         textColor: '#ffffff',
-        accentColor: '#E8440A',
+        accentColor: '#FFE156',
         brandAccent: true,
         font: 'Anton',
         bodyFont: 'Inter',
@@ -1518,7 +1518,7 @@ export function TemplatePreview({ id }: { id: string }) {
                     <div className="absolute inset-0"
                         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent)' }} />
                     <div className="relative z-10 space-y-0.5" style={{ textAlign: 'left' }}>
-                        <div className="h-0.5 w-4 rounded mb-1" style={{ background: '#E8440A' }} />
+                        <div className="h-0.5 w-4 rounded mb-1" style={{ background: '#FFE156' }} />
                         <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', color: '#fff', fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.title')}</div>
                         <div style={{ fontSize: 5, color: 'rgba(255,255,255,0.45)', letterSpacing: 1, textTransform: 'uppercase' }}>{t('slideEditor.elements.subtitle')}</div>
                     </div>

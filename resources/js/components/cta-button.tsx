@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 const COLORS = {
-    orange: '#E8440A',
+    orange: '#FFE156',
     dark: '#1A1A1A',
 } as const;
 

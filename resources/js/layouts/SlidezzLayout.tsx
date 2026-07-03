@@ -48,7 +48,7 @@ export default function SlidezzLayout({ children, activeItem }: Props) {
                 style={{ width: 210, background: '#F2F1EB', borderRight: '1px solid #E0DFD9' }}
             >
                 <div className="p-3 pt-4">
-                    <button className="w-full flex items-center gap-2 bg-[#E8440A] hover:bg-[#D13D09] text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+                    <button className="w-full flex items-center gap-2 bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A] rounded-lg px-3 py-2 text-sm font-medium transition-colors">
                         <Plus className="w-4 h-4 flex-shrink-0" />
                         Nova Automação
                     </button>

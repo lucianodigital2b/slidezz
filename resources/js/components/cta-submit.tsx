@@ -23,7 +23,7 @@ export default function CtaSubmit({
         <button
             type="submit"
             disabled={disabled ?? processing}
-            style={{ '--cta': '#E8440A' } as CSSProperties}
+            style={{ '--cta': '#FFE156' } as CSSProperties}
             className={cn(
                 'group relative flex h-12 w-full items-center justify-center rounded-full border border-[var(--cta)] bg-[var(--cta)] px-6 text-base font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-80',
                 className,

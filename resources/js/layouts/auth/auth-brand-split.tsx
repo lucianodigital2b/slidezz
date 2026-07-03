@@ -69,7 +69,7 @@ export default function AuthBrandSplit({
                     href={home()}
                     className="mb-10 flex items-center gap-2.5 text-foreground lg:hidden"
                 >
-                    <AppLogoIcon className="size-7 text-[#E8440A]" />
+                    <AppLogoIcon className="size-7 text-[#1A1A1A]" />
                     <span className="mt-1 font-display text-2xl tracking-wide">
                         Slidezz
                     </span>

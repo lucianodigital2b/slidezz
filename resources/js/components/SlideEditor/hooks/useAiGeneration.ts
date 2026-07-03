@@ -357,7 +357,7 @@ export function useAiGeneration(
             fontStyle: titleFontStyle, align: textAlign, verticalAlign: 'top',
             lineHeight: 1.15, letterSpacing: titleLetterSpacing, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: titlePadding, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+            accentEnabled: false, accentColor: '#FFE156', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS, shadowEnabled: true, shadowBlur: 20, shadowOpacity: 0.6,
             ...(titleRichText ? { richText: titleRichText } : {}),
         };
@@ -370,7 +370,7 @@ export function useAiGeneration(
             fontStyle: '', align: textAlign, verticalAlign: 'top',
             lineHeight: 1.5, letterSpacing: 0, textDecoration: '', stroke: '#000000',
             strokeWidth: 0, padding: descriptionPadding, wrap: 'word',
-            accentEnabled: false, accentColor: '#E8440A', accentThickness: 6, accentSide: 'left', accentGap: 12,
+            accentEnabled: false, accentColor: '#FFE156', accentThickness: 6, accentSide: 'left', accentGap: 12,
             ...SHADOW_DEFAULTS,
         };
 

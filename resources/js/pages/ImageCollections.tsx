@@ -12,7 +12,7 @@ export default function ImageCollections() {
                         <h1 className="text-xl font-semibold text-gray-900 mb-1">Coleções de Imagens</h1>
                         <p className="text-sm text-gray-500">Organize suas imagens em coleções para usar nos seus slideshows</p>
                     </div>
-                    <button className="flex items-center gap-2 bg-[#E8440A] hover:bg-[#D13D09] text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+                    <button className="flex items-center gap-2 bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A] rounded-lg px-4 py-2 text-sm font-medium transition-colors">
                         <Plus className="w-4 h-4" />
                         Nova Coleção
                     </button>

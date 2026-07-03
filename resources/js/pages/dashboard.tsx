@@ -157,7 +157,7 @@ function CarouselCard({ project }: { project: Project }) {
                             <button
                                 type="button"
                                 onClick={copyPrompt}
-                                className="flex items-center gap-1 text-[10px] text-[#888880] transition-colors hover:text-[#E8440A]"
+                                className="flex items-center gap-1 text-[10px] text-[#888880] transition-colors hover:text-[#1A1A1A]"
                             >
                                 <Copy className="h-3 w-3" />
                                 {t('dashboard.copy')}
@@ -320,8 +320,8 @@ function WelcomeModal({
         >
             <DialogContent className="text-center sm:max-w-md">
                 <DialogHeader className="items-center gap-3">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E8440A]/10">
-                        <Gift className="h-8 w-8 text-[#E8440A]" />
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                        <Gift className="h-8 w-8 text-[#1A1A1A]" />
                     </div>
                     <DialogTitle className="font-display text-2xl tracking-wide text-[#1A1A1A]">
                         {t('dashboard.welcome.title')}
@@ -331,9 +331,9 @@ function WelcomeModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="my-2 flex items-center justify-center gap-2 rounded-xl border border-[#E8440A]/15 bg-[#E8440A]/5 px-4 py-3">
-                    <Sparkles className="h-4 w-4 shrink-0 text-[#E8440A]" />
-                    <span className="text-sm font-bold text-[#E8440A]">
+                <div className="my-2 flex items-center justify-center gap-2 rounded-xl border border-[#FFE156]/15 bg-[#FFE156]/5 px-4 py-3">
+                    <Sparkles className="h-4 w-4 shrink-0 text-[#1A1A1A]" />
+                    <span className="text-sm font-bold text-[#1A1A1A]">
                         {t('dashboard.welcome.credits')}
                     </span>
                 </div>
@@ -345,7 +345,7 @@ function WelcomeModal({
                             onClose();
                             router.visit('/carousel/create');
                         }}
-                        className="w-full rounded-xl bg-[#E8440A] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#D13D09]"
+                        className="w-full rounded-xl bg-[#FFE156] px-6 py-3 text-sm font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
                     >
                         {t('dashboard.welcome.cta')}
                     </button>
@@ -453,7 +453,7 @@ export default function Dashboard({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder={t('dashboard.searchPlaceholder')}
-                                className="w-full rounded-full border border-[#E8E7E2] bg-white py-2 pr-3 pl-8 text-sm text-[#1A1A1A] placeholder-[#888880] transition-colors outline-none focus:border-[#E8440A]"
+                                className="w-full rounded-full border border-[#E8E7E2] bg-white py-2 pr-3 pl-8 text-sm text-[#1A1A1A] placeholder-[#888880] transition-colors outline-none focus:border-[#FFE156]"
                             />
                         </div>
                     </div>
@@ -476,8 +476,8 @@ export default function Dashboard({
                         </>
                     ) : search.trim() ? (
                         <div className="flex flex-col items-center justify-center gap-3 py-28">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8440A]/10">
-                                <Search className="h-6 w-6 text-[#E8440A]" />
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                                <Search className="h-6 w-6 text-[#1A1A1A]" />
                             </div>
                             <p className="text-sm text-[#555550]">
                                 {t('dashboard.noResults')}
@@ -492,8 +492,8 @@ export default function Dashboard({
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center gap-4 py-24">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8440A]/10">
-                                <Sparkles className="h-6 w-6 text-[#E8440A]" />
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                                <Sparkles className="h-6 w-6 text-[#1A1A1A]" />
                             </div>
                             <p className="max-w-sm text-center text-sm leading-relaxed text-[#555550]">
                                 {t('dashboard.empty')}

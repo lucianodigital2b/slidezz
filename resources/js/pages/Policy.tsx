@@ -7,7 +7,7 @@ export default function Policy() {
         <>
             <Head title="Privacy Policy - Slidezz" />
             <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-                <Link href="/" className="text-sm font-medium text-[#E8440A] hover:underline">
+                <Link href="/" className="text-sm font-medium text-[#1A1A1A] hover:underline">
                     ← Back to Slidezz
                 </Link>
 
@@ -145,7 +145,7 @@ export default function Policy() {
                     <h2 className="mb-4 text-xl font-semibold text-gray-900">12. Contact Us</h2>
                     <p className="mb-6 text-gray-700">
                         Questions about this Privacy Policy? Email us at{' '}
-                        <a href="mailto:hello@slidezz.app" className="text-[#E8440A] hover:underline">
+                        <a href="mailto:hello@slidezz.app" className="text-[#1A1A1A] hover:underline">
                             hello@slidezz.app
                         </a>
                         .

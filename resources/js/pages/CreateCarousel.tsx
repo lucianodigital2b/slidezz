@@ -76,16 +76,16 @@ function SelectionCard({
             onClick={onClick}
             className={`relative w-full text-left rounded-xl border-2 p-4 transition-all ${
                 selected
-                    ? 'border-[#E8440A] bg-[#E8440A]/5'
+                    ? 'border-[#FFE156] bg-[#FFE156]/5'
                     : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
         >
             {selected && (
-                <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#E8440A]">
+                <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE156]">
                     <Check className="h-3 w-3 text-white" />
                 </span>
             )}
-            <p className={`text-sm font-semibold ${selected ? 'text-[#E8440A]' : 'text-gray-800'}`}>{name}</p>
+            <p className={`text-sm font-semibold ${selected ? 'text-[#1A1A1A]' : 'text-gray-800'}`}>{name}</p>
             <p className="mt-1 text-xs text-gray-500 leading-relaxed">{description}</p>
         </button>
     );
@@ -158,7 +158,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                                 type="button"
                                 onClick={() => { setUrlType(type); setError(''); }}
                                 className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
-                                    urlType === type ? 'bg-[#E8440A] text-white' : 'text-gray-500 hover:text-gray-700'
+                                    urlType === type ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
                                 {type === 'blog' ? 'Blog / Artigo' : type === 'instagram' ? 'Instagram' : 'YouTube'}
@@ -167,7 +167,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                     </div>
 
                     {/* URL input */}
-                    <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-[#E8440A] focus-within:ring-1 focus-within:ring-[#E8440A]">
+                    <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-[#FFE156] focus-within:ring-1 focus-within:ring-[#FFE156]">
                         <ExternalLink className="h-4 w-4 text-gray-400 shrink-0" />
                         <input
                             type="url"
@@ -184,7 +184,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                         type="button"
                         onClick={handleExtract}
                         disabled={!url.trim() || loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#E8440A] py-2.5 text-sm font-semibold text-white hover:bg-[#D13D09] disabled:opacity-50 transition-colors"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FFE156] py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-50 transition-colors"
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {t('createCarousel.import.extractBtn')}
@@ -208,18 +208,18 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
                     <div key={label} className="flex items-center">
                         <div className="flex flex-col items-center gap-1">
                             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                                done    ? 'bg-[#E8440A] text-white' :
-                                current ? 'bg-[#E8440A] text-white ring-4 ring-[#E8440A]/20' :
+                                done    ? 'bg-[#FFE156] text-[#1A1A1A]' :
+                                current ? 'bg-[#FFE156] text-[#1A1A1A] ring-4 ring-[#FFE156]/20' :
                                           'bg-gray-100 text-gray-400'
                             }`}>
                                 {done ? <Check className="h-3.5 w-3.5" /> : idx}
                             </div>
-                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${current ? 'text-[#E8440A]' : done ? 'text-gray-500' : 'text-gray-300'}`}>
+                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${current ? 'text-[#1A1A1A]' : done ? 'text-gray-500' : 'text-gray-300'}`}>
                                 {label}
                             </span>
                         </div>
                         {i < labels.length - 1 && (
-                            <div className={`h-0.5 w-16 mx-2 mb-4 rounded transition-colors ${done ? 'bg-[#E8440A]' : 'bg-gray-200'}`} />
+                            <div className={`h-0.5 w-16 mx-2 mb-4 rounded transition-colors ${done ? 'bg-[#FFE156]' : 'bg-gray-200'}`} />
                         )}
                     </div>
                 );
@@ -351,7 +351,7 @@ export default function CreateCarousel() {
                                                 onClick={() => applySavedTemplate(tpl.id)}
                                                 disabled={submitting}
                                                 title={`${tpl.title} — ${t('createCarousel.step3.useTemplate')}`}
-                                                className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 p-1.5 text-left hover:border-[#E8440A] disabled:opacity-60 transition-colors"
+                                                className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 p-1.5 text-left hover:border-[#FFE156] disabled:opacity-60 transition-colors"
                                             >
                                                 <div
                                                     className="relative w-full overflow-hidden rounded-lg bg-gray-100"
@@ -383,7 +383,7 @@ export default function CreateCarousel() {
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         placeholder={t('createCarousel.step1.titlePlaceholder')}
-                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8440A] focus:border-transparent"
+                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
                                     />
                                 </div>
 
@@ -397,7 +397,7 @@ export default function CreateCarousel() {
                                         onChange={(e) => setTopic(e.target.value)}
                                         rows={5}
                                         placeholder={t('createCarousel.step1.topicPlaceholder')}
-                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#E8440A] focus:border-transparent"
+                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
                                     />
                                 </div>
 
@@ -413,7 +413,7 @@ export default function CreateCarousel() {
                                 {/* <button
                                     type="button"
                                     onClick={() => setImportOpen(true)}
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 hover:border-[#E8440A] hover:text-[#E8440A] transition-colors"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 hover:border-[#FFE156] hover:text-[#1A1A1A] transition-colors"
                                 >
                                     <ExternalLink className="h-4 w-4" />
                                     {t('createCarousel.step1.importBtn')}
@@ -430,18 +430,18 @@ export default function CreateCarousel() {
                                             type="button"
                                             onClick={() => setFormat(f)}
                                             className={`flex-1 flex items-center gap-3 rounded-xl border-2 p-4 transition-all ${
-                                                format === f ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
+                                                format === f ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                         >
-                                            <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === f ? 'border-[#E8440A]' : 'border-gray-400'}`}
+                                            <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === f ? 'border-[#FFE156]' : 'border-gray-400'}`}
                                                 style={{ width: f === 'post' ? 20 : 14, height: f === 'post' ? 20 : 24 }} />
                                             <div className="text-left">
-                                                <p className={`text-sm font-semibold ${format === f ? 'text-[#E8440A]' : 'text-gray-700'}`}>
+                                                <p className={`text-sm font-semibold ${format === f ? 'text-[#1A1A1A]' : 'text-gray-700'}`}>
                                                     {f === 'post' ? 'Post' : 'Stories'}
                                                 </p>
                                                 <p className="text-xs text-gray-400">{FORMATS[f as keyof typeof FORMATS].ratio} · {FORMATS[f as keyof typeof FORMATS].w}×{FORMATS[f as keyof typeof FORMATS].h}</p>
                                             </div>
-                                            {format === f && <Check className="h-4 w-4 text-[#E8440A] ml-auto" />}
+                                            {format === f && <Check className="h-4 w-4 text-[#1A1A1A] ml-auto" />}
                                         </button>
                                     ))}
                                 </div>
@@ -504,7 +504,7 @@ export default function CreateCarousel() {
                                         </div>
                                         {archetype && (
                                             <div className="px-4 py-3 border-t border-gray-100">
-                                                <p className="text-[10px] font-semibold text-[#E8440A] uppercase tracking-wider">{t('createCarousel.step2.hook')}</p>
+                                                <p className="text-[10px] font-semibold text-[#1A1A1A] uppercase tracking-wider">{t('createCarousel.step2.hook')}</p>
                                                 <p className="text-xs font-semibold text-gray-800 mt-0.5">{selectedArchetypeName}</p>
                                                 <p className="text-[10px] text-gray-400 mt-0.5">{t(`createCarousel.archetypes.${archetype}.description`)}</p>
                                             </div>
@@ -547,7 +547,7 @@ export default function CreateCarousel() {
                                 <div className="px-5 py-4 border-t border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('createCarousel.step3.slideCountLabel')}</p>
-                                        <span className="text-sm font-bold text-[#E8440A] w-6 text-center">{slideCount}</span>
+                                        <span className="text-sm font-bold text-[#1A1A1A] w-6 text-center">{slideCount}</span>
                                     </div>
                                     <input
                                         type="range"
@@ -555,7 +555,7 @@ export default function CreateCarousel() {
                                         max={10}
                                         value={slideCount}
                                         onChange={(e) => setSlideCount(Number(e.target.value))}
-                                        className="w-full accent-[#E8440A]"
+                                        className="w-full accent-[#FFE156]"
                                     />
                                     <div className="flex justify-between text-[10px] text-gray-300 mt-0.5">
                                         <span>2</span>
@@ -575,7 +575,7 @@ export default function CreateCarousel() {
                                     onChange={(e) => setCustomPrompt(e.target.value)}
                                     rows={3}
                                     placeholder={t('createCarousel.step3.customPromptPlaceholder')}
-                                    className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#E8440A] focus:border-transparent"
+                                    className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
                                 />
                             </div>
 
@@ -595,7 +595,7 @@ export default function CreateCarousel() {
                                             onClick={() => setImageMode(id)}
                                             className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
                                                 imageMode === id
-                                                    ? 'border-[#E8440A] bg-[#E8440A]/5 text-[#E8440A]'
+                                                    ? 'border-[#FFE156] bg-[#FFE156]/5 text-[#1A1A1A]'
                                                     : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                             }`}
                                         >
@@ -615,7 +615,7 @@ export default function CreateCarousel() {
                                         onChange={(e) => setImageStyle(e.target.value)}
                                         placeholder={t('createCarousel.step3.imageStylePlaceholder')}
                                         rows={2}
-                                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors focus:border-[#E8440A] focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20"
+                                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
                                     />
                                 </div>
                             )}
@@ -626,7 +626,7 @@ export default function CreateCarousel() {
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value)}
-                                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors focus:border-[#E8440A] focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20"
+                                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
                                 >
                                     {([
                                         { id: 'Portuguese (Brazil)', label: 'Português (BR)' },
@@ -646,11 +646,11 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={() => setSaveConfig((v) => !v)}
                                 className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                                    saveConfig ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
+                                    saveConfig ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                    saveConfig ? 'border-[#E8440A] bg-[#E8440A]' : 'border-gray-300'
+                                    saveConfig ? 'border-[#FFE156] bg-[#FFE156]' : 'border-gray-300'
                                 }`}>
                                     {saveConfig && <Check className="h-3 w-3 text-white" />}
                                 </div>
@@ -665,11 +665,11 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={() => setSaveAsTemplate((v) => !v)}
                                 className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                                    saveAsTemplate ? 'border-[#E8440A] bg-[#E8440A]/5' : 'border-gray-200 hover:border-gray-300'
+                                    saveAsTemplate ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                    saveAsTemplate ? 'border-[#E8440A] bg-[#E8440A]' : 'border-gray-300'
+                                    saveAsTemplate ? 'border-[#FFE156] bg-[#FFE156]' : 'border-gray-300'
                                 }`}>
                                     {saveAsTemplate && <Check className="h-3 w-3 text-white" />}
                                 </div>
@@ -697,7 +697,7 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={handleNext}
                                 disabled={!canAdvance()}
-                                className="flex items-center gap-2 rounded-lg bg-[#E8440A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#D13D09] disabled:opacity-40 transition-colors"
+                                className="flex items-center gap-2 rounded-lg bg-[#FFE156] px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-40 transition-colors"
                             >
                                 {t('createCarousel.next')}
                                 <ArrowRight className="h-4 w-4" />
@@ -707,7 +707,7 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="flex items-center gap-2 rounded-lg bg-[#E8440A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#D13D09] disabled:opacity-50 transition-colors"
+                                className="flex items-center gap-2 rounded-lg bg-[#FFE156] px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-50 transition-colors"
                             >
                                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                                 {t('createCarousel.step3.generateBtn')}

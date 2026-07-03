@@ -75,10 +75,10 @@ export function AppSidebar() {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip={{ children: t('sidebar.upgrade') }}
-                                    className="group !text-white bg-gradient-to-r from-[#E8440A] to-[#F97316] hover:from-[#D13D09] hover:to-[#EA6A0C] font-bold rounded-full shadow-lg shadow-[#E8440A]/30 ring-1 ring-white/20 hover:shadow-xl hover:shadow-[#E8440A]/40 transition-all justify-center"
+                                    className="group !text-[#1A1A1A] bg-gradient-to-r from-[#FFE156] to-[#E6CB4D] hover:from-[#E6CB4D] hover:to-[#D4B93A] font-bold rounded-full shadow-lg shadow-[#FFE156]/30 ring-1 ring-black/10 hover:shadow-xl hover:shadow-[#FFE156]/40 transition-all justify-center"
                                 >
                                     <Link href={billingEdit.url()} prefetch>
-                                        <Rocket className="w-4 h-4 fill-white/20 text-white transition-transform group-hover:-translate-y-0.5 group-hover:rotate-12" />
+                                        <Rocket className="w-4 h-4 fill-black/10 text-[#1A1A1A] transition-transform group-hover:-translate-y-0.5 group-hover:rotate-12" />
                                         <span>{t('sidebar.upgrade')}</span>
                                     </Link>
                                 </SidebarMenuButton>
@@ -90,9 +90,9 @@ export function AppSidebar() {
                             <SidebarMenuButton
                                 onClick={() => setCreditsOpen(true)}
                                 tooltip={{ children: `${auth.credits} credits` }}
-                                className="text-[#E8440A] bg-orange-50 hover:bg-orange-100 font-semibold rounded-full"
+                                className="text-[#1A1A1A] bg-yellow-50 hover:bg-yellow-100 font-semibold rounded-full"
                             >
-                                <Zap className="w-4 h-4 fill-[#E8440A] text-[#E8440A]" />
+                                <Zap className="w-4 h-4 fill-[#FFE156] text-[#1A1A1A]" />
                                 <span>{auth.credits} {t('sidebar.credits')}</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

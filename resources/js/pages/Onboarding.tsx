@@ -57,13 +57,13 @@ interface FormData {
 
 // ─── Brand tokens (mirrors LandingEn.tsx) ─────────────────────────────────────
 
-const ACCENT = '#E8440A';
-const ACCENT_DARK = '#D13D09';
+const ACCENT = '#FFE156';
+const ACCENT_DARK = '#E6CB4D';
 const INK = '#1A1A1A';
 const BORDER = '#E8E7E2';
 
 const fieldClass =
-    'w-full rounded-xl border bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder:text-[#AFACA4] transition-colors focus:border-[#E8440A] focus:outline-none focus:ring-4 focus:ring-[#E8440A]/15';
+    'w-full rounded-xl border bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder:text-[#AFACA4] transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-4 focus:ring-[#FFE156]/15';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ const TOTAL_STEPS = 5;
 const GOAL_ICONS: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
     sell_products:        { color: 'text-white', bg: 'bg-emerald-500', icon: TrendingUp },
     build_authority:      { color: 'text-white', bg: 'bg-[#7C3AED]', icon: Sparkles },
-    increase_engagement:  { color: 'text-white', bg: 'bg-[#E8440A]', icon: Zap },
+    increase_engagement:  { color: 'text-[#1A1A1A]', bg: 'bg-[#FFE156]', icon: Zap },
     generate_leads:       { color: 'text-white', bg: 'bg-[#2563EB]', icon: Users },
 };
 
@@ -481,7 +481,7 @@ function Step5({ data, set }: { data: FormData; set: (k: keyof FormData, v: any)
                                         className="h-9 w-9 cursor-pointer rounded-lg border p-0.5" style={{ borderColor: BORDER }} />
                                     <input type="text" value={value} maxLength={7}
                                         onChange={(e) => { setter(e.target.value); }}
-                                        className="w-28 rounded-lg border px-2 py-1.5 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20"
+                                        className="w-28 rounded-lg border px-2 py-1.5 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
                                         style={{ borderColor: BORDER }} />
                                     <span className="text-xs font-medium capitalize text-[#666660]">{t(`onboarding.step5.palette${key.charAt(0).toUpperCase() + key.slice(1)}`)}</span>
                                 </div>

@@ -154,7 +154,7 @@ export default function Analytics({ stats, posts, period }: Props) {
                             <select
                                 value={period}
                                 onChange={(e) => handlePeriod(Number(e.target.value))}
-                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FF5722] cursor-pointer"
+                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FFE156] cursor-pointer"
                             >
                                 {PERIODS.map((p) => (
                                     <option key={p.value} value={p.value}>{p.label}</option>

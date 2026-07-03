@@ -352,7 +352,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                     <p className="text-xs font-medium text-gray-400">{t('slideEditor.globalPanel.transparent')}</p>
                     <button
                         onClick={() => onBackgroundChange(isTransparent ? '#FFFFFF' : 'transparent')}
-                        className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${isTransparent ? 'bg-[#E8440A]' : 'bg-gray-200'}`}
+                        className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${isTransparent ? 'bg-[#FFE156]' : 'bg-gray-200'}`}
                         style={{ width: 44, height: 24 }}
                     >
                         <span
@@ -416,14 +416,14 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                         }}
                                         className={`text-left rounded-xl border-2 p-2 transition-colors ${
                                             isActive
-                                                ? 'border-[#E8440A] bg-[#E8440A]/5'
+                                                ? 'border-[#FFE156] bg-[#FFE156]/5'
                                                 : 'border-gray-200 hover:border-gray-300 bg-white'
                                         }`}
                                     >
                                         <div className="rounded-lg overflow-hidden mb-1.5 bg-gray-50" style={{ aspectRatio: '4/5' }}>
                                             {layout.thumbnail}
                                         </div>
-                                        <p className={`text-[10px] font-semibold leading-tight ${isActive ? 'text-[#E8440A]' : 'text-gray-800'}`}>
+                                        <p className={`text-[10px] font-semibold leading-tight ${isActive ? 'text-[#1A1A1A]' : 'text-gray-800'}`}>
                                             {t(layout.nameKey)}
                                         </p>
                                         <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">
@@ -511,7 +511,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         )}
                     </div>
                     {caption && (
-                        <span className="text-[10px] font-medium text-[#E8440A] shrink-0">
+                        <span className="text-[10px] font-medium text-[#1A1A1A] shrink-0">
                             {t('slideEditor.globalPanel.captionEdit')}
                         </span>
                     )}
@@ -553,7 +553,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                 type="checkbox"
                                 checked={badge.enabled}
                                 onChange={(e) => handleBadgeShowToggle(e.target.checked)}
-                                className="rounded accent-[#E8440A]"
+                                className="rounded accent-[#FFE156]"
                             />
                             <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.profileBadgeShow')}</span>
                         </label>
@@ -598,7 +598,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         {/* Display name */}
                         <div className="flex flex-col gap-1">
                             <p className="text-[9px] font-medium tracking-wider text-gray-400">{t('slideEditor.globalPanel.profileBadgeName')}</p>
-                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 focus-within:border-[#E8440A] transition-colors">
+                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 focus-within:border-[#FFE156] transition-colors">
                                 <input
                                     type="text"
                                     value={badge.name ?? ''}
@@ -612,7 +612,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         {/* Handle */}
                         <div className="flex flex-col gap-1">
                             <p className="text-[9px] font-medium tracking-wider text-gray-400">{t('slideEditor.globalPanel.profileBadgeHandle')}</p>
-                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 focus-within:border-[#E8440A] transition-colors">
+                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 focus-within:border-[#FFE156] transition-colors">
                                 <span className="text-xs text-gray-400 font-medium">@</span>
                                 <input
                                     type="text"
@@ -669,7 +669,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                 max={200}
                                 value={badge.size}
                                 onChange={(e) => patchBadge({ size: Number(e.target.value) })}
-                                className="w-full accent-[#E8440A]"
+                                className="w-full accent-[#FFE156]"
                             />
                         </div>
 
@@ -724,15 +724,15 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                         <div
                                             key={key}
                                             onClick={() => onCornerSelect(key)}
-                                            className={`flex flex-col gap-1 rounded-lg p-2 cursor-pointer transition-colors ${isSelected ? 'bg-[#E8440A]/10 ring-1 ring-[#E8440A]/40' : 'bg-gray-100 hover:bg-gray-200/70'}`}
+                                            className={`flex flex-col gap-1 rounded-lg p-2 cursor-pointer transition-colors ${isSelected ? 'bg-[#FFE156]/10 ring-1 ring-[#FFE156]/40' : 'bg-gray-100 hover:bg-gray-200/70'}`}
                                         >
                                             <div className="flex items-center justify-between">
-                                                <span className={`text-[9px] font-medium tracking-wide ${isSelected ? 'text-[#E8440A]' : 'text-gray-400'}`}>
+                                                <span className={`text-[9px] font-medium tracking-wide ${isSelected ? 'text-[#1A1A1A]' : 'text-gray-400'}`}>
                                                     {t(CORNER_T_KEYS[key])}
                                                 </span>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); patchCorner(key, { enabled: !cfg.enabled }); }}
-                                                    className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${cfg.enabled ? 'bg-[#E8440A]' : 'bg-gray-300'}`}
+                                                    className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${cfg.enabled ? 'bg-[#FFE156]' : 'bg-gray-300'}`}
                                                     style={{ width: 28, height: 16 }}
                                                 >
                                                     <span
@@ -747,7 +747,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                                 onChange={(e) => handleCornerTextChange(key, e.target.value)}
                                                 onClick={(e) => e.stopPropagation()}
                                                 placeholder={t('slideEditor.globalPanel.cornerPlaceholder')}
-                                                className={`w-full rounded text-[10px] px-1.5 py-1 outline-none bg-white border text-gray-700 placeholder:text-gray-300 ${isSelected ? 'border-[#E8440A]/40 focus:border-[#E8440A]' : 'border-gray-200 focus:border-[#E8440A]'}`}
+                                                className={`w-full rounded text-[10px] px-1.5 py-1 outline-none bg-white border text-gray-700 placeholder:text-gray-300 ${isSelected ? 'border-[#FFE156]/40 focus:border-[#FFE156]' : 'border-gray-200 focus:border-[#FFE156]'}`}
                                             />
                                         </div>
                                     );
@@ -761,7 +761,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                 type="checkbox"
                                 checked={corners.show}
                                 onChange={(e) => patchCorners({ show: e.target.checked })}
-                                className="rounded accent-[#E8440A]"
+                                className="rounded accent-[#FFE156]"
                             />
                             <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.showCorners')}</span>
                         </label>
@@ -772,7 +772,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                 type="checkbox"
                                 checked={corners.showDots}
                                 onChange={(e) => patchCorners({ showDots: e.target.checked })}
-                                className="rounded accent-[#E8440A]"
+                                className="rounded accent-[#FFE156]"
                             />
                             <span className="text-xs font-medium text-gray-800">{t('slideEditor.globalPanel.showDots')}</span>
                         </label>
@@ -809,7 +809,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                             <div className="flex items-center gap-2">
-                                <MessageSquare className="w-4 h-4 text-[#E8440A]" />
+                                <MessageSquare className="w-4 h-4 text-[#1A1A1A]" />
                                 <h2 className="text-sm font-medium text-gray-900">{t('slideEditor.globalPanel.captionModalTitle')}</h2>
                             </div>
                             <button
@@ -830,7 +830,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                     placeholder={t('slideEditor.globalPanel.captionPlaceholder')}
                                     rows={8}
                                     autoFocus
-                                    className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm leading-relaxed text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E8440A]/20 focus:border-[#E8440A] transition-colors"
+                                    className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm leading-relaxed text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20 focus:border-[#FFE156] transition-colors"
                                 />
                             </div>
 
@@ -866,7 +866,7 @@ export function SlideGlobalPanel({ slide, slideIdx, onBackgroundChange, onAddTex
                                     <button
                                         type="button"
                                         onClick={saveCaptionModal}
-                                        className="px-4 py-1.5 bg-[#E8440A] text-white text-xs font-medium rounded-lg hover:bg-[#d13d09] transition-colors"
+                                        className="px-4 py-1.5 bg-[#FFE156] text-[#1A1A1A] text-xs font-medium rounded-lg hover:bg-[#d13d09] transition-colors"
                                     >
                                         {t('slideEditor.globalPanel.captionSave')}
                                     </button>

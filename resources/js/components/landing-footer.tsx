@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
 
 const INK = '#1A1A1A';
-const FLAME = '#E8440A';
+const FLAME = '#FFE156';
 const LINE = '#E8E7E2';
 
 type FooterLink = { label: string; href: string };
@@ -187,7 +187,7 @@ export default function LandingFooter({
                                         <li key={link.label}>
                                             <a
                                                 href={link.href}
-                                                className="text-base font-medium text-[#666660] transition-colors hover:text-[#E8440A]"
+                                                className="text-base font-medium text-[#666660] transition-colors hover:text-[#1A1A1A]"
                                             >
                                                 {link.label}
                                             </a>

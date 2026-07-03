@@ -51,11 +51,11 @@ function IdeaCard({
             type="button"
             disabled={disabled || spinning}
             onClick={() => goToCreate({ topic: idea.title, title: idea.title })}
-            className="group flex min-h-[150px] flex-col gap-3 overflow-hidden rounded-2xl border border-[#E8E7E2] bg-white p-5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-[#E8440A] enabled:hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
+            className="group flex min-h-[150px] flex-col gap-3 overflow-hidden rounded-2xl border border-[#E8E7E2] bg-white p-5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-[#FFE156] enabled:hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
             style={spinning ? { borderColor: 'rgba(232,68,10,0.35)' } : undefined}
         >
             <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E8440A]/10 text-[11px] font-extrabold text-[#E8440A]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFE156]/10 text-[11px] font-extrabold text-[#1A1A1A]">
                     {index + 1}
                 </span>
                 <span className="text-[10px] font-bold tracking-wider text-[#888880] uppercase">{label}</span>
@@ -226,16 +226,16 @@ function IdeasOfTheDay() {
             </div>
 
             {rateLimited && (
-                <p className="text-right text-xs font-medium text-[#E8440A]">{t('dashboard.ideas.rateLimited')}</p>
+                <p className="text-right text-xs font-medium text-[#1A1A1A]">{t('dashboard.ideas.rateLimited')}</p>
             )}
 
             {/* Initial loading */}
             {initialLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#E8E7E2] bg-white px-6 py-14 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#E8440A]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#1A1A1A]" />
                     <p className="text-base font-bold text-[#1A1A1A]">{t('dashboard.ideas.generating')}</p>
                     <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[#888880] uppercase">
-                        <Sparkles className="h-3 w-3 text-[#E8440A]" />
+                        <Sparkles className="h-3 w-3 text-[#1A1A1A]" />
                         {t('dashboard.ideas.generatingCount')}
                     </p>
                 </div>
@@ -293,7 +293,7 @@ function IdeasOfTheDay() {
                     }}
                     rows={3}
                     placeholder={t('dashboard.ideas.describePlaceholder')}
-                    className="w-full resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#E8440A] focus:ring-4 focus:ring-[#E8440A]/15"
+                    className="w-full resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#FFE156] focus:ring-4 focus:ring-[#FFE156]/15"
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
@@ -307,7 +307,7 @@ function IdeasOfTheDay() {
                         type="button"
                         onClick={submitCustom}
                         disabled={!topic.trim()}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#E8440A] px-7 py-2.5 text-base font-bold text-white transition-colors hover:bg-[#D13D09] disabled:opacity-40"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#FFE156] px-7 py-2.5 text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D] disabled:opacity-40"
                     >
                         {t('dashboard.ideas.create')}
                         <ArrowRight className="h-4 w-4" />

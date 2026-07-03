@@ -61,7 +61,7 @@ export function contrastRatio(foreground: string, background: string): number {
 export function resolveAccessibleHighlightColor(
     preferredColor: string | undefined | null,
     backgroundColor: string,
-    fallbackColors: string[] = ['#FFD84D', '#FF5A36', '#39FF14', '#E8440A']
+    fallbackColors: string[] = ['#FFD84D', '#FF5A36', '#39FF14', '#FFE156']
 ): string {
     const minContrast = 4.5;
     const normalizedBackground = normalizeHexColor(backgroundColor) ?? '#000000';

@@ -21,7 +21,6 @@ import FadeIn from '@/components/fade-in';
 import FeatureBento from '@/components/feature-bento';
 import LandingFooter from '@/components/landing-footer';
 import ScrollStack from '@/components/scroll-stack';
-import TestimonialMarquee from '@/components/testimonial-marquee';
 import { TextShimmer } from '@/components/text-shimmer';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { cn } from '@/lib/utils';
@@ -36,45 +35,6 @@ const comparisonItems = [
     { label: 'Adobe Photoshop (editor)', price: '$22.99/mo' },
     { label: 'Freelance Designer (layouts)', price: '$300.00/mo' },
     { label: 'Freelance Copywriter (scripts)', price: '$150.00/mo' },
-];
-
-const testimonials = [
-    {
-        name: 'Camila Alves',
-        role: 'B2B Marketing',
-        quote: 'Funnel carousel hit +48% saves vs. the rest of the feed in the same month — without me spending the weekend on Canva.',
-        initials: 'CA',
-    },
-    {
-        name: 'Rafael Santos',
-        role: 'Infoproduct Creator',
-        quote: 'A lead asked which agency did the layout. It was me on Slidezz at night. The following Tuesday, he closed a consulting package.',
-        initials: 'RS',
-    },
-    {
-        name: 'Juliana Menezes',
-        role: 'Mentor',
-        quote: 'Before, I recorded Reels on the fly. Now the weekly carousel is ready on Sunday — I just adapt the hook for the video.',
-        initials: 'JM',
-    },
-    {
-        name: 'Lucas Pereira',
-        role: 'Fitness',
-        quote: "I tested the hook AI suggested on the 1st slide: saves went from 4% → 11% in the same niche. It wasn't luck.",
-        initials: 'LP',
-    },
-    {
-        name: 'Bianca Ferreira',
-        role: 'Aesthetics',
-        quote: 'Same template, skincare and accountant — I just change the palette. Client said it looked like a brand with rebranding.',
-        initials: 'BF',
-    },
-    {
-        name: 'Diego Rocha',
-        role: 'Consultant',
-        quote: 'DMs with "how much does it cost?" tripled in the month I standardized carousels. It coincided with Slidezz — it wasn\'t random virality.',
-        initials: 'DR',
-    },
 ];
 
 const faqs = [
@@ -129,7 +89,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300"
                     style={{
                         border: '1px solid #E8E7E2',
-                        background: open ? '#E8440A' : '#F3EEE8',
+                        background: open ? '#FFE156' : '#F3EEE8',
                     }}
                 >
                     <ChevronDown
@@ -210,7 +170,7 @@ export default function LandingEn({
                 {/* ── TOP BAR ── */}
                 <div
                     className="py-2.5 text-center font-bold tracking-wide"
-                    style={{ background: '#1A1A1A', color: '#E8440A' }}
+                    style={{ background: '#1A1A1A', color: '#FFE156' }}
                 >
                     ⚡ Limited spots — access may close at any moment
                 </div>
@@ -252,12 +212,6 @@ export default function LandingEn({
                                     className="transition-colors hover:text-[#1A1A1A]"
                                 >
                                     Pricing
-                                </a>
-                                <a
-                                    href="#testimonials"
-                                    className="transition-colors hover:text-[#1A1A1A]"
-                                >
-                                    Results
                                 </a>
                             </nav>
 
@@ -310,7 +264,7 @@ export default function LandingEn({
                                     background: '#fff',
                                 }}
                             >
-                                <Zap className="h-3.5 w-3.5 fill-[#E8440A] text-[#E8440A]" />
+                                <Zap className="h-3.5 w-3.5 fill-[#FFE156] text-[#1A1A1A]" />
                                 AI-powered content at scale
                             </div>
 
@@ -347,7 +301,7 @@ export default function LandingEn({
                                 <div className="flex">
                                     {[
                                         { i: 'MD', bg: '#1A1A1A' },
-                                        { i: 'RS', bg: '#E8440A' },
+                                        { i: 'RS', bg: '#FFE156' },
                                         { i: 'JM', bg: '#2563EB' },
                                     ].map((p) => (
                                         <span
@@ -398,7 +352,7 @@ export default function LandingEn({
                                 <div className="flex items-center gap-3 px-2 py-2">
                                     <span
                                         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-white"
-                                        style={{ background: '#E8440A' }}
+                                        style={{ background: '#FFE156' }}
                                     >
                                         <Sparkles className="h-4 w-4" />
                                     </span>
@@ -464,7 +418,7 @@ export default function LandingEn({
                     }}
                 >
                     <FadeIn className="mx-auto max-w-4xl px-6 py-24 text-center">
-                        <p className="mb-4 font-bold tracking-widest text-[#E8440A] uppercase">
+                        <p className="mb-4 font-bold tracking-widest text-[#1A1A1A] uppercase">
                             The truth no one tells you
                         </p>
                         <h2 className="mb-8 font-display font-bold text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
@@ -661,13 +615,13 @@ export default function LandingEn({
                                 className="flex items-center justify-between px-6 py-5"
                                 style={{
                                     background: '#2A0E00',
-                                    borderTop: '1px solid #E8440A',
+                                    borderTop: '1px solid #FFE156',
                                 }}
                             >
                                 <span className="text-lg font-extrabold text-white">
                                     Total (if bought separately)
                                 </span>
-                                <span className="text-xl font-extrabold text-[#E8440A]">
+                                <span className="text-xl font-extrabold text-[#1A1A1A]">
                                     {totalComparison}
                                 </span>
                             </div>
@@ -702,7 +656,7 @@ export default function LandingEn({
                                 {billingCycle === 'monthly' && (
                                     <motion.span
                                         layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#E8440A]"
+                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
                                         transition={
                                             reduceMotion
                                                 ? { duration: 0 }
@@ -732,7 +686,7 @@ export default function LandingEn({
                                 {billingCycle === 'annual' && (
                                     <motion.span
                                         layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#E8440A]"
+                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
                                         transition={
                                             reduceMotion
                                                 ? { duration: 0 }
@@ -819,7 +773,7 @@ export default function LandingEn({
                             </div>
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#E8440A]" />
+                                <Check className="h-4 w-4 text-[#1A1A1A]" />
                                 Unlimited carousels
                             </div>
 
@@ -836,7 +790,7 @@ export default function LandingEn({
                                         key={feature}
                                         className="flex items-start gap-3 text-lg font-medium text-[#555550]"
                                     >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#E8440A]" />
+                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
                                         {feature}
                                     </li>
                                 ))}
@@ -852,7 +806,7 @@ export default function LandingEn({
                         </div>
 
                         {/* Pro */}
-                        <div className="relative flex transform flex-col rounded-[24px] border-2 border-[#E8440A] bg-white p-8 shadow-lg md:-translate-y-4">
+                        <div className="relative flex transform flex-col rounded-[24px] border-2 border-[#FFE156] bg-white p-8 shadow-lg md:-translate-y-4">
                             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0F766E] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
                                 Most popular
                             </div>
@@ -905,7 +859,7 @@ export default function LandingEn({
                             </div>
 
                             <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#E8440A]" />
+                                <Check className="h-4 w-4 text-[#1A1A1A]" />
                                 Unlimited carousels
                             </div>
 
@@ -923,7 +877,7 @@ export default function LandingEn({
                                         key={feature}
                                         className="flex items-start gap-3 text-lg font-medium text-[#555550]"
                                     >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#E8440A]" />
+                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
                                         {feature}
                                     </li>
                                 ))}
@@ -932,7 +886,7 @@ export default function LandingEn({
                             <button
                                 type="button"
                                 onClick={() => startCheckout('pro')}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
                             >
                                 Try it now <ArrowRight className="h-4 w-4" />
                             </button>
@@ -1016,35 +970,12 @@ export default function LandingEn({
                             <button
                                 type="button"
                                 onClick={() => startCheckout('agency')}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8440A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#D13D09]"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
                             >
                                 Try it now <ArrowRight className="h-4 w-4" />
                             </button>
                         </div>
                     </div>
-                </section>
-
-                {/* ── TESTIMONIALS ── */}
-                <section
-                    id="testimonials"
-                    className="py-24"
-                    style={{
-                        borderTop: '1px solid #E8E7E2',
-                        background: '#FAFAF7',
-                    }}
-                >
-                    <div className="mx-auto max-w-6xl px-6">
-                        <FadeIn className="mb-16 text-center">
-                            <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                                Results from those who publish
-                            </p>
-                            <h2 className="font-display font-bold text-5xl leading-none tracking-normal lg:text-6xl">
-                                See what our clients say
-                            </h2>
-                        </FadeIn>
-                    </div>
-
-                    <TestimonialMarquee items={testimonials} />
                 </section>
 
                 {/* ── FAQ ── */}
@@ -1084,10 +1015,10 @@ export default function LandingEn({
                             style={{
                                 border: '1px solid #333330',
                                 background: '#222220',
-                                color: '#E8440A',
+                                color: '#FFE156',
                             }}
                         >
-                            <Zap className="h-3.5 w-3.5 fill-[#E8440A]" />
+                            <Zap className="h-3.5 w-3.5 fill-[#FFE156]" />
                             AI-powered carousel generator
                         </div>
 
@@ -1127,7 +1058,6 @@ export default function LandingEn({
                                     href: '#how-it-works',
                                 },
                                 { label: 'Pricing', href: '#pricing' },
-                                { label: 'Results', href: '#testimonials' },
                             ],
                         },
                         {

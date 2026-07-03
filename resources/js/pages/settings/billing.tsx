@@ -85,8 +85,8 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
                             <div className="flex items-center justify-between gap-4 flex-wrap">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8440A]/10">
-                                        <Zap className="h-4 w-4 text-[#E8440A]" />
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFE156]/10">
+                                        <Zap className="h-4 w-4 text-[#1A1A1A]" />
                                     </div>
                                     <div>
                                         <p className="font-semibold">{plans[currentPlanKey!]?.name ?? currentPlanKey}</p>
@@ -154,13 +154,13 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                             return (
                                 <div
                                     key={key}
-                                    className={`rounded-xl border bg-card p-5 space-y-4 flex flex-col ${isCurrent ? 'border-[#E8440A] ring-1 ring-[#E8440A]/30' : 'border-border'}`}
+                                    className={`rounded-xl border bg-card p-5 space-y-4 flex flex-col ${isCurrent ? 'border-[#FFE156] ring-1 ring-[#FFE156]/30' : 'border-border'}`}
                                 >
                                     <div>
                                         <div className="flex items-center justify-between mb-1">
                                             <p className="font-semibold text-base">{plan.name}</p>
                                             {isCurrent && (
-                                                <Badge className="bg-[#E8440A] hover:bg-[#E8440A] text-xs">Plano atual</Badge>
+                                                <Badge className="bg-[#FFE156] hover:bg-[#FFE156] text-xs">Plano atual</Badge>
                                             )}
                                         </div>
                                         <p className="text-sm text-muted-foreground">{plan.description}</p>
@@ -177,7 +177,7 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                                     </ul>
 
                                     <Button
-                                        className={`w-full mt-2 ${isCurrent ? 'bg-muted text-muted-foreground hover:bg-muted cursor-default' : 'bg-[#E8440A] hover:bg-[#D13D09] text-white'}`}
+                                        className={`w-full mt-2 ${isCurrent ? 'bg-muted text-muted-foreground hover:bg-muted cursor-default' : 'bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A]'}`}
                                         disabled={isCurrent || !plan.price_id}
                                         onClick={() => !isCurrent && subscribeToPlan(key)}
                                     >

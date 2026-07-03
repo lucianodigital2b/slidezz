@@ -157,7 +157,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                 <CalendarIcon className="w-4 h-4" /> Calendar
                             </button>
                         </div>
-                        <Button className="bg-[#FF5722] hover:bg-[#E64A19] text-white ml-2" onClick={() => setIsModalOpen(true)}>
+                        <Button className="bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A] ml-2" onClick={() => setIsModalOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> New Post
                         </Button>
                     </div>
@@ -235,7 +235,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                             {day && (
                                                 <>
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[#FF5722] text-white' : 'text-gray-700'}`}>
+                                                        <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-700'}`}>
                                                             {day}
                                                         </span>
                                                         <button 
@@ -255,7 +255,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                                             className={`p-1 transition-opacity ${
                                                                 (new Date(year, month - 1, day, 23, 59) < new Date() && !isToday)
                                                                 ? 'opacity-0 cursor-not-allowed'
-                                                                : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-[#FF5722]'
+                                                                : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-[#FFE156]'
                                                             }`}
                                                         >
                                                             <Plus className="w-4 h-4" />
@@ -366,7 +366,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                 <h3 className="text-base font-semibold text-gray-900 mb-2">No posts scheduled</h3>
                                 <p className="text-sm text-gray-500 mb-6">Schedule some posts and they will appear here</p>
                                 
-                                <Button className="bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-sm font-semibold border border-[#FF5722]/50" onClick={() => setIsModalOpen(true)}>
+                                <Button className="bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A] shadow-sm font-semibold border border-[#FFE156]/50" onClick={() => setIsModalOpen(true)}>
                                     <Plus className="w-4 h-4 mr-2" /> New Post
                                 </Button>
                             </div>
@@ -447,7 +447,7 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={processing} className="bg-[#FF5722] hover:bg-[#E64A19] text-white">
+                            <Button type="submit" disabled={processing} className="bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A]">
                                 {processing ? 'Scheduling...' : 'Schedule Post'}
                             </Button>
                         </DialogFooter>

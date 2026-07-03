@@ -32,7 +32,7 @@ export function SlideRightPanel({
                         <div
                             key={s.id}
                             onClick={() => onSelectSlide(idx)}
-                            className={`relative group cursor-pointer rounded-lg overflow-hidden shrink-0 transition-all border-2 ${idx === currentIdx ? 'border-[#E8440A]' : 'border-transparent ring-1 ring-black/10'}`}
+                            className={`relative group cursor-pointer rounded-lg overflow-hidden shrink-0 transition-all border-2 ${idx === currentIdx ? 'border-[#FFE156]' : 'border-transparent ring-1 ring-black/10'}`}
                             style={{
                                 width: 52,
                                 height: format === 'stories' ? 76 : 60,
