@@ -57,7 +57,7 @@ export default function Terms() {
 
                     <h2 className="mb-4 text-xl font-semibold text-gray-900">4. Bring Your Own Key (BYOK)</h2>
                     <p className="mb-6 text-gray-700">
-                        On eligible plans you may provide your own AI provider API keys. You are responsible for your
+                        You may provide your own AI provider API keys (required for AI image generation). You are responsible for your
                         provider account, any usage costs it incurs, and for complying with that provider's terms. We use
                         your keys only to generate your content and store them encrypted.
                     </p>

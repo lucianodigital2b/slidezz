@@ -96,6 +96,21 @@ class BillingCatalog
             ->toArray();
     }
 
+    /**
+     * The launch-offer lifetime deal for one currency (one-time payment).
+     *
+     * @return array{price_label: string|null, price_id: string|null}
+     */
+    public function lifetime(string $currency): array
+    {
+        $prices = config('lifetime.prices.'.$this->normalize($currency), []);
+
+        return [
+            'price_label' => $prices['price_label'] ?? null,
+            'price_id' => $prices['price_id'] ?? null,
+        ];
+    }
+
     public function subscriptionPriceId(string $plan, string $cycle, string $currency): ?string
     {
         return config("plans.{$plan}.prices.{$this->normalize($currency)}.{$cycle}.price_id");

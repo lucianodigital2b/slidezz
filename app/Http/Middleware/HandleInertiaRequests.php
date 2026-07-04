@@ -45,6 +45,9 @@ class HandleInertiaRequests extends Middleware
                 'on_trial' => $request->user()?->onTrial(),
                 'onboarding_complete' => $request->user()?->hasCompletedOnboarding(),
                 'credits' => $request->user()?->credits ?? 0,
+                // Soft paywall: lifetime purchase or active subscription unlocks the generator.
+                'premium_access' => (bool) $request->user()?->hasPremiumAccess(),
+                'lifetime_access' => (bool) $request->user()?->hasLifetimeAccess(),
             ],
             // Localized pricing (BRL for Brazil, USD otherwise) so the credits modal
             // and other in-app upsells render the right currency for each user.
@@ -55,9 +58,9 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Plans and credit packs resolved to the request's currency.
+     * Plans, credit packs and the lifetime launch offer resolved to the request's currency.
      *
-     * @return array{currency: string, plans: array<string, array<string, mixed>>, packs: list<array<string, mixed>>}
+     * @return array{currency: string, plans: array<string, array<string, mixed>>, packs: list<array<string, mixed>>, lifetime: array{price_label: string|null, price_id: string|null}}
      */
     private function pricing(Request $request): array
     {
@@ -68,6 +71,7 @@ class HandleInertiaRequests extends Middleware
             'currency' => $currency,
             'plans' => $catalog->plans($currency),
             'packs' => $catalog->packs($currency),
+            'lifetime' => $catalog->lifetime($currency),
         ];
     }
 }

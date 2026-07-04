@@ -6,6 +6,7 @@ use App\Http\Controllers\CarouselWizardController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LifetimeController;
 use App\Http\Controllers\MetaEventController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ScheduleController;
@@ -84,6 +85,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
 
     Route::post('credits/purchase', [CreditController::class, 'purchase'])->name('credits.purchase');
+    Route::post('lifetime/purchase', [LifetimeController::class, 'purchase'])->name('lifetime.purchase');
 
     Route::post('carousel/generate', [CarouselGenerationController::class, 'generate'])->name('carousel.generate');
     Route::post('carousel/generate-image', [CarouselGenerationController::class, 'generateImage'])->name('carousel.generate-image');

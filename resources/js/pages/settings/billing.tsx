@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, CreditCard, Download, ExternalLink, Zap } from 'lucide-react';
+import { CheckCircle2, CreditCard, Crown, Download, ExternalLink, Zap } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,10 +49,14 @@ function statusBadge(subscription: Subscription) {
 }
 
 export default function Billing({ plans, subscription, on_trial, invoices }: Props) {
-    const { auth } = usePage().props as any;
+    const { auth, pricing } = usePage().props as any;
 
     const subscribeToPlan = (planKey: string) => {
         router.post(subscribe.url(), { plan: planKey });
+    };
+
+    const buyLifetime = () => {
+        router.post('/lifetime/purchase');
     };
 
     const cancelSubscription = () => {
@@ -137,6 +141,51 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                     <div className="rounded-xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
                         Você ainda não possui uma assinatura ativa. Escolha um plano abaixo para começar.
                     </div>
+                )}
+
+                {/* Launch offer: lifetime access, one-time payment */}
+                {auth.lifetime_access ? (
+                    <div className="flex items-center gap-3 rounded-xl border border-[#FFE156] bg-[#FFE156]/10 p-5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
+                            <Crown className="h-4 w-4 text-[#1A1A1A]" />
+                        </div>
+                        <div>
+                            <p className="font-semibold">Acesso vitalício ativo</p>
+                            <p className="text-sm text-muted-foreground">Você garantiu a oferta de lançamento. Carrosséis e imagens ilimitados, pra sempre.</p>
+                        </div>
+                    </div>
+                ) : (
+                    pricing?.lifetime?.price_id && (
+                        <div className="rounded-xl border-2 border-[#FFE156] bg-card p-5 space-y-4">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
+                                        <Crown className="h-4 w-4 text-[#1A1A1A]" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold">Oferta de lançamento — Acesso vitalício</p>
+                                        <p className="text-sm text-muted-foreground">Pague uma vez, use pra sempre. Sem mensalidade.</p>
+                                    </div>
+                                </div>
+                                <Badge className="bg-[#FFE156] hover:bg-[#FFE156] text-[#1A1A1A]">Por tempo limitado</Badge>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight">
+                                {pricing.lifetime.price_label}
+                                <span className="ml-2 text-sm font-medium text-muted-foreground">pagamento único</span>
+                            </p>
+                            <ul className="space-y-1.5">
+                                {['Carrosséis ilimitados', 'Imagens ilimitadas com sua chave Gemini', 'Todos os templates e atualizações futuras'].map((feature) => (
+                                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+                            <Button className="w-full bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A]" onClick={buyLifetime}>
+                                Garantir acesso vitalício
+                            </Button>
+                        </div>
+                    )
                 )}
 
                 {/* Plan cards */}

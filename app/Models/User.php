@@ -33,6 +33,7 @@ class User extends Authenticatable
             'onboarding_completed_at' => 'datetime',
             'welcome_shown_at' => 'datetime',
             'trial_ends_at' => 'datetime',
+            'lifetime_access_at' => 'datetime',
             // Stored encrypted at rest; the user pastes their own Gemini key for
             // BYOK image generation. Never exposed (see Hidden above).
             'gemini_api_key' => 'encrypted',
@@ -70,26 +71,39 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the user's current plan allows bring-your-own Gemini key.
+     * Whether the user bought the launch-offer lifetime deal (one-time payment).
      */
-    public function byokEnabled(): bool
+    public function hasLifetimeAccess(): bool
     {
-        $plan = $this->activePlanKey();
-
-        return $plan !== null && (bool) config("plans.{$plan}.byok_enabled", false);
+        return $this->lifetime_access_at !== null;
     }
 
     /**
-     * The Gemini API key to use for image generation: the user's own key when
-     * BYOK is allowed on their plan and a key is set, otherwise null (managed —
-     * the platform key is used).
+     * Whether the user may run the AI generator: lifetime purchase or any
+     * active subscription. Signup is free (soft paywall) — only generation
+     * is gated.
+     */
+    public function hasPremiumAccess(): bool
+    {
+        return $this->hasLifetimeAccess() || $this->activePlanKey() !== null;
+    }
+
+    /**
+     * Whether the user may bring their own Gemini key. LAUNCH OFFER: images
+     * are BYOK-only for everyone, so this always returns true. When managed
+     * credits come back, restore the plan gate via config plans.*.byok_enabled.
+     */
+    public function byokEnabled(): bool
+    {
+        return true;
+    }
+
+    /**
+     * The Gemini API key to use for image generation, or null when the user
+     * has not connected one yet (image generation is unavailable then).
      */
     public function byokGeminiKey(): ?string
     {
-        if (! $this->byokEnabled()) {
-            return null;
-        }
-
         $key = $this->gemini_api_key;
 
         return is_string($key) && $key !== '' ? $key : null;

@@ -275,7 +275,9 @@
       "errorServer": "Server error. Please try again.",
       "errorParsing": "Could not parse the generated content. Please try again.",
       "errorNoCredits": "You're out of viral images. Purchase more to continue.",
-      "errorNoImageCredits": "You ran out of viral images, so some slides were generated without an image. The carousel text is unaffected."
+      "errorNoImageCredits": "You ran out of viral images, so some slides were generated without an image. The carousel text is unaffected.",
+      "errorMissingGeminiKey": "Your slides were generated without images because you haven't connected your Gemini key yet. Go to Settings → Integrations, paste your free Google AI Studio key, and generate the images again.",
+      "errorPremiumRequired": "Activate lifetime access in Settings → Billing to generate with AI. Limited-time launch offer!"
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -407,6 +409,7 @@
     }
   },
   "createCarousel": {
+    "premiumRequired": "Activate lifetime access to generate AI carousels. Limited-time launch offer!",
     "pageTitle": "Create Carousel",
     "back": "Back",
     "next": "Continue",
@@ -748,8 +751,8 @@
     },
     "welcome": {
       "title": "Welcome to Slidezz!",
-      "description": "To get you started, we've given you 15 free viral images (carousels are unlimited).",
-      "credits": "15 free viral images",
+      "description": "Carousels are unlimited. To generate AI images, connect your free Google Gemini key in Settings → Integrations.",
+      "credits": "Unlimited images with your Gemini key",
       "cta": "Create my first carousel"
     }
   },
@@ -857,10 +860,10 @@
     },
     "integrations": {
       "title": "Integrations",
-      "geminiTitle": "Gemini key (BYOK)",
-      "geminiDescription": "Connect your own Google Gemini key to generate unlimited images. Images are billed directly to your Google account.",
+      "geminiTitle": "Gemini key",
+      "geminiDescription": "Connect your own Google Gemini key to generate your carousel images — no limits. It takes 2 minutes and Google offers a free tier.",
       "keyLabel": "Gemini API key",
-      "keyHint": "Get it at ai.google.dev. We store the key encrypted and never show it back.",
+      "keyHint": "Create your free key at ai.google.dev. We store the key encrypted and never show it back.",
       "keyConnected": "Key connected. Unlimited images active.",
       "save": "Save",
       "lockedTitle": "Available on the Pro and Agency plans",

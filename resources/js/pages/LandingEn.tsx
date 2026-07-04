@@ -56,7 +56,11 @@ const faqs = [
     },
     {
         q: 'How many carousels can I create?',
-        a: 'Carousels are unlimited on every plan. What each plan includes is a monthly AI-image allowance (60 on Starter, 150 on Pro, 400 on Agency). On Pro and Agency you can connect your own Gemini key (BYOK) for unlimited images.',
+        a: 'Carousels are unlimited on every plan — no quotas, no credits, no catch. AI images run on your own Google Gemini key, so they are unlimited on our side too.',
+    },
+    {
+        q: 'How do the AI-generated images work?',
+        a: 'You connect your own Google Gemini API key (takes 2 minutes and Google offers a free tier). Images are generated directly on your Google account, with no extra cost from Slidezz and no credit limits.',
     },
     {
         q: 'Does it work on mobile?',
@@ -646,6 +650,60 @@ export default function LandingEn({
                         </p>
                     </FadeIn>
 
+                    {/* ── LAUNCH OFFER: LIFETIME ── */}
+                    <FadeIn className="mx-auto mb-16 max-w-3xl">
+                        <div className="relative overflow-hidden rounded-[24px] border-2 border-[#FFE156] bg-[#1A1A1A] p-10 text-center shadow-xl sm:p-12">
+                            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#FFE156] px-4 py-1.5 text-xs font-extrabold tracking-widest text-[#1A1A1A] uppercase">
+                                Launch offer
+                            </div>
+                            <h3 className="mb-2 font-display text-5xl leading-none font-bold tracking-normal text-white sm:text-6xl">
+                                Lifetime access
+                            </h3>
+                            <div className="mb-2 flex items-baseline justify-center gap-2">
+                                <span className="text-[56px] leading-none font-extrabold text-[#FFE156]">
+                                    $149
+                                </span>
+                                <span className="text-lg font-semibold text-[#AAAAAA]">
+                                    one-time payment
+                                </span>
+                            </div>
+                            <p className="mb-7 text-lg font-medium text-[#AAAAAA]">
+                                Pay once, use forever. No subscription.
+                            </p>
+                            <ul className="mx-auto mb-8 flex max-w-md flex-col gap-2.5 text-left">
+                                {[
+                                    'Unlimited carousels, forever',
+                                    'Unlimited images with your Gemini key',
+                                    'All templates + future updates',
+                                ].map((feature) => (
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]"
+                                    >
+                                        <Check className="mt-1 h-4 w-4 flex-shrink-0 text-[#FFE156]" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link
+                                href={ctaHref}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFE156] px-10 py-4 text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
+                            >
+                                Claim the lifetime deal{' '}
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                            <p className="mt-4 text-sm font-medium text-[#666660]">
+                                Limited time only. After that, monthly plans only.
+                            </p>
+                        </div>
+                    </FadeIn>
+
+                    <FadeIn className="mb-8 text-center">
+                        <p className="text-lg font-bold text-[#888880]">
+                            Prefer paying monthly? Pick a plan:
+                        </p>
+                    </FadeIn>
+
                     {/* Toggle */}
                     <div className="mb-12 flex justify-center">
                         <div className="flex items-center gap-1 rounded-full border border-[#E8E7E2] bg-white p-1 shadow-sm">
@@ -782,7 +840,7 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '60 viral images / month',
+                                    'Unlimited images with your Gemini key',
                                     'AI copywriting & hooks',
                                     'All templates',
                                 ].map((feature) => (
@@ -868,10 +926,9 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '150 viral images / month',
-                                    'Unlimited images with your Gemini key (BYOK)',
                                     'Priority support',
                                     'Save your own templates',
+                                    'Early access to new features',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -952,10 +1009,9 @@ export default function LandingEn({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '400 viral images / month',
-                                    'Unlimited images with your Gemini key (BYOK)',
                                     'Multiple projects',
                                     'Team management',
+                                    'Dedicated support',
                                 ].map((feature) => (
                                     <li
                                         key={feature}

@@ -24,8 +24,8 @@ class IntegrationsController extends Controller
     }
 
     /**
-     * Store or clear the user's own Gemini API key (BYOK). Only persisted when
-     * the user's plan allows BYOK; otherwise it's a no-op upsell surface.
+     * Store or clear the user's own Gemini API key (BYOK). Every user can set
+     * a key — image generation only works with one connected.
      */
     public function update(Request $request): RedirectResponse
     {
@@ -34,8 +34,6 @@ class IntegrationsController extends Controller
         ]);
 
         $user = $request->user();
-
-        abort_unless($user->byokEnabled(), 403, 'BYOK is not available on your plan.');
 
         $user->gemini_api_key = filled($validated['gemini_api_key'] ?? null)
             ? trim($validated['gemini_api_key'])

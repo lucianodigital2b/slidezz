@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\HandleStripeWebhookForCredits;
+use App\Listeners\HandleStripeWebhookForLifetime;
 use App\Listeners\TrackStripePurchaseInMeta;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         Event::listen(WebhookReceived::class, HandleStripeWebhookForCredits::class);
+        Event::listen(WebhookReceived::class, HandleStripeWebhookForLifetime::class);
         Event::listen(WebhookReceived::class, TrackStripePurchaseInMeta::class);
     }
 

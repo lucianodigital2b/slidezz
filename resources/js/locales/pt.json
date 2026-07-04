@@ -171,10 +171,10 @@
     },
     "integrations": {
       "title": "Integrações",
-      "geminiTitle": "Chave Gemini (BYOK)",
-      "geminiDescription": "Conecte sua própria chave do Google Gemini para gerar imagens ilimitadas. As imagens são cobradas direto na sua conta Google.",
+      "geminiTitle": "Chave Gemini",
+      "geminiDescription": "Conecte sua própria chave do Google Gemini para gerar as imagens dos seus carrosséis — sem limite. Leva 2 minutos e o Google oferece um nível gratuito.",
       "keyLabel": "Chave da API Gemini",
-      "keyHint": "Pegue em ai.google.dev. Armazenamos a chave criptografada e nunca a exibimos de volta.",
+      "keyHint": "Crie sua chave grátis em ai.google.dev. Armazenamos a chave criptografada e nunca a exibimos de volta.",
       "keyConnected": "Chave conectada — imagens ilimitadas ativas.",
       "save": "Salvar",
       "lockedTitle": "Disponível nos planos Pro e Agency",
@@ -295,8 +295,8 @@
     },
     "welcome": {
       "title": "Bem-vindo ao Slidezz!",
-      "description": "Para você começar, demos 15 imagens virais grátis (carrosséis são ilimitados).",
-      "credits": "15 imagens virais grátis",
+      "description": "Carrosséis são ilimitados. Para gerar imagens com IA, conecte sua chave gratuita do Google Gemini em Configurações → Integrações.",
+      "credits": "Imagens ilimitadas com sua chave Gemini",
       "cta": "Criar meu primeiro carrossel"
     }
   },
@@ -560,7 +560,9 @@
       "errorServer": "Erro no servidor. Por favor, tente novamente.",
       "errorParsing": "Não foi possível processar o conteúdo gerado. Tente novamente.",
       "errorNoCredits": "Suas imagens virais acabaram. Adquira mais para continuar.",
-      "errorNoImageCredits": "Suas imagens virais acabaram, então alguns slides foram gerados sem imagem. O texto do carrossel não foi afetado."
+      "errorNoImageCredits": "Suas imagens virais acabaram, então alguns slides foram gerados sem imagem. O texto do carrossel não foi afetado.",
+      "errorMissingGeminiKey": "Os slides foram gerados sem imagem porque você ainda não conectou sua chave Gemini. Vá em Configurações → Integrações, cole sua chave gratuita do Google AI Studio e gere as imagens de novo.",
+      "errorPremiumRequired": "Ative o acesso vitalício em Configurações → Assinatura pra gerar com IA. Oferta de lançamento por tempo limitado!"
     },
     "templates": {
       "panel": "TEMPLATES",
@@ -671,6 +673,7 @@
     }
   },
   "createCarousel": {
+    "premiumRequired": "Ative o acesso vitalício pra gerar carrosséis com IA. Oferta de lançamento por tempo limitado!",
     "pageTitle": "Criar Carrossel",
     "back": "Voltar",
     "next": "Continuar",

@@ -1,10 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { CalendarDays, Layers, Sparkles, Zap, Settings, MessageCircle, Rocket } from 'lucide-react';
 import { edit as billingEdit } from '@/routes/billing';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
-import { CreditsModal } from '@/components/CreditsModal';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -23,7 +21,6 @@ export function AppSidebar() {
     const { isCurrentUrl } = useCurrentUrl();
     const { t } = useTranslation();
     const { auth } = usePage().props;
-    const [creditsOpen, setCreditsOpen] = useState(false);
 
     const navItems = [
         { title: t('sidebar.generate'), href: '/generate', icon: Sparkles },
@@ -85,17 +82,9 @@ export function AppSidebar() {
                             </SidebarMenuItem>
                         )}
 
-                        {/* Credits button */}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                onClick={() => setCreditsOpen(true)}
-                                tooltip={{ children: `${auth.credits} credits` }}
-                                className="text-[#1A1A1A] bg-yellow-50 hover:bg-yellow-100 font-semibold rounded-full"
-                            >
-                                <Zap className="w-4 h-4 fill-[#FFE156] text-[#1A1A1A]" />
-                                <span>{auth.credits} {t('sidebar.credits')}</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        {/* Credits button hidden during the BYOK launch offer —
+                            balances keep accruing server-side; re-add this item
+                            (and the CreditsModal below) to bring credits back. */}
 
                         <SidebarMenuItem>
                             <SidebarMenuButton
@@ -116,8 +105,6 @@ export function AppSidebar() {
             <SidebarFooter>
                 <NavUser />
             </SidebarFooter>
-
-            <CreditsModal open={creditsOpen} onOpenChange={setCreditsOpen} />
         </Sidebar>
     );
 }

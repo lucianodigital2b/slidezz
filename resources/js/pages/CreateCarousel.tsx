@@ -19,7 +19,6 @@ import { FORMATS } from '@/components/SlideEditor/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { CreditsModal } from '@/components/CreditsModal';
 
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
 
@@ -254,7 +253,6 @@ export default function CreateCarousel() {
     const [language, setLanguage]           = useState('Portuguese (Brazil)');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
-    const [creditsModalOpen, setCreditsModalOpen] = useState(false);
 
     const selectedTemplateName  = template  ? t(`createCarousel.templates.${template}.name`)  : null;
     const selectedArchetypeName = archetype ? t(`createCarousel.archetypes.${archetype}.name`) : null;
@@ -305,8 +303,11 @@ export default function CreateCarousel() {
 
     function handleSubmit() {
         if (submitting) return;
-        if (auth.credits <= 0) {
-            setCreditsModalOpen(true);
+        // Soft paywall: browsing is free, generating needs the lifetime offer
+        // (or an active subscription).
+        if (!auth.premium_access) {
+            toast.error(t('createCarousel.premiumRequired'));
+            router.visit('/settings/billing');
             return;
         }
         setSubmitting(true);
@@ -755,8 +756,6 @@ export default function CreateCarousel() {
             {importOpen && (
                 <ImportModal onClose={() => setImportOpen(false)} onImport={handleImport} />
             )}
-
-            <CreditsModal open={creditsModalOpen} onOpenChange={setCreditsModalOpen} />
         </>
     );
 }

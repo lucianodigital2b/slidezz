@@ -22,9 +22,15 @@ class CarouselGenerationController extends Controller
             'image_style' => ['nullable', 'string', 'max:300'],
         ]);
 
-        // Carousels (text) are unlimited and free: credits meter the only real COGS,
-        // which is AI image generation (charged per image in generateImage). So the
-        // text step neither gates on nor deducts credits.
+        // Soft paywall: signup and browsing are free, but the AI generator needs
+        // the lifetime launch offer (or an active subscription).
+        if (! $request->user()->hasPremiumAccess()) {
+            return response()->json([
+                'error' => 'premium_required',
+                'message' => 'Ative o acesso vitalício para gerar carrosséis com IA.',
+            ], 402);
+        }
+
         try {
             $ndjson = $this->carouselGenerationService->generateSlides(
                 topic: $validated['topic'],
@@ -57,15 +63,21 @@ class CarouselGenerationController extends Controller
             'aspect_ratio' => ['nullable', 'string', 'in:1:1,4:5,9:16,3:4,16:9'],
         ]);
 
-        // A credit is spent only when the PLATFORM pays for the image. With BYOK the
-        // user's own Gemini key is billed, so those images are free and unmetered.
-        $byokKey = $request->user()->byokGeminiKey();
-        $managed = $byokKey === null;
-
-        if ($managed && ! $request->user()->deductCredit()) {
+        if (! $request->user()->hasPremiumAccess()) {
             return response()->json([
-                'error' => 'no_credits',
-                'message' => 'Imagens virais insuficientes.',
+                'error' => 'premium_required',
+                'message' => 'Ative o acesso vitalício para gerar imagens com IA.',
+            ], 402);
+        }
+
+        // Images are BYOK-only: they always run on the user's own Gemini key,
+        // so there is no platform COGS and nothing to meter with credits.
+        $byokKey = $request->user()->byokGeminiKey();
+
+        if ($byokKey === null) {
+            return response()->json([
+                'error' => 'missing_byok_key',
+                'message' => 'Conecte sua chave Gemini em Configurações → Integrações para gerar imagens.',
             ], 402);
         }
 
@@ -76,11 +88,6 @@ class CarouselGenerationController extends Controller
                 $byokKey,
             );
         } catch (\Throwable $e) {
-            // Refund the credit we spent up front for this managed image.
-            if ($managed) {
-                $request->user()->addCredits(1);
-            }
-
             \Log::error('Image generation failed', [
                 'message' => $e->getMessage(),
                 'class' => get_class($e),

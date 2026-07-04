@@ -110,7 +110,6 @@ class OnboardingController extends Controller
         try {
             $checkout = $request->user()
                 ->newSubscription($validated['plan'], $priceId)
-                ->trialDays(14)
                 ->allowPromotionCodes()
                 ->checkout([
                     'success_url' => route('onboarding.complete').'?session_id={CHECKOUT_SESSION_ID}',

@@ -441,7 +441,9 @@ export function useAiGeneration(
             isGeneratingRef.current = false;
             setAiStatus('error');
             if (response.status === 402) {
-                setAiError(t('slideEditor.ai.errorNoCredits'));
+                // Soft paywall: the generator needs the lifetime launch offer
+                // (or an active subscription).
+                setAiError(t('slideEditor.ai.errorPremiumRequired'));
             } else {
                 setAiError(t('slideEditor.ai.errorServer'));
             }
@@ -502,9 +504,9 @@ export function useAiGeneration(
         );
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
-        // Each managed (non-BYOK) image costs one credit server-side; track when the
-        // balance runs out so we can tell the user some slides came back without an image.
-        let ranOutOfImageCredits = false;
+        // Images are BYOK-only: a 402 from the server means the user has no Gemini
+        // key connected yet. Track it so we can point them to the settings page.
+        let missingGeminiKey = false;
 
         const aspectRatio = format === 'stories' ? '9:16' : '4:5';
 
@@ -521,7 +523,7 @@ export function useAiGeneration(
                             // overrides the template aesthetics during composition).
                             body: JSON.stringify({ prompt: s.imagePrompt, aspect_ratio: aspectRatio }),
                         });
-                        if (r.status === 402) { ranOutOfImageCredits = true; return null; }
+                        if (r.status === 402) { missingGeminiKey = true; return null; }
                         if (!r.ok) return null;
                         const data = await r.json() as { base64?: string };
                         return data.base64 ?? null;
@@ -560,10 +562,10 @@ export function useAiGeneration(
         setAiStatus('idle');
         isGeneratingRef.current = false;
 
-        // The deck still generated (text is free) — only some images were skipped for
-        // lack of image credits. Surface it without blocking the result.
-        if (ranOutOfImageCredits) {
-            window.alert(t('slideEditor.ai.errorNoImageCredits'));
+        // The deck still generated (text is free) — only the images were skipped
+        // because no Gemini key is connected. Point the user to the settings page.
+        if (missingGeminiKey) {
+            window.alert(t('slideEditor.ai.errorMissingGeminiKey'));
         }
 
         return newSlides;

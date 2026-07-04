@@ -21,8 +21,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CheckoutController extends Controller
 {
-    private const TRIAL_DAYS = 14;
-
     public function create(Request $request, BillingCatalog $catalog): Response
     {
         $validated = $request->validate([
@@ -46,7 +44,6 @@ class CheckoutController extends Controller
 
             try {
                 $checkout = $user->newSubscription($validated['plan'], $priceId)
-                    ->trialDays(self::TRIAL_DAYS)
                     ->allowPromotionCodes()
                     ->checkout([
                         'success_url' => route('onboarding.complete').'?session_id={CHECKOUT_SESSION_ID}',
@@ -62,7 +59,6 @@ class CheckoutController extends Controller
         $session = Cashier::stripe()->checkout->sessions->create([
             'mode' => 'subscription',
             'line_items' => [['price' => $priceId, 'quantity' => 1]],
-            'subscription_data' => ['trial_period_days' => self::TRIAL_DAYS],
             'allow_promotion_codes' => true,
             'billing_address_collection' => 'auto',
             'metadata' => ['plan' => $validated['plan'], 'cycle' => $cycle],

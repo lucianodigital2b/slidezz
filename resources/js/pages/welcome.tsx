@@ -74,7 +74,11 @@ const faqs = [
     },
     {
         q: 'Quantos carrosséis posso criar?',
-        a: 'Carrosséis são ilimitados em todos os planos. O que cada plano inclui é uma cota de imagens virais por mês (60 no Starter, 150 no Pro, 400 no Agency). No Pro e no Agency você pode conectar sua própria chave Gemini (BYOK) e ter imagens ilimitadas.',
+        a: 'Carrosséis são ilimitados em todos os planos — sem cota, sem crédito, sem pegadinha. As imagens geradas por IA usam a sua própria chave do Google Gemini, então também não têm limite do nosso lado.',
+    },
+    {
+        q: 'Como funcionam as imagens geradas por IA?',
+        a: 'Você conecta a sua própria chave do Google Gemini (leva 2 minutos e o Google oferece um nível gratuito). As imagens são geradas direto na sua conta Google, sem custo extra do Slidezz e sem limite de créditos.',
     },
     {
         q: 'Funciona no celular?',
@@ -736,6 +740,62 @@ export default function Welcome({
                         </p>
                     </FadeIn>
 
+                    {/* ── OFERTA DE LANÇAMENTO: LIFETIME ── */}
+                    <FadeIn className="mx-auto mb-16 max-w-3xl">
+                        <div
+                            className="relative overflow-hidden rounded-[24px] border-2 border-[#FFE156] bg-[#1A1A1A] p-10 text-center shadow-xl sm:p-12"
+                        >
+                            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#FFE156] px-4 py-1.5 text-xs font-extrabold tracking-widest text-[#1A1A1A] uppercase">
+                                Oferta de lançamento
+                            </div>
+                            <h3 className="mb-2 font-display text-5xl leading-none tracking-normal text-white sm:text-6xl">
+                                Acesso vitalício
+                            </h3>
+                            <div className="mb-2 flex items-baseline justify-center gap-2">
+                                <span className="text-[56px] leading-none font-extrabold text-[#FFE156]">
+                                    R$149
+                                </span>
+                                <span className="text-lg font-semibold text-[#AAAAAA]">
+                                    pagamento único
+                                </span>
+                            </div>
+                            <p className="mb-7 text-lg font-medium text-[#AAAAAA]">
+                                Pague uma vez, use pra sempre. Sem mensalidade.
+                            </p>
+                            <ul className="mx-auto mb-8 flex max-w-md flex-col gap-2.5 text-left">
+                                {[
+                                    'Carrosséis ilimitados, pra sempre',
+                                    'Imagens ilimitadas com sua chave Gemini',
+                                    'Todos os templates + atualizações futuras',
+                                ].map((feature) => (
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]"
+                                    >
+                                        <Check className="mt-1 h-4 w-4 flex-shrink-0 text-[#FFE156]" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link
+                                href={ctaHref}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFE156] px-10 py-4 text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
+                            >
+                                Garantir oferta vitalícia{' '}
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                            <p className="mt-4 text-sm font-medium text-[#666660]">
+                                Por tempo limitado. Depois, só nos planos mensais.
+                            </p>
+                        </div>
+                    </FadeIn>
+
+                    <FadeIn className="mb-8 text-center">
+                        <p className="text-lg font-bold text-[#888880]">
+                            Prefere pagar por mês? Assine um plano:
+                        </p>
+                    </FadeIn>
+
                     {/* Toggle */}
                     <div className="mb-12 flex justify-center">
                         <div className="flex items-center gap-1 rounded-full border border-[#E8E7E2] bg-white p-1 shadow-sm">
@@ -872,7 +932,7 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '60 imagens virais por mês',
+                                    'Imagens ilimitadas com sua chave Gemini',
                                     'Copy e hooks com IA',
                                     'Todos os templates',
                                 ].map((feature) => (
@@ -957,10 +1017,9 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '150 imagens virais por mês',
-                                    'Imagens ilimitadas com sua chave Gemini (BYOK)',
                                     'Suporte prioritário',
                                     'Salvar seus templates',
+                                    'Acesso antecipado a novidades',
                                 ].map((feature) => (
                                     <li
                                         key={feature}
@@ -1040,10 +1099,9 @@ export default function Welcome({
                             </div>
                             <ul className="mb-8 flex flex-1 flex-col gap-3">
                                 {[
-                                    '400 imagens virais por mês',
-                                    'Imagens ilimitadas com sua chave Gemini (BYOK)',
                                     'Múltiplos projetos',
                                     'Gestão de equipe',
+                                    'Suporte dedicado',
                                 ].map((feature) => (
                                     <li
                                         key={feature}

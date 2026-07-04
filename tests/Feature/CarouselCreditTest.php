@@ -13,28 +13,21 @@ class CarouselCreditTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Active subscription helper (mirrors ByokTest) so BYOK resolves on Pro/Agency. */
-    private function subscribe(User $user, string $plan): void
-    {
-        $user->subscriptions()->create([
-            'type' => $plan,
-            'stripe_id' => 'sub_'.$plan.'_'.$user->id,
-            'stripe_status' => 'active',
-            'stripe_price' => 'price_'.$plan,
-            'quantity' => 1,
-        ]);
-    }
-
-    // ─── Carousel text is free (credits meter images, not carousels) ─────────
+    // ─── Carousel text is free ───────────────────────────────────────────────
 
     public function test_generate_is_free_and_does_not_consume_credits(): void
     {
-        Prism::fake([TextResponseFake::make()->withText('{"title":"A","image":{"main_description":"x"}}')]);
+        // Two usable lines for the two requested slides so the under-delivery
+        // retry (which would need a second queued fake) never fires.
+        Prism::fake([TextResponseFake::make()->withText(
+            '{"title":"A","image":{"main_description":"x"}}'."\n".'{"title":"B","image":{"main_description":"y"}}'
+        )]);
 
-        $user = User::factory()->create(['credits' => 0]);
+        $user = User::factory()->create(['credits' => 0, 'lifetime_access_at' => now()]);
 
         $this->actingAs($user)->postJson('/carousel/generate', [
             'topic' => 'Test topic',
+            'slide_count' => 2,
         ])->assertOk()->assertJsonStructure(['ndjson']);
 
         $this->assertEquals(0, $user->fresh()->credits);
@@ -46,7 +39,7 @@ class CarouselCreditTest extends TestCase
             $mock->shouldReceive('generateSlides')->andThrow(new \RuntimeException('all providers down'));
         });
 
-        $user = User::factory()->create(['credits' => 3]);
+        $user = User::factory()->create(['credits' => 3, 'lifetime_access_at' => now()]);
 
         $this->actingAs($user)->postJson('/carousel/generate', [
             'topic' => 'Test topic',
@@ -55,62 +48,49 @@ class CarouselCreditTest extends TestCase
         $this->assertEquals(3, $user->fresh()->credits);
     }
 
-    // ─── Images are the metered COGS ─────────────────────────────────────────
+    // ─── Images are BYOK-only (launch offer: no managed generation) ──────────
 
-    public function test_managed_image_deducts_one_credit(): void
-    {
-        $this->mock(CarouselGenerationService::class, function ($mock) {
-            $mock->shouldReceive('generateImage')->once()->andReturn('data:image/png;base64,abc');
-        });
-
-        $user = User::factory()->create(['credits' => 3]); // no subscription -> managed
-
-        $this->actingAs($user)->postJson('/carousel/generate-image', [
-            'prompt' => 'a cat',
-        ])->assertOk()->assertJsonStructure(['base64']);
-
-        $this->assertEquals(2, $user->fresh()->credits);
-    }
-
-    public function test_managed_image_returns_402_without_credits(): void
+    public function test_image_generation_requires_a_connected_gemini_key(): void
     {
         $this->mock(CarouselGenerationService::class, function ($mock) {
             $mock->shouldNotReceive('generateImage');
         });
 
-        $user = User::factory()->create(['credits' => 0]);
+        $user = User::factory()->create(['credits' => 3, 'lifetime_access_at' => now()]);
 
         $this->actingAs($user)->postJson('/carousel/generate-image', [
             'prompt' => 'a cat',
-        ])->assertStatus(402)->assertJsonFragment(['error' => 'no_credits']);
+        ])->assertStatus(402)->assertJsonFragment(['error' => 'missing_byok_key']);
 
-        $this->assertEquals(0, $user->fresh()->credits);
-    }
-
-    public function test_byok_image_does_not_consume_a_credit(): void
-    {
-        $this->mock(CarouselGenerationService::class, function ($mock) {
-            $mock->shouldReceive('generateImage')->once()->andReturn('data:image/png;base64,abc');
-        });
-
-        $user = User::factory()->create(['credits' => 3, 'gemini_api_key' => 'AIza-key']);
-        $this->subscribe($user, 'pro');
-
-        $this->actingAs($user)->postJson('/carousel/generate-image', [
-            'prompt' => 'a cat',
-        ])->assertOk();
-
-        // BYOK bills the user's own Gemini key, so no platform credit is spent.
         $this->assertEquals(3, $user->fresh()->credits);
     }
 
-    public function test_managed_image_refunds_the_credit_on_failure(): void
+    public function test_image_generation_uses_the_users_key_and_spends_no_credits(): void
+    {
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateImage')
+                ->once()
+                ->withArgs(fn (string $prompt, string $ratio, ?string $key): bool => $key === 'AIza-key')
+                ->andReturn('data:image/png;base64,abc');
+        });
+
+        // No subscription needed — BYOK is open to everyone during the launch offer.
+        $user = User::factory()->create(['credits' => 3, 'gemini_api_key' => 'AIza-key', 'lifetime_access_at' => now()]);
+
+        $this->actingAs($user)->postJson('/carousel/generate-image', [
+            'prompt' => 'a cat',
+        ])->assertOk()->assertJsonStructure(['base64']);
+
+        $this->assertEquals(3, $user->fresh()->credits);
+    }
+
+    public function test_image_failure_returns_500_and_leaves_credits_untouched(): void
     {
         $this->mock(CarouselGenerationService::class, function ($mock) {
             $mock->shouldReceive('generateImage')->andThrow(new \RuntimeException('image down'));
         });
 
-        $user = User::factory()->create(['credits' => 3]);
+        $user = User::factory()->create(['credits' => 3, 'gemini_api_key' => 'AIza-key', 'lifetime_access_at' => now()]);
 
         $this->actingAs($user)->postJson('/carousel/generate-image', [
             'prompt' => 'a cat',
@@ -118,6 +98,8 @@ class CarouselCreditTest extends TestCase
 
         $this->assertEquals(3, $user->fresh()->credits);
     }
+
+    // ─── Dormant credit infrastructure keeps working for the future revert ───
 
     public function test_deduct_credit_is_atomic_and_cannot_go_below_zero(): void
     {

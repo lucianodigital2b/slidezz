@@ -21,59 +21,59 @@ class ByokTest extends TestCase
         ]);
     }
 
-    public function test_byok_is_disabled_without_an_active_subscription(): void
+    // ─── LAUNCH OFFER: BYOK is available to everyone ─────────────────────────
+
+    public function test_byok_is_enabled_without_an_active_subscription(): void
     {
         $user = User::factory()->create();
 
-        $this->assertFalse($user->byokEnabled());
+        $this->assertTrue($user->byokEnabled());
     }
 
-    public function test_byok_is_disabled_on_the_starter_plan(): void
+    public function test_byok_is_enabled_on_every_plan(): void
     {
-        $user = User::factory()->create();
-        $this->subscribe($user, 'starter');
+        foreach (['starter', 'pro', 'agency'] as $plan) {
+            $user = User::factory()->create();
+            $this->subscribe($user, $plan);
 
-        $this->assertFalse($user->fresh()->byokEnabled());
+            $this->assertTrue($user->fresh()->byokEnabled(), "BYOK should be enabled on the {$plan} plan");
+        }
     }
 
-    public function test_byok_is_enabled_on_pro_and_agency(): void
+    public function test_byok_key_is_returned_regardless_of_plan(): void
     {
-        $pro = User::factory()->create();
-        $this->subscribe($pro, 'pro');
-        $this->assertTrue($pro->fresh()->byokEnabled());
+        $noPlan = User::factory()->create(['gemini_api_key' => 'AIza-secret']);
+        $this->assertSame('AIza-secret', $noPlan->byokGeminiKey());
 
-        $agency = User::factory()->create();
-        $this->subscribe($agency, 'agency');
-        $this->assertTrue($agency->fresh()->byokEnabled());
-    }
-
-    public function test_byok_key_is_only_returned_when_the_plan_allows_it(): void
-    {
         $starter = User::factory()->create(['gemini_api_key' => 'AIza-secret']);
         $this->subscribe($starter, 'starter');
-        $this->assertNull($starter->fresh()->byokGeminiKey());
-
-        $pro = User::factory()->create(['gemini_api_key' => 'AIza-secret']);
-        $this->subscribe($pro, 'pro');
-        $this->assertSame('AIza-secret', $pro->fresh()->byokGeminiKey());
+        $this->assertSame('AIza-secret', $starter->fresh()->byokGeminiKey());
     }
 
-    public function test_integrations_update_is_forbidden_on_a_non_byok_plan(): void
+    public function test_byok_key_is_null_when_not_connected(): void
     {
         $user = User::factory()->create();
-        $this->subscribe($user, 'starter');
+
+        $this->assertNull($user->byokGeminiKey());
+    }
+
+    // ─── Integrations settings ───────────────────────────────────────────────
+
+    public function test_integrations_update_saves_the_key_without_a_subscription(): void
+    {
+        $user = User::factory()->create();
 
         $this->actingAs($user)
             ->patch('/settings/integrations', ['gemini_api_key' => 'AIza-x'])
-            ->assertForbidden();
+            ->assertRedirect();
 
-        $this->assertNull($user->fresh()->gemini_api_key);
+        $this->assertSame('AIza-x', $user->fresh()->gemini_api_key);
     }
 
-    public function test_integrations_update_saves_the_key_on_a_byok_plan(): void
+    public function test_integrations_update_saves_the_key_on_any_plan(): void
     {
         $user = User::factory()->create();
-        $this->subscribe($user, 'pro');
+        $this->subscribe($user, 'starter');
 
         $this->actingAs($user)
             ->patch('/settings/integrations', ['gemini_api_key' => 'AIza-x'])
@@ -85,7 +85,6 @@ class ByokTest extends TestCase
     public function test_integrations_update_can_clear_the_key(): void
     {
         $user = User::factory()->create(['gemini_api_key' => 'AIza-x']);
-        $this->subscribe($user, 'pro');
 
         $this->actingAs($user)
             ->patch('/settings/integrations', ['gemini_api_key' => ''])

@@ -20,17 +20,23 @@ export interface PricingPack {
     badge: string | null;
 }
 
+export interface PricingLifetime {
+    price_label: string | null;
+    price_id: string | null;
+}
+
 export interface Pricing {
     currency: string;
     plans: Record<string, PricingPlan>;
     packs: PricingPack[];
+    lifetime: PricingLifetime | null;
 }
 
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
-            auth: Auth & { credits: number; on_trial: boolean; trial_ends_at: string | null; onboarding_complete: boolean };
+            auth: Auth & { credits: number; on_trial: boolean; trial_ends_at: string | null; onboarding_complete: boolean; premium_access: boolean; lifetime_access: boolean };
             pricing: Pricing | null;
             igEnabled: boolean;
             sidebarOpen: boolean;

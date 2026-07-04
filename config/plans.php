@@ -3,11 +3,15 @@
 /*
  * Pricing lever — every pricing value here is env-overridable (see .env.example),
  * with the current published prices as defaults:
- *   - PLAN_*_CREDITS         → managed AI-image allowance per billing cycle. Credits
- *     meter the only real COGS; carousels/text are unlimited and BYOK images are free,
- *     so mid/top tiers are effectively "unlimited images with BYOK".
+ *   - PLAN_*_CREDITS         → managed AI-image allowance per billing cycle.
  *   - STRIPE_PRICE_*_LABEL   → the price shown on the pricing UI (display only).
  *   - STRIPE_PRICE_*         → the real Stripe Price id that is actually charged.
+ *
+ * LAUNCH OFFER: images are BYOK on every plan (each user connects their own
+ * Gemini key), so image generation carries no platform COGS right now. The
+ * credit structure below stays fully wired — balances keep accruing silently —
+ * so managed images can be re-enabled later by flipping `byok_enabled` back to
+ * false on the lower tiers and unhiding the credits UI.
  */
 
 $starterCredits = (int) env('PLAN_STARTER_CREDITS', 60);
@@ -20,12 +24,10 @@ return [
         'name' => 'Starter',
         'description' => 'Para criadores individuais',
         'credits_per_cycle' => $starterCredits,
-        // BYOK (bring-your-own Gemini key) is reserved for paid mid/top tiers so
-        // the entry plan can't be used as an "unlimited images" backdoor.
-        'byok_enabled' => false,
+        'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            "{$starterCredits} imagens virais por mês",
+            'Imagens ilimitadas com sua chave Gemini',
             'Todos os templates',
             'Suporte por e-mail',
         ],
@@ -48,8 +50,7 @@ return [
         'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            "{$proCredits} imagens virais por mês",
-            'Imagens ilimitadas com sua chave Gemini (BYOK)',
+            'Imagens ilimitadas com sua chave Gemini',
             'Todos os templates',
             'Suporte prioritário',
             'Acesso antecipado',
@@ -73,8 +74,7 @@ return [
         'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            "{$agencyCredits} imagens virais por mês",
-            'Imagens ilimitadas com sua chave Gemini (BYOK)',
+            'Imagens ilimitadas com sua chave Gemini',
             'Todos os templates',
             'Múltiplos projetos',
             'Suporte prioritário',
