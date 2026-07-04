@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Align, BadgeStyle, GradientEl, PathEl, ShapeEl, SLIDE_W, SlideCorners, SlideEl, TextEl } from './types';
+import { Align, BadgeStyle, PathEl, ShapeEl, SLIDE_W, SlideCorners, SlideEl, TextEl } from './types';
 import { SHADOW_DEFAULTS, fitTextFontSize, measuredTextHeight, uid } from './utils';
 import { LayoutDefinition, computeSafeArea } from './layouts';
 
@@ -107,19 +107,6 @@ function createRect(overrides: Partial<ShapeEl> & Pick<ShapeEl, 'type' | 'x' | '
         cornerRadius: 0,
         borderStyle: 'solid',
         dashEnabled: false,
-        ...SHADOW_DEFAULTS,
-        ...overrides,
-    };
-}
-
-function createGradient(overrides: Partial<GradientEl> & Pick<GradientEl, 'x' | 'y' | 'width' | 'height'>): GradientEl {
-    return {
-        id: uid(),
-        type: 'gradient',
-        rotation: 0,
-        opacity: 1,
-        color: '#000000',
-        direction: 'bottom',
         ...SHADOW_DEFAULTS,
         ...overrides,
     };
@@ -279,17 +266,6 @@ export function buildSceneFromLayoutGeneric(
             width: Math.round(slot.width * safe.width),
             height: Math.round(slot.height * contentH),
         };
-    }
-
-    if (layout.gradientIntensity > 0.2) {
-        elements.push(createGradient({
-            x: 0,
-            y: Math.round(slideH * 0.35),
-            width: SLIDE_W,
-            height: Math.round(slideH * 0.65),
-            color: bg,
-            opacity: layout.gradientIntensity,
-        }));
     }
 
     if (layout.stat?.visible && content.stat) {
@@ -510,14 +486,6 @@ function buildNoirManifesto(content: TemplateContent, slideH: number, accent: st
                 fill: 'rgba(232,68,10,0.10)',
                 stroke: 'rgba(255,255,255,0.08)',
                 strokeWidth: 2,
-            }),
-            createGradient({
-                x: 0,
-                y: Math.round(slideH * 0.42),
-                width: SLIDE_W,
-                height: Math.round(slideH * 0.58),
-                color: '#000000',
-                opacity: 0.9,
             }),
             createRect({
                 type: 'rect',
