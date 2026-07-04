@@ -467,7 +467,9 @@ export function useAiGeneration(
             if (!trimmed.startsWith('{')) continue;
             try {
                 const slide = JSON.parse(trimmed) as SlideData;
-                if (slide.title && slide.imagePrompt) parsedSlides.push(slide);
+                // A slide with copy but no imagePrompt is still a slide — render it
+                // without an image rather than silently shrinking the deck.
+                if (slide.title) parsedSlides.push(slide);
             } catch { /* skip malformed lines */ }
         }
 
@@ -510,6 +512,7 @@ export function useAiGeneration(
             imageResults = await Promise.allSettled(
                 parsedSlides.map(async (s) => {
                     setAiProgress((prev) => [...prev, s.title]);
+                    if (!s.imagePrompt) return null;
                     try {
                         const r = await fetch(CarouselGenerationController.generateImage().url, {
                             method: 'POST',

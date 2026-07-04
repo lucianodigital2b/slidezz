@@ -62,7 +62,7 @@ class CarouselGenerationServiceTest extends TestCase
     {
         Prism::fake([TextResponseFake::make()->withText('{"title":"Test","imagePrompt":"x"}')]);
 
-        $result = $this->service->generateSlides('marketing tips', 'modern and professional', 3);
+        $result = $this->service->generateSlides('marketing tips', 'modern and professional', 1);
 
         $this->assertIsString($result);
         $this->assertStringContainsString('"title":"Test"', $result);
@@ -135,6 +135,79 @@ class CarouselGenerationServiceTest extends TestCase
         // ...while scene content and the universal constraints remain.
         $this->assertStringContainsString('Marie Curie', $prompt);
         $this->assertStringContainsString('no text, captions, logos, or watermarks', $prompt);
+    }
+
+    public function test_generate_slides_synthesizes_image_prompt_when_model_omits_the_image_object(): void
+    {
+        $lines = implode("\n", [
+            json_encode(['title' => 'Hook', 'description' => 'D1', 'image' => ['main_description' => 'A scene', 'subjects' => [], 'environment' => ['scene' => 'office', 'elements' => []]]]),
+            json_encode(['title' => 'Erro comum', 'description' => 'Postar sem estratégia']),
+        ]);
+
+        Prism::fake([TextResponseFake::make()->withText($lines)]);
+
+        $result = $this->service->generateSlides('growth', 'fun', 2, true, 'Portuguese (Brazil)', 'pop-magazine');
+
+        $decoded = array_map(fn (string $l) => json_decode($l, true), explode("\n", $result));
+
+        $this->assertCount(2, $decoded);
+        // The lazy line still gets a usable image prompt built from its own copy...
+        $this->assertStringContainsString('Erro comum', $decoded[1]['imagePrompt']);
+        $this->assertStringContainsString('Postar sem estratégia', $decoded[1]['imagePrompt']);
+        // ...with the template aesthetics and universal constraints pinned on.
+        $this->assertStringContainsString('high-saturation', $decoded[1]['imagePrompt']);
+        $this->assertStringContainsString('no text, captions, logos, or watermarks', $decoded[1]['imagePrompt']);
+    }
+
+    public function test_generate_slides_retries_when_model_returns_fewer_slides_than_requested(): void
+    {
+        $short = '{"title":"Only one","description":"D","imagePrompt":"x"}';
+        $full = implode("\n", [
+            '{"title":"S1","description":"D","imagePrompt":"x"}',
+            '{"title":"S2","description":"D","imagePrompt":"x"}',
+            '{"title":"S3","description":"D","imagePrompt":"x"}',
+        ]);
+
+        Prism::fake([
+            TextResponseFake::make()->withText($short),
+            TextResponseFake::make()->withText($full),
+        ]);
+
+        $result = $this->service->generateSlides('marketing tips', 'fun', 3);
+
+        $lines = array_filter(explode("\n", $result));
+
+        $this->assertCount(3, $lines);
+    }
+
+    public function test_generate_slides_keeps_first_response_when_retry_is_no_better(): void
+    {
+        $short = '{"title":"Only one","description":"D","imagePrompt":"x"}';
+
+        Prism::fake([
+            TextResponseFake::make()->withText($short),
+            TextResponseFake::make()->withText(''),
+        ]);
+
+        $result = $this->service->generateSlides('marketing tips', 'fun', 3);
+
+        $this->assertStringContainsString('"title":"Only one"', $result);
+    }
+
+    public function test_generate_slides_does_not_retry_when_count_matches(): void
+    {
+        // Prism::fake throws if more calls happen than queued responses, so queuing
+        // exactly one response asserts no retry request is made.
+        $full = implode("\n", [
+            '{"title":"S1","description":"D","imagePrompt":"x"}',
+            '{"title":"S2","description":"D","imagePrompt":"x"}',
+        ]);
+
+        Prism::fake([TextResponseFake::make()->withText($full)]);
+
+        $result = $this->service->generateSlides('marketing tips', 'fun', 2);
+
+        $this->assertCount(2, array_filter(explode("\n", $result)));
     }
 
     public function test_generate_slides_pins_aesthetics_onto_a_plain_image_prompt_fallback(): void

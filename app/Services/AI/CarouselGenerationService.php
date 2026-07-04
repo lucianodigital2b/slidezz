@@ -35,7 +35,7 @@ OUTPUT
 KEYS (each line must have exactly these keys)
 - title: headline, max 8 words, punchy and specific.
 - description: body copy following the PER-SLIDE rules. Always concrete and complete, never vague or generic.
-- image: an object describing ONLY the scene content (see IMAGE). Never describe lighting, camera, lens, color, or art style anywhere - those are fixed per template and added automatically so every slide shares one consistent look.
+- image: an object describing ONLY the scene content (see IMAGE). EVERY one of the {$slideCount} lines must include its own complete `image` object - never omit it or leave it empty on any slide. Never describe lighting, camera, lens, color, or art style anywhere - those are fixed per template and added automatically so every slide shares one consistent look.
 {$highlightFields}- stat: (optional) a single dramatic hero number, e.g. "\$150B", "90%", "3 of 4". Include only when the slide has a genuinely strong number worth calling out; otherwise omit the key entirely.
 
 NARRATIVE
@@ -65,12 +65,46 @@ Voice: {$style}
 Output exactly {$slideCount} lines of raw NDJSON. Nothing else.
 PROMPT;
 
-        $ndjson = $this->runTextWithFallback(
-            $systemPrompt,
-            "Create a {$slideCount}-slide Instagram carousel about: {$topic}",
-        );
+        $userPrompt = "Create a {$slideCount}-slide Instagram carousel about: {$topic}";
+
+        $ndjson = $this->runTextWithFallback($systemPrompt, $userPrompt);
+
+        // Models occasionally ignore the "exactly N lines" instruction and return a
+        // single slide (or emit the `image` object only on slide 1). One retry fixes
+        // the vast majority of these; the client would otherwise render a 1-slide deck.
+        if ($this->countUsableSlideLines($ndjson) < $slideCount) {
+            \Log::warning('[Carousel] Model returned fewer slides than requested; retrying', [
+                'requested' => $slideCount,
+                'usable' => $this->countUsableSlideLines($ndjson),
+            ]);
+
+            $retry = $this->runTextWithFallback($systemPrompt, $userPrompt);
+
+            if ($this->countUsableSlideLines($retry) > $this->countUsableSlideLines($ndjson)) {
+                $ndjson = $retry;
+            }
+        }
 
         return $this->composeImagePrompts($ndjson, $template, $imageStyle);
+    }
+
+    /**
+     * How many NDJSON lines parse into a slide the editor can actually render
+     * (a JSON object with a non-empty title).
+     */
+    private function countUsableSlideLines(string $ndjson): int
+    {
+        $count = 0;
+
+        foreach (preg_split('/\r\n|\r|\n/', $ndjson) ?: [] as $line) {
+            $decoded = json_decode(trim($line), true);
+
+            if (is_array($decoded) && trim((string) ($decoded['title'] ?? '')) !== '') {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**
@@ -175,6 +209,13 @@ PROMPT;
             } elseif (! empty($decoded['imagePrompt']) && is_string($decoded['imagePrompt'])) {
                 // Fallback: model emitted free text - still pin the resolved aesthetic.
                 $decoded['imagePrompt'] = $this->joinSentences([$decoded['imagePrompt'], $this->aestheticsSentence($aesthetics, $imageStyle)]);
+            } elseif (trim((string) ($decoded['title'] ?? '')) !== '') {
+                // Model omitted the image entirely on this slide - synthesize a prompt
+                // from the slide copy so the editor never drops the slide.
+                $decoded['imagePrompt'] = $this->joinSentences([
+                    'An editorial scene that visually represents: '.trim(($decoded['title'] ?? '').'. '.($decoded['description'] ?? '')),
+                    $this->aestheticsSentence($aesthetics, $imageStyle),
+                ]);
             }
 
             $out[] = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
