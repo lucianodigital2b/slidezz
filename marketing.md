@@ -14,11 +14,11 @@ Guia de tom, posicionamento e mensagens prontas para divulgação. Idioma: **por
 - Carrosséis **ilimitados** em todos os planos, sem créditos nem cotas.
 - Imagens virais geradas por IA **sem limite**: você conecta sua chave gratuita do Google Gemini (2 minutos) e as imagens rodam na sua conta Google.
 - Todos os templates inclusos.
-- **Oferta de lançamento:** acesso vitalício por **R$149** (pagamento único, sem mensalidade), por tempo limitado.
+- **Oferta de lançamento:** acesso vitalício por **R$297** (pagamento único, sem mensalidade), por tempo limitado.
 - Criar conta é grátis; o gerador de IA é liberado com o vitalício (ou assinatura).
 - Site: **slidezz.app**
 
-> Nota interna (oferta de lançamento): as imagens usam a chave Gemini do próprio usuário (BYOK) em todos os planos. Nos posts, falar "imagens ilimitadas" e "chave gratuita do Google", nunca "BYOK" ou "créditos". A oferta principal a divulgar é o vitalício de R$149.
+> Nota interna (oferta de lançamento): as imagens usam a chave Gemini do próprio usuário (BYOK) em todos os planos. Nos posts, falar "imagens ilimitadas" e "chave gratuita do Google", nunca "BYOK" ou "créditos". A oferta principal a divulgar é o vitalício de R$297.
 
 ---
 
@@ -41,7 +41,7 @@ Guia de tom, posicionamento e mensagens prontas para divulgação. Idioma: **por
 
 🚀 Cansou de perder horas fazendo carrossel?
 O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, imagens e design prontos em minutos.
-🎁 Oferta de lançamento: acesso vitalício por R$149, pague uma vez só.
+🎁 Oferta de lançamento: acesso vitalício por R$297, pague uma vez só.
 👉 slidezz.app
 
 ---
@@ -66,7 +66,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > Em vez de horas montando slide por slide, você descreve o tema e recebe o carrosséis pronto pra postar.
 >
-> 🎁 Oferta de lançamento: R$149 uma única vez, acesso pra sempre.
+> 🎁 Oferta de lançamento: R$297 uma única vez, acesso pra sempre.
 >
 > Bora criar o seu primeiro? 👉 slidezz.app
 
@@ -98,7 +98,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 
 **CTA padrão:** Comece grátis 👉 slidezz.app
 
-**Oferta padrão:** acesso vitalício por R$149, pagamento único (lançamento, por tempo limitado).
+**Oferta padrão:** acesso vitalício por R$297, pagamento único (lançamento, por tempo limitado).
 
 **Hashtags (Instagram/TikTok):** #carrossel #instagram #criadordeconteudo #marketingdigital #IA #slidezz
 
@@ -112,7 +112,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > O Slidezz cria o carrossel inteiro com IA: você dá a ideia, ele entrega roteiro viral + imagens + design prontos.
 >
-> Salva esse post e garante o vitalício por R$149 (link na bio), oferta de lançamento por tempo limitado. 🚀
+> Salva esse post e garante o vitalício por R$297 (link na bio), oferta de lançamento por tempo limitado. 🚀
 >
 > #carrossel #criadordeconteudo #marketingdigital #socialmedia #IA #slidezz
 
@@ -122,7 +122,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > **Tela 2:** Eu descrevo a ideia e a IA monta tudo — texto, imagem e design. Em minutos. 🤯 *(print/vídeo do app)*
 >
-> **Tela 3:** Garante o seu 👉 *(sticker de link)* slidezz.app · vitalício por R$149 🎁
+> **Tela 3:** Garante o seu 👉 *(sticker de link)* slidezz.app · vitalício por R$297 🎁
 
 ### LinkedIn — post profissional
 
@@ -142,7 +142,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > *(mostra a tela)* Digita a ideia aqui… a IA escreve o roteiro… gera as imagens… e pronto, carrossel completo pra postar.
 >
-> Oferta de lançamento: R$149 e é seu pra sempre: slidezz.app
+> Oferta de lançamento: R$297 e é seu pra sempre: slidezz.app
 
 ---
 
@@ -154,7 +154,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > O Slidezz gera o carrossel completo com IA a partir da sua ideia — roteiro, imagens e design. Você foca na estratégia e na oferta.
 >
-> 🎁 Vitalício por R$149, por tempo limitado 👉 slidezz.app
+> 🎁 Vitalício por R$297, por tempo limitado 👉 slidezz.app
 
 ### Social media / agências
 
@@ -173,7 +173,7 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > O Slidezz cria os posts do seu negócio com IA — é só dizer o que você quer divulgar e ele monta o carrossel prontinho pra publicar.
 >
-> Garanta o vitalício por R$149 👉 slidezz.app
+> Garanta o vitalício por R$297 👉 slidezz.app
 
 ### Iniciantes / quem quer começar
 
@@ -181,4 +181,4 @@ O *Slidezz* cria carrosséis virais pra Instagram e TikTok com IA — roteiro, i
 >
 > O Slidezz faz o trabalho pesado: você escreve a ideia e a IA cria o carrossel completo — texto, imagens e design. Sem experiência nenhuma.
 >
-> 🎁 Oferta de lançamento: R$149 pra sempre 👉 slidezz.app
+> 🎁 Oferta de lançamento: R$297 pra sempre 👉 slidezz.app

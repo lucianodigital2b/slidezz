@@ -753,7 +753,7 @@ export default function Welcome({
                             </h3>
                             <div className="mb-2 flex items-baseline justify-center gap-2">
                                 <span className="text-[56px] leading-none font-extrabold text-[#FFE156]">
-                                    R$149
+                                    R$297
                                 </span>
                                 <span className="text-lg font-semibold text-[#AAAAAA]">
                                     pagamento único

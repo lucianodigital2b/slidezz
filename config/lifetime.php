@@ -13,7 +13,7 @@ return [
             'price_id' => env('STRIPE_PRICE_LIFETIME'),
         ],
         'brl' => [
-            'price_label' => env('STRIPE_PRICE_LIFETIME_BRL_LABEL', 'R$149'),
+            'price_label' => env('STRIPE_PRICE_LIFETIME_BRL_LABEL', 'R$297'),
             'price_id' => env('STRIPE_PRICE_LIFETIME_BRL'),
         ],
     ],
