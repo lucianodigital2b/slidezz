@@ -36,7 +36,7 @@ export default function CtaButton({
             href={href}
             style={{ '--cta': COLORS[variant] } as CSSProperties}
             className={cn(
-                'group relative inline-flex items-center gap-3 rounded-full border border-[var(--cta)] bg-[var(--cta)] py-1.5 pr-1.5 pl-6 text-lg font-bold text-white',
+                'group relative inline-flex items-center gap-3 rounded-full border border-[var(--cta)] bg-[var(--cta)] py-1.5 pr-1.5 pl-6 text-lg font-bold text-[#1A1A1A]',
                 className,
             )}
         >
@@ -45,10 +45,10 @@ export default function CtaButton({
                 aria-hidden
                 className="absolute top-1/2 right-1.5 h-9 w-9 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-out group-hover:top-0 group-hover:right-0 group-hover:h-full group-hover:w-full group-hover:translate-y-0 motion-reduce:transition-none"
             />
-            <span className="relative z-10 transition-colors duration-300 ease-out group-hover:text-[var(--cta)]">
+            <span className="relative z-10 text-[#1A1A1A]">
                 {children}
             </span>
-            <span className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center text-[var(--cta)]">
+            <span className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center text-[#1A1A1A]">
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-0.5" />
             </span>
         </Link>

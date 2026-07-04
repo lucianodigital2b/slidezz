@@ -601,12 +601,14 @@ export function KonvaImageEl({ el, slideW, slideH, draggable, onSelect, onDragMo
     const dispX = el.isBackground ? 0 : el.x;
     const dispY = el.isBackground ? 0 : el.y;
 
-    // Crop for background-size modes
-    const crop = img && el.isBackground
+    // Crop for background-size modes. Applied to placed images too (not just
+    // backgrounds) so a fixed layout box fills via cover-crop instead of
+    // stretching the source and squishing it.
+    const crop = img
         ? el.bgSize === 'cover'
-            ? coverCrop(img.naturalWidth, img.naturalHeight, slideW, slideH, el.bgPositionX, el.bgPositionY)
+            ? coverCrop(img.naturalWidth, img.naturalHeight, dispW, dispH, el.bgPositionX, el.bgPositionY)
             : el.bgSize === 'contain'
-                ? containCrop(img.naturalWidth, img.naturalHeight, slideW, slideH)
+                ? containCrop(img.naturalWidth, img.naturalHeight, dispW, dispH)
                 : undefined
         : undefined;
 

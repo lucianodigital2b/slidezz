@@ -25,7 +25,7 @@ export default function CtaSubmit({
             disabled={disabled ?? processing}
             style={{ '--cta': '#FFE156' } as CSSProperties}
             className={cn(
-                'group relative flex h-12 w-full items-center justify-center rounded-full border border-[var(--cta)] bg-[var(--cta)] px-6 text-base font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-80',
+                'group relative flex h-12 w-full items-center justify-center rounded-full border border-[var(--cta)] bg-[var(--cta)] px-6 text-base font-bold text-[#1A1A1A] transition-opacity disabled:cursor-not-allowed disabled:opacity-80',
                 className,
             )}
             {...props}
@@ -35,10 +35,10 @@ export default function CtaSubmit({
                 aria-hidden
                 className="absolute top-1/2 right-1.5 h-9 w-9 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-out group-hover:top-0 group-hover:right-0 group-hover:h-full group-hover:w-full group-hover:translate-y-0 motion-reduce:transition-none"
             />
-            <span className="relative z-10 transition-colors duration-300 ease-out group-hover:text-[var(--cta)]">
+            <span className="relative z-10 text-[#1A1A1A]">
                 {children}
             </span>
-            <span className="absolute top-1/2 right-1.5 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-[var(--cta)]">
+            <span className="absolute top-1/2 right-1.5 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-[#1A1A1A]">
                 {processing ? (
                     <Spinner />
                 ) : (

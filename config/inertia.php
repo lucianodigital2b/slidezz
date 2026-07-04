@@ -16,7 +16,12 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
+        // Off by default: this app has no SSR entry/bundle and the dev script
+        // never starts an SSR server, so leaving SSR "on" makes the client
+        // render over inconsistent markup (duplicate React roots / hydration
+        // errors). Enable via INERTIA_SSR=true only once SSR is properly built
+        // (build:ssr) and the SSR server is running.
+        'enabled' => env('INERTIA_SSR', false),
         'url' => 'http://127.0.0.1:13714',
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 

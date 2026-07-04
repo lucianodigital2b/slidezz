@@ -18,6 +18,7 @@ import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 import { FORMATS } from '@/components/SlideEditor/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { CreditsModal } from '@/components/CreditsModal';
 
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
@@ -230,6 +231,10 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+/** Field limits mirrored from the backend validation in CarouselWizardController@store. */
+const TITLE_MAX = 255;
+const TOPIC_MAX = 2000;
+
 export default function CreateCarousel() {
     const { t } = useTranslation();
     const { workspaceConfig, savedTemplates, auth, initialTopic, initialTitle } = usePage<PageProps>().props;
@@ -241,7 +246,7 @@ export default function CreateCarousel() {
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
-    const [imageMode, setImageMode] = useState<ImageMode>('background');
+    const [imageMode, setImageMode] = useState<ImageMode>('alternate');
     const [imageStyle, setImageStyle]       = useState('');
     const [saveConfig, setSaveConfig]       = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
@@ -261,7 +266,14 @@ export default function CreateCarousel() {
     ];
 
     function canAdvance() {
-        if (step === 1) return title.trim().length > 0 && topic.trim().length > 0;
+        if (step === 1) {
+            return (
+                title.trim().length > 0 &&
+                title.length <= TITLE_MAX &&
+                topic.trim().length > 0 &&
+                topic.length <= TOPIC_MAX
+            );
+        }
         if (step === 2) return template !== '';
         return true;
     }
@@ -279,7 +291,16 @@ export default function CreateCarousel() {
         if (submitting) return;
         setSubmitting(true);
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
-        router.post(`/slide-templates/${id}/use`, {}, { headers: { 'X-CSRF-TOKEN': csrfToken } });
+        router.post(`/slide-templates/${id}/use`, {}, {
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+            onError: (errors) => {
+                setSubmitting(false);
+                const firstError = Object.values(errors)[0];
+                if (firstError) {
+                    toast.error(firstError);
+                }
+            },
+        });
     }
 
     function handleSubmit() {
@@ -293,7 +314,16 @@ export default function CreateCarousel() {
         router.post(
             CarouselWizardController.store().url,
             { title, topic, template, archetype, slide_count: slideCount, save_config: saveConfig, save_as_template: saveAsTemplate, format, custom_prompt: customPrompt, image_mode: imageMode, image_style: imageStyle, language },
-            { headers: { 'X-CSRF-TOKEN': csrfToken } },
+            {
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                onError: (errors) => {
+                    setSubmitting(false);
+                    const firstError = Object.values(errors)[0];
+                    if (firstError) {
+                        toast.error(firstError);
+                    }
+                },
+            },
         );
     }
 
@@ -382,6 +412,7 @@ export default function CreateCarousel() {
                                         type="text"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
+                                        maxLength={TITLE_MAX}
                                         placeholder={t('createCarousel.step1.titlePlaceholder')}
                                         className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
                                     />
@@ -396,9 +427,13 @@ export default function CreateCarousel() {
                                         value={topic}
                                         onChange={(e) => setTopic(e.target.value)}
                                         rows={5}
+                                        maxLength={TOPIC_MAX}
                                         placeholder={t('createCarousel.step1.topicPlaceholder')}
-                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
+                                        className={`rounded-lg border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent ${topic.length > TOPIC_MAX ? 'border-red-400' : 'border-gray-200'}`}
                                     />
+                                    <span className={`self-end text-xs ${topic.length > TOPIC_MAX ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                                        {topic.length}/{TOPIC_MAX}
+                                    </span>
                                 </div>
 
                                 {/* TODO: Import from a URL — feature to be implemented later */}

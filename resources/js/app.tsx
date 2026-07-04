@@ -1,5 +1,7 @@
 import '@/i18n';
 import { createInertiaApp, router } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { syncStoredLanguage } from '@/i18n';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -9,6 +11,19 @@ import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+/**
+ * Applies the stored language preference after hydration. Runs in an effect
+ * (client-only, post-mount) so the initial render stays in sync with the SSR
+ * HTML and no hydration mismatch is triggered.
+ */
+function LanguageSync() {
+    useEffect(() => {
+        syncStoredLanguage();
+    }, []);
+
+    return null;
+}
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -32,6 +47,7 @@ createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
+                <LanguageSync />
                 <Toaster />
             </TooltipProvider>
         );
