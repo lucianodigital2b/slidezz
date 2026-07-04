@@ -528,7 +528,7 @@
   },
   "onboarding": {
     "header": {
-      "subtitle": "Set up your account in 5 simple steps",
+      "subtitle": "Set up your account in 6 simple steps",
       "step": "Step {{current}} of {{total}}"
     },
     "steps": {
@@ -536,7 +536,17 @@
       "brand": "Brand",
       "audience": "Audience",
       "identity": "Identity",
-      "style": "Style"
+      "style": "Style",
+      "gemini": "AI key"
+    },
+    "gemini": {
+      "title": "Connect your Gemini key",
+      "subtitle": "Your carousel images are generated with your own free Google Gemini key — unlimited, with no extra cost from Slidezz",
+      "label": "Gemini API key",
+      "placeholder": "AIza...",
+      "hint": "Takes 2 minutes, Google offers a free tier, and the key is stored encrypted.",
+      "guideLink": "How do I get my free key?",
+      "skip": "Skip for now"
     },
     "nav": {
       "back": "Back",
@@ -864,6 +874,7 @@
       "geminiDescription": "Connect your own Google Gemini key to generate your carousel images — no limits. It takes 2 minutes and Google offers a free tier.",
       "keyLabel": "Gemini API key",
       "keyHint": "Create your free key at ai.google.dev. We store the key encrypted and never show it back.",
+      "guideLink": "Step by step: how to get your free key",
       "keyConnected": "Key connected. Unlimited images active.",
       "save": "Save",
       "lockedTitle": "Available on the Pro and Agency plans",

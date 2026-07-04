@@ -82,6 +82,11 @@ class ByokTest extends TestCase
         $this->assertSame('AIza-x', $user->fresh()->gemini_api_key);
     }
 
+    public function test_gemini_key_guide_page_is_public(): void
+    {
+        $this->get('/chave-gemini')->assertOk();
+    }
+
     public function test_integrations_update_can_clear_the_key(): void
     {
         $user = User::factory()->create(['gemini_api_key' => 'AIza-x']);

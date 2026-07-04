@@ -51,7 +51,15 @@ class OnboardingController extends Controller
             'palette.accent' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'visual_style' => ['nullable', 'string', 'max:2000'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'gemini_api_key' => ['nullable', 'string', 'max:200'],
         ]);
+
+        // BYOK step of the wizard (optional — there's a skip button): images run
+        // on the user's own Gemini key, so capture it here when provided.
+        if (filled($validated['gemini_api_key'] ?? null)) {
+            $request->user()->gemini_api_key = trim($validated['gemini_api_key']);
+            $request->user()->save();
+        }
 
         $logoPath = null;
         if ($request->hasFile('logo')) {

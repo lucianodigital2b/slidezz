@@ -76,6 +76,14 @@ export default function Integrations({
                                         />
                                     </div>
                                     <p className="text-xs text-muted-foreground">{t('settings.integrations.keyHint')}</p>
+                                    <a
+                                        href="/chave-gemini"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                                    >
+                                        {t('settings.integrations.guideLink')}
+                                    </a>
                                     <InputError className="mt-1" message={errors.gemini_api_key} />
                                 </div>
 

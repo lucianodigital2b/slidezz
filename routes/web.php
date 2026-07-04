@@ -30,6 +30,10 @@ Route::inertia('/br', 'welcome', [
 Route::inertia('/privacy-policy', 'Policy')->name('privacy-policy');
 Route::inertia('/terms', 'Terms')->name('terms');
 
+// Public how-to: creating a free Gemini API key on Google AI Studio (linked
+// from the onboarding BYOK step and the integrations settings).
+Route::inertia('/chave-gemini', 'GeminiKeyGuide')->name('gemini-key.guide');
+
 // Meta Pixel browser events mirrored to the Conversions API (works for guests too).
 Route::post('meta/event', [MetaEventController::class, 'store'])
     ->middleware('throttle:60,1')

@@ -175,6 +175,7 @@
       "geminiDescription": "Conecte sua própria chave do Google Gemini para gerar as imagens dos seus carrosséis — sem limite. Leva 2 minutos e o Google oferece um nível gratuito.",
       "keyLabel": "Chave da API Gemini",
       "keyHint": "Crie sua chave grátis em ai.google.dev. Armazenamos a chave criptografada e nunca a exibimos de volta.",
+      "guideLink": "Passo a passo: como pegar sua chave gratuita",
       "keyConnected": "Chave conectada — imagens ilimitadas ativas.",
       "save": "Salvar",
       "lockedTitle": "Disponível nos planos Pro e Agency",
@@ -792,7 +793,7 @@
   },
   "onboarding": {
     "header": {
-      "subtitle": "Configure sua conta em 5 passos simples",
+      "subtitle": "Configure sua conta em 6 passos simples",
       "step": "Passo {{current}} de {{total}}"
     },
     "steps": {
@@ -800,7 +801,17 @@
       "brand": "Marca",
       "audience": "Público",
       "identity": "Identidade",
-      "style": "Estilo"
+      "style": "Estilo",
+      "gemini": "Chave IA"
+    },
+    "gemini": {
+      "title": "Conecte sua chave Gemini",
+      "subtitle": "As imagens dos seus carrosséis são geradas com a sua própria chave gratuita do Google Gemini — sem limite e sem custo extra do Slidezz",
+      "label": "Chave da API Gemini",
+      "placeholder": "AIza...",
+      "hint": "Leva 2 minutos, o Google oferece um nível gratuito e a chave fica criptografada.",
+      "guideLink": "Como pegar minha chave gratuita?",
+      "skip": "Pular por enquanto"
     },
     "nav": {
       "back": "Voltar",

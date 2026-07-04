@@ -124,6 +124,30 @@ class OnboardingControllerTest extends TestCase
         $this->assertSame(15, $fresh->credits);
     }
 
+    public function test_save_profile_stores_the_gemini_key_when_provided(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload(['gemini_api_key' => '  AIza-onboarding-key  ']))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertSame('AIza-onboarding-key', $user->fresh()->gemini_api_key);
+    }
+
+    public function test_save_profile_without_gemini_key_leaves_it_null(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload())
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertNull($user->fresh()->gemini_api_key);
+    }
+
     public function test_save_profile_stores_logo_and_references_in_profile(): void
     {
         Storage::fake('public');

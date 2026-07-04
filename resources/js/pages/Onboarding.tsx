@@ -6,6 +6,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     Fingerprint,
+    KeyRound,
     Lightbulb,
     Loader2,
     Palette as PaletteIcon,
@@ -53,6 +54,7 @@ interface FormData {
     palette: Palette;
     visual_style: string;
     logo: File | null;
+    gemini_api_key: string;
 }
 
 // ─── Brand tokens (mirrors LandingEn.tsx) ─────────────────────────────────────
@@ -67,7 +69,7 @@ const fieldClass =
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const GOAL_ICONS: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
     sell_products:        { color: 'text-white', bg: 'bg-emerald-500', icon: TrendingUp },
@@ -97,8 +99,8 @@ const EXTRA_PALETTES: Palette[] = [
 
 // ─── Step nav config ─────────────────────────────────────────────────────────
 
-const STEP_ICONS = [Target, Building2, Users, Fingerprint, PaletteIcon];
-const STEP_KEYS = ['goal', 'brand', 'audience', 'identity', 'style'] as const;
+const STEP_ICONS = [Target, Building2, Users, Fingerprint, PaletteIcon, KeyRound];
+const STEP_KEYS = ['goal', 'brand', 'audience', 'identity', 'style', 'gemini'] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -554,7 +556,48 @@ function Step5({ data, set }: { data: FormData; set: (k: keyof FormData, v: any)
     );
 }
 
-// ─── Step 6: Plans ───────────────────────────────────────────────────────────
+// ─── Step 6: Gemini key (BYOK) ───────────────────────────────────────────────
+
+function Step6GeminiKey({ data, set }: { data: FormData; set: (k: keyof FormData, v: any) => void }) {
+    const { t } = useTranslation();
+    return (
+        <div className="space-y-8">
+            <div className="space-y-2 text-center">
+                <h2 className="font-display text-5xl leading-none tracking-normal text-[#1A1A1A]">{t('onboarding.gemini.title')}</h2>
+                <p className="text-lg font-medium text-[#666660]">{t('onboarding.gemini.subtitle')}</p>
+            </div>
+
+            <div className="space-y-2">
+                <label htmlFor="gemini_api_key" className="text-sm font-bold text-[#1A1A1A]">
+                    {t('onboarding.gemini.label')}
+                </label>
+                <div className="relative">
+                    <KeyRound className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#AFACA4]" />
+                    <input
+                        id="gemini_api_key"
+                        type="password"
+                        autoComplete="off"
+                        className={`${fieldClass} pl-11`}
+                        placeholder={t('onboarding.gemini.placeholder')}
+                        value={data.gemini_api_key}
+                        onChange={(e) => set('gemini_api_key', e.target.value)}
+                    />
+                </div>
+                <a
+                    href="/chave-gemini"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-xs font-semibold text-[#888880] underline underline-offset-2 transition-colors hover:text-[#1A1A1A]"
+                >
+                    {t('onboarding.gemini.guideLink')}
+                </a>
+                <p className="text-xs font-medium text-[#AFACA4]">{t('onboarding.gemini.hint')}</p>
+            </div>
+        </div>
+    );
+}
+
+// ─── Step 7: Plans ───────────────────────────────────────────────────────────
 
 function StepPlans({
     plans,
@@ -648,7 +691,7 @@ function validateStep(step: number, data: FormData, t: (k: string) => string): s
 
 export default function Onboarding({ has_profile, plans }: Props) {
     const { t } = useTranslation();
-    const [step, setStep] = useState(has_profile ? 6 : 1);
+    const [step, setStep] = useState(has_profile ? 7 : 1);
     const [saving, setSaving] = useState(false);
     const [subscribingTo, setSubscribingTo] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -661,6 +704,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
         palette: PALETTES[0],
         visual_style: '',
         logo: null,
+        gemini_api_key: '',
     });
 
     const set = (key: keyof FormData, value: any) => {
@@ -684,7 +728,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
         setStep((s) => Math.max(s - 1, 1));
     };
 
-    const saveAndAdvance = () => {
+    const saveAndAdvance = (skipGeminiKey = false) => {
         const form = new FormData();
         form.append('goal', data.goal);
         form.append('brand_name', data.brand_name);
@@ -697,12 +741,13 @@ export default function Onboarding({ has_profile, plans }: Props) {
         form.append('palette[accent]', data.palette.accent);
         if (data.visual_style) form.append('visual_style', data.visual_style);
         if (data.logo) form.append('logo', data.logo);
+        if (!skipGeminiKey && data.gemini_api_key.trim()) form.append('gemini_api_key', data.gemini_api_key.trim());
 
         setSaving(true);
         router.post('/onboarding/profile', form, {
             forceFormData: true,
             preserveState: true,
-            onSuccess: () => { setStep(6); setSaving(false); },
+            onSuccess: () => { setStep(7); setSaving(false); },
             onError: () => setSaving(false),
         });
     };
@@ -714,7 +759,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
         });
     };
 
-    const isOnPlansStep = step === 6;
+    const isOnPlansStep = step === 7;
 
     const stepComponents: Record<number, React.ReactNode> = {
         1: <Step1 data={data} set={set} />,
@@ -722,7 +767,8 @@ export default function Onboarding({ has_profile, plans }: Props) {
         3: <Step3 data={data} set={set} />,
         4: <Step4 data={data} set={set} />,
         5: <Step5 data={data} set={set} />,
-        6: <StepPlans plans={plans} onSubscribe={subscribeToPlan} subscribingTo={subscribingTo} />,
+        6: <Step6GeminiKey data={data} set={set} />,
+        7: <StepPlans plans={plans} onSubscribe={subscribeToPlan} subscribingTo={subscribingTo} />,
     };
 
     return (
@@ -783,17 +829,25 @@ export default function Onboarding({ has_profile, plans }: Props) {
                                 ) : (
                                     <span />
                                 )}
-                                <button type="button" onClick={next} disabled={saving}
-                                    className="flex items-center gap-2 rounded-full px-7 py-3 text-base font-bold text-white shadow-sm transition-colors disabled:opacity-50"
-                                    style={{ background: ACCENT }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT_DARK; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; }}>
-                                    {saving ? (
-                                        <><Loader2 className="h-4 w-4 animate-spin" /> {t('onboarding.nav.saving')}</>
-                                    ) : (
-                                        <>{step === TOTAL_STEPS ? t('onboarding.nav.viewPlans') : t('onboarding.nav.continue')} <ArrowRight className="h-4 w-4" /></>
+                                <div className="flex items-center gap-4">
+                                    {step === TOTAL_STEPS && (
+                                        <button type="button" onClick={() => saveAndAdvance(true)} disabled={saving}
+                                            className="text-sm font-semibold text-[#888880] underline underline-offset-2 transition-colors hover:text-[#1A1A1A] disabled:opacity-50">
+                                            {t('onboarding.gemini.skip')}
+                                        </button>
                                     )}
-                                </button>
+                                    <button type="button" onClick={next} disabled={saving}
+                                        className="flex items-center gap-2 rounded-full px-7 py-3 text-base font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+                                        style={{ background: ACCENT }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = ACCENT_DARK; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = ACCENT; }}>
+                                        {saving ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin" /> {t('onboarding.nav.saving')}</>
+                                        ) : (
+                                            <>{step === TOTAL_STEPS ? t('onboarding.nav.viewPlans') : t('onboarding.nav.continue')} <ArrowRight className="h-4 w-4" /></>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
