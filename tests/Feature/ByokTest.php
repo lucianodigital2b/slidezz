@@ -87,6 +87,17 @@ class ByokTest extends TestCase
         $this->get('/chave-gemini')->assertOk();
     }
 
+    public function test_dashboard_shares_whether_a_gemini_key_is_connected(): void
+    {
+        $without = User::factory()->create(['onboarding_completed_at' => now()]);
+        $this->actingAs($without)->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('auth.has_gemini_key', false));
+
+        $with = User::factory()->create(['onboarding_completed_at' => now(), 'gemini_api_key' => 'AIza-x']);
+        $this->actingAs($with)->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('auth.has_gemini_key', true));
+    }
+
     public function test_integrations_update_can_clear_the_key(): void
     {
         $user = User::factory()->create(['gemini_api_key' => 'AIza-x']);

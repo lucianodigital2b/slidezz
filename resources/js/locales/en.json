@@ -759,6 +759,11 @@
         "button": "Start from scratch"
       }
     },
+    "geminiAlert": {
+      "title": "You still need to connect your Gemini key",
+      "body": "Without it, your carousels come out without AI images. It takes 2 minutes and it's free.",
+      "cta": "Connect now"
+    },
     "welcome": {
       "title": "Welcome to Slidezz!",
       "description": "Carousels are unlimited. To generate AI images, connect your free Google Gemini key in Settings → Integrations.",

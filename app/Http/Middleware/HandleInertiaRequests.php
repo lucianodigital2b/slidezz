@@ -48,6 +48,9 @@ class HandleInertiaRequests extends Middleware
                 // Soft paywall: lifetime purchase or active subscription unlocks the generator.
                 'premium_access' => (bool) $request->user()?->hasPremiumAccess(),
                 'lifetime_access' => (bool) $request->user()?->hasLifetimeAccess(),
+                // Images are BYOK-only, so surfaces like the dashboard nudge the
+                // user to connect a Gemini key when none is set yet.
+                'has_gemini_key' => filled($request->user()?->gemini_api_key),
             ],
             // Localized pricing (BRL for Brazil, USD otherwise) so the credits modal
             // and other in-app upsells render the right currency for each user.

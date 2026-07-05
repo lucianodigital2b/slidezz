@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     ChevronLeft,
@@ -8,6 +8,7 @@ import {
     ExternalLink,
     Files,
     Gift,
+    KeyRound,
     PenLine,
     Search,
     Sparkles,
@@ -367,6 +368,7 @@ export default function Dashboard({
     show_welcome: boolean;
 }) {
     const { t } = useTranslation();
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(initialSearch ?? '');
     const [welcomeOpen, setWelcomeOpen] = useState(show_welcome);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -412,6 +414,33 @@ export default function Dashboard({
             />
 
             <div className="flex-1 bg-[#F9F6F4] font-[Outfit,sans-serif] text-[#1A1A1A]">
+                {/* ── Gemini key nudge (images are BYOK-only) ── */}
+                {!auth.has_gemini_key && (
+                    <FadeIn className="px-6 pt-6 sm:px-10">
+                        <div className="flex flex-col gap-4 rounded-2xl border border-[#FFE156] bg-[#FFE156]/15 p-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
+                                    <KeyRound className="h-4 w-4 text-[#1A1A1A]" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-[#1A1A1A]">
+                                        {t('dashboard.geminiAlert.title')}
+                                    </p>
+                                    <p className="text-sm font-medium text-[#555550]">
+                                        {t('dashboard.geminiAlert.body')}
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href="/settings/integrations"
+                                className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#333]"
+                            >
+                                {t('dashboard.geminiAlert.cta')}
+                            </Link>
+                        </div>
+                    </FadeIn>
+                )}
+
                 {/* ── Hero ── */}
                 <FadeIn className="border-b border-[#1A1A1A]/10 px-6 pt-10 pb-9 sm:px-10">
                     <p className="mb-3 text-xs font-bold tracking-[0.18em] text-[#888880] uppercase">

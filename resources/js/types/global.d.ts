@@ -36,7 +36,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
-            auth: Auth & { credits: number; on_trial: boolean; trial_ends_at: string | null; onboarding_complete: boolean; premium_access: boolean; lifetime_access: boolean };
+            auth: Auth & { credits: number; on_trial: boolean; trial_ends_at: string | null; onboarding_complete: boolean; premium_access: boolean; lifetime_access: boolean; has_gemini_key: boolean };
             pricing: Pricing | null;
             igEnabled: boolean;
             sidebarOpen: boolean;

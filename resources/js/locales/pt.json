@@ -294,6 +294,11 @@
         "button": "Começar do zero"
       }
     },
+    "geminiAlert": {
+      "title": "Falta conectar sua chave Gemini",
+      "body": "Sem ela, seus carrosséis saem sem imagens de IA. Leva 2 minutos e é grátis.",
+      "cta": "Conectar agora"
+    },
     "welcome": {
       "title": "Bem-vindo ao Slidezz!",
       "description": "Carrosséis são ilimitados. Para gerar imagens com IA, conecte sua chave gratuita do Google Gemini em Configurações → Integrações.",
