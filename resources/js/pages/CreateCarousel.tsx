@@ -12,6 +12,7 @@ import {
     Layers,
     LayoutTemplate,
     Loader2,
+    Upload,
     X,
 } from 'lucide-react';
 import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
 
 const TEMPLATE_IDS = [
+    'editorial-press',
     'noir-manifesto',
     'dark-cards',
     'pop-magazine',
@@ -31,6 +33,42 @@ const TEMPLATE_IDS = [
     'documentary',
     'ticket',
 ] as const;
+
+/** Template pre-selected in the wizard when the workspace has no saved choice. */
+const DEFAULT_TEMPLATE_ID: TemplateId = 'editorial-press';
+
+/**
+ * Read an image file and return a downscaled PNG data URL (max 1080px wide, the
+ * slide width). Downscaling keeps the CTA image small enough to ride in
+ * sessionStorage across the wizard→editor redirect.
+ */
+function fileToScaledDataUrl(file: File, maxWidth = 1080): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new window.Image();
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const scale = Math.min(1, maxWidth / img.naturalWidth);
+            const w = Math.max(1, Math.round(img.naturalWidth * scale));
+            const h = Math.max(1, Math.round(img.naturalHeight * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('canvas unavailable'));
+                return;
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('could not load image'));
+        };
+        img.src = url;
+    });
+}
 
 const ARCHETYPE_IDS = [
     'disruptor-social',
@@ -242,11 +280,12 @@ export default function CreateCarousel() {
     const [title, setTitle]                 = useState(initialTitle ?? '');
     const [topic, setTopic]                 = useState(initialTopic ?? '');
     const [customPrompt, setCustomPrompt]   = useState('');
-    const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? '');
+    const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID);
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
     const [imageMode, setImageMode] = useState<ImageMode>('alternate');
     const [imageStyle, setImageStyle]       = useState('');
+    const [ctaImage, setCtaImage]           = useState<string | null>(null);
     const [saveConfig, setSaveConfig]       = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
     const [format, setFormat]               = useState<'post' | 'stories'>('post');
@@ -311,6 +350,19 @@ export default function CreateCarousel() {
             return;
         }
         setSubmitting(true);
+        // The CTA image (if any) rides to the editor in sessionStorage — it survives
+        // the same-tab Inertia redirect and becomes the final slide during generation.
+        try {
+            if (ctaImage) {
+                sessionStorage.setItem('wizardCtaImage', ctaImage);
+            } else {
+                sessionStorage.removeItem('wizardCtaImage');
+            }
+        } catch {
+            setSubmitting(false);
+            toast.error(t('createCarousel.step3.ctaImageTooLarge'));
+            return;
+        }
         const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
         router.post(
             CarouselWizardController.store().url,
@@ -655,6 +707,46 @@ export default function CreateCarousel() {
                                     />
                                 </div>
                             )}
+
+                            {/* CTA image (optional): becomes the final slide, AI skips the CTA */}
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('createCarousel.step3.ctaImageLabel')}</p>
+                                {ctaImage ? (
+                                    <div className="flex items-center gap-3 rounded-lg border-2 border-gray-200 p-2">
+                                        <img src={ctaImage} alt="" className="h-16 w-16 rounded object-cover" />
+                                        <p className="flex-1 text-xs text-gray-500">{t('createCarousel.step3.ctaImageSet')}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCtaImage(null)}
+                                            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                            aria-label={t('createCarousel.step3.ctaImageRemove')}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300">
+                                        <Upload className="h-4 w-4 shrink-0" />
+                                        {t('createCarousel.step3.ctaImageUpload')}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                e.target.value = '';
+                                                if (!file) return;
+                                                try {
+                                                    setCtaImage(await fileToScaledDataUrl(file));
+                                                } catch {
+                                                    toast.error(t('createCarousel.step3.ctaImageError'));
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                                <p className="mt-1.5 text-xs text-gray-400">{t('createCarousel.step3.ctaImageHint')}</p>
+                            </div>
 
                             {/* Language Selector */}
                             <div>

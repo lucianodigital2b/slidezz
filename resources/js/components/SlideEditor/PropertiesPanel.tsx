@@ -8,15 +8,26 @@ import { OVERLAY_PRESETS, OverlayPreset, getOverlayLabel } from './overlays';
 
 // ── Word Highlight helpers ────────────────────────────────────────────────────
 
-function getHighlightedWords(text: string, richText: RichSpan[] | undefined): Map<number, string> {
-    const result = new Map<number, string>();
+/** Per-word highlight styling: fill color + font weight. */
+interface HighlightStyle {
+    color: string;
+    weight: number;
+}
+
+/** Default weight for a highlighted span that has no explicit weight (bold ⇒ 700). */
+function spanWeight(span: RichSpan): number {
+    return span.weight ?? (span.bold ? 700 : 400);
+}
+
+function getHighlightedWords(text: string, richText: RichSpan[] | undefined): Map<number, HighlightStyle> {
+    const result = new Map<number, HighlightStyle>();
     if (!richText || richText.length === 0) return result;
-    const charColors: (string | null)[] = new Array(text.length).fill(null);
+    const charStyles: (HighlightStyle | null)[] = new Array(text.length).fill(null);
     let pos = 0;
     for (const span of richText) {
-        const color = span.color ?? null;
-        for (let i = 0; i < span.text.length && pos + i < charColors.length; i++) {
-            charColors[pos + i] = color;
+        const style: HighlightStyle | null = span.color ? { color: span.color, weight: spanWeight(span) } : null;
+        for (let i = 0; i < span.text.length && pos + i < charStyles.length; i++) {
+            charStyles[pos + i] = style;
         }
         pos += span.text.length;
     }
@@ -24,14 +35,14 @@ function getHighlightedWords(text: string, richText: RichSpan[] | undefined): Ma
     let wordIndex = 0;
     let m;
     while ((m = wordRegex.exec(text)) !== null) {
-        const color = charColors[m.index];
-        if (color) result.set(wordIndex, color);
+        const style = charStyles[m.index];
+        if (style) result.set(wordIndex, style);
         wordIndex++;
     }
     return result;
 }
 
-function buildRichTextFromHighlights(text: string, highlights: Map<number, string>): RichSpan[] | undefined {
+function buildRichTextFromHighlights(text: string, highlights: Map<number, HighlightStyle>): RichSpan[] | undefined {
     if (highlights.size === 0) return undefined;
     const spans: RichSpan[] = [];
     const pushPlain = (t: string) => {
@@ -45,8 +56,9 @@ function buildRichTextFromHighlights(text: string, highlights: Map<number, strin
     let m;
     while ((m = wordRegex.exec(text)) !== null) {
         if (m.index > lastIndex) pushPlain(text.slice(lastIndex, m.index));
-        const color = highlights.get(wordIndex);
-        if (color) { spans.push({ text: m[0], color }); } else { pushPlain(m[0]); }
+        const style = highlights.get(wordIndex);
+        // Highlighted words carry an explicit per-word weight (default 700).
+        if (style) { spans.push({ text: m[0], color: style.color, weight: style.weight }); } else { pushPlain(m[0]); }
         lastIndex = m.index + m[0].length;
         wordIndex++;
     }
@@ -56,10 +68,42 @@ function buildRichTextFromHighlights(text: string, highlights: Map<number, strin
 
 const HIGHLIGHT_PRESETS = ['#FFD600', '#FF3B30', '#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#5AC8FA'];
 
+// ── Font weight helpers ───────────────────────────────────────────────────────
+// A Konva `fontStyle` string mixes weight + slant, e.g. "700", "500 italic",
+// "bold", "italic", "". These parse/rebuild the weight portion while preserving
+// any italic slant, so the weight picker and the bold toggle stay in sync.
+
+const FONT_WEIGHTS: { value: number; label: string }[] = [
+    { value: 300, label: 'Light' },
+    { value: 400, label: 'Regular' },
+    { value: 500, label: 'Medium' },
+    { value: 600, label: 'SemiBold' },
+    { value: 700, label: 'Bold' },
+    { value: 800, label: 'ExtraBold' },
+    { value: 900, label: 'Black' },
+];
+
+function parseFontWeight(fontStyle: string | undefined): number {
+    const s = (fontStyle ?? '').toLowerCase();
+    const numeric = s.match(/\b([1-9]00)\b/);
+    if (numeric) return parseInt(numeric[1], 10);
+    if (s.includes('bold')) return 700;
+    return 400;
+}
+
+function applyFontWeight(fontStyle: string | undefined, weight: number): string {
+    const italic = /italic/i.test(fontStyle ?? '');
+    const parts: string[] = [];
+    if (weight !== 400) parts.push(String(weight)); // 400 is the default; keep it implicit
+    if (italic) parts.push('italic');
+    return parts.join(' ');
+}
+
 function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Partial<TextEl>) => void }) {
     const { t } = useTranslation();
     const [hlColor, setHlColor] = React.useState(HIGHLIGHT_PRESETS[0]);
     const [hexInput, setHexInput] = React.useState(HIGHLIGHT_PRESETS[0]);
+    const [hlWeight, setHlWeight] = React.useState(700);
 
     const words = React.useMemo(() => {
         const result: string[] = [];
@@ -74,8 +118,16 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
     const applyColor = (c: string) => { setHlColor(c); setHexInput(c); };
 
     const toggleWord = (wordIndex: number) => {
-        const next = new Map<number, string>();
-        if (!highlights.has(wordIndex)) next.set(wordIndex, hlColor);
+        // Start from the current highlights so multiple words stay highlighted. Clicking
+        // applies the active color+weight; clicking a word that already has that exact
+        // style toggles it off (so the same style can be added, restyled, or removed).
+        const next = new Map(highlights);
+        const cur = next.get(wordIndex);
+        if (cur && cur.color === hlColor && cur.weight === hlWeight) {
+            next.delete(wordIndex);
+        } else {
+            next.set(wordIndex, { color: hlColor, weight: hlWeight });
+        }
         onChange({ richText: buildRichTextFromHighlights(el.text, next) });
     };
 
@@ -83,13 +135,13 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
         <div className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-1.5">
                 {words.map((word, i) => {
-                    const color = highlights.get(i);
+                    const style = highlights.get(i);
                     return (
                         <button key={i} type="button" onClick={() => toggleWord(i)}
-                            className="px-2.5 py-1 rounded-full text-xs font-semibold border transition-all"
-                            style={color
-                                ? { backgroundColor: color, borderColor: color, color: '#fff' }
-                                : { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', color: '#374151' }}>
+                            className="px-2.5 py-1 rounded-full text-xs border transition-all"
+                            style={style
+                                ? { backgroundColor: style.color, borderColor: style.color, color: '#fff', fontWeight: style.weight }
+                                : { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', color: '#374151', fontWeight: 600 }}>
                             {word}
                         </button>
                     );
@@ -119,6 +171,16 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
                     }}
                     className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156] font-mono uppercase" />
             </div>
+
+            <label className="flex items-center justify-between gap-2 text-xs font-medium text-gray-500">
+                <span>{t('slideEditor.fields.weight')}</span>
+                <select value={hlWeight} onChange={(e) => setHlWeight(parseInt(e.target.value, 10))}
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]">
+                    {FONT_WEIGHTS.map((w) => (
+                        <option key={w.value} value={w.value}>{w.value} · {w.label}</option>
+                    ))}
+                </select>
+            </label>
         </div>
     );
 }
@@ -296,8 +358,19 @@ export function PropertiesPanel({
                             <Field label={t('slideEditor.fields.size')}>
                                 <SliderField value={el.fontSize} onChange={(v) => ch<TextEl>({ fontSize: v })} min={8} max={300} unit="px" />
                             </Field>
+                            <Field label={t('slideEditor.fields.weight')}>
+                                <select
+                                    value={parseFontWeight(el.fontStyle)}
+                                    onChange={(e) => ch<TextEl>({ fontStyle: applyFontWeight(el.fontStyle, parseInt(e.target.value, 10)) })}
+                                    className="w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                >
+                                    {FONT_WEIGHTS.map((w) => (
+                                        <option key={w.value} value={w.value}>{w.value} · {w.label}</option>
+                                    ))}
+                                </select>
+                            </Field>
                             <div className="flex gap-1.5 flex-wrap">
-                                {iconBtn((el.fontStyle ?? '').includes('bold'), () => ch<TextEl>({ fontStyle: (el.fontStyle ?? '').includes('bold') ? (el.fontStyle ?? '').replace('bold', '').trim() : `${el.fontStyle ?? ''} bold`.trim() }), <Bold className="w-3.5 h-3.5" />, t('slideEditor.fields.bold'))}
+                                {iconBtn(parseFontWeight(el.fontStyle) >= 700, () => ch<TextEl>({ fontStyle: applyFontWeight(el.fontStyle, parseFontWeight(el.fontStyle) >= 700 ? 400 : 700) }), <Bold className="w-3.5 h-3.5" />, t('slideEditor.fields.bold'))}
                                 {iconBtn((el.fontStyle ?? '').includes('italic'), () => ch<TextEl>({ fontStyle: (el.fontStyle ?? '').includes('italic') ? (el.fontStyle ?? '').replace('italic', '').trim() : `${el.fontStyle ?? ''} italic`.trim() }), <Italic className="w-3.5 h-3.5" />, t('slideEditor.fields.italic'))}
                                 {iconBtn((el.textDecoration ?? '').includes('underline'), () => ch<TextEl>({ textDecoration: (el.textDecoration ?? '').includes('underline') ? (el.textDecoration ?? '').replace('underline', '').trim() : `${el.textDecoration ?? ''} underline`.trim() }), <Underline className="w-3.5 h-3.5" />, t('slideEditor.fields.underline'))}
                                 {iconBtn((el.textDecoration ?? '').includes('line-through'), () => ch<TextEl>({ textDecoration: (el.textDecoration ?? '').includes('line-through') ? (el.textDecoration ?? '').replace('line-through', '').trim() : `${el.textDecoration ?? ''} line-through`.trim() }), <Strikethrough className="w-3.5 h-3.5" />, t('slideEditor.fields.strikethrough'))}
@@ -341,7 +414,8 @@ export function PropertiesPanel({
                             </Field>
                         </Section>
 
-                        <Section title={t('slideEditor.sections.wordHighlight')} defaultOpen={false}>
+                        {/* Keyed by element id so it re-opens each time a text element is selected. */}
+                        <Section key={el.id} title={t('slideEditor.sections.wordHighlight')} defaultOpen>
                             <WordHighlightSection el={el} onChange={(p) => ch<TextEl>(p)} />
                         </Section>
 

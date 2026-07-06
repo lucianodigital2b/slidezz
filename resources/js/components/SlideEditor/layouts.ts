@@ -126,8 +126,11 @@ const STAT_CALLOUT: LayoutDefinition = {
         maxFontSize: 44, fontRole: 'body', fontStyleHint: 'normal',
         lineHeight: 1.5, letterSpacing: 0, visible: true, opacity: 0.85,
     },
-    backgroundPreference: 'solid',
-    gradientIntensity: 0.4,
+    // Keep a generated image rather than discarding it: the oversized stat reads great
+    // over a full-bleed photo (a strong gradient keeps it legible). The generator forces
+    // background (not grid) placement for this layout so the number sits over the image.
+    backgroundPreference: 'either',
+    gradientIntensity: 0.85,
     imageCardPosition: 'bottom',
 };
 

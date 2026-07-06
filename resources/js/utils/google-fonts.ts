@@ -248,7 +248,12 @@ export function loadGoogleFont(family: string): Promise<void> {
             const link = document.createElement('link');
             link.id = id;
             link.rel = 'stylesheet';
-            link.href = `https://fonts.googleapis.com/css2?family=${key}:ital,wght@0,400;0,700;1,400&display=swap`;
+            // Serve the full 300-900 weight range (upright + italic) so the weight
+            // picker and templates can use any weight, not just 400/700. css2 is lenient
+            // with a discrete list — single-weight faces (e.g. Anton) still return 200 and
+            // just serve what they have; a variable font serves the whole range in one file.
+            // (A `300..900` RANGE, by contrast, 400s for static fonts, so we list them.)
+            link.href = `https://fonts.googleapis.com/css2?family=${key}:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap`;
 
             // Wait for the stylesheet to be parsed so FontFace objects are registered
             // before calling document.fonts.load() — otherwise it resolves immediately
@@ -261,10 +266,11 @@ export function loadGoogleFont(family: string): Promise<void> {
         }
 
         try {
-            await Promise.all([
-                document.fonts.load(`400 16px "${family}"`),
-                document.fonts.load(`700 16px "${family}"`),
-            ]);
+            await Promise.all(
+                ['300', '400', '500', '600', '700', '800', '900'].map((w) =>
+                    document.fonts.load(`${w} 16px "${family}"`),
+                ),
+            );
         } catch {
             // silently fall back if the font fails
         }

@@ -4,10 +4,29 @@ import CarouselGenerationController from '@/actions/App/Http/Controllers/Carouse
 import { Slide, SlideEl, TextEl, ImageEl, GradientEl, ProfileBadge, RichSpan, Format, FORMATS, SLIDE_W } from '../types';
 import { uid, SHADOW_DEFAULTS, fitTextFontSize, resolveAccessibleHighlightColor, getSafeAreaBounds } from '../utils';
 import { loadGoogleFont } from '@/utils/google-fonts';
-import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners, resolveTemplateForBrand } from '../templates';
-import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, slotToBox, computeSafeArea, TitleFitter } from '../layouts';
+import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners, buildEditorialHeaderElements, resolveTemplateForBrand } from '../templates';
+import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, pickLayoutForSlide, slotToBox, computeSafeArea, TitleFitter } from '../layouts';
 
 export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
+
+/** A full-bleed slide whose only content is a user-supplied image (the final CTA). */
+function buildImageSlide(src: string, slideH: number): Slide {
+    return {
+        id: uid(),
+        background: '#000000',
+        elements: [{
+            id: uid(), type: 'image', src,
+            x: 0, y: 0, width: SLIDE_W, height: slideH,
+            rotation: 0, opacity: 1,
+            brightness: 0, contrast: 0, blurRadius: 0, grayscale: false, sepia: false,
+            hue: 0, saturation: 0, luminance: 0, pixelSize: 1, noise: 0, enhance: 0,
+            red: 255, green: 255, blue: 255,
+            overlayEnabled: false, overlayColor: '#000000', overlayOpacity: 1, overlayPreset: 'none',
+            isBackground: true, bgSize: 'cover', bgPositionX: 50, bgPositionY: 50,
+            ...SHADOW_DEFAULTS,
+        } as ImageEl],
+    };
+}
 
 /** Loads an image just to read its natural width/height aspect (w / h). */
 function loadImageAspect(url: string): Promise<number> {
@@ -27,6 +46,7 @@ export interface SlideData {
     description: string;
     imagePrompt: string;
     highlightWords?: string[];
+    highlightBody?: string[];
     highlightColor?: string;
     highlightGradient?: string[];
     stat?: string;
@@ -83,7 +103,9 @@ export function useAiGeneration(
         let lastIndex = 0;
         for (const match of text.matchAll(pattern)) {
             if (match.index! > lastIndex) spans.push({ text: text.slice(lastIndex, match.index), color: normalColor });
-            spans.push({ text: match[0], color: highlightColor, ...(gradient ? { gradient } : {}) });
+            // Highlighted words render bold (min 700) so they stand out even when the
+            // surrounding copy is a lighter body weight.
+            spans.push({ text: match[0], color: highlightColor, bold: true, ...(gradient ? { gradient } : {}) });
             lastIndex = match.index! + match[0].length;
         }
         if (lastIndex < text.length) spans.push({ text: text.slice(lastIndex), color: normalColor });
@@ -135,10 +157,16 @@ export function useAiGeneration(
         const slideH = FORMATS[format].h;
         const layout = LAYOUT_DEFINITIONS[layoutType];
 
-        const effectiveMode: 'background' | 'grid' =
+        let effectiveMode: 'background' | 'grid' =
             imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
             imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
             imageMode as 'background' | 'grid';
+
+        // The oversized stat callout only reads over a full-bleed photo, never as a
+        // small grid card — force background placement regardless of the alternation.
+        if (layout.type === 'stat_callout') {
+            effectiveMode = 'background';
+        }
 
         // A grid image card occupies the top or bottom of the slide. Compute its box up
         // front so we can (a) reserve the opposite band for the text content and (b) place
@@ -239,6 +267,23 @@ export function useAiGeneration(
                 }
             }
 
+            // Body highlight: emphasize key phrases inside the description (accent color +
+            // bold), mirroring the title. Prefer the LLM's `highlightBody` picks; on middle
+            // slides fall back to any title terms that also appear in the body. The hook and
+            // CTA keep an un-highlighted body unless the model explicitly picks a phrase.
+            const isMiddleSlide = slideIndex > 0 && slideIndex < totalSlides - 1;
+            const bodyPicks = data.highlightBody ?? (isMiddleSlide ? data.highlightWords : undefined);
+            const bodyTerms = pickHighlightTerms(data.description, bodyPicks);
+
+            if (bodyTerms.length > 0) {
+                const descEl = scene.elements.find(
+                    (el): el is TextEl => el.type === 'text' && el.text === data.description,
+                );
+                if (descEl) {
+                    descEl.richText = buildRichText(descEl.text, bodyTerms, descEl.fill, highlightColor, highlightGradient);
+                }
+            }
+
             if (bgBase64 && layout.backgroundPreference !== 'solid') {
                 if (effectiveMode === 'background') {
                     const overlayColor = isPhotographic ? '#000000' : (template?.background ?? '#000000');
@@ -281,6 +326,20 @@ export function useAiGeneration(
                         ...SHADOW_DEFAULTS,
                     } as ImageEl);
                 }
+            }
+
+            // Editorial Press runs a fixed top header on every slide (source credit ·
+            // @handle · month year). It's pushed last so it sits above any full-bleed
+            // photo; the ink is forced white on photographic slides (dark overlay).
+            if (template?.id === 'editorial-press') {
+                const now = new Date();
+                const month = now.toLocaleString('pt-BR', { month: 'long' });
+                const dateLabel = `${month.charAt(0).toUpperCase()}${month.slice(1)} ${now.getFullYear()}`;
+                scene.elements.push(...buildEditorialHeaderElements({
+                    handle: badgeIdentity.handle || '',
+                    dateLabel,
+                    background: isPhotographic ? '#000000' : scene.background,
+                }));
             }
 
             // Templates can ship an active ProfileBadge by default: tweet-style decks read
@@ -403,16 +462,20 @@ export function useAiGeneration(
         return { id: uid(), background: backgroundColor, elements };
     }
 
-    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null, languageOverride?: string, imageStyleOverride?: string) {
+    async function generateCarousel(topicOverride?: string, styleOverride?: string, slideCountOverride?: number, imageModeOverride?: ImageMode, wordHighlightOverride?: boolean, replaceSlides?: boolean, templateIdOverride?: string | null, languageOverride?: string, imageStyleOverride?: string, ctaImageOverride?: string | null) {
         if (isGeneratingRef.current) return;
         const topic = topicOverride ?? aiTopic;
         const style = styleOverride ?? aiStyle;
-        const slideCount = slideCountOverride ?? aiSlideCount;
+        const totalSlideCount = slideCountOverride ?? aiSlideCount;
         const imageMode: ImageMode = imageModeOverride ?? aiImageMode;
         const wordHighlight = wordHighlightOverride ?? aiWordHighlight;
         const language = languageOverride ?? aiLanguage;
         const imageStyle = (imageStyleOverride ?? aiImageStyle).trim();
         const templateId = templateIdOverride !== undefined ? templateIdOverride : aiTemplateId;
+        // A user-supplied CTA image becomes the final slide, so the model writes one
+        // fewer slide and skips the CTA copy.
+        const ctaImage = ctaImageOverride ?? null;
+        const slideCount = ctaImage ? Math.max(1, totalSlideCount - 1) : totalSlideCount;
         const shouldGenerateImages = imageMode !== 'none';
         if (!topic.trim()) return;
         isGeneratingRef.current = true;
@@ -428,7 +491,7 @@ export function useAiGeneration(
             response = await fetch(CarouselGenerationController.generate().url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language, template: templateId || undefined, image_style: imageStyle || undefined }),
+                body: JSON.stringify({ topic, style: style || undefined, slide_count: slideCount, word_highlight: wordHighlight, language, template: templateId || undefined, image_style: imageStyle || undefined, handle: badgeIdentity.handle || undefined, cta_slide: ctaImage ? false : undefined }),
             });
         } catch {
             isGeneratingRef.current = false;
@@ -484,7 +547,7 @@ export function useAiGeneration(
 
         const slideH = FORMATS[format].h;
         const rawTemplate = templateId ? SLIDE_TEMPLATES.find(t => t.id === templateId) ?? null : null;
-        const template = rawTemplate ? resolveTemplateForBrand(rawTemplate, brand.accent) : null;
+        const template = rawTemplate ? resolveTemplateForBrand(rawTemplate, brand.accent, brand.color) : null;
 
         // Load the template fonts before measuring so the title fit reflects real
         // glyph metrics rather than the canvas fallback font.
@@ -502,6 +565,18 @@ export function useAiGeneration(
             parsedSlides.map(s => ({ title: s.title, description: s.description, hasStat: Boolean(s.stat), hasImage: shouldGenerateImages })),
             fitTitle,
         );
+
+        // With a user CTA image, no generated slide is a call-to-action — re-pick the
+        // last slide as a regular middle layout so it doesn't render the centered
+        // CTA-closing composition.
+        if (ctaImage && layoutSequence.length > 0) {
+            const lastIdx = layoutSequence.length - 1;
+            const s = parsedSlides[lastIdx];
+            layoutSequence[lastIdx] = pickLayoutForSlide(
+                { title: s.title, description: s.description, hasStat: Boolean(s.stat), hasImage: shouldGenerateImages },
+                'middle',
+            );
+        }
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
         // Images are BYOK-only: a 402 from the server means the user has no Gemini
@@ -550,6 +625,11 @@ export function useAiGeneration(
             const base64 = imgResult?.status === 'fulfilled' ? imgResult.value : null;
             return buildSlideFromData(s, base64, template, layoutSequence[i], i, parsedSlides.length, imageMode, topic, logo);
         });
+
+        // Append the user's CTA image as the final full-bleed slide.
+        if (ctaImage) {
+            newSlides.push(buildImageSlide(ctaImage, slideH));
+        }
 
         if (replaceSlides) {
             setSlides(newSlides);

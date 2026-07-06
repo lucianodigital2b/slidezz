@@ -29,6 +29,8 @@ interface LayoutToken {
     color: string;
     highlight?: string;
     gradient?: string[];
+    bold?: boolean;
+    weight?: number;
     x: number;
     width: number;
     advanceWidth: number;
@@ -39,10 +41,50 @@ interface LayoutLine {
     height: number;
 }
 
+/** Numeric weight parsed from a Konva fontStyle string ('bold', '500', '700 italic', ''). */
+function resolveWeight(fontStyle: string): number {
+    const s = fontStyle.toLowerCase();
+    const numeric = s.match(/\b([1-9]00)\b/);
+    if (numeric) return parseInt(numeric[1], 10);
+    if (s.includes('bold')) return 700;
+    return 400;
+}
+
+/**
+ * The fontStyle for a token, preserving the base italic slant:
+ *  - an explicit `weight` wins (per-word weight from the highlight panel);
+ *  - otherwise a `bold` span is at least 700 (never lighter than the base);
+ *  - otherwise the element's base style is used unchanged.
+ */
+function tokenFontStyle(baseStyle: string, bold?: boolean, weight?: number): string {
+    const italic = /italic/i.test(baseStyle);
+    if (weight != null) {
+        return `${weight}${italic ? ' italic' : ''}`;
+    }
+    if (!bold) return baseStyle;
+    return `${Math.max(resolveWeight(baseStyle), 700)}${italic ? ' italic' : ''}`;
+}
+
+/** Whether a token needs a font different from the element's base weight. */
+function tokenHasWeightOverride(bold?: boolean, weight?: number): boolean {
+    return Boolean(bold) || weight != null;
+}
+
+/** Canvas font shorthand for a given style/size/family. */
+function fontShorthand(fontStyle: string, fontSize: number, fontFamily: string): string {
+    return `${fontStyle ? fontStyle + ' ' : ''}${fontSize}px "${fontFamily}"`;
+}
+
 function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): LayoutLine[] {
     const ctx = getMeasureCtx();
     const fs = el.fontStyle || '';
-    ctx.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
+    // Base (non-bold) font, and a per-token resolver so bold spans are measured with
+    // their heavier weight — glyph advances differ by weight, so measuring must match
+    // what gets drawn or bold words would over/underflow the wrap width.
+    const baseFont = fontShorthand(fs, el.fontSize, el.fontFamily);
+    const fontFor = (bold?: boolean, weight?: number) =>
+        (tokenHasWeightOverride(bold, weight) ? fontShorthand(tokenFontStyle(fs, bold, weight), el.fontSize, el.fontFamily) : baseFont);
+    ctx.font = baseFont;
     const lineH = el.fontSize * el.lineHeight;
     const innerWidth = Math.max(10, el.width - el.padding * 2);
 
@@ -52,16 +94,16 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     // added in the content field). So derive per-word styles from the spans, then
     // tokenise el.text itself, splitting on real newlines first so a line break
     // is never swallowed by an adjacent space.
-    const wordStyles: { color: string; highlight?: string; gradient?: string[] }[] = [];
+    const wordStyles: { color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number }[] = [];
     for (const span of spans) {
         const matches = span.text.match(/\S+/g);
         if (!matches) continue;
         for (let i = 0; i < matches.length; i++) {
-            wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient });
+            wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient, bold: span.bold, weight: span.weight });
         }
     }
 
-    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; isSpace: boolean; isNewline: boolean }[] = [];
+    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number; isSpace: boolean; isNewline: boolean }[] = [];
     let wordIdx = 0;
     for (const segment of el.text.split(/(\n)/)) {
         if (segment === '\n') {
@@ -76,7 +118,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
                 continue;
             }
             const style = wordStyles[wordIdx] ?? { color: defaultColor };
-            tokens.push({ text: part, color: style.color, highlight: style.highlight, gradient: style.gradient, isSpace: false, isNewline: false });
+            tokens.push({ text: part, color: style.color, highlight: style.highlight, gradient: style.gradient, bold: style.bold, weight: style.weight, isSpace: false, isNewline: false });
             wordIdx++;
         }
     }
@@ -86,7 +128,8 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     let lineWidth = 0;
 
     const flushLine = () => {
-        // Trim trailing whitespace
+        // Trim trailing whitespace (always the base weight — spaces are never bold).
+        ctx.font = baseFont;
         while (lineTokens.length > 0 && lineTokens[lineTokens.length - 1].isSpace) {
             const last = lineTokens.pop()!;
             lineWidth -= measureTextWidthWithLetterSpacing(ctx, last.text, el.letterSpacing, true);
@@ -98,6 +141,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
 
     for (const token of tokens) {
         if (token.isNewline) { flushLine(); continue; }
+        ctx.font = fontFor(token.bold, token.weight);
         const tw = measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, true);
         if (!token.isSpace && lineWidth + tw > innerWidth && lineTokens.length > 0) flushLine();
         lineTokens.push(token);
@@ -109,16 +153,21 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
 }
 
 function buildLine(
-    tokens: { text: string; color: string; highlight?: string; gradient?: string[] }[],
+    tokens: { text: string; color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number }[],
     ctx: CanvasRenderingContext2D,
     el: TextEl,
     lineH: number,
 ): LayoutLine {
+    const fs = el.fontStyle || '';
     const innerWidth = Math.max(10, el.width - el.padding * 2);
-    const tokenMetrics = tokens.map((token, index) => ({
-        contentWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, false),
-        advanceWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, index < tokens.length - 1),
-    }));
+    // Measure each token with its own weight (heavier spans are wider) so positions line up.
+    const tokenMetrics = tokens.map((token, index) => {
+        ctx.font = fontShorthand(tokenFontStyle(fs, token.bold, token.weight), el.fontSize, el.fontFamily);
+        return {
+            contentWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, false),
+            advanceWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, index < tokens.length - 1),
+        };
+    });
     const lineWidth = tokenMetrics.reduce((sum, token) => sum + token.advanceWidth, 0);
     let startX = el.padding;
     if (el.align === 'center') startX = el.padding + (innerWidth - lineWidth) / 2;
@@ -128,7 +177,7 @@ function buildLine(
     const layoutTokens: LayoutToken[] = [];
     for (const [index, token] of tokens.entries()) {
         const { contentWidth, advanceWidth } = tokenMetrics[index];
-        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, gradient: token.gradient, x, width: contentWidth, advanceWidth });
+        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, gradient: token.gradient, bold: token.bold, weight: token.weight, x, width: contentWidth, advanceWidth });
         x += advanceWidth;
     }
     return { tokens: layoutTokens, height: lineH };
@@ -198,7 +247,8 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const c = (ctx as any)._context as CanvasRenderingContext2D;
         const fs = el.fontStyle || '';
-        c.font = `${fs ? fs + ' ' : ''}${el.fontSize}px "${el.fontFamily}"`;
+        const baseFont = fontShorthand(fs, el.fontSize, el.fontFamily);
+        c.font = baseFont;
         c.lineJoin = 'round';
         c.strokeStyle = effectiveStroke ?? 'transparent';
         c.lineWidth = effectiveStrokeWidth;
@@ -211,6 +261,10 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
         for (const line of layout) {
             if (!hidden) {
                 for (const token of line.tokens) {
+                    // Bold / per-word-weight spans draw (and stroke) with their own weight.
+                    c.font = tokenHasWeightOverride(token.bold, token.weight)
+                        ? fontShorthand(tokenFontStyle(fs, token.bold, token.weight), el.fontSize, el.fontFamily)
+                        : baseFont;
                     if (token.highlight && token.text.trim()) {
                         const pad = Math.round(el.fontSize * 0.08);
                         c.fillStyle = token.highlight;

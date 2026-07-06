@@ -15,11 +15,15 @@ class CarouselGenerationController extends Controller
         $validated = $request->validate([
             'topic' => ['required', 'string', 'max:500'],
             'style' => ['nullable', 'string', 'max:200'],
-            'slide_count' => ['nullable', 'integer', 'min:2', 'max:10'],
+            // Min 1 so a deck with a user-supplied CTA image can ask the model for a
+            // single content slide (the image becomes the final slide client-side).
+            'slide_count' => ['nullable', 'integer', 'min:1', 'max:10'],
             'word_highlight' => ['nullable', 'boolean'],
             'language' => ['nullable', 'string', 'max:50'],
             'template' => ['nullable', 'string', 'max:100'],
             'image_style' => ['nullable', 'string', 'max:300'],
+            'handle' => ['nullable', 'string', 'max:100'],
+            'cta_slide' => ['nullable', 'boolean'],
         ]);
 
         // Soft paywall: signup and browsing are free, but the AI generator needs
@@ -40,6 +44,8 @@ class CarouselGenerationController extends Controller
                 language: $validated['language'] ?? 'Portuguese (Brazil)',
                 template: $validated['template'] ?? '',
                 imageStyle: $validated['image_style'] ?? '',
+                handle: $validated['handle'] ?? '',
+                ctaSlide: $validated['cta_slide'] ?? true,
             );
         } catch (\Throwable $e) {
             \Log::error('Carousel generation failed', [

@@ -161,6 +161,7 @@
       "textColor": "Text color",
       "font": "Font",
       "size": "Size",
+      "weight": "Weight",
       "bold": "Bold",
       "italic": "Italic",
       "underline": "Underline",
@@ -458,6 +459,10 @@
       "ticket": {
         "name": "Ticket",
         "description": "Aesthetic serif headline on a die-cut ticket shape. Cover uses your workspace brand color; inner tickets are white. Corners carry the deck title, slide number, handle and logo."
+      },
+      "editorial-press": {
+        "name": "Editorial Press",
+        "description": "Editorial carousel: slides alternate between your workspace color and a contrasting neutral, with a heavy grotesque headline (and a high-contrast serif on reflective slides), a keyword highlighted in your accent, a cover profile chip, and a running header (source · @handle · month). Photos run full-bleed or as cards."
       }
     },
     "archetypes": {
@@ -505,6 +510,13 @@
       "imageModeLabel": "Images in carousel",
       "imageStyleLabel": "Image style (optional)",
       "imageStylePlaceholder": "e.g. black & white, cinematic, film grain...",
+      "ctaImageLabel": "CTA image (optional)",
+      "ctaImageUpload": "Upload CTA image",
+      "ctaImageSet": "CTA image ready - it becomes the last slide.",
+      "ctaImageRemove": "Remove CTA image",
+      "ctaImageHint": "If set, the AI skips the CTA slide and your image is added as the final slide.",
+      "ctaImageError": "Could not read that image. Try another.",
+      "ctaImageTooLarge": "Image too large. Please use a smaller one.",
       "languageLabel": "Content language",
       "customPromptLabel": "Additional instructions (optional)",
       "customPromptHint": "Add specific details, tone, or constraints for the AI to follow.",

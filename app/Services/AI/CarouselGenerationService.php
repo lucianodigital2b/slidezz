@@ -14,11 +14,23 @@ class CarouselGenerationService
      * Runs buffered (not streamed) so a provider timeout can be caught and
      * retried against the fallback provider in the same request.
      */
-    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true, string $language = 'Portuguese (Brazil)', string $template = '', string $imageStyle = ''): string
+    public function generateSlides(string $topic, string $style, int $slideCount, bool $wordHighlight = true, string $language = 'Portuguese (Brazil)', string $template = '', string $imageStyle = '', string $handle = '', bool $ctaSlide = true): string
     {
+        // When the user supplies their own CTA image (appended as the final slide on
+        // the client), the model writes a closing takeaway instead of a call-to-action.
+        $lastSlideRule = $ctaSlide
+            ? "- Last slide (slide {$slideCount}): a call-to-action. The title MUST contain a direct imperative verb (Follow, Save, Share, Comment, DM, Subscribe, etc.) and the description MUST tell the reader exactly what to do next and why. Never a summary, reflection, or conclusion."
+            : "- Last slide (slide {$slideCount}): a strong closing takeaway that lands the argument with a memorable, specific final point. Do NOT write a call-to-action, an imperative verb, or an @mention — a separate CTA slide follows.";
         $highlightFields = $wordHighlight
-            ? "- highlightWords: array of 1 to 4 of the most impactful words or short phrases to emphasize in the title. Use the exact wording as it appears in the title (phrases are allowed). Emphasize only the words that carry the core meaning; leave connecting words (articles, prepositions, conjunctions) un-emphasized. Example: [\"Claude\", \"10x faster\"]\n"
+            ? "- highlightWords: array of 1 to 4 of the most impactful words or short phrases to emphasize in the title. Use the exact wording as it appears in the title (phrases are allowed). Emphasize only the words that carry the core meaning; leave connecting words (articles, prepositions, conjunctions) un-emphasized. Example: [\"Claude\", \"10x faster\"]\n- highlightBody: (optional) array of 1 to 2 short phrases copied EXACTLY from this slide's description to emphasize in the body. Use only on middle slides that carry the key insight; omit it on the hook (slide 1) and the CTA (last slide). Pick the phrase that carries the core point, not connecting words.\n"
             : '';
+
+        // The CTA slide references the account. Give the model the real handle so it
+        // uses it verbatim instead of inventing a placeholder like "@YourHandle".
+        $handle = ltrim(trim($handle), '@');
+        $accountSection = $handle !== '' && $ctaSlide
+            ? "\nACCOUNT\n- This account's Instagram handle is @{$handle}. Whenever the copy mentions the account (especially the CTA's Follow / Comment / DM / Share line), use this EXACT handle. Never invent or alter it, and never use a placeholder like \"@YourHandle\" or \"@handle\".\n"
+            : "\nACCOUNT\n- Do NOT reference a specific @handle or invent one (e.g. \"@YourHandle\"). Write the copy without any @mention.\n";
 
         $systemPrompt = <<<PROMPT
 You are an expert Instagram carousel copywriter and art director.
@@ -36,7 +48,7 @@ KEYS (each line must have exactly these keys)
 - title: headline, max 8 words, punchy and specific.
 - description: body copy following the PER-SLIDE rules. Always concrete and complete, never vague or generic.
 - image: an object describing ONLY the scene content (see IMAGE). EVERY one of the {$slideCount} lines must include its own complete `image` object - never omit it or leave it empty on any slide. Never describe lighting, camera, lens, color, or art style anywhere - those are fixed per template and added automatically so every slide shares one consistent look.
-{$highlightFields}- stat: (optional) a single dramatic hero number, e.g. "\$150B", "90%", "3 of 4". Include only when the slide has a genuinely strong number worth calling out; otherwise omit the key entirely.
+{$highlightFields}- stat: (optional) a single dramatic hero number, e.g. "\$150B", "90%", "3 of 4". Use it on AT MOST 1-2 slides in the WHOLE deck - only for the single most striking number. Most slides MUST omit this key entirely and carry body copy instead, so they render as text-with-photo layouts rather than a wall of big numbers. Never put a stat on every slide.
 
 NARRATIVE
 - The slides form ONE connected argument: hook, then develop, then pay off. Do not repeat points between slides; each slide must add something new and specific (facts, examples, data).
@@ -44,8 +56,8 @@ NARRATIVE
 PER-SLIDE
 - Slide 1 (hook): prioritize virality over completeness. 15-22 words, about two short lines. Use a bold claim, sharp contrast, surprising number, or emotionally loaded tension. No setup, context, or throat-clearing.
 - Middle slides: develop the argument with specific facts, examples, or data. 40-50 words each, kept tight so the text renders large and readable.
-- Last slide (slide {$slideCount}): a call-to-action. The title MUST contain a direct imperative verb (Follow, Save, Share, Comment, DM, Subscribe, etc.) and the description MUST tell the reader exactly what to do next and why. Never a summary, reflection, or conclusion.
-
+{$lastSlideRule}
+{$accountSection}
 IMAGE (the `image` object - describe scene CONTENT only, written in English)
 - main_description: one vivid sentence describing the whole scene.
 - subjects: array (usually exactly 1) of the people or objects in focus. Each object has:
@@ -170,6 +182,12 @@ PROMPT;
                 'art_style' => 'Clean, neutral editorial photography',
                 'key_light' => 'soft even light',
                 'color_grade' => 'natural, true-to-life color',
+            ],
+            'editorial-press' => [
+                'art_style' => 'Punchy contemporary editorial photojournalism, candid real-life moments',
+                'key_light' => 'bright, direct light with lively energy',
+                'color_grade' => 'vivid, saturated color grade',
+                'grain' => 'clean, minimal grain',
             ],
         ];
 
@@ -381,6 +399,7 @@ PROMPT;
             'acid-brutalist' => 'edgy, provocative, in-your-face voice',
             'documentary' => 'serious, investigative, journalistic voice',
             'ticket' => 'refined, editorial, considered voice',
+            'editorial-press' => 'sharp, data-driven, editorial voice',
         ];
 
         $archetypes = [

@@ -336,7 +336,11 @@ export default function SlideEditor() {
         setAiTemplateId(templateId);
         setAiModalOpen(true);
         const shouldSaveTemplate = wizardConfig.saveAsTemplate ?? false;
-        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId, lang, imgStyle)
+        // A CTA image chosen in the wizard rides across the redirect in sessionStorage
+        // (same-tab, survives the Inertia visit). It becomes the final slide.
+        const ctaImage = sessionStorage.getItem('wizardCtaImage');
+        if (ctaImage) sessionStorage.removeItem('wizardCtaImage');
+        generateCarousel(wizardConfig.topic, wizardConfig.style, wizardConfig.slideCount, mode, hl, true, templateId, lang, imgStyle, ctaImage)
             .then((generated) => {
                 if (shouldSaveTemplate && generated && generated.length > 0) {
                     // Let the canvas paint the generated slides before snapshotting the thumbnail.
@@ -362,8 +366,8 @@ export default function SlideEditor() {
 
     async function applyTemplate(tpl: (typeof SLIDE_TEMPLATES)[number]) {
         await Promise.all([...new Set(tpl.fonts)].map((font) => loadGoogleFont(font)));
-        const resolved = resolveTemplateForBrand(tpl, brand?.accent ?? null);
-        const scene = resolved.buildScene(getTemplateContent(), slideH, resolved.accentColor);
+        const resolved = resolveTemplateForBrand(tpl, brand?.accent ?? null, brand?.color ?? null);
+        const scene = resolved.buildScene(getTemplateContent(), slideH, resolved.accentColor, resolved.background);
         const preservedBackgroundImages = slide.elements
             .filter((el): el is ImageEl => el.type === 'image' && el.isBackground)
             .map((el) => ({ ...el }));

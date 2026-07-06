@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Align, BadgeStyle, PathEl, ShapeEl, SLIDE_W, SlideCorners, SlideEl, TextEl } from './types';
 import { SHADOW_DEFAULTS, fitTextFontSize, measuredTextHeight, uid } from './utils';
-import { LayoutDefinition, computeSafeArea } from './layouts';
+import { LayoutDefinition, LayoutType, computeSafeArea } from './layouts';
 
 /**
  * An absolute (px) vertical band that generated content must stay within. Used to
@@ -43,6 +43,11 @@ export interface SlideTemplate {
     bodyFont: string;
     captionFont: string;
     fontStyle: string;
+    /**
+     * Font weight for body copy (subtitle + description). Defaults to '' (400).
+     * Set to '500'+ for templates that want heavier, more legible body text.
+     */
+    bodyFontStyle?: string;
     letterSpacing: number;
     align: Align;
     fonts: string[];
@@ -55,16 +60,31 @@ export interface SlideTemplate {
         totalSlides: number,
         contentBand?: ContentBand,
     ) => TemplateScene;
-    buildScene: (content: TemplateContent, slideH: number, accent?: string) => TemplateScene;
+    buildScene: (content: TemplateContent, slideH: number, accent?: string, background?: string) => TemplateScene;
     /**
      * Generic template: its accent isn't a fixed design choice, so it defaults to
      * the workspace brand accent (set in onboarding) when one is available.
      */
     brandAccent?: boolean;
+    /**
+     * The slide background is driven by the workspace brand color (set in
+     * onboarding) when one is available: the brand color becomes the primary
+     * background and the alternating background flips to a contrasting neutral, so
+     * the deck always reads in the client's palette. Text color follows contrast.
+     */
+    brandBackground?: boolean;
     /** When set, generated slides ship an active ProfileBadge above the title in this style. */
     defaultBadgeStyle?: BadgeStyle;
     /** Defaults to true (ALL-CAPS titles). Set false to render titles in their original case. */
     uppercaseTitle?: boolean;
+    /**
+     * Optional per-layout override for the title typeface, letting one template mix
+     * two fonts across the deck (e.g. a serif for reflective quote/split layouts and
+     * the grotesque display font for punchy hero/stat/cta layouts). Return a font
+     * family to override, or `undefined` to fall back to the slot's role font.
+     * Any family returned here must also be listed in `fonts` so it preloads.
+     */
+    titleFontOverride?: (layoutType: LayoutType) => string | undefined;
 }
 
 function createText(overrides: Partial<TextEl> & Pick<TextEl, 'text' | 'x' | 'y' | 'width' | 'height'>): TextEl {
@@ -248,6 +268,9 @@ export function buildSceneFromLayoutGeneric(
     const useAlt = slideIndex % 2 === 1 && Boolean(template.backgroundAlt);
     const bg = useAlt ? template.backgroundAlt! : template.background;
     const textColor = useAlt && template.textColorAlt ? template.textColorAlt : template.textColor;
+    // Body copy weight (subtitle + description). Kept consistent between fit and
+    // render so measured line breaks match the drawn text.
+    const bodyStyle = template.bodyFontStyle ?? '';
 
     const elements: SlideEl[] = [];
 
@@ -321,7 +344,10 @@ export function buildSceneFromLayoutGeneric(
         // valid font-weight, so passing it to fitTextFontSize corrupts measurement
         // (the canvas rejects the font string). Fit and render must use the same value.
         const titleFontStyle = fontStyleHintToStyle(layout.title.fontStyleHint);
-        const titleFont = fontForRole(layout.title.fontRole);
+        // A template may swap the title typeface per layout (e.g. serif for reflective
+        // layouts). Falls back to the slot's role font. Fit, render and measure all use
+        // this one resolved value so metrics stay consistent.
+        const titleFont = template.titleFontOverride?.(layout.type) ?? fontForRole(layout.title.fontRole);
         const fontSize = fitTextFontSize(
             titleText,
             titleFont,
@@ -367,7 +393,7 @@ export function buildSceneFromLayoutGeneric(
         const fontSize = fitTextFontSize(
             subtitleText,
             subtitleFont,
-            '',
+            bodyStyle,
             layout.subtitle.maxFontSize,
             layout.subtitle.lineHeight,
             layout.subtitle.letterSpacing,
@@ -382,6 +408,7 @@ export function buildSceneFromLayoutGeneric(
             text: subtitleText,
             fontFamily: subtitleFont,
             fontSize,
+            fontStyle: bodyStyle,
             fill: textColor,
             align: layout.subtitle.align,
             verticalAlign: layout.subtitle.verticalAlign,
@@ -391,7 +418,7 @@ export function buildSceneFromLayoutGeneric(
         }));
 
         if (stackCursorY !== null) {
-            const subMeasuredH = measuredTextHeight(subtitleText, subtitleFont, '', fontSize, layout.subtitle.lineHeight, layout.subtitle.letterSpacing, rect.width);
+            const subMeasuredH = measuredTextHeight(subtitleText, subtitleFont, bodyStyle, fontSize, layout.subtitle.lineHeight, layout.subtitle.letterSpacing, rect.width);
             stackCursorY = y + subMeasuredH;
         }
     }
@@ -405,7 +432,7 @@ export function buildSceneFromLayoutGeneric(
         const fontSize = fitTextFontSize(
             descriptionText,
             descFont,
-            '',
+            bodyStyle,
             layout.description.maxFontSize,
             layout.description.lineHeight,
             0,
@@ -420,6 +447,7 @@ export function buildSceneFromLayoutGeneric(
             text: descriptionText,
             fontFamily: descFont,
             fontSize,
+            fontStyle: bodyStyle,
             fill: textColor,
             align: layout.description.align,
             verticalAlign: layout.description.verticalAlign,
@@ -429,7 +457,7 @@ export function buildSceneFromLayoutGeneric(
         }));
 
         if (stackCursorY !== null) {
-            const descMeasuredH = measuredTextHeight(descriptionText, descFont, '', fontSize, layout.description.lineHeight, 0, rect.width - BODY_BOX_PADDING * 2);
+            const descMeasuredH = measuredTextHeight(descriptionText, descFont, bodyStyle, fontSize, layout.description.lineHeight, 0, rect.width - BODY_BOX_PADDING * 2);
             stackCursorY = y + descMeasuredH;
         }
     }
@@ -1278,19 +1306,162 @@ function buildTicket(content: TemplateContent, slideH: number): TemplateScene {
     };
 }
 
+// ─── Editorial Press ─────────────────────────────────────────────────────────
+// Editorial carousel look: navy / cream alternating backgrounds, a heavy
+// grotesque headline in sentence case, an orange keyword highlight, and a fixed
+// three-part top header (source credit · @handle · month year). The header is a
+// running band on every slide, so it is built here and attached by the generator
+// (which knows the handle and date).
+
+/** Editorial Press palette — orange accent used for highlighted words and the CTA. */
+export const EDITORIAL_ACCENT = '#FF3B14';
+const EDITORIAL_NAVY = '#0C0E2B';
+const EDITORIAL_CREAM = '#F1EEE6';
+const EDITORIAL_INK = '#12142E';
+/** Grotesque display/body face, and the serif used on reflective (quote/split) layouts. */
+const EDITORIAL_GROTESQUE = 'Archivo';
+const EDITORIAL_SERIF = 'Fraunces';
+
 /**
- * Resolves a template's accent against the workspace brand. Generic templates
- * (those flagged `brandAccent`) adopt the workspace accent from onboarding when
- * available; templates with a deliberate palette keep their own accent.
+ * Editorial Press mixes two typefaces across the deck: reflective, headline-led
+ * layouts (quote/split) get the high-contrast serif, while punchy hero/data/cta
+ * layouts keep the heavy grotesque. Returns undefined to use the role font.
+ */
+function editorialTitleFont(layoutType: LayoutType): string | undefined {
+    return layoutType === 'quote_block' || layoutType === 'split_text' ? EDITORIAL_SERIF : undefined;
+}
+
+/** Relative luminance of a #rrggbb color, used to pick a contrasting header ink. */
+function hexLuminance(hex: string): number {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+    if (!m) {
+        return 0;
+    }
+    const n = parseInt(m[1], 16);
+    const r = (n >> 16) & 0xff;
+    const g = (n >> 8) & 0xff;
+    const b = n & 0xff;
+
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+/**
+ * The Editorial Press running header: three text elements pinned to the top edge —
+ * the source credit (left), the @handle (centered), and the month/year stamp
+ * (right). `background` decides the ink color so the band reads on navy or cream.
+ */
+export function buildEditorialHeaderElements(opts: { handle: string; dateLabel: string; background: string }): SlideEl[] {
+    const ink = hexLuminance(opts.background) > 0.6 ? EDITORIAL_INK : '#ffffff';
+    const y = 42;
+    const fontSize = 24;
+    const font = 'Archivo';
+    const margin = 72;
+    const sideWidth = 460;
+    const handle = opts.handle ? `@${opts.handle.replace(/^@/, '')}` : '@handle';
+
+    return [
+        createText({
+            x: margin, y, width: sideWidth, height: 32,
+            text: 'Powered by Slidezz',
+            fontFamily: font, fontSize, fontStyle: '500', fill: ink,
+            align: 'left', letterSpacing: -0.4,
+        }),
+        createText({
+            x: 0, y, width: SLIDE_W, height: 32,
+            text: handle,
+            fontFamily: font, fontSize, fontStyle: '500', fill: ink,
+            align: 'center', letterSpacing: -0.4,
+        }),
+        createText({
+            x: SLIDE_W - margin - sideWidth, y, width: sideWidth, height: 32,
+            text: `${opts.dateLabel} ®`,
+            fontFamily: font, fontSize, fontStyle: '500', fill: ink,
+            align: 'right', letterSpacing: -0.4,
+        }),
+    ];
+}
+
+/**
+ * Static (non-AI) Editorial Press cover: navy field, running header, a heavy
+ * sentence-case headline anchored low with an orange keyword, and a lead-in line
+ * below. Mirrors what the layout builder produces for the hook_hero cover.
+ */
+function buildEditorialPress(content: TemplateContent, slideH: number, accent: string = EDITORIAL_ACCENT, background: string = EDITORIAL_NAVY): TemplateScene {
+    const margin = 72;
+    const contentW = SLIDE_W - margin * 2;
+    const titleY = slideH - 560;
+    const titleSize = fitTextFontSize(content.title, 'Archivo', '700', 108, 1.02, -1, contentW, 360, TITLE_BOX_PADDING);
+    const titleInk = hexLuminance(background) > 0.6 ? EDITORIAL_INK : '#ffffff';
+
+    return {
+        background,
+        badgeX: margin,
+        badgeY: titleY - 132,
+        badgeStyle: 'solid',
+        elements: [
+            ...buildEditorialHeaderElements({ handle: content.eyebrow, dateLabel: 'Janeiro 2026', background }),
+            createText({
+                x: margin,
+                y: titleY,
+                width: contentW,
+                height: 380,
+                text: content.title,
+                fontFamily: 'Archivo',
+                fontSize: titleSize,
+                fontStyle: '700',
+                fill: titleInk,
+                lineHeight: 1.02,
+                letterSpacing: -1,
+                padding: TITLE_BOX_PADDING,
+            }),
+            createText({
+                x: margin,
+                y: titleY + 400,
+                width: contentW,
+                height: 120,
+                text: content.subtitle || content.caption,
+                fontFamily: 'Archivo',
+                fontSize: 32,
+                fontStyle: '700',
+                fill: accent,
+                lineHeight: 1.3,
+            }),
+        ],
+    };
+}
+
+/**
+ * Resolves a template against the workspace brand from onboarding. Templates
+ * flagged `brandAccent` adopt the workspace accent; templates flagged
+ * `brandBackground` take the workspace color as their primary background, with the
+ * alternating background flipped to a contrasting neutral and text recolored for
+ * contrast. Templates with a deliberate palette keep their own values.
  */
 export function resolveTemplateForBrand(
     template: SlideTemplate,
     workspaceAccent?: string | null,
+    workspaceColor?: string | null,
 ): SlideTemplate {
+    let next = template;
+
     if (template.brandAccent && workspaceAccent) {
-        return { ...template, accentColor: workspaceAccent };
+        next = { ...next, accentColor: workspaceAccent };
     }
-    return template;
+
+    if (template.brandBackground && workspaceColor) {
+        // Flip the alternating background to whichever neutral contrasts the brand
+        // color, so the deck always alternates light/dark regardless of brand hue.
+        const darkBrand = hexLuminance(workspaceColor) < 0.5;
+        next = {
+            ...next,
+            background: workspaceColor,
+            textColor: darkBrand ? '#ffffff' : EDITORIAL_INK,
+            backgroundAlt: darkBrand ? EDITORIAL_CREAM : EDITORIAL_NAVY,
+            textColorAlt: darkBrand ? EDITORIAL_INK : '#ffffff',
+        };
+    }
+
+    return next;
 }
 
 // ─── Template definitions ────────────────────────────────────────────────────
@@ -1474,6 +1645,36 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
             return scene;
         },
     },
+    {
+        id: 'editorial-press',
+        name: 'Editorial Press',
+        description: 'Editorial carousel: alternating navy/cream slides with a heavy grotesque headline (and a high-contrast serif on reflective slides), an orange keyword highlight, a hero profile chip, and a running "source · @handle · month" top header. Photos run full-bleed or as square cards.',
+        background: EDITORIAL_NAVY,
+        backgroundAlt: EDITORIAL_CREAM,
+        textColor: '#ffffff',
+        textColorAlt: EDITORIAL_INK,
+        accentColor: EDITORIAL_ACCENT,
+        brandAccent: true,
+        brandBackground: true,
+        font: EDITORIAL_GROTESQUE,
+        bodyFont: EDITORIAL_GROTESQUE,
+        captionFont: EDITORIAL_GROTESQUE,
+        fontStyle: '700',
+        bodyFontStyle: '500',
+        letterSpacing: -0.5,
+        align: 'left',
+        fonts: [EDITORIAL_GROTESQUE, EDITORIAL_SERIF],
+        uppercaseTitle: false,
+        defaultBadgeStyle: 'solid',
+        titleFontOverride: editorialTitleFont,
+        buildScene: buildEditorialPress,
+        buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
+            // Typography + imaging come from the generic builder; the running top
+            // header (source · @handle · month) is attached by the generator, which
+            // has the handle and current date.
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
+        },
+    },
 ];
 
 export function TemplatePreview({ id }: { id: string }) {
@@ -1578,6 +1779,25 @@ export function TemplatePreview({ id }: { id: string }) {
                         <div className="absolute rounded-full" style={{ width: 12, height: 12, background: '#000', bottom: -6, left: '50%', transform: 'translateX(-50%)' }} />
                         <div className="absolute" style={{ left: '12%', top: '24%', right: '12%' }}>
                             <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 13, fontWeight: 600, color: '#111', lineHeight: 1.02, letterSpacing: -0.5 }}>{t('slideEditor.elements.title')}</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        case 'editorial-press':
+            return (
+                <div className="relative w-full h-full flex flex-col justify-end px-2 py-1.5" style={{ background: EDITORIAL_NAVY }}>
+                    {/* Running header: source · handle · date */}
+                    <div className="absolute inset-x-1.5 top-1 flex items-center justify-between" style={{ color: '#fff' }}>
+                        <div style={{ fontFamily: 'Archivo, Arial, sans-serif', fontSize: 3, letterSpacing: -0.2 }}>Slidezz</div>
+                        <div style={{ fontFamily: 'Archivo, Arial, sans-serif', fontSize: 3, letterSpacing: -0.2 }}>@handle</div>
+                        <div style={{ fontFamily: 'Archivo, Arial, sans-serif', fontSize: 3, letterSpacing: -0.2 }}>Jan 2026 ®</div>
+                    </div>
+                    <div className="relative z-10" style={{ textAlign: 'left' }}>
+                        <div style={{ fontFamily: 'Archivo, Arial, sans-serif', fontSize: 10, fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: -0.5 }}>
+                            {t('slideEditor.elements.title')} <span style={{ color: EDITORIAL_ACCENT }}>{t('slideEditor.elements.big')}</span>
+                        </div>
+                        <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 5, fontWeight: 600, color: EDITORIAL_ACCENT, marginTop: 3, lineHeight: 1.2 }}>
+                            {t('slideEditor.elements.subtitle')}
                         </div>
                     </div>
                 </div>

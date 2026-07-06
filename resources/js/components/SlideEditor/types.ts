@@ -41,6 +41,8 @@ export interface RichSpan {
     color?: string;        // undefined = inherit el.fill
     highlight?: string;    // background highlight color
     gradient?: string[];   // 2+ hex stops; renders the glyph fill as a left→right gradient
+    bold?: boolean;        // render this span heavier than the element's base weight (min 700)
+    weight?: number;       // explicit per-word font weight (300-900); overrides `bold`
 }
 
 export interface TextReadabilityStyle {

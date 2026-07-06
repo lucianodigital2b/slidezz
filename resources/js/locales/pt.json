@@ -452,6 +452,7 @@
       "textColor": "Cor do texto",
       "font": "Fonte",
       "size": "Tamanho",
+      "weight": "Peso",
       "bold": "Negrito",
       "italic": "Itálico",
       "underline": "Sublinhado",
@@ -728,6 +729,10 @@
       "ticket": {
         "name": "Ticket",
         "description": "Título em serifa aesthetic sobre uma forma de ticket recortado. A capa usa a cor primary do seu workspace; os tickets internos são brancos. Os cantos trazem o título do deck, número do slide, handle e logo."
+      },
+      "editorial-press": {
+        "name": "Editorial Press",
+        "description": "Carrossel editorial: slides alternando entre a cor do seu workspace e um neutro contrastante, título grotesco pesado (e uma serifada de alto contraste nos slides reflexivos), palavra-chave destacada no seu accent, chip de perfil na capa e um header corrido (fonte · @handle · mês). Fotos em tela cheia ou em cards."
       }
     },
     "archetypes": {
@@ -775,6 +780,13 @@
       "imageModeLabel": "Imagens no carrossel",
       "imageStyleLabel": "Estilo das imagens (opcional)",
       "imageStylePlaceholder": "ex: preto e branco, cinematográfico, grão de filme...",
+      "ctaImageLabel": "Imagem de CTA (opcional)",
+      "ctaImageUpload": "Enviar imagem de CTA",
+      "ctaImageSet": "Imagem de CTA pronta - vira o último slide.",
+      "ctaImageRemove": "Remover imagem de CTA",
+      "ctaImageHint": "Se enviar, a IA não cria o slide de CTA e sua imagem entra como último slide.",
+      "ctaImageError": "Não foi possível ler essa imagem. Tente outra.",
+      "ctaImageTooLarge": "Imagem muito grande. Use uma menor.",
       "languageLabel": "Idioma do conteúdo",
       "customPromptLabel": "Instruções adicionais (opcional)",
       "customPromptHint": "Adicione detalhes específicos, tom ou restrições para a IA seguir.",
