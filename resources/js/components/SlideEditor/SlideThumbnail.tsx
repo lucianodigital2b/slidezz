@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Circle as KonvaCircle, Path as KonvaPath } from 'react-konva';
 import { Slide, Format, FORMATS } from './types';
-import { KonvaTextEl, KonvaImageEl, KonvaButtonEl } from './KonvaElements';
+import { KonvaTextEl, KonvaImageEl, KonvaButtonEl, KonvaBadgeEl } from './KonvaElements';
 import { borderStyleToDash, gradientLinearProps } from './utils';
 
 export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format }) {
@@ -88,6 +88,9 @@ export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format
                             }
                             return null;
                         })}
+                        {slide.profileBadge && (
+                            <KonvaBadgeEl badge={slide.profileBadge} slideW={fmt.w} slideH={slideH} />
+                        )}
                     </Layer>
                 </Stage>
             )}

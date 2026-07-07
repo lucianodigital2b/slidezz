@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronLeft, ChevronRight, KeyRound, Loader2, Sparkles } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
@@ -133,14 +133,11 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
     const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
     const [missingKey, setMissingKey] = useState(false);
     const [selectedLang, setSelectedLang] = useState(language);
-    const startedForLang = useRef<string | null>(null);
 
     useEffect(() => {
-        // Re-run when the chosen language changes; guard React StrictMode's double-invoke
-        // by keying on the language we last started generating for.
-        if (startedForLang.current === selectedLang) return;
-        startedForLang.current = selectedLang;
-
+        // Regenerate whenever the chosen language changes. The `cancelled` flag keeps
+        // this safe under React StrictMode's double-invoke and drops stale results when
+        // switching languages mid-generation.
         let cancelled = false;
         const lang = selectedLang;
         const handle = slugHandle(brandName);
