@@ -7,7 +7,16 @@ import { loadGoogleFont } from '@/utils/google-fonts';
 import { SLIDE_TEMPLATES, SlideTemplate, ContentBand, createTicketShape, ticketRect, buildTicketCorners, buildEditorialHeaderElements, resolveTemplateForBrand } from '../templates';
 import { LayoutType, LAYOUT_DEFINITIONS, generateLayoutSequenceFromContent, pickLayoutForSlide, slotToBox, computeSafeArea, TitleFitter } from '../layouts';
 
-export type ImageMode = 'none' | 'background' | 'grid' | 'alternate';
+export type ImageMode = 'none' | 'background' | 'grid' | 'alternate' | 'mixed';
+
+// 'mixed' mode: an inner slide switches from a full-bleed photo to a contained image
+// card once its body copy passes this length — a short slide reads as a punchy
+// full-bleed hero, a text-heavy one gets a card so the body has room to breathe.
+const MIXED_CARD_MIN_DESC = 90;
+
+// Above this body length, an image card slide shrinks its card to leave a taller text
+// band so the long copy fits the reserved area instead of overflowing onto the photo.
+const GRID_CARD_LONG_DESC = 160;
 
 /** A full-bleed slide whose only content is a user-supplied image (the final CTA). */
 function buildImageSlide(src: string, slideH: number): Slide {
@@ -67,7 +76,7 @@ export function useAiGeneration(
     const [aiTopic, setAiTopic] = useState('');
     const [aiStyle, setAiStyle] = useState('');
     const [aiSlideCount, setAiSlideCount] = useState(5);
-    const [aiImageMode, setAiImageMode] = useState<ImageMode>('background');
+    const [aiImageMode, setAiImageMode] = useState<ImageMode>('mixed');
     const [aiWordHighlight, setAiWordHighlight] = useState(true);
     const [aiLanguage, setAiLanguage] = useState('Portuguese (Brazil)');
     // Free-text refinement appended to every generated image prompt (e.g. "preto e
@@ -157,7 +166,18 @@ export function useAiGeneration(
         const slideH = FORMATS[format].h;
         const layout = LAYOUT_DEFINITIONS[layoutType];
 
+        // 'mixed' (hero cover + varied inner layouts): the cover is always a full-bleed
+        // hero; inner slides pick their image placement from the copy so the deck has
+        // variety without a blind index rotation — a short slide is a full-bleed photo,
+        // a text-heavy one is a contained card.
+        const mixedPlacement = (): 'background' | 'grid' => {
+            if (slideIndex === 0) return 'background';
+
+            return (data.description ?? '').trim().length >= MIXED_CARD_MIN_DESC ? 'grid' : 'background';
+        };
+
         let effectiveMode: 'background' | 'grid' =
+            imageMode === 'mixed' ? mixedPlacement() :
             imageMode === 'alternate' ? (slideIndex % 2 === 0 ? 'background' : 'grid') :
             imageMode === 'none' ? 'background' : // won't reach here — guarded upstream
             imageMode as 'background' | 'grid';
@@ -173,14 +193,36 @@ export function useAiGeneration(
         // the card itself further down, from the same geometry.
         const willPlaceGridCard = Boolean(bgBase64) && effectiveMode === 'grid' && layout.backgroundPreference !== 'solid';
         const GRID_CARD_PAD = 80;
-        const GRID_CARD_GAP = 48;
-        const gridCardH = Math.round(slideH * (layout.type === 'hook_hero' ? 0.50 : 0.40));
-        const gridCardY = layout.imageCardPosition === 'bottom'
+        // Breathing room reserved between the image card and the text band so copy never
+        // reads glued to the photo.
+        const GRID_CARD_GAP = 72;
+        // 'mixed' mode alternates the card between top and bottom across inner slides so
+        // consecutive photo-card slides don't read the same; other modes keep the
+        // layout's own preferred position. The content band is reserved on the opposite
+        // side (see contentBand below) so copy never overlaps the card wherever it lands.
+        const cardPosition: 'top' | 'bottom' =
+            // A tweet's media always sits below the copy, and its profile header is pinned
+            // to the top — so keep the card at the bottom to stay authentic and clear of
+            // the badge that now renders on every Twitter/X slide.
+            template?.id === 'twitter-x' ? 'bottom' :
+            imageMode === 'mixed' ? (slideIndex % 2 === 0 ? 'top' : 'bottom') :
+            layout.imageCardPosition;
+
+        // A text-heavy slide needs a taller text band, so shrink the card — otherwise the
+        // long body can't fit the reserved band and overflows onto the card despite the
+        // gap. The hero cover keeps its large card; other slides shrink once the body is long.
+        const isTextHeavyCard = (data.description ?? '').trim().length >= GRID_CARD_LONG_DESC;
+        const gridCardH = Math.round(slideH * (
+            layout.type === 'hook_hero' ? 0.50 :
+            isTextHeavyCard ? 0.32 :
+            0.40
+        ));
+        const gridCardY = cardPosition === 'bottom'
             ? slideH - GRID_CARD_PAD - gridCardH
             : GRID_CARD_PAD;
         const safeArea = computeSafeArea(slideH, slideIndex);
         const contentBand: ContentBand | undefined = willPlaceGridCard
-            ? (layout.imageCardPosition === 'bottom'
+            ? (cardPosition === 'bottom'
                 ? { top: safeArea.y, bottom: gridCardY - GRID_CARD_GAP }
                 : { top: gridCardY + gridCardH + GRID_CARD_GAP, bottom: safeArea.y + safeArea.height })
             : undefined;
@@ -196,7 +238,20 @@ export function useAiGeneration(
                 ctaPill: data.ctaPill,
             };
 
-            const scene = template.buildSceneFromLayout(content, layout, slideH, slideIndex, totalSlides, contentBand);
+            // A stat callout over a full-bleed photo must sit LOW, over the bottom
+            // gradient — not centered over the subject's face. Pack the caption, stat
+            // and body into the lower half only when there's a background image; on a
+            // solid background the layout stays centered.
+            const layoutForScene = (bgBase64 && layout.type === 'stat_callout' && layout.stat)
+                ? {
+                    ...layout,
+                    title: { ...layout.title, y: 0.46, height: 0.07 },
+                    stat: { ...layout.stat, y: 0.53, height: 0.20 },
+                    description: { ...layout.description, y: 0.74, height: 0.24 },
+                }
+                : layout;
+
+            const scene = template.buildSceneFromLayout(content, layoutForScene, slideH, slideIndex, totalSlides, contentBand);
 
             // Ticket template: the serif title/body is already laid out. Drop a ticket-shaped
             // surface behind it (workspace brand color on the cover, white on inner slides),
@@ -346,8 +401,11 @@ export function useAiGeneration(
             // like a real Twitter/X post, and any template with a defaultBadgeStyle gets a
             // handle chip above the title. Placeholder name/handle/photo are edited in the
             // badge panel.
-            // Profile badge only on the hero (cover) slide — never on inner/closing slides.
-            const wantsBadge = slideIndex === 0 && (scene.badgeStyle === 'tweet' || Boolean(template?.defaultBadgeStyle));
+            // The Twitter/X template is a real tweet on every slide, so its profile header
+            // (avatar · name · @handle) renders on all slides. Other templates only chip the
+            // handle on the hero (cover) slide.
+            const isTweet = scene.badgeStyle === 'tweet';
+            const wantsBadge = isTweet || (slideIndex === 0 && Boolean(template?.defaultBadgeStyle));
             const profileBadge: ProfileBadge | undefined = wantsBadge && scene.badgeStyle
                 ? {
                     enabled: true,
@@ -355,7 +413,7 @@ export function useAiGeneration(
                     name: scene.badgeStyle === 'tweet' ? 'Your name' : '',
                     handle: badgeIdentity.handle || '',
                     photoUrl: badgeIdentity.photoUrl,
-                    size: 48,
+                    size: 64,
                     verified: scene.badgeStyle === 'tweet',
                     x: scene.badgeX,
                     y: scene.badgeY,

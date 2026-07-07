@@ -958,6 +958,7 @@ function buildTwitterX(content: TemplateContent, slideH: number): TemplateScene 
 function buildTwitterXFromLayout(
     content: TemplateContent & { stat?: string; ctaPill?: string },
     slideH: number,
+    contentBand?: ContentBand,
 ): TemplateScene {
     const pad = 72;
     const contentW = SLIDE_W - pad * 2;
@@ -965,8 +966,13 @@ function buildTwitterXFromLayout(
     const font = 'Albert Sans';
 
     const headerY = Math.round(slideH * 0.065);
-    const bodyTop = Math.round(slideH * 0.185);
-    const blockBottom = slideH - Math.round(slideH * 0.09);
+    // Default body band. When a grid image card reserves part of the slide, clamp the
+    // title+body into the opposite band (contentBand) so the copy never sits under the
+    // photo — the band already accounts for the card position and its gap.
+    const defaultBodyTop = Math.round(slideH * 0.185);
+    const defaultBlockBottom = slideH - Math.round(slideH * 0.09);
+    const bodyTop = contentBand ? Math.max(defaultBodyTop, Math.round(contentBand.top)) : defaultBodyTop;
+    const blockBottom = contentBand ? Math.min(defaultBlockBottom, Math.round(contentBand.bottom)) : defaultBlockBottom;
 
     const titleLs = -0.5;
     const titleLh = 1.3;
@@ -1320,7 +1326,7 @@ const EDITORIAL_CREAM = '#F1EEE6';
 const EDITORIAL_INK = '#12142E';
 /** Grotesque display/body face, and the serif used on reflective (quote/split) layouts. */
 const EDITORIAL_GROTESQUE = 'Archivo';
-const EDITORIAL_SERIF = 'Fraunces';
+const EDITORIAL_SERIF = 'Alegreya';
 
 /**
  * Editorial Press mixes two typefaces across the deck: reflective, headline-led
@@ -1568,9 +1574,11 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         align: 'left',
         fonts: ['Albert Sans'],
         buildScene: buildTwitterX,
-        buildSceneFromLayout(content, _layout, slideH) {
+        buildSceneFromLayout(content, _layout, slideH, _slideIndex, _totalSlides, contentBand) {
             // Tweet-specific layout: profile header + body copy (no ALL-CAPS grid).
-            return buildTwitterXFromLayout(content, slideH);
+            // Pass the reserved content band so the copy is clamped to the half opposite
+            // a grid image card instead of running under the photo.
+            return buildTwitterXFromLayout(content, slideH, contentBand);
         },
     },
     {
@@ -1796,7 +1804,7 @@ export function TemplatePreview({ id }: { id: string }) {
                         <div style={{ fontFamily: 'Archivo, Arial, sans-serif', fontSize: 10, fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: -0.5 }}>
                             {t('slideEditor.elements.title')} <span style={{ color: EDITORIAL_ACCENT }}>{t('slideEditor.elements.big')}</span>
                         </div>
-                        <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 5, fontWeight: 600, color: EDITORIAL_ACCENT, marginTop: 3, lineHeight: 1.2 }}>
+                        <div style={{ fontFamily: 'Alegreya, Georgia, serif', fontSize: 5, fontWeight: 600, color: EDITORIAL_ACCENT, marginTop: 3, lineHeight: 1.2 }}>
                             {t('slideEditor.elements.subtitle')}
                         </div>
                     </div>

@@ -128,7 +128,7 @@ class CarouselWizardController extends Controller
             'save_config' => ['boolean'],
             'save_as_template' => ['boolean'],
             'format' => ['nullable', 'string', 'in:post,stories'],
-            'image_mode' => ['nullable', 'string', 'in:none,background,grid,alternate'],
+            'image_mode' => ['nullable', 'string', 'in:none,background,grid,alternate,mixed'],
             'image_style' => ['nullable', 'string', 'max:500'],
             'word_highlight' => ['nullable', 'boolean'],
             'language' => ['nullable', 'string', 'max:50'],
@@ -162,7 +162,7 @@ class CarouselWizardController extends Controller
             ->with('wizardStyle', $style)
             ->with('wizardTemplate', $validated['template'])
             ->with('wizardSlideCount', $validated['slide_count'] ?? 3)
-            ->with('wizardImageMode', $validated['image_mode'] ?? 'background')
+            ->with('wizardImageMode', $validated['image_mode'] ?? 'mixed')
             ->with('wizardImageStyle', $validated['image_style'] ?? '')
             ->with('wizardWordHighlight', $validated['word_highlight'] ?? true)
             ->with('wizardLanguage', $validated['language'] ?? 'Portuguese (Brazil)')

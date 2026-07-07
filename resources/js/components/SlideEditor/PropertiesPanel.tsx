@@ -19,17 +19,33 @@ function spanWeight(span: RichSpan): number {
     return span.weight ?? (span.bold ? 700 : 400);
 }
 
-function getHighlightedWords(text: string, richText: RichSpan[] | undefined): Map<number, HighlightStyle> {
+/**
+ * Whether a span is an actual highlight, not just normal body text. Generated decks
+ * give EVERY word a span colored with the element's base fill, so "has a color" alone
+ * would flag every word (and paint the un-highlighted ones white). A real highlight
+ * differs from the base color, or carries an explicit weight/bold.
+ */
+function isHighlightSpan(span: RichSpan, baseFill: string): boolean {
+    if (span.bold || span.weight != null) return true;
+    return Boolean(span.color) && span.color!.toLowerCase() !== baseFill.toLowerCase();
+}
+
+function getHighlightedWords(text: string, richText: RichSpan[] | undefined, baseFill: string): Map<number, HighlightStyle> {
     const result = new Map<number, HighlightStyle>();
     if (!richText || richText.length === 0) return result;
     const charStyles: (HighlightStyle | null)[] = new Array(text.length).fill(null);
     let pos = 0;
     for (const span of richText) {
-        const style: HighlightStyle | null = span.color ? { color: span.color, weight: spanWeight(span) } : null;
-        for (let i = 0; i < span.text.length && pos + i < charStyles.length; i++) {
+        const style: HighlightStyle | null = isHighlightSpan(span, baseFill)
+            ? { color: span.color ?? baseFill, weight: spanWeight(span) }
+            : null;
+        // Guard against malformed persisted spans (older builds could store a null text
+        // on a whitespace gap span): treat missing text as empty so we don't crash.
+        const spanText = span.text ?? '';
+        for (let i = 0; i < spanText.length && pos + i < charStyles.length; i++) {
             charStyles[pos + i] = style;
         }
-        pos += span.text.length;
+        pos += spanText.length;
     }
     const wordRegex = /\S+/g;
     let wordIndex = 0;
@@ -113,7 +129,7 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
         return result;
     }, [el.text]);
 
-    const highlights = React.useMemo(() => getHighlightedWords(el.text, el.richText), [el.text, el.richText]);
+    const highlights = React.useMemo(() => getHighlightedWords(el.text, el.richText, el.fill), [el.text, el.richText, el.fill]);
 
     const applyColor = (c: string) => { setHlColor(c); setHexInput(c); };
 

@@ -112,7 +112,7 @@ const STAT_CALLOUT: LayoutDefinition = {
         x: 0, y: 0.08, width: 1, height: 0.12,
         align: 'center', verticalAlign: 'bottom',
         maxFontSize: 28, fontRole: 'caption', fontStyleHint: 'bold',
-        lineHeight: 1.2, letterSpacing: 3, visible: true, opacity: 0.6,
+        lineHeight: 1.2, letterSpacing: 3, visible: true, opacity: 1,
     },
     subtitle: {
         x: 0, y: 0, width: 0, height: 0,

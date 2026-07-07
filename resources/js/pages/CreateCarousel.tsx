@@ -12,6 +12,7 @@ import {
     Layers,
     LayoutTemplate,
     Loader2,
+    Shuffle,
     Upload,
     X,
 } from 'lucide-react';
@@ -283,7 +284,11 @@ export default function CreateCarousel() {
     const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID);
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
     const [slideCount, setSlideCount]       = useState(3);
-    const [imageMode, setImageMode] = useState<ImageMode>('alternate');
+    // Twitter/X defaults to grid (its tweet copy can't sit over a full-bleed photo);
+    // every other template starts on the varied hero+layouts mode.
+    const [imageMode, setImageMode] = useState<ImageMode>(
+        (workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID) === 'twitter-x' ? 'grid' : 'mixed',
+    );
     const [imageStyle, setImageStyle]       = useState('');
     const [ctaImage, setCtaImage]           = useState<string | null>(null);
     const [saveConfig, setSaveConfig]       = useState(false);
@@ -386,7 +391,7 @@ export default function CreateCarousel() {
             <div className="min-h-screen bg-gray-50">
 
                 {/* ── Header ──────────────────────────────────────────────── */}
-                <div className="bg-white border-b border-gray-100 px-6 py-4">
+                <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4">
                     <div className="max-w-4xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button
@@ -405,12 +410,14 @@ export default function CreateCarousel() {
                                 <h1 className="text-lg font-bold text-gray-900">{t('createCarousel.pageTitle')}</h1>
                             </div>
                         </div>
-                        <Stepper step={step} labels={stepLabels} />
+                        <div className="hidden md:block">
+                            <Stepper step={step} labels={stepLabels} />
+                        </div>
                     </div>
                 </div>
 
                 {/* ── Body ────────────────────────────────────────────────── */}
-                <div className="max-w-4xl mx-auto px-6 py-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
 
                     {/* ── Step 1: INPUT ─────────────────────────────────── */}
                     {step === 1 && (
@@ -539,19 +546,25 @@ export default function CreateCarousel() {
 
                     {/* ── Step 2: CONFIG ────────────────────────────────── */}
                     {step === 2 && (
-                        <div className="grid grid-cols-3 gap-6">
-                            <div className="col-span-2 space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2 space-y-6">
                                 {/* Templates */}
                                 <div>
                                     <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('createCarousel.step2.templateTitle')}</h2>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {TEMPLATE_IDS.map((id) => (
                                             <SelectionCard
                                                 key={id}
                                                 name={t(`createCarousel.templates.${id}.name`)}
                                                 description={t(`createCarousel.templates.${id}.description`)}
                                                 selected={template === id}
-                                                onClick={() => setTemplate(id)}
+                                                onClick={() => {
+                                                    setTemplate(id);
+                                                    // The Twitter/X template is a tweet with a media card, and its
+                                                    // dark-on-white copy is unreadable over a full-bleed photo — so
+                                                    // default its images to the grid (card) layout.
+                                                    if (id === 'twitter-x') setImageMode('grid');
+                                                }}
                                             />
                                         ))}
                                     </div>
@@ -561,7 +574,7 @@ export default function CreateCarousel() {
                                 <div>
                                     <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('createCarousel.step2.archetypeTitle')}</h2>
                                     <p className="text-xs text-gray-400 mb-3">{t('createCarousel.step2.archetypeSubtitle')}</p>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {ARCHETYPE_IDS.map((id) => (
                                             <SelectionCard
                                                 key={id}
@@ -575,8 +588,8 @@ export default function CreateCarousel() {
                                 </div>
                             </div>
 
-                            {/* Preview panel */}
-                            <div className="col-span-1">
+                            {/* Preview panel — desktop only (hidden on mobile) */}
+                            <div className="hidden lg:block lg:col-span-1">
                                 <div className="sticky top-6">
                                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('createCarousel.step2.preview')}</p>
                                     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -676,6 +689,7 @@ export default function CreateCarousel() {
                                         { id: 'background' as ImageMode, label: t('slideEditor.ai.imageMode.background'), Icon: Image     },
                                         { id: 'grid'       as ImageMode, label: t('slideEditor.ai.imageMode.grid'),       Icon: Grid2X2   },
                                         { id: 'alternate'  as ImageMode, label: t('slideEditor.ai.imageMode.alternate'),  Icon: Layers    },
+                                        { id: 'mixed'      as ImageMode, label: t('slideEditor.ai.imageMode.mixed'),      Icon: Shuffle   },
                                     ] as { id: ImageMode; label: string; Icon: React.ElementType }[]).map(({ id, label, Icon }) => (
                                         <button
                                             key={id}

@@ -324,7 +324,7 @@ export default function SlideEditor() {
         setAiTopic(wizardConfig.topic);
         setAiStyle(wizardConfig.style);
         setAiSlideCount(wizardConfig.slideCount);
-        const mode: ImageMode = wizardConfig.imageMode ?? 'background';
+        const mode: ImageMode = wizardConfig.imageMode ?? 'mixed';
         setAiImageMode(mode);
         const hl = wizardConfig.wordHighlight ?? true;
         setAiWordHighlight(hl);
@@ -1113,6 +1113,8 @@ export default function SlideEditor() {
                         safeAreaPadding={safeAreaPadding}
                         elementsOpen={elementsOpen}
                         onElementsOpenChange={setElementsOpen}
+                        onPrevSlide={() => { setCurrentIdx((i) => Math.max(0, i - 1)); setSelectedId(null); setSelectedCornerId(null); }}
+                        onNextSlide={() => { setCurrentIdx((i) => Math.min(slides.length - 1, i + 1)); setSelectedId(null); setSelectedCornerId(null); }}
                         onStageClick={handleStageClick}
                         onStageDragStart={handleStageDragStart}
                         onStageDragEnd={handleStageDragEnd}

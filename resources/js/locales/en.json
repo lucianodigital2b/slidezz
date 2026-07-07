@@ -264,7 +264,9 @@
         "grid": "Grid only",
         "gridShort": "Grid",
         "alternate": "Alternate both",
-        "alternateShort": "Alternate"
+        "alternateShort": "Alternate",
+        "mixed": "Hero cover + varied layouts",
+        "mixedShort": "Varied"
       },
       "statusGenerating": "Writing your slides…",
       "statusGeneratingHint": "Creating each slide's content with AI",
@@ -775,6 +777,12 @@
       "title": "You still need to connect your Gemini key",
       "body": "Without it, your carousels come out without AI images. It takes 2 minutes and it's free.",
       "cta": "Connect now"
+    },
+    "geminiModal": {
+      "title": "Connect your Gemini key",
+      "body": "To generate carousels with AI you need to connect your Gemini key. It's free and takes 2 minutes.",
+      "cta": "Connect Gemini key",
+      "cancel": "Not now"
     },
     "welcome": {
       "title": "Welcome to Slidezz!",

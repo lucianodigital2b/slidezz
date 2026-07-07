@@ -1,7 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 const COLORS = {
@@ -16,6 +16,11 @@ type CtaButtonProps = {
     variant?: keyof typeof COLORS;
     /** Extra classes to tune sizing/spacing on the outer pill. */
     className?: string;
+    /**
+     * Optional click handler. Call `event.preventDefault()` inside to block the
+     * navigation (e.g. to open a gating modal instead of following `href`).
+     */
+    onClick?: (event: MouseEvent<Element>) => void;
 };
 
 /**
@@ -30,10 +35,12 @@ export default function CtaButton({
     children,
     variant = 'orange',
     className,
+    onClick,
 }: CtaButtonProps) {
     return (
         <Link
             href={href}
+            onClick={onClick}
             style={{ '--cta': COLORS[variant] } as CSSProperties}
             className={cn(
                 'group relative inline-flex items-center gap-3 rounded-full border border-[var(--cta)] bg-[var(--cta)] py-1.5 pr-1.5 pl-6 text-lg font-bold text-[#1A1A1A]',

@@ -137,7 +137,9 @@ export function extractSingleHighlightWord(text: string, richText: RichSpan[] | 
     let searchStartIndex = 0;
     for (const span of richText) {
         const candidateColor = normalizeColorForCompare(span.color);
-        if (!span.text.trim() || !candidateColor || candidateColor === normalizedBaseColor) continue;
+        // A malformed persisted span may carry a null/undefined text — skip it like a
+        // whitespace-only span instead of crashing on .trim().
+        if (!span.text?.trim() || !candidateColor || candidateColor === normalizedBaseColor) continue;
 
         const spanWords = tokenizeWords(span.text);
         if (!spanWords.length) continue;

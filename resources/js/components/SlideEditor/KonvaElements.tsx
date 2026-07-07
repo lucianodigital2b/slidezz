@@ -96,7 +96,10 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     // is never swallowed by an adjacent space.
     const wordStyles: { color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number }[] = [];
     for (const span of spans) {
-        const matches = span.text.match(/\S+/g);
+        // Spans are advisory (per-word styling) and can be persisted malformed by older
+        // builds — a whitespace gap span may carry a null/undefined text. Coalesce to ''
+        // so it contributes no words (same as a whitespace-only span) instead of crashing.
+        const matches = (span.text ?? '').match(/\S+/g);
         if (!matches) continue;
         for (let i = 0; i < matches.length; i++) {
             wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient, bold: span.bold, weight: span.weight });
@@ -841,6 +844,16 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
         const tbx = badge.x ?? 72;
         const tby = badge.y ?? 96;
 
+        // Every visible child (name, handle, verified tick, placeholder avatar) is
+        // listening={false}, so without this the draggable Group has no hit area and
+        // can't be grabbed. A transparent rect spanning the whole badge makes the entire
+        // header draggable from anywhere.
+        measure.font = `400 ${tweetHandleSize}px ${tweetFont}, sans-serif`;
+        const handleW = handleText ? Math.ceil(measure.measureText(handleText).width) : 0;
+        const nameLineW = nameW + (nameText && badge.verified ? tweetVerifiedGap + tweetVerifiedSize : 0);
+        const hitW = (nameText || handleText) ? textX + Math.max(nameLineW, handleW) : photoSize;
+        const hitH = photoSize;
+
         return (
             <Group
                 x={tbx} y={tby}
@@ -849,6 +862,7 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
                 onClick={(e) => { e.cancelBubble = true; }}
                 onTap={(e) => { e.cancelBubble = true; }}
             >
+                <Rect x={0} y={0} width={hitW} height={hitH} fill="transparent" />
                 {img ? (
                     <Group
                         x={0} y={0}
@@ -948,6 +962,10 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
                 onClick={(e) => { e.cancelBubble = true; }}
                 onTap={(e) => { e.cancelBubble = true; }}
             >
+                {/* Transparent hit area so the whole badge is draggable — every visible
+                    child below is listening={false}. */}
+                <Rect x={0} y={0} width={totalW} height={divH} fill="transparent" />
+
                 {/* Left line */}
                 <Rect x={0} y={midY - 1} width={lineW} height={1.5} fill={lineFill} listening={false} />
 
@@ -1036,7 +1054,7 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
             onClick={(e) => { e.cancelBubble = true; }}
             onTap={(e) => { e.cancelBubble = true; }}
         >
-            {badge.style !== 'minimal' && (
+            {badge.style !== 'minimal' ? (
                 <Rect
                     x={0} y={0}
                     width={containerW} height={containerH}
@@ -1045,6 +1063,10 @@ export function KonvaBadgeEl({ badge, slideW, slideH, onBadgeMove }: KonvaBadgeE
                     stroke={badge.style === 'glass' ? 'rgba(255,255,255,0.35)' : undefined}
                     strokeWidth={badge.style === 'glass' ? 1.5 : 0}
                 />
+            ) : (
+                // Minimal has no background chrome, so add a transparent hit area — its
+                // handle/verified children are listening={false} and wouldn't be grabbable.
+                <Rect x={0} y={0} width={containerW} height={containerH} fill="transparent" />
             )}
 
             {hasAvatar && (

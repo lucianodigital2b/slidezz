@@ -299,6 +299,12 @@
       "body": "Sem ela, seus carrosséis saem sem imagens de IA. Leva 2 minutos e é grátis.",
       "cta": "Conectar agora"
     },
+    "geminiModal": {
+      "title": "Conecte sua chave Gemini",
+      "body": "Para gerar carrosséis com IA você precisa conectar sua chave Gemini. É grátis e leva 2 minutos.",
+      "cta": "Conectar chave Gemini",
+      "cancel": "Agora não"
+    },
     "welcome": {
       "title": "Bem-vindo ao Slidezz!",
       "description": "Carrosséis são ilimitados. Para gerar imagens com IA, conecte sua chave gratuita do Google Gemini em Configurações → Integrações.",
@@ -555,7 +561,9 @@
         "grid": "Só grade de imagens",
         "gridShort": "Só grade",
         "alternate": "Intercalar ambas",
-        "alternateShort": "Intercalar"
+        "alternateShort": "Intercalar",
+        "mixed": "Capa hero + layouts variados",
+        "mixedShort": "Variado"
       },
       "statusGenerating": "Escrevendo seus slides…",
       "statusGeneratingHint": "Criando o conteúdo de cada slide com IA",

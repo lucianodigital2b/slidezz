@@ -297,6 +297,37 @@ class CarouselWizardControllerTest extends TestCase
             ->assertSessionHas('wizardSlideCount', 3);
     }
 
+    public function test_store_accepts_mixed_image_mode(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+                'image_mode' => 'mixed',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('wizardImageMode', 'mixed');
+    }
+
+    public function test_store_rejects_invalid_image_mode(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->actingAs($user)
+            ->post(route('carousel.store'), [
+                'title' => 'My Carousel',
+                'topic' => 'test topic',
+                'template' => 'noir-manifesto',
+                'archetype' => 'disruptor-social',
+                'image_mode' => 'nonsense',
+            ])
+            ->assertSessionHasErrors(['image_mode']);
+    }
+
     public function test_store_validates_slide_count_bounds(): void
     {
         $user = $this->authenticatedUser();

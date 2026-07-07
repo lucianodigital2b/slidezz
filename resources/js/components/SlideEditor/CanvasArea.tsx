@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { MousePointer, Type, RectangleHorizontal, Square, Circle as CircleIcon, Shapes } from 'lucide-react';
+import { MousePointer, Type, RectangleHorizontal, Square, Circle as CircleIcon, Shapes, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
     Circle as KonvaCircle,
@@ -47,6 +47,8 @@ interface CanvasAreaProps {
     safeAreaPadding: { top: number; right: number; bottom: number; left: number };
     elementsOpen: boolean;
     onElementsOpenChange: (open: boolean) => void;
+    onPrevSlide: () => void;
+    onNextSlide: () => void;
     onStageClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
     onStageDragStart: (e: Konva.KonvaEventObject<DragEvent>) => void;
     onStageDragEnd: () => void;
@@ -203,6 +205,7 @@ export function CanvasArea({
     editingId,
     showSafeAreaGuide, safeAreaBounds, safeAreaPadding,
     elementsOpen, onElementsOpenChange,
+    onPrevSlide, onNextSlide,
     onStageClick, onStageDragStart, onStageDragEnd,
     onAddPath, onStartEditing, onElementChange,
     onBadgeMove,
@@ -706,8 +709,18 @@ export function CanvasArea({
                 </div>
             )}
 
-            {/* Floating tool palette */}
+            {/* Floating navigation + tool palette */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+                <button
+                    type="button"
+                    title={t('slideEditor.slides.prevSlide')}
+                    onClick={onPrevSlide}
+                    disabled={currentIdx <= 0}
+                    className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+
                 <div className="flex items-center gap-0.5 bg-white rounded-2xl shadow-xl border border-gray-200/80 px-1.5 py-1.5">
                     {toolBtn('select', <MousePointer className="w-4 h-4" />, t('slideEditor.toolbar.select'))}
                     {toolBtn('text', <Type className="w-4 h-4" />, t('slideEditor.toolbar.text'))}
@@ -723,6 +736,16 @@ export function CanvasArea({
                         <Shapes className="w-4 h-4" />
                     </button>
                 </div>
+
+                <button
+                    type="button"
+                    title={t('slideEditor.slides.nextSlide')}
+                    onClick={onNextSlide}
+                    disabled={currentIdx >= slidesCount - 1}
+                    className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white shadow-xl border border-gray-200/80 text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-35 disabled:hover:bg-white"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
             </div>
 
             {/* Konva Stage — all slides in a row (scrolls horizontally; the tool
