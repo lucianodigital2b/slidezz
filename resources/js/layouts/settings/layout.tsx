@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { edit as editApiTokens } from '@/routes/api-tokens';
 import { edit as editAppearance } from '@/routes/appearance';
+import { edit as editBrand } from '@/routes/brand';
 import { edit as editBilling } from '@/routes/billing';
 import { edit as editIntegrations } from '@/routes/integrations';
 import { edit } from '@/routes/profile';
@@ -16,12 +18,16 @@ import type { NavItem } from '@/types';
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { t } = useTranslation();
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { mcpEnabled } = usePage<{ mcpEnabled?: boolean }>().props;
 
     const sidebarNavItems: NavItem[] = [
         { title: t('settings.nav.profile'), href: edit(), icon: null },
+        { title: t('settings.nav.brand'), href: editBrand(), icon: null },
         { title: t('settings.nav.security'), href: editSecurity(), icon: null },
         { title: t('settings.nav.appearance'), href: editAppearance(), icon: null },
         { title: t('settings.nav.integrations'), href: editIntegrations(), icon: null },
+        // Dev-only MCP token UI (see HandleInertiaRequests: mcpEnabled).
+        ...(mcpEnabled ? [{ title: t('settings.nav.apiTokens'), href: editApiTokens(), icon: null }] : []),
         { title: t('settings.nav.billing'), href: editBilling(), icon: null },
     ];
 

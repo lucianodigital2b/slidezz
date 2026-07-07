@@ -291,7 +291,10 @@
       "lines": "Lines",
       "arrows": "Arrows",
       "decorative": "Decorative",
-      "balloons": "Balloons"
+      "balloons": "Balloons",
+      "icons": "Icons",
+      "searchIcons": "Search icons...",
+      "noIcons": "No icons found"
     },
     "elements": {
       "title": "TITLE",
@@ -566,7 +569,17 @@
       "back": "Back",
       "continue": "Continue",
       "viewPlans": "Finish",
+      "seePreview": "See my carousels",
       "saving": "Saving..."
+    },
+    "preview": {
+      "title": "Look what we made for {{brand}}",
+      "subtitle": "2 ready carousels in your brand's style. This is what you'll generate in seconds.",
+      "loading": "Creating 2 carousels tailored to your brand...",
+      "generating": "Generating...",
+      "viewPlans": "See plans",
+      "error": "We couldn't generate the preview right now, but you can continue.",
+      "missingKey": "These are text-only. Connect your Gemini key in settings to also generate the carousel photos."
     },
     "advanced": {
       "title": "Advanced settings",
@@ -655,8 +668,23 @@
       "afterTrial": "after 14 days free",
       "startFree": "Start {{plan}} free",
       "terms": "By subscribing, you agree to our terms of use. You can cancel before the end of the free period at no cost.",
+      "skip": "Skip for now",
       "logout": "Log out",
-      "popular": "Most popular"
+      "popular": "Most popular",
+      "lifetime": {
+        "name": "Lifetime",
+        "description": "Launch offer",
+        "badge": "Launch",
+        "priceNote": "one-time payment, no subscription",
+        "cta": "Get lifetime",
+        "features": [
+          "Lifetime access, no monthly fee",
+          "Unlimited carousels",
+          "Unlimited images with your Gemini key",
+          "All templates",
+          "Future updates included"
+        ]
+      }
     },
     "errors": {
       "goalRequired": "Please select your main goal.",
@@ -824,9 +852,11 @@
     "description": "Manage your profile and account settings",
     "nav": {
       "profile": "Profile",
+      "brand": "Brand",
       "security": "Security",
       "appearance": "Appearance",
       "integrations": "Integrations",
+      "apiTokens": "API & MCP",
       "billing": "Billing"
     },
     "profile": {
@@ -905,6 +935,45 @@
       "lockedTitle": "Available on the Pro and Agency plans",
       "lockedDescription": "BYOK (your own Gemini key) unlocks unlimited images. Upgrade to enable it.",
       "upgradeCta": "View plans"
+    },
+    "brand": {
+      "title": "Brand",
+      "description": "The brand profile the AI uses to write and design your carousels. Set during onboarding — update it anytime.",
+      "goalLabel": "Main goal",
+      "nameLabel": "Brand name",
+      "namePlaceholder": "e.g. Slidezz",
+      "descriptionLabel": "Brand description",
+      "descriptionPlaceholder": "What your brand does, its personality and what makes it different.",
+      "audienceLabel": "Target audience",
+      "audiencePlaceholder": "Who you're talking to — their role, interests and pains.",
+      "toneLabel": "Tone of voice",
+      "paletteLabel": "Color palette",
+      "visualStyleLabel": "Visual style (optional)",
+      "visualStylePlaceholder": "e.g. minimal, high-contrast, film grain, editorial...",
+      "visualStyleHint": "Extra art direction applied to generated images.",
+      "logoLabel": "Logo",
+      "logoUpload": "Upload logo",
+      "save": "Save changes",
+      "saved": "Saved."
+    },
+    "apiTokens": {
+      "title": "API & MCP tokens",
+      "description": "Create personal access tokens to connect Slidezz to MCP clients like Claude Code.",
+      "createdTitle": "Token created",
+      "createdHint": "Copy it now — for security, it won't be shown again.",
+      "copy": "Copy",
+      "nameLabel": "Token name",
+      "namePlaceholder": "e.g. Claude Code",
+      "nameHint": "A label to help you recognize where this token is used.",
+      "create": "Create token",
+      "listTitle": "Your tokens",
+      "empty": "No tokens yet.",
+      "createdAt": "Created {{when}}",
+      "lastUsed": "last used {{when}}",
+      "neverUsed": "never used",
+      "revoke": "Revoke",
+      "connectTitle": "Connect from Claude Code",
+      "connectHint": "Run this in your terminal, then ask Claude to list your Slidezz projects."
     },
     "deleteAccount": {
       "title": "Delete account",

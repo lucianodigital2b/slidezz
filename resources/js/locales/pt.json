@@ -103,6 +103,8 @@
       "security": "Segurança",
       "appearance": "Aparência",
       "integrations": "Integrações",
+      "apiTokens": "API & MCP",
+      "brand": "Marca",
       "billing": "Assinatura"
     },
     "profile": {
@@ -181,6 +183,45 @@
       "lockedTitle": "Disponível nos planos Pro e Agency",
       "lockedDescription": "O BYOK (sua própria chave Gemini) libera imagens ilimitadas. Faça upgrade para ativar.",
       "upgradeCta": "Ver planos"
+    },
+    "brand": {
+      "title": "Marca",
+      "description": "O perfil de marca que a IA usa pra escrever e desenhar seus carrosséis. Definido no onboarding — atualize quando quiser.",
+      "goalLabel": "Objetivo principal",
+      "nameLabel": "Nome da marca",
+      "namePlaceholder": "ex: Slidezz",
+      "descriptionLabel": "Descrição da marca",
+      "descriptionPlaceholder": "O que sua marca faz, a personalidade dela e o que a diferencia.",
+      "audienceLabel": "Público-alvo",
+      "audiencePlaceholder": "Com quem você fala — cargo, interesses e dores.",
+      "toneLabel": "Tom de voz",
+      "paletteLabel": "Paleta de cores",
+      "visualStyleLabel": "Estilo visual (opcional)",
+      "visualStylePlaceholder": "ex: minimalista, alto contraste, grão de filme, editorial...",
+      "visualStyleHint": "Direção de arte extra aplicada às imagens geradas.",
+      "logoLabel": "Logo",
+      "logoUpload": "Enviar logo",
+      "save": "Salvar alterações",
+      "saved": "Salvo."
+    },
+    "apiTokens": {
+      "title": "Tokens de API & MCP",
+      "description": "Crie tokens de acesso pessoal para conectar o Slidezz a clientes MCP como o Claude Code.",
+      "createdTitle": "Token criado",
+      "createdHint": "Copie agora — por segurança, ele não será exibido novamente.",
+      "copy": "Copiar",
+      "nameLabel": "Nome do token",
+      "namePlaceholder": "ex: Claude Code",
+      "nameHint": "Um rótulo pra você reconhecer onde este token é usado.",
+      "create": "Criar token",
+      "listTitle": "Seus tokens",
+      "empty": "Nenhum token ainda.",
+      "createdAt": "Criado {{when}}",
+      "lastUsed": "usado por último {{when}}",
+      "neverUsed": "nunca usado",
+      "revoke": "Revogar",
+      "connectTitle": "Conectar pelo Claude Code",
+      "connectHint": "Rode isto no terminal e depois peça pro Claude listar seus projetos do Slidezz."
     },
     "deleteAccount": {
       "title": "Excluir conta",
@@ -588,7 +629,10 @@
       "lines": "Linhas",
       "arrows": "Setas",
       "decorative": "Decorativos",
-      "balloons": "Balões"
+      "balloons": "Balões",
+      "icons": "Ícones",
+      "searchIcons": "Buscar ícones...",
+      "noIcons": "Nenhum ícone encontrado"
     },
     "elements": {
       "title": "TÍTULO",
@@ -842,7 +886,17 @@
       "back": "Voltar",
       "continue": "Continuar",
       "viewPlans": "Concluir",
+      "seePreview": "Ver meus carrosséis",
       "saving": "Salvando..."
+    },
+    "preview": {
+      "title": "Olha o que já criamos pra {{brand}}",
+      "subtitle": "2 carrosséis prontos, no estilo da sua marca. É isso que você vai gerar em segundos.",
+      "loading": "Criando 2 carrosséis com a cara da sua marca...",
+      "generating": "Gerando...",
+      "viewPlans": "Ver planos",
+      "error": "Não conseguimos gerar o preview agora, mas você pode continuar.",
+      "missingKey": "Estes são só com texto. Conecte sua chave Gemini nas configurações para gerar também as fotos dos carrosséis."
     },
     "advanced": {
       "title": "Configurações avançadas",
@@ -932,7 +986,22 @@
       "afterTrial": "após 14 dias grátis",
       "startFree": "Começar {{plan}} grátis",
       "terms": "Ao assinar, você concorda com nossos termos de uso. Você pode cancelar antes do término do período gratuito sem nenhum custo.",
-      "logout": "Sair da conta"
+      "skip": "Pular por agora",
+      "logout": "Sair da conta",
+      "lifetime": {
+        "name": "Vitalício",
+        "description": "Oferta de lançamento",
+        "badge": "Lançamento",
+        "priceNote": "pagamento único, sem mensalidade",
+        "cta": "Garantir vitalício",
+        "features": [
+          "Acesso vitalício, sem mensalidade",
+          "Carrosséis ilimitados",
+          "Imagens ilimitadas com sua chave Gemini",
+          "Todos os templates",
+          "Atualizações futuras incluídas"
+        ]
+      }
     },
     "errors": {
       "goalRequired": "Selecione seu objetivo principal.",

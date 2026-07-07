@@ -63,6 +63,10 @@ return [
         // Image generation driver: 'gemini' (gemini-2.5-flash-image, cinematic
         // subject-accurate), 'openai' (gpt-image-1, paid), or 'unsplash' (free stock search).
         'driver' => env('CAROUSEL_IMAGE_DRIVER', 'gemini'),
+        // Kill-switch: cover the onboarding "aha" preview images on the platform key
+        // when the user hasn't connected their own Gemini key yet. Treated as marketing
+        // spend (CAC) and capped once per user. Off by default.
+        'onboarding_preview' => env('ONBOARDING_PREVIEW_IMAGES', false),
     ],
 
     'deepseek' => [

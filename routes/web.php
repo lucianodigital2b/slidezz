@@ -48,7 +48,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
     Route::post('onboarding/profile', [OnboardingController::class, 'saveProfile'])->name('onboarding.profile');
     Route::post('onboarding/subscribe', [OnboardingController::class, 'subscribe'])->name('onboarding.subscribe');
+    Route::post('onboarding/lifetime', [OnboardingController::class, 'subscribeLifetime'])->name('onboarding.lifetime');
+    Route::post('onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
     Route::get('onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
+
+    // "Aha" preview: brand-tailored carousels shown between the profile and the
+    // plans step. Pre-payment (no premium gate), so throttled to curb abuse.
+    Route::post('onboarding/preview/topics', [OnboardingController::class, 'previewTopics'])
+        ->middleware('throttle:10,1')->name('onboarding.preview.topics');
+    Route::post('onboarding/preview/deck', [OnboardingController::class, 'previewDeck'])
+        ->middleware('throttle:12,1')->name('onboarding.preview.deck');
+    Route::post('onboarding/preview/image', [OnboardingController::class, 'previewImage'])
+        ->middleware('throttle:30,1')->name('onboarding.preview.image');
 });
 
 Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(function () {

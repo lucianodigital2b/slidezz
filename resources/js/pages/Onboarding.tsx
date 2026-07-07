@@ -22,6 +22,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppLogoIcon from '@/components/app-logo-icon';
 import FadeIn from '@/components/fade-in';
+import OnboardingPreview from '@/components/onboarding/OnboardingPreview';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -35,7 +36,9 @@ interface Plan {
 
 interface Props {
     has_profile: boolean;
+    preview_images_enabled: boolean;
     plans: Record<string, Plan>;
+    lifetime: { price_label: string | null; price_id: string | null };
 }
 
 interface Palette {
@@ -70,6 +73,9 @@ const fieldClass =
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const TOTAL_STEPS = 6;
+// Steps beyond the numbered profile flow: the "aha" preview and the plans step.
+const PREVIEW_STEP = 7;
+const PLANS_STEP = 8;
 
 const GOAL_ICONS: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
     sell_products:        { color: 'text-white', bg: 'bg-emerald-500', icon: TrendingUp },
@@ -601,12 +607,18 @@ function Step6GeminiKey({ data, set }: { data: FormData; set: (k: keyof FormData
 
 function StepPlans({
     plans,
+    lifetime,
     onSubscribe,
+    onLifetime,
     subscribingTo,
+    onSkip,
 }: {
     plans: Record<string, Plan>;
+    lifetime: { price_label: string | null; price_id: string | null };
     onSubscribe: (key: string) => void;
+    onLifetime: () => void;
     subscribingTo: string | null;
+    onSkip: () => void;
 }) {
     const { t } = useTranslation();
     const entries = Object.entries(plans);
@@ -617,7 +629,7 @@ function StepPlans({
                 <p className="text-lg font-medium text-[#666660]">{t('onboarding.plans.subtitle')}</p>
             </div>
 
-            <div className={`grid items-stretch gap-6 ${entries.length >= 3 ? 'md:grid-cols-3' : 'sm:grid-cols-2'}`}>
+            <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {entries.map(([key, plan], i) => {
                     const featured = entries.length >= 3 ? i === 1 : false;
                     return (
@@ -660,11 +672,48 @@ function StepPlans({
                         </div>
                     );
                 })}
+
+                {/* Lifetime launch offer — a 4th card in the same grid. */}
+                <div className="relative flex flex-col rounded-[24px] border-2 bg-white p-7 shadow-sm" style={{ borderColor: INK }}>
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#1A1A1A] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
+                        {t('onboarding.plans.lifetime.badge')}
+                    </div>
+                    <div>
+                        <p className="text-2xl font-extrabold text-[#1A1A1A]">{t('onboarding.plans.lifetime.name')}</p>
+                        <p className="mt-1 text-sm font-medium text-[#666660]">{t('onboarding.plans.lifetime.description')}</p>
+                        <p className="mt-4 font-display text-5xl leading-none tracking-normal text-[#1A1A1A]">{lifetime.price_label ?? '—'}</p>
+                        <p className="mt-1 text-xs font-medium text-[#888880]">{t('onboarding.plans.lifetime.priceNote')}</p>
+                    </div>
+                    <ul className="my-6 flex-1 space-y-3 border-t pt-6" style={{ borderColor: BORDER }}>
+                        {(t('onboarding.plans.lifetime.features', { returnObjects: true }) as string[]).map((feature) => (
+                            <li key={feature} className="flex items-start gap-2.5 text-sm font-medium text-[#555550]">
+                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: ACCENT }} />
+                                {feature}
+                            </li>
+                        ))}
+                    </ul>
+                    <button
+                        type="button"
+                        className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-lg font-bold text-white transition-colors disabled:opacity-60"
+                        style={{ background: INK }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#333'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = INK; }}
+                        disabled={subscribingTo !== null || !lifetime.price_id}
+                        onClick={onLifetime}
+                    >
+                        {subscribingTo === '__lifetime__' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        {t('onboarding.plans.lifetime.cta')}
+                    </button>
+                </div>
             </div>
 
             <p className="text-center text-xs font-medium text-[#888880]">{t('onboarding.plans.terms')}</p>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3">
+                <button type="button" onClick={onSkip} disabled={subscribingTo !== null}
+                    className="text-sm font-bold text-[#666660] underline underline-offset-2 transition-colors hover:text-[#1A1A1A] disabled:opacity-50">
+                    {t('onboarding.plans.skip')}
+                </button>
                 <button type="button" onClick={() => router.post('/logout')}
                     className="text-sm font-medium text-[#888880] underline underline-offset-2 transition-colors hover:text-[#1A1A1A]">
                     {t('onboarding.plans.logout')}
@@ -689,9 +738,9 @@ function validateStep(step: number, data: FormData, t: (k: string) => string): s
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function Onboarding({ has_profile, plans }: Props) {
-    const { t } = useTranslation();
-    const [step, setStep] = useState(has_profile ? 7 : 1);
+export default function Onboarding({ has_profile, preview_images_enabled, plans, lifetime }: Props) {
+    const { t, i18n } = useTranslation();
+    const [step, setStep] = useState(has_profile ? PLANS_STEP : 1);
     const [saving, setSaving] = useState(false);
     const [subscribingTo, setSubscribingTo] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -747,7 +796,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
         router.post('/onboarding/profile', form, {
             forceFormData: true,
             preserveState: true,
-            onSuccess: () => { setStep(7); setSaving(false); },
+            onSuccess: () => { setStep(PREVIEW_STEP); setSaving(false); },
             onError: () => setSaving(false),
         });
     };
@@ -759,7 +808,21 @@ export default function Onboarding({ has_profile, plans }: Props) {
         });
     };
 
-    const isOnPlansStep = step === 7;
+    const subscribeLifetime = () => {
+        setSubscribingTo('__lifetime__');
+        router.post('/onboarding/lifetime', {}, { onError: () => setSubscribingTo(null) });
+    };
+
+    const skipPlans = () => {
+        setSubscribingTo('__skip__');
+        router.post('/onboarding/skip', {}, { onError: () => setSubscribingTo(null) });
+    };
+
+    const isOnPlansStep = step === PLANS_STEP;
+    const isPreviewStep = step === PREVIEW_STEP;
+    const isChromeless = isOnPlansStep || isPreviewStep;
+
+    const previewLanguage = i18n.language === 'en' ? 'English' : 'Portuguese (Brazil)';
 
     const stepComponents: Record<number, React.ReactNode> = {
         1: <Step1 data={data} set={set} />,
@@ -768,7 +831,16 @@ export default function Onboarding({ has_profile, plans }: Props) {
         4: <Step4 data={data} set={set} />,
         5: <Step5 data={data} set={set} />,
         6: <Step6GeminiKey data={data} set={set} />,
-        7: <StepPlans plans={plans} onSubscribe={subscribeToPlan} subscribingTo={subscribingTo} />,
+        [PREVIEW_STEP]: (
+            <OnboardingPreview
+                brandName={data.brand_name}
+                brand={{ color: data.palette.primary, accent: data.palette.accent }}
+                hasKey={data.gemini_api_key.trim() !== '' || preview_images_enabled}
+                language={previewLanguage}
+                onContinue={() => setStep(PLANS_STEP)}
+            />
+        ),
+        [PLANS_STEP]: <StepPlans plans={plans} lifetime={lifetime} onSubscribe={subscribeToPlan} onLifetime={subscribeLifetime} subscribingTo={subscribingTo} onSkip={skipPlans} />,
     };
 
     return (
@@ -790,7 +862,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
                             <p className="mt-0.5 text-xs font-medium text-[#888880]">{t('onboarding.header.subtitle')}</p>
                         </div>
                     </div>
-                    {!isOnPlansStep && (
+                    {!isChromeless && (
                         <span className="rounded-full border bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#666660] tabular-nums" style={{ borderColor: BORDER }}>
                             {t('onboarding.header.step', { current: step, total: TOTAL_STEPS })}
                         </span>
@@ -798,7 +870,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
                 </header>
 
                 {/* Progress + step nav */}
-                {!isOnPlansStep && (
+                {!isChromeless && (
                     <div className="px-6 pb-6">
                         <div className="mx-auto max-w-2xl">
                             <ProgressBar current={step} total={TOTAL_STEPS} />
@@ -809,7 +881,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
 
                 {/* Content */}
                 <main className="flex flex-1 items-start justify-center px-4 pb-16">
-                    <div className={`w-full space-y-8 ${isOnPlansStep ? 'max-w-5xl' : 'max-w-xl'}`}>
+                    <div className={`w-full space-y-8 ${isOnPlansStep ? 'max-w-6xl' : isPreviewStep ? 'max-w-4xl' : 'max-w-xl'}`}>
                         <FadeIn key={step}>{stepComponents[step]}</FadeIn>
 
                         {error && (
@@ -818,7 +890,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
                             </p>
                         )}
 
-                        {!isOnPlansStep && (
+                        {!isChromeless && (
                             <div className="flex items-center justify-between gap-4 border-t pt-6" style={{ borderColor: BORDER }}>
                                 {step > 1 ? (
                                     <button type="button" onClick={back} disabled={saving}
@@ -844,7 +916,7 @@ export default function Onboarding({ has_profile, plans }: Props) {
                                         {saving ? (
                                             <><Loader2 className="h-4 w-4 animate-spin" /> {t('onboarding.nav.saving')}</>
                                         ) : (
-                                            <>{step === TOTAL_STEPS ? t('onboarding.nav.viewPlans') : t('onboarding.nav.continue')} <ArrowRight className="h-4 w-4" /></>
+                                            <>{step === TOTAL_STEPS ? t('onboarding.nav.seePreview') : t('onboarding.nav.continue')} <ArrowRight className="h-4 w-4" /></>
                                         )}
                                     </button>
                                 </div>

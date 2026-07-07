@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Settings\ApiTokensController;
 use App\Http\Controllers\Settings\BillingController;
+use App\Http\Controllers\Settings\BrandController;
 use App\Http\Controllers\Settings\IntegrationsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -24,8 +26,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
 
+    Route::get('settings/brand', [BrandController::class, 'edit'])->name('brand.edit');
+    Route::post('settings/brand', [BrandController::class, 'update'])->name('brand.update');
+
     Route::get('settings/integrations', [IntegrationsController::class, 'edit'])->name('integrations.edit');
     Route::patch('settings/integrations', [IntegrationsController::class, 'update'])->name('integrations.update');
+
+    Route::get('settings/api-tokens', [ApiTokensController::class, 'edit'])->name('api-tokens.edit');
+    Route::post('settings/api-tokens', [ApiTokensController::class, 'store'])->name('api-tokens.store');
+    Route::delete('settings/api-tokens/{token}', [ApiTokensController::class, 'destroy'])->name('api-tokens.destroy');
 
     Route::get('settings/billing', [BillingController::class, 'edit'])->name('billing.edit');
     Route::post('settings/billing/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');

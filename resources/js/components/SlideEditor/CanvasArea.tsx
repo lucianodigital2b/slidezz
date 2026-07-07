@@ -20,6 +20,7 @@ import { borderStyleToDash, contrastRatio, gradientLinearProps, normalizeHexColo
 import { KonvaTextEl, KonvaImageEl, KonvaButtonEl, KonvaBadgeEl } from './KonvaElements';
 import { loadGoogleFont } from '@/utils/google-fonts';
 import { ShapeDef, SHAPE_CATEGORIES } from './shapes';
+import { IconLibrary } from './IconLibrary';
 
 /** Horizontal gap between slides in the overview row, in world (pre-scale) units. */
 export const SLIDE_GAP = 120;
@@ -706,6 +707,8 @@ export function CanvasArea({
                             </div>
                         </div>
                     ))}
+
+                    <IconLibrary onPick={onAddPath} />
                 </div>
             )}
 

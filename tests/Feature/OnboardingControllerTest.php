@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\AI\CarouselGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -30,20 +31,27 @@ class OnboardingControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Onboarding')
                 ->where('has_profile', false)
+                ->where('preview_images_enabled', false)
                 ->has('plans')
+                ->has('lifetime')
             );
     }
 
-    public function test_user_with_existing_profile_is_completed_and_redirected_to_dashboard(): void
+    public function test_user_with_existing_profile_resumes_on_onboarding_without_completing(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
         Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
-            ->assertRedirect(route('dashboard'));
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Onboarding')
+                ->where('has_profile', true)
+            );
 
-        $this->assertNotNull($user->fresh()->onboarding_completed_at);
+        // Saving the profile no longer completes onboarding; the plans step still needs to run.
+        $this->assertNull($user->fresh()->onboarding_completed_at);
     }
 
     public function test_completed_user_is_redirected_from_onboarding(): void
@@ -102,7 +110,7 @@ class OnboardingControllerTest extends TestCase
                 'goal' => 'sell_products',
                 'tone_of_voice' => ['professional', 'motivational'],
             ]))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('onboarding'));
 
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $this->assertNotNull($workspace);
@@ -112,16 +120,17 @@ class OnboardingControllerTest extends TestCase
         $this->assertSame(['professional', 'motivational'], $workspace->profile['tone_of_voice']);
     }
 
-    public function test_save_profile_completes_onboarding_and_awards_three_credits(): void
+    public function test_save_profile_does_not_complete_onboarding_or_award_credits_yet(): void
     {
         Storage::fake('public');
         $user = User::factory()->create(['onboarding_completed_at' => null, 'credits' => 0]);
 
         $this->actingAs($user)->post(route('onboarding.profile'), $this->validProfilePayload());
 
+        // Completion (and the welcome credits) now happens on skip/subscribe, not on save.
         $fresh = $user->fresh();
-        $this->assertNotNull($fresh->onboarding_completed_at);
-        $this->assertSame(15, $fresh->credits);
+        $this->assertNull($fresh->onboarding_completed_at);
+        $this->assertSame(0, $fresh->credits);
     }
 
     public function test_save_profile_stores_the_gemini_key_when_provided(): void
@@ -131,7 +140,7 @@ class OnboardingControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('onboarding.profile'), $this->validProfilePayload(['gemini_api_key' => '  AIza-onboarding-key  ']))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('onboarding'));
 
         $this->assertSame('AIza-onboarding-key', $user->fresh()->gemini_api_key);
     }
@@ -143,7 +152,7 @@ class OnboardingControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('onboarding.profile'), $this->validProfilePayload())
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('onboarding'));
 
         $this->assertNull($user->fresh()->gemini_api_key);
     }
@@ -193,6 +202,40 @@ class OnboardingControllerTest extends TestCase
             ->assertSessionHasErrors('plan');
     }
 
+    // ─── lifetime (launch offer) ─────────────────────────────────────────────
+
+    public function test_onboarding_lifetime_requires_authentication(): void
+    {
+        $this->post(route('onboarding.lifetime'))->assertRedirect(route('login'));
+    }
+
+    public function test_onboarding_lifetime_404_when_price_not_configured(): void
+    {
+        config(['lifetime.prices' => []]);
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'lifetime_access_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.lifetime'))
+            ->assertNotFound();
+    }
+
+    public function test_onboarding_lifetime_completes_when_already_owned(): void
+    {
+        $user = User::factory()->create([
+            'onboarding_completed_at' => null,
+            'lifetime_access_at' => now(),
+            'credits' => 0,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.lifetime'))
+            ->assertRedirect(route('dashboard'));
+
+        $fresh = $user->fresh();
+        $this->assertNotNull($fresh->onboarding_completed_at);
+        $this->assertSame(15, $fresh->credits);
+    }
+
     // ─── complete ────────────────────────────────────────────────────────────
 
     public function test_complete_requires_authentication(): void
@@ -226,6 +269,160 @@ class OnboardingControllerTest extends TestCase
         );
     }
 
+    // ─── skip ────────────────────────────────────────────────────────────────
+
+    public function test_skip_completes_onboarding_and_awards_credits(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'credits' => 0]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.skip'))
+            ->assertRedirect(route('dashboard'));
+
+        $fresh = $user->fresh();
+        $this->assertNotNull($fresh->onboarding_completed_at);
+        $this->assertSame(15, $fresh->credits);
+    }
+
+    public function test_skip_is_idempotent_for_completed_user(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => now()->subDay(), 'credits' => 3]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.skip'))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertSame(3, $user->fresh()->credits);
+    }
+
+    // ─── preview (aha) ───────────────────────────────────────────────────────
+
+    public function test_preview_topics_returns_two_brand_tailored_topics(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+        Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateIdeas')->once()->andReturn([
+                ['title' => 'Ideia A', 'angle' => 'erro_comum'],
+                ['title' => 'Ideia B', 'angle' => 'passo_a_passo'],
+                ['title' => 'Ideia C', 'angle' => 'bastidores'],
+            ]);
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.topics'))
+            ->assertOk()
+            ->assertJsonCount(2, 'topics')
+            ->assertJsonPath('topics.0.topic', 'Ideia A')
+            ->assertJsonPath('topics.0.title', 'Ideia A');
+    }
+
+    public function test_preview_topics_empty_without_brand_profile(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.topics'))
+            ->assertOk()
+            ->assertJsonPath('topics', []);
+    }
+
+    public function test_preview_topics_forbidden_when_already_completed(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => now()]);
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.topics'))
+            ->assertForbidden();
+    }
+
+    public function test_preview_deck_returns_ndjson(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+        Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('buildStyle')->andReturn('editorial voice');
+            $mock->shouldReceive('generateSlides')->once()->andReturn('{"title":"Slide 1"}');
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.deck'), ['topic' => 'Como vender mais'])
+            ->assertOk()
+            ->assertJsonPath('ndjson', '{"title":"Slide 1"}');
+    }
+
+    public function test_preview_deck_requires_topic(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.deck'), [])
+            ->assertStatus(422);
+    }
+
+    public function test_preview_image_requires_byok_key(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'gemini_api_key' => null]);
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.image'), ['prompt' => 'a cat'])
+            ->assertStatus(402)
+            ->assertJsonPath('error', 'missing_byok_key');
+    }
+
+    public function test_preview_image_falls_back_to_platform_key_when_enabled(): void
+    {
+        config(['services.carousel_image.onboarding_preview' => true]);
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'gemini_api_key' => null]);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateImage')->once()->andReturn('data:image/png;base64,PLATFORM');
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.image'), ['prompt' => 'a cat'])
+            ->assertOk()
+            ->assertJsonPath('base64', 'data:image/png;base64,PLATFORM');
+    }
+
+    public function test_preview_image_platform_budget_is_capped_per_user(): void
+    {
+        config(['services.carousel_image.onboarding_preview' => true]);
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'gemini_api_key' => null]);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateImage')->andReturn('data:image/png;base64,PLATFORM');
+        });
+
+        // The platform covers the first 8 images (2 carousels x 4 slides), then stops.
+        for ($i = 0; $i < 8; $i++) {
+            $this->actingAs($user)
+                ->postJson(route('onboarding.preview.image'), ['prompt' => "slide {$i}"])
+                ->assertOk();
+        }
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.image'), ['prompt' => 'over budget'])
+            ->assertStatus(402)
+            ->assertJsonPath('error', 'missing_byok_key');
+    }
+
+    public function test_preview_image_returns_base64_with_key(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null, 'gemini_api_key' => 'AIza-key']);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateImage')->once()->andReturn('data:image/png;base64,AAAA');
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.image'), ['prompt' => 'a cat', 'aspect_ratio' => '4:5'])
+            ->assertOk()
+            ->assertJsonPath('base64', 'data:image/png;base64,AAAA');
+    }
+
     // ─── middleware ──────────────────────────────────────────────────────────
 
     public function test_dashboard_redirects_to_onboarding_when_not_complete(): void
@@ -255,14 +452,15 @@ class OnboardingControllerTest extends TestCase
             ->assertOk();
     }
 
-    public function test_returning_user_with_saved_profile_is_redirected_to_dashboard(): void
+    public function test_returning_user_with_saved_profile_resumes_onboarding(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);
         Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
             ->get(route('onboarding'))
-            ->assertRedirect(route('dashboard'));
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Onboarding')->where('has_profile', true));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────
