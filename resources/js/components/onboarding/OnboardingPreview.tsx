@@ -132,16 +132,25 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
     const [decks, setDecks] = useState<Deck[]>([]);
     const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
     const [missingKey, setMissingKey] = useState(false);
-    const startedRef = useRef(false);
+    const [selectedLang, setSelectedLang] = useState(language);
+    const startedForLang = useRef<string | null>(null);
 
     useEffect(() => {
-        if (startedRef.current) return;
-        startedRef.current = true;
+        // Re-run when the chosen language changes; guard React StrictMode's double-invoke
+        // by keying on the language we last started generating for.
+        if (startedForLang.current === selectedLang) return;
+        startedForLang.current = selectedLang;
 
+        let cancelled = false;
+        const lang = selectedLang;
         const handle = slugHandle(brandName);
 
+        setDecks([]);
+        setMissingKey(false);
+        setPhase('loading');
+
         async function buildDeck(topic: string, title: string): Promise<Deck | null> {
-            const r = await postJson('/onboarding/preview/deck', { topic });
+            const r = await postJson('/onboarding/preview/deck', { topic, lang });
             if (!r.ok) return null;
             const { ndjson } = (await r.json()) as { ndjson?: string };
 
@@ -184,7 +193,7 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
                         try {
                             const ir = await postJson('/onboarding/preview/image', { prompt: s.imagePrompt, aspect_ratio: '4:5' });
                             if (ir.status === 402) {
-                                setMissingKey(true);
+                                if (!cancelled) setMissingKey(true);
                                 return null;
                             }
                             if (!ir.ok) return null;
@@ -212,9 +221,10 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
 
         (async () => {
             try {
-                const tr = await postJson('/onboarding/preview/topics', { lang: language });
+                const tr = await postJson('/onboarding/preview/topics', { lang });
                 const data = (await tr.json()) as { topics?: { topic: string; title: string }[]; error?: boolean };
                 const topics = data.topics ?? [];
+                if (cancelled) return;
 
                 if (!tr.ok || data.error || topics.length === 0) {
                     setPhase('error');
@@ -224,17 +234,22 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
                 const results = await Promise.all(
                     topics.slice(0, 2).map(async (tp) => {
                         const deck = await buildDeck(tp.topic, tp.title);
-                        if (deck) setDecks((prev) => [...prev, deck]);
+                        if (deck && !cancelled) setDecks((prev) => [...prev, deck]);
                         return deck;
                     }),
                 );
 
+                if (cancelled) return;
                 setPhase(results.some((d) => d !== null) ? 'ready' : 'error');
             } catch {
-                setPhase('error');
+                if (!cancelled) setPhase('error');
             }
         })();
-    }, [brandName, brand.accent, brand.color, hasKey, language]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedLang, brandName, brand.accent, brand.color, hasKey]);
 
     const expectedDecks = 2;
 
@@ -250,6 +265,23 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
                 <p className="text-lg font-medium text-[#666660]">
                     {phase === 'loading' ? t('onboarding.preview.loading') : t('onboarding.preview.subtitle')}
                 </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2">
+                <label htmlFor="preview-lang" className="text-xs font-semibold uppercase tracking-wide text-[#888880]">
+                    {t('onboarding.preview.language')}
+                </label>
+                <select
+                    id="preview-lang"
+                    value={selectedLang}
+                    onChange={(e) => setSelectedLang(e.target.value)}
+                    disabled={phase === 'loading'}
+                    className="rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-[#1A1A1A] outline-none transition-colors focus:border-[#FFE156] disabled:opacity-50"
+                    style={{ borderColor: BORDER }}
+                >
+                    <option value="Portuguese (Brazil)">Português (BR)</option>
+                    <option value="English">English</option>
+                </select>
             </div>
 
             {phase === 'error' && decks.length === 0 ? (

@@ -13,8 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 use Laravel\Cashier\Exceptions\IncompletePayment;
+use Symfony\Component\HttpFoundation\Response;
 
 class OnboardingController extends Controller
 {
@@ -25,7 +26,7 @@ class OnboardingController extends Controller
      */
     private const PREVIEW_PLATFORM_IMAGE_CAP = 8;
 
-    public function show(Request $request, BillingCatalog $catalog): Response|RedirectResponse
+    public function show(Request $request, BillingCatalog $catalog): InertiaResponse|RedirectResponse
     {
         $user = $request->user();
 
@@ -118,6 +119,17 @@ class OnboardingController extends Controller
      * the daily idea generator and is cached per user per day so re-mounting the
      * step is cheap.
      */
+    /**
+     * Validate a requested preview language against the supported set (prevents
+     * prompt injection through the free-text field), defaulting to pt-BR.
+     */
+    private function previewLanguage(?string $lang): string
+    {
+        $allowed = ['Portuguese (Brazil)', 'English'];
+
+        return in_array($lang, $allowed, true) ? $lang : 'Portuguese (Brazil)';
+    }
+
     public function previewTopics(Request $request, CarouselGenerationService $service): JsonResponse
     {
         $user = $request->user();
@@ -130,10 +142,15 @@ class OnboardingController extends Controller
             return response()->json(['topics' => []]);
         }
 
-        $allowed = ['Portuguese (Brazil)', 'English'];
-        $language = in_array($request->string('lang')->toString(), $allowed, true)
-            ? $request->string('lang')->toString()
-            : 'Portuguese (Brazil)';
+        $language = $this->previewLanguage($request->string('lang')->toString());
+
+        // Persist the chosen carousel language on the workspace so future generations
+        // (dashboard ideas, the main generator) can default to it too.
+        if (data_get($workspace->profile, 'language') !== $language) {
+            $profile = $workspace->profile ?? [];
+            $profile['language'] = $language;
+            $workspace->update(['profile' => $profile]);
+        }
 
         $cacheKey = "onboarding_preview_topics:{$user->id}:".now()->toDateString().':'.md5($language);
 
@@ -168,10 +185,12 @@ class OnboardingController extends Controller
 
         $validated = $request->validate([
             'topic' => ['required', 'string', 'max:500'],
+            'lang' => ['nullable', 'string'],
         ]);
 
         $workspace = Workspace::where('owner_id', $user->id)->first();
         $handle = Str::slug((string) data_get($workspace?->profile, 'brand_name', ''));
+        $language = $this->previewLanguage($validated['lang'] ?? null);
 
         try {
             $ndjson = $service->generateSlides(
@@ -179,7 +198,7 @@ class OnboardingController extends Controller
                 style: $service->buildStyle('editorial-press', null),
                 slideCount: 4,
                 wordHighlight: true,
-                language: 'Portuguese (Brazil)',
+                language: $language,
                 template: 'editorial-press',
                 imageStyle: '',
                 handle: $handle,
@@ -286,7 +305,7 @@ class OnboardingController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function subscribe(Request $request, BillingCatalog $catalog): RedirectResponse
+    public function subscribe(Request $request, BillingCatalog $catalog): Response
     {
         $validated = $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
@@ -308,9 +327,11 @@ class OnboardingController extends Controller
                     'cancel_url' => route('onboarding'),
                 ]);
 
-            return redirect($checkout->url);
+            // External redirect: use Inertia::location so the client does a full-page
+            // navigation to Stripe instead of following the 302 via XHR (which CORS-blocks).
+            return Inertia::location($checkout->url);
         } catch (IncompletePayment $e) {
-            return redirect()->route('cashier.payment', [$e->payment->id, 'redirect' => route('onboarding')]);
+            return Inertia::location(route('cashier.payment', [$e->payment->id, 'redirect' => route('onboarding')]));
         }
     }
 
@@ -320,7 +341,7 @@ class OnboardingController extends Controller
      * success URL completes onboarding so a mid-onboarding buyer isn't bounced back.
      * Fulfillment (lifetime_access_at) still happens in the Stripe webhook.
      */
-    public function subscribeLifetime(Request $request, BillingCatalog $catalog): RedirectResponse
+    public function subscribeLifetime(Request $request, BillingCatalog $catalog): Response
     {
         $user = $request->user();
 
@@ -342,7 +363,7 @@ class OnboardingController extends Controller
             ],
         ]);
 
-        return redirect($checkout->url);
+        return Inertia::location($checkout->url);
     }
 
     public function complete(Request $request): RedirectResponse

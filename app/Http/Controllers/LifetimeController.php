@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\Billing\BillingCatalog;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 class LifetimeController extends Controller
 {
@@ -13,12 +14,12 @@ class LifetimeController extends Controller
      * (one-time payment). Fulfillment happens in the Stripe webhook via the
      * `type: lifetime` metadata (see HandleStripeWebhookForLifetime).
      */
-    public function purchase(Request $request, BillingCatalog $catalog): RedirectResponse
+    public function purchase(Request $request, BillingCatalog $catalog): Response
     {
         $user = $request->user();
 
         if ($user->hasLifetimeAccess()) {
-            return redirect()->route('dashboard');
+            return Inertia::location(route('dashboard'));
         }
 
         $priceId = $catalog->lifetime($catalog->currencyFor($request))['price_id'];
@@ -35,6 +36,6 @@ class LifetimeController extends Controller
             ],
         ]);
 
-        return redirect($checkout->url);
+        return Inertia::location($checkout->url);
     }
 }

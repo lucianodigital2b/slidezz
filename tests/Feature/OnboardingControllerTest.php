@@ -318,6 +318,25 @@ class OnboardingControllerTest extends TestCase
             ->assertJsonPath('topics.0.title', 'Ideia A');
     }
 
+    public function test_preview_topics_persists_selected_language_on_workspace(): void
+    {
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+        $workspace = Workspace::factory()->withProfile()->create(['owner_id' => $user->id]);
+
+        $this->mock(CarouselGenerationService::class, function ($mock) {
+            $mock->shouldReceive('generateIdeas')->andReturn([
+                ['title' => 'A', 'angle' => 'x'],
+                ['title' => 'B', 'angle' => 'y'],
+            ]);
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('onboarding.preview.topics'), ['lang' => 'English'])
+            ->assertOk();
+
+        $this->assertSame('English', $workspace->fresh()->profile['language']);
+    }
+
     public function test_preview_topics_empty_without_brand_profile(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => null]);

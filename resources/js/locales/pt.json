@@ -894,6 +894,7 @@
       "subtitle": "2 carrosséis prontos, no estilo da sua marca. É isso que você vai gerar em segundos.",
       "loading": "Criando 2 carrosséis com a cara da sua marca...",
       "generating": "Gerando...",
+      "language": "Idioma dos carrosséis",
       "viewPlans": "Ver planos",
       "error": "Não conseguimos gerar o preview agora, mas você pode continuar.",
       "missingKey": "Estes são só com texto. Conecte sua chave Gemini nas configurações para gerar também as fotos dos carrosséis."

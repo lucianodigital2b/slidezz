@@ -44,7 +44,7 @@ class BillingController extends Controller
         ]);
     }
 
-    public function subscribe(Request $request, BillingCatalog $catalog): RedirectResponse
+    public function subscribe(Request $request, BillingCatalog $catalog): \Symfony\Component\HttpFoundation\Response
     {
         $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
@@ -65,9 +65,11 @@ class BillingController extends Controller
                     'cancel_url' => route('billing.edit'),
                 ]);
 
-            return redirect($checkout->url);
+            // External redirect: full-page navigation via Inertia so the XHR doesn't
+            // try to follow the 302 to Stripe cross-origin (CORS-blocked).
+            return Inertia::location($checkout->url);
         } catch (IncompletePayment $e) {
-            return redirect()->route('cashier.payment', [$e->payment->id, 'redirect' => route('billing.edit')]);
+            return Inertia::location(route('cashier.payment', [$e->payment->id, 'redirect' => route('billing.edit')]));
         }
     }
 

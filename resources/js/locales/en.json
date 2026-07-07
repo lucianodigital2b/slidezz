@@ -577,6 +577,7 @@
       "subtitle": "2 ready carousels in your brand's style. This is what you'll generate in seconds.",
       "loading": "Creating 2 carousels tailored to your brand...",
       "generating": "Generating...",
+      "language": "Carousel language",
       "viewPlans": "See plans",
       "error": "We couldn't generate the preview right now, but you can continue.",
       "missingKey": "These are text-only. Connect your Gemini key in settings to also generate the carousel photos."

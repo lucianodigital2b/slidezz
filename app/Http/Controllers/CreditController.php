@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Services\Billing\BillingCatalog;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 class CreditController extends Controller
 {
-    public function purchase(Request $request, BillingCatalog $catalog): RedirectResponse
+    public function purchase(Request $request, BillingCatalog $catalog): Response
     {
         $request->validate([
             'pack' => ['required', 'string'],
@@ -30,6 +31,6 @@ class CreditController extends Controller
             ],
         ]);
 
-        return redirect($checkout->url);
+        return Inertia::location($checkout->url);
     }
 }
