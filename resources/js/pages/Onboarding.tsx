@@ -647,7 +647,6 @@ function StepPlans({
                                 <p className="text-2xl font-extrabold text-[#1A1A1A]">{plan.name}</p>
                                 <p className="mt-1 text-sm font-medium text-[#666660]">{plan.description}</p>
                                 <p className="mt-4 font-display text-5xl leading-none tracking-normal text-[#1A1A1A]">{plan.price_label}</p>
-                                <p className="mt-1 text-xs font-medium text-[#888880]">{t('onboarding.plans.afterTrial')}</p>
                             </div>
                             <ul className="my-6 flex-1 space-y-3 border-t pt-6" style={{ borderColor: BORDER }}>
                                 {plan.features.map((feature) => (

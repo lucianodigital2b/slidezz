@@ -666,8 +666,7 @@
     "plans": {
       "title": "Choose your plan",
       "subtitle": "14 days free. No charge now. Cancel at any time.",
-      "afterTrial": "after 14 days free",
-      "startFree": "Start {{plan}} free",
+      "startFree": "Start {{plan}}",
       "terms": "By subscribing, you agree to our terms of use. You can cancel before the end of the free period at no cost.",
       "skip": "Skip for now",
       "logout": "Log out",
