@@ -70,6 +70,7 @@ class OnboardingController extends Controller
             'visual_style' => ['nullable', 'string', 'max:2000'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'gemini_api_key' => ['nullable', 'string', 'max:200'],
+            'language' => ['nullable', 'string', 'max:50'],
         ]);
 
         // BYOK step of the wizard (optional — there's a skip button): images run
@@ -93,6 +94,7 @@ class OnboardingController extends Controller
             'tone_of_voice' => $validated['tone_of_voice'],
             'palette' => $validated['palette'],
             'visual_style' => $validated['visual_style'] ?? null,
+            'language' => $this->previewLanguage($validated['language'] ?? null),
         ];
 
         if ($logoPath) {

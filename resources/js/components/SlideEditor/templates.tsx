@@ -250,6 +250,31 @@ export function buildSceneFromLayoutGeneric(
     slideIndex: number,
     contentBand?: ContentBand,
 ): TemplateScene {
+    // Inner slides (everything after the cover) read cleaner left-aligned and at full
+    // opacity (no faded body copy, more "pop") across every template. The cover keeps
+    // its layout's own alignment/opacity; the Twitter template has its own builder and
+    // is already left-aligned.
+    if (slideIndex >= 1) {
+        // Normalize each text slot to the same left margin (x=0) while preserving its
+        // right edge, so slots that carried a fractional x for centered compositions
+        // (stat_callout, quote_block, cta_closing) don't end up indented relative to
+        // the title once everything is left-aligned.
+        const leftFull = (slot: LayoutDefinition['title']) => ({
+            ...slot,
+            x: 0,
+            width: Math.min(1, slot.x + slot.width),
+            align: 'left' as const,
+            opacity: 1,
+        });
+        layout = {
+            ...layout,
+            title: leftFull(layout.title),
+            subtitle: leftFull(layout.subtitle),
+            description: leftFull(layout.description),
+            ...(layout.stat ? { stat: leftFull(layout.stat) } : {}),
+        };
+    }
+
     // Keep all content inside the Instagram profile-grid crop. The grid shows a
     // 1:1 centre square of the post, so the top/bottom (slideH - SLIDE_W) / 2 of a
     // portrait slide is cut off there. Anchor the content band to that square
@@ -1412,7 +1437,7 @@ function buildEditorialPress(content: TemplateContent, slideH: number, accent: s
                 width: contentW,
                 height: 380,
                 text: content.title,
-                fontFamily: 'Archivo',
+                fontFamily: 'Anton',
                 fontSize: titleSize,
                 fontStyle: '700',
                 fill: titleInk,
@@ -1426,7 +1451,7 @@ function buildEditorialPress(content: TemplateContent, slideH: number, accent: s
                 width: contentW,
                 height: 120,
                 text: content.subtitle || content.caption,
-                fontFamily: 'Archivo',
+                fontFamily: 'Albert Sans',
                 fontSize: 32,
                 fontStyle: '700',
                 fill: accent,
@@ -1677,10 +1702,23 @@ export const SLIDE_TEMPLATES: SlideTemplate[] = [
         titleFontOverride: editorialTitleFont,
         buildScene: buildEditorialPress,
         buildSceneFromLayout(content, layout, slideH, slideIndex, _totalSlides, contentBand) {
+            // Editorial reads as a left-aligned magazine with crisp, high-contrast copy:
+            // force every slot left-aligned and at full opacity (no faded body text) so
+            // the deck "pops". The cover (hook_hero) is already left, so this mainly
+            // affects the inner slides and removes the default 0.8-0.85 body opacity.
+            const leftFull = (slot: LayoutDefinition['title']) => ({ ...slot, align: 'left' as const, opacity: 1 });
+            const editorialLayout: LayoutDefinition = {
+                ...layout,
+                title: leftFull(layout.title),
+                subtitle: leftFull(layout.subtitle),
+                description: leftFull(layout.description),
+                ...(layout.stat ? { stat: leftFull(layout.stat) } : {}),
+            };
+
             // Typography + imaging come from the generic builder; the running top
             // header (source · @handle · month) is attached by the generator, which
             // has the handle and current date.
-            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, layout, slideH, slideIndex, contentBand);
+            return buildSceneFromLayoutGeneric(this as SlideTemplate, content, editorialLayout, slideH, slideIndex, contentBand);
         },
     },
 ];

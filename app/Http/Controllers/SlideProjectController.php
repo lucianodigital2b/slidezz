@@ -38,6 +38,8 @@ class SlideProjectController extends Controller
                     'prompt' => $p->prompt,
                     'slide_count' => count($p->slides ?? []),
                     'cover_color' => data_get($p->slides, '0.background', '#1a1a1a'),
+                    // The full first slide so the grid renders a real thumbnail (like the dashboard).
+                    'first_slide' => data_get($p->slides, '0'),
                     'created_at' => $p->created_at->diffForHumans(),
                 ])
             : collect()->paginate(12);

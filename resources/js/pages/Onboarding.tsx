@@ -58,6 +58,7 @@ interface FormData {
     visual_style: string;
     logo: File | null;
     gemini_api_key: string;
+    language: string;
 }
 
 // ─── Brand tokens (mirrors LandingEn.tsx) ─────────────────────────────────────
@@ -599,6 +600,22 @@ function Step6GeminiKey({ data, set }: { data: FormData; set: (k: keyof FormData
                 </a>
                 <p className="text-xs font-medium text-[#AFACA4]">{t('onboarding.gemini.hint')}</p>
             </div>
+
+            <div className="space-y-2">
+                <label htmlFor="carousel_language" className="text-sm font-bold text-[#1A1A1A]">
+                    {t('onboarding.preview.language')}
+                </label>
+                <select
+                    id="carousel_language"
+                    value={data.language}
+                    onChange={(e) => set('language', e.target.value)}
+                    className={fieldClass}
+                    style={{ borderColor: BORDER }}
+                >
+                    <option value="Portuguese (Brazil)">Português (BR)</option>
+                    <option value="English">English</option>
+                </select>
+            </div>
         </div>
     );
 }
@@ -753,6 +770,7 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
         visual_style: '',
         logo: null,
         gemini_api_key: '',
+        language: i18n.language === 'en' ? 'English' : 'Portuguese (Brazil)',
     });
 
     const set = (key: keyof FormData, value: any) => {
@@ -790,6 +808,7 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
         if (data.visual_style) form.append('visual_style', data.visual_style);
         if (data.logo) form.append('logo', data.logo);
         if (!skipGeminiKey && data.gemini_api_key.trim()) form.append('gemini_api_key', data.gemini_api_key.trim());
+        form.append('language', data.language);
 
         setSaving(true);
         router.post('/onboarding/profile', form, {
@@ -821,8 +840,6 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
     const isPreviewStep = step === PREVIEW_STEP;
     const isChromeless = isOnPlansStep || isPreviewStep;
 
-    const previewLanguage = i18n.language === 'en' ? 'English' : 'Portuguese (Brazil)';
-
     const stepComponents: Record<number, React.ReactNode> = {
         1: <Step1 data={data} set={set} />,
         2: <Step2 data={data} set={set} />,
@@ -835,7 +852,7 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
                 brandName={data.brand_name}
                 brand={{ color: data.palette.primary, accent: data.palette.accent }}
                 hasKey={data.gemini_api_key.trim() !== '' || preview_images_enabled}
-                language={previewLanguage}
+                language={data.language}
                 onContinue={() => setStep(PLANS_STEP)}
             />
         ),

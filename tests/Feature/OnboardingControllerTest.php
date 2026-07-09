@@ -172,6 +172,30 @@ class OnboardingControllerTest extends TestCase
         Storage::disk('public')->assertExists($workspace->logo_path);
     }
 
+    public function test_save_profile_stores_selected_language(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload(['language' => 'English']));
+
+        $workspace = Workspace::where('owner_id', $user->id)->first();
+        $this->assertSame('English', $workspace->profile['language']);
+    }
+
+    public function test_save_profile_defaults_language_to_portuguese(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['onboarding_completed_at' => null]);
+
+        $this->actingAs($user)
+            ->post(route('onboarding.profile'), $this->validProfilePayload());
+
+        $workspace = Workspace::where('owner_id', $user->id)->first();
+        $this->assertSame('Portuguese (Brazil)', $workspace->profile['language']);
+    }
+
     public function test_save_profile_stores_palette_in_profile_json(): void
     {
         Storage::fake('public');

@@ -196,6 +196,7 @@
       "audiencePlaceholder": "Com quem você fala — cargo, interesses e dores.",
       "toneLabel": "Tom de voz",
       "paletteLabel": "Paleta de cores",
+      "palettePresets": "Usar paletas prontas",
       "visualStyleLabel": "Estilo visual (opcional)",
       "visualStylePlaceholder": "ex: minimalista, alto contraste, grão de filme, editorial...",
       "visualStyleHint": "Direção de arte extra aplicada às imagens geradas.",

@@ -28,6 +28,20 @@ class SocialAccount extends Model
         'refresh_token' => 'encrypted',
     ];
 
+    /**
+     * Resolve the connected account for an incoming platform event (webhook
+     * routing), keyed by the provider's own account id. This is what maps an
+     * event to the right workspace when many workspaces connect many different
+     * accounts across providers.
+     */
+    public static function locate(string $provider, string $providerId): ?self
+    {
+        return static::query()
+            ->where('provider', $provider)
+            ->where('provider_id', $providerId)
+            ->first();
+    }
+
     public function workspace()
     {
         return $this->belongsTo(Workspace::class);

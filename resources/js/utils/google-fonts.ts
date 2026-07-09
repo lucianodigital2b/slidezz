@@ -228,6 +228,16 @@ export const GOOGLE_FONTS: string[] = [
     'Zilla Slab Highlight',
 ];
 
+/**
+ * Fonts bundled locally via @font-face (see resources/css/app.css) instead of the
+ * Google catalog. They must NOT get a Google stylesheet link — the faces are
+ * already declared — but still appear in the picker and load like any other font.
+ */
+export const CUSTOM_FONTS: string[] = ['Euclid Circular A'];
+
+/** The full font picker catalog: locally-bundled fonts first, then the Google catalog. */
+export const EDITOR_FONTS: string[] = [...CUSTOM_FONTS, ...GOOGLE_FONTS];
+
 // Cache the in-flight load PROMISE per family (not just a "started" flag).
 // Concurrent callers must await the same real load — marking a font "loaded"
 // before the await completes would let later callers resolve immediately while
@@ -244,7 +254,9 @@ export function loadGoogleFont(family: string): Promise<void> {
         const key = family.replace(/ /g, '+');
         const id = `gf-${key}`;
 
-        if (!document.getElementById(id)) {
+        // Locally-bundled faces (@font-face in app.css) have no Google stylesheet;
+        // skip the link and just wait for the already-declared faces to be ready.
+        if (!CUSTOM_FONTS.includes(family) && !document.getElementById(id)) {
             const link = document.createElement('link');
             link.id = id;
             link.rel = 'stylesheet';

@@ -948,6 +948,7 @@
       "audiencePlaceholder": "Who you're talking to — their role, interests and pains.",
       "toneLabel": "Tone of voice",
       "paletteLabel": "Color palette",
+      "palettePresets": "Use preset palettes",
       "visualStyleLabel": "Visual style (optional)",
       "visualStylePlaceholder": "e.g. minimal, high-contrast, film grain, editorial...",
       "visualStyleHint": "Extra art direction applied to generated images.",

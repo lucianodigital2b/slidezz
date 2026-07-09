@@ -12,6 +12,8 @@ import { OVERLAY_PRESETS, OverlayPreset, getOverlayLabel } from './overlays';
 interface HighlightStyle {
     color: string;
     weight: number;
+    fontFamily?: string;
+    textDecoration?: string;
 }
 
 /** Default weight for a highlighted span that has no explicit weight (bold ⇒ 700). */
@@ -27,6 +29,7 @@ function spanWeight(span: RichSpan): number {
  */
 function isHighlightSpan(span: RichSpan, baseFill: string): boolean {
     if (span.bold || span.weight != null) return true;
+    if (span.fontFamily || span.textDecoration) return true;
     return Boolean(span.color) && span.color!.toLowerCase() !== baseFill.toLowerCase();
 }
 
@@ -37,7 +40,7 @@ function getHighlightedWords(text: string, richText: RichSpan[] | undefined, bas
     let pos = 0;
     for (const span of richText) {
         const style: HighlightStyle | null = isHighlightSpan(span, baseFill)
-            ? { color: span.color ?? baseFill, weight: spanWeight(span) }
+            ? { color: span.color ?? baseFill, weight: spanWeight(span), fontFamily: span.fontFamily, textDecoration: span.textDecoration }
             : null;
         // Guard against malformed persisted spans (older builds could store a null text
         // on a whitespace gap span): treat missing text as empty so we don't crash.
@@ -74,7 +77,7 @@ function buildRichTextFromHighlights(text: string, highlights: Map<number, Highl
         if (m.index > lastIndex) pushPlain(text.slice(lastIndex, m.index));
         const style = highlights.get(wordIndex);
         // Highlighted words carry an explicit per-word weight (default 700).
-        if (style) { spans.push({ text: m[0], color: style.color, weight: style.weight }); } else { pushPlain(m[0]); }
+        if (style) { spans.push({ text: m[0], color: style.color, weight: style.weight, fontFamily: style.fontFamily, textDecoration: style.textDecoration }); } else { pushPlain(m[0]); }
         lastIndex = m.index + m[0].length;
         wordIndex++;
     }
@@ -115,11 +118,27 @@ function applyFontWeight(fontStyle: string | undefined, weight: number): string 
     return parts.join(' ');
 }
 
+/**
+ * The style of the first already-highlighted word, so the panel opens on the
+ * color/weight that was actually applied (e.g. at generation) instead of always
+ * defaulting to the first swatch.
+ */
+function detectActiveHighlight(el: TextEl): HighlightStyle | null {
+    const map = getHighlightedWords(el.text, el.richText, el.fill);
+    const first = map.values().next().value as HighlightStyle | undefined;
+    return first ?? null;
+}
+
 function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Partial<TextEl>) => void }) {
     const { t } = useTranslation();
-    const [hlColor, setHlColor] = React.useState(HIGHLIGHT_PRESETS[0]);
-    const [hexInput, setHexInput] = React.useState(HIGHLIGHT_PRESETS[0]);
-    const [hlWeight, setHlWeight] = React.useState(700);
+    // Seed from the element's current highlight so the swatch/hex reflect the color
+    // in use. The section is keyed by el.id upstream, so this re-seeds per element.
+    const active = detectActiveHighlight(el);
+    const [hlColor, setHlColor] = React.useState<string | null>(active?.color ?? HIGHLIGHT_PRESETS[0]);
+    const [hexInput, setHexInput] = React.useState(active?.color ?? HIGHLIGHT_PRESETS[0]);
+    const [hlWeight, setHlWeight] = React.useState(active?.weight ?? 700);
+    const [hlFont, setHlFont] = React.useState(active?.fontFamily ?? '');
+    const [hlDeco, setHlDeco] = React.useState(active?.textDecoration ?? '');
 
     const words = React.useMemo(() => {
         const result: string[] = [];
@@ -131,19 +150,42 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
 
     const highlights = React.useMemo(() => getHighlightedWords(el.text, el.richText, el.fill), [el.text, el.richText, el.fill]);
 
-    const applyColor = (c: string) => { setHlColor(c); setHexInput(c); };
+    // Clicking the already-active swatch clears the selection (eraser mode below).
+    const applyColor = (c: string) => {
+        if (c === hlColor) { setHlColor(null); return; }
+        setHlColor(c);
+        setHexInput(c);
+    };
+
+    const toggleDeco = (d: string) => {
+        setHlDeco((prev) => (prev.includes(d) ? prev.replace(d, '').replace(/\s+/g, ' ').trim() : `${prev} ${d}`.trim()));
+    };
 
     const toggleWord = (wordIndex: number) => {
-        // Start from the current highlights so multiple words stay highlighted. Clicking
-        // applies the active color+weight; clicking a word that already has that exact
-        // style toggles it off (so the same style can be added, restyled, or removed).
         const next = new Map(highlights);
         const cur = next.get(wordIndex);
-        if (cur && cur.color === hlColor && cur.weight === hlWeight) {
-            next.delete(wordIndex);
-        } else {
-            next.set(wordIndex, { color: hlColor, weight: hlWeight });
+
+        // No active color = eraser: a click removes any highlight on the word.
+        if (hlColor === null) {
+            if (cur) next.delete(wordIndex);
+            onChange({ richText: buildRichTextFromHighlights(el.text, next) });
+            return;
         }
+
+        // Applies the active color + weight + font + decoration; clicking a word that
+        // already has that exact style toggles it off (add / restyle / remove).
+        const style: HighlightStyle = {
+            color: hlColor,
+            weight: hlWeight,
+            fontFamily: hlFont || undefined,
+            textDecoration: hlDeco || undefined,
+        };
+        const same = cur
+            && cur.color === style.color
+            && cur.weight === style.weight
+            && (cur.fontFamily ?? '') === (style.fontFamily ?? '')
+            && (cur.textDecoration ?? '') === (style.textDecoration ?? '');
+        if (same) { next.delete(wordIndex); } else { next.set(wordIndex, style); }
         onChange({ richText: buildRichTextFromHighlights(el.text, next) });
     };
 
@@ -156,7 +198,7 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
                         <button key={i} type="button" onClick={() => toggleWord(i)}
                             className="px-2.5 py-1 rounded-full text-xs border transition-all"
                             style={style
-                                ? { backgroundColor: style.color, borderColor: style.color, color: '#fff', fontWeight: style.weight }
+                                ? { backgroundColor: style.color, borderColor: style.color, color: '#fff', fontWeight: style.weight, textDecoration: style.textDecoration, fontFamily: style.fontFamily }
                                 : { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', color: '#374151', fontWeight: 600 }}>
                             {word}
                         </button>
@@ -178,7 +220,7 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
             </div>
 
             <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded border border-gray-200 shrink-0" style={{ backgroundColor: hlColor }} />
+                <div className="w-6 h-6 rounded border border-gray-200 shrink-0" style={{ backgroundColor: hlColor ?? 'transparent' }} />
                 <input type="text" value={hexInput}
                     onChange={(e) => {
                         const v = e.target.value;
@@ -197,6 +239,30 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
                     ))}
                 </select>
             </label>
+
+            {/* Highlight font family (blank = inherit the element font) */}
+            <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">{t('slideEditor.fields.font')}</span>
+                <FontPicker value={hlFont || el.fontFamily} onChange={setHlFont} />
+                {hlFont && (
+                    <button type="button" onClick={() => setHlFont('')}
+                        className="self-start text-[10px] text-gray-400 transition-colors hover:text-gray-600">
+                        {t('slideEditor.fields.inheritFont', 'Usar fonte do elemento')}
+                    </button>
+                )}
+            </div>
+
+            {/* Highlight text decoration */}
+            <div className="flex items-center gap-1.5">
+                <button type="button" title={t('slideEditor.fields.underline')} onClick={() => toggleDeco('underline')}
+                    className={`rounded border p-1.5 transition-colors ${hlDeco.includes('underline') ? 'border-gray-300 bg-[#f2f2f2] text-gray-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                    <Underline className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" title={t('slideEditor.fields.strikethrough')} onClick={() => toggleDeco('line-through')}
+                    className={`rounded border p-1.5 transition-colors ${hlDeco.includes('line-through') ? 'border-gray-300 bg-[#f2f2f2] text-gray-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                    <Strikethrough className="h-3.5 w-3.5" />
+                </button>
+            </div>
         </div>
     );
 }

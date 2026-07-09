@@ -83,6 +83,15 @@ export default function Brand({ profile, logoUrl }: { profile: BrandProfile; log
         logo: null,
     });
 
+    // A saved palette whose name isn't one of the presets is a custom one — open
+    // the custom editor for it.
+    const isPreset = (name?: string) => PALETTES.some((p) => p.name === name);
+    const [customMode, setCustomMode] = useState(!isPreset(profile.palette?.name));
+
+    function setPaletteColor(role: 'primary' | 'secondary' | 'accent', value: string) {
+        form.setData('palette', { ...form.data.palette, name: 'custom', [role]: value });
+    }
+
     function toggleTone(key: string) {
         const next = form.data.tone_of_voice.includes(key)
             ? form.data.tone_of_voice.filter((k) => k !== key)
@@ -204,30 +213,67 @@ export default function Brand({ profile, logoUrl }: { profile: BrandProfile; log
 
                 {/* Palette */}
                 <div className="grid gap-2">
-                    <Label>{t('settings.brand.paletteLabel')}</Label>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {PALETTES.map((p) => {
-                            const selected = form.data.palette?.name === p.name;
-                            return (
-                                <button
-                                    type="button"
-                                    key={p.name}
-                                    onClick={() => form.setData('palette', p)}
-                                    className={cn(
-                                        'flex flex-col gap-2 rounded-xl border p-2.5 transition-colors',
-                                        selected ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-border hover:border-muted-foreground/40',
-                                    )}
-                                >
-                                    <div className="flex gap-1">
-                                        {[p.primary, p.secondary, p.accent].map((c) => (
-                                            <span key={c} className="h-6 flex-1 rounded" style={{ backgroundColor: c }} />
-                                        ))}
-                                    </div>
-                                    <span className="text-xs text-muted-foreground">{t(`onboarding.step5.palettes.${p.name}`, p.name)}</span>
-                                </button>
-                            );
-                        })}
+                    <div className="flex items-center justify-between">
+                        <Label>{t('settings.brand.paletteLabel')}</Label>
+                        <button
+                            type="button"
+                            onClick={() => setCustomMode((v) => !v)}
+                            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            {customMode ? t('settings.brand.palettePresets') : t('onboarding.step5.paletteCustomize')}
+                        </button>
                     </div>
+
+                    {customMode ? (
+                        <div className="grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-3">
+                            {(['primary', 'secondary', 'accent'] as const).map((role) => (
+                                <div key={role} className="grid gap-1.5">
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                        {t(`onboarding.step5.palette${role.charAt(0).toUpperCase() + role.slice(1)}`)}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            aria-label={role}
+                                            value={form.data.palette[role]}
+                                            onChange={(e) => setPaletteColor(role, e.target.value)}
+                                            className="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-border bg-transparent p-1"
+                                        />
+                                        <Input
+                                            value={form.data.palette[role]}
+                                            onChange={(e) => setPaletteColor(role, e.target.value)}
+                                            maxLength={7}
+                                            className="font-mono text-xs uppercase"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {PALETTES.map((p) => {
+                                const selected = form.data.palette?.name === p.name;
+                                return (
+                                    <button
+                                        type="button"
+                                        key={p.name}
+                                        onClick={() => form.setData('palette', p)}
+                                        className={cn(
+                                            'flex flex-col gap-2 rounded-xl border p-2.5 transition-colors',
+                                            selected ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-border hover:border-muted-foreground/40',
+                                        )}
+                                    >
+                                        <div className="flex gap-1">
+                                            {[p.primary, p.secondary, p.accent].map((c) => (
+                                                <span key={c} className="h-6 flex-1 rounded" style={{ backgroundColor: c }} />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">{t(`onboarding.step5.palettes.${p.name}`, p.name)}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                     <InputError message={paletteError as string | undefined} />
                 </div>
 

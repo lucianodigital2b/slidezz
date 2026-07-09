@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarDays, Layers, Sparkles, Zap, Settings, MessageCircle, Rocket } from 'lucide-react';
+import { CalendarDays, Layers, LineChart, Sparkles, Zap, Settings, MessageCircle, Rocket } from 'lucide-react';
 import { edit as billingEdit } from '@/routes/billing';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
@@ -20,11 +20,18 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 export function AppSidebar() {
     const { isCurrentUrl } = useCurrentUrl();
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, igEnabled } = usePage().props;
 
     const navItems = [
         { title: t('sidebar.generate'), href: '/generate', icon: Sparkles },
-        // { title: t('sidebar.schedule'), href: '/schedule', icon: CalendarDays },
+        // Calendar/schedule + analytics are gated to Instagram-enabled users
+        // (canUseInstagram allowlist) — both depend on published social posts.
+        ...(igEnabled
+            ? [
+                  { title: t('sidebar.schedule'), href: '/schedule', icon: CalendarDays },
+                  { title: t('sidebar.analytics'), href: '/analytics', icon: LineChart },
+              ]
+            : []),
         // { title: t('sidebar.automations'), href: '/automations', icon: Zap },
         { title: t('sidebar.slideshowEditor'), href: '/slideshow-editor', icon: Layers },
         { title: t('sidebar.settings'), href: '/settings/profile', icon: Settings },

@@ -165,15 +165,16 @@ export default function SlideEditor() {
 
     // ── Canvas sizing ────────────────────────────────────────────────────────
     // `displayW` describes a single slide; the row is laid out from it plus
-    // SLIDE_GAP. We size so up to 3 slides fit across the visible width (and
-    // within the height); any beyond that scroll horizontally.
+    // SLIDE_GAP. We size so up to 2 slides fit across the visible width (and
+    // within the height) — fewer slides across means each renders larger; any
+    // beyond that scroll horizontally.
     useEffect(() => {
         const recalc = () => {
             if (!containerRef.current) return;
             const { width, height } = containerRef.current.getBoundingClientRect();
-            const pad = 96;
+            const pad = 56;
             const fmt = FORMATS[format];
-            const visible = Math.min(Math.max(1, slides.length), 3);
+            const visible = Math.min(Math.max(1, slides.length), 2);
             const visibleRowW = fmt.w * visible + SLIDE_GAP * (visible - 1);
             const scaleByH = (height - pad) / fmt.h;
             const scaleByW = (width - pad) / visibleRowW;
@@ -635,6 +636,7 @@ export default function SlideEditor() {
             fontSize: `${el.fontSize * scale}px`,
             fontFamily: el.fontFamily,
             fontStyle: el.fontStyle,
+            textDecoration: el.textDecoration,
             textAlign: el.align,
             color: el.fill,
             lineHeight: String(el.lineHeight),

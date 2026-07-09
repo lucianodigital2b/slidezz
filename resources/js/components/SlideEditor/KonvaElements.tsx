@@ -31,9 +31,29 @@ interface LayoutToken {
     gradient?: string[];
     bold?: boolean;
     weight?: number;
+    fontFamily?: string;
+    textDecoration?: string;
     x: number;
     width: number;
     advanceWidth: number;
+}
+
+/** Per-span styling carried from the rich spans onto each measured token. */
+interface TokenStyle {
+    color: string;
+    highlight?: string;
+    gradient?: string[];
+    bold?: boolean;
+    weight?: number;
+    fontFamily?: string;
+    textDecoration?: string;
+}
+
+/** Canvas font shorthand for a token, honoring its per-span font family + weight. */
+function tokenFontFor(el: TextEl, baseStyle: string, token: { bold?: boolean; weight?: number; fontFamily?: string }): string {
+    const family = token.fontFamily || el.fontFamily;
+    const style = tokenHasWeightOverride(token.bold, token.weight) ? tokenFontStyle(baseStyle, token.bold, token.weight) : baseStyle;
+    return fontShorthand(style, el.fontSize, family);
 }
 
 interface LayoutLine {
@@ -82,8 +102,6 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     // their heavier weight — glyph advances differ by weight, so measuring must match
     // what gets drawn or bold words would over/underflow the wrap width.
     const baseFont = fontShorthand(fs, el.fontSize, el.fontFamily);
-    const fontFor = (bold?: boolean, weight?: number) =>
-        (tokenHasWeightOverride(bold, weight) ? fontShorthand(tokenFontStyle(fs, bold, weight), el.fontSize, el.fontFamily) : baseFont);
     ctx.font = baseFont;
     const lineH = el.fontSize * el.lineHeight;
     const innerWidth = Math.max(10, el.width - el.padding * 2);
@@ -94,7 +112,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
     // added in the content field). So derive per-word styles from the spans, then
     // tokenise el.text itself, splitting on real newlines first so a line break
     // is never swallowed by an adjacent space.
-    const wordStyles: { color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number }[] = [];
+    const wordStyles: TokenStyle[] = [];
     for (const span of spans) {
         // Spans are advisory (per-word styling) and can be persisted malformed by older
         // builds — a whitespace gap span may carry a null/undefined text. Coalesce to ''
@@ -102,11 +120,11 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
         const matches = (span.text ?? '').match(/\S+/g);
         if (!matches) continue;
         for (let i = 0; i < matches.length; i++) {
-            wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient, bold: span.bold, weight: span.weight });
+            wordStyles.push({ color: span.color ?? defaultColor, highlight: span.highlight, gradient: span.gradient, bold: span.bold, weight: span.weight, fontFamily: span.fontFamily, textDecoration: span.textDecoration });
         }
     }
 
-    const tokens: { text: string; color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number; isSpace: boolean; isNewline: boolean }[] = [];
+    const tokens: (TokenStyle & { text: string; isSpace: boolean; isNewline: boolean })[] = [];
     let wordIdx = 0;
     for (const segment of el.text.split(/(\n)/)) {
         if (segment === '\n') {
@@ -121,7 +139,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
                 continue;
             }
             const style = wordStyles[wordIdx] ?? { color: defaultColor };
-            tokens.push({ text: part, color: style.color, highlight: style.highlight, gradient: style.gradient, bold: style.bold, weight: style.weight, isSpace: false, isNewline: false });
+            tokens.push({ text: part, color: style.color, highlight: style.highlight, gradient: style.gradient, bold: style.bold, weight: style.weight, fontFamily: style.fontFamily, textDecoration: style.textDecoration, isSpace: false, isNewline: false });
             wordIdx++;
         }
     }
@@ -144,7 +162,7 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
 
     for (const token of tokens) {
         if (token.isNewline) { flushLine(); continue; }
-        ctx.font = fontFor(token.bold, token.weight);
+        ctx.font = tokenFontFor(el, fs, token);
         const tw = measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, true);
         if (!token.isSpace && lineWidth + tw > innerWidth && lineTokens.length > 0) flushLine();
         lineTokens.push(token);
@@ -156,16 +174,17 @@ function layoutRichText(spans: RichSpan[], el: TextEl, defaultColor: string): La
 }
 
 function buildLine(
-    tokens: { text: string; color: string; highlight?: string; gradient?: string[]; bold?: boolean; weight?: number }[],
+    tokens: (TokenStyle & { text: string })[],
     ctx: CanvasRenderingContext2D,
     el: TextEl,
     lineH: number,
 ): LayoutLine {
     const fs = el.fontStyle || '';
     const innerWidth = Math.max(10, el.width - el.padding * 2);
-    // Measure each token with its own weight (heavier spans are wider) so positions line up.
+    // Measure each token with its own font family + weight (both change glyph advances)
+    // so positions line up.
     const tokenMetrics = tokens.map((token, index) => {
-        ctx.font = fontShorthand(tokenFontStyle(fs, token.bold, token.weight), el.fontSize, el.fontFamily);
+        ctx.font = tokenFontFor(el, fs, token);
         return {
             contentWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, false),
             advanceWidth: measureTextWidthWithLetterSpacing(ctx, token.text, el.letterSpacing, index < tokens.length - 1),
@@ -180,7 +199,7 @@ function buildLine(
     const layoutTokens: LayoutToken[] = [];
     for (const [index, token] of tokens.entries()) {
         const { contentWidth, advanceWidth } = tokenMetrics[index];
-        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, gradient: token.gradient, bold: token.bold, weight: token.weight, x, width: contentWidth, advanceWidth });
+        layoutTokens.push({ text: token.text, color: token.color, highlight: token.highlight, gradient: token.gradient, bold: token.bold, weight: token.weight, fontFamily: token.fontFamily, textDecoration: token.textDecoration, x, width: contentWidth, advanceWidth });
         x += advanceWidth;
     }
     return { tokens: layoutTokens, height: lineH };
@@ -208,7 +227,14 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
     useEffect(() => {
         let cancelled = false;
 
-        loadGoogleFont(el.fontFamily).then(() => {
+        // Load the element font plus any per-span font families used in the rich text,
+        // so measurement/render reflect real glyph metrics for every span.
+        const families = new Set<string>([el.fontFamily]);
+        for (const span of el.richText ?? []) {
+            if (span.fontFamily) families.add(span.fontFamily);
+        }
+
+        Promise.all([...families].map((f) => loadGoogleFont(f))).then(() => {
             if (cancelled) return;
             setFontRevision((rev) => rev + 1);
             groupRef.current?.getLayer()?.batchDraw();
@@ -217,7 +243,7 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
         return () => {
             cancelled = true;
         };
-    }, [el.fontFamily]);
+    }, [el.fontFamily, el.richText]);
 
     useEffect(() => {
         if (textRef.current) {
@@ -264,10 +290,8 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
         for (const line of layout) {
             if (!hidden) {
                 for (const token of line.tokens) {
-                    // Bold / per-word-weight spans draw (and stroke) with their own weight.
-                    c.font = tokenHasWeightOverride(token.bold, token.weight)
-                        ? fontShorthand(tokenFontStyle(fs, token.bold, token.weight), el.fontSize, el.fontFamily)
-                        : baseFont;
+                    // Spans draw (and stroke) with their own font family + weight.
+                    c.font = tokenFontFor(el, fs, token);
                     if (token.highlight && token.text.trim()) {
                         const pad = Math.round(el.fontSize * 0.08);
                         c.fillStyle = token.highlight;
@@ -285,6 +309,22 @@ export function KonvaTextEl({ el, hidden, draggable, onSelect, onDblClick, onDra
                         c.fillStyle = token.color;
                     }
                     drawTextWithLetterSpacing(c, token.text, token.x, curY + el.fontSize * 0.82, el.letterSpacing);
+
+                    // Per-span underline / strikethrough, drawn in the token's own color.
+                    if (token.textDecoration && token.text.trim()) {
+                        c.strokeStyle = token.color;
+                        c.lineWidth = Math.max(1, el.fontSize * 0.06);
+                        if (token.textDecoration.includes('underline')) {
+                            const y = Math.round(curY + el.fontSize * 0.92);
+                            c.beginPath(); c.moveTo(token.x, y); c.lineTo(token.x + token.width, y); c.stroke();
+                        }
+                        if (token.textDecoration.includes('line-through')) {
+                            const y = Math.round(curY + el.fontSize * 0.52);
+                            c.beginPath(); c.moveTo(token.x, y); c.lineTo(token.x + token.width, y); c.stroke();
+                        }
+                        c.strokeStyle = effectiveStroke ?? 'transparent';
+                        c.lineWidth = effectiveStrokeWidth;
+                    }
                 }
             }
             curY += line.height;

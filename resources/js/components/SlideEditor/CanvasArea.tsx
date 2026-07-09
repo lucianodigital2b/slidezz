@@ -397,7 +397,6 @@ export function CanvasArea({
     const renderElement = useCallback((el: SlideEl, idx: number) => {
         const select = () => { if (tool === 'select') onSelectElement(idx, el.id); };
         const common = {
-            key: el.id,
             id: el.id,
             draggable: tool === 'select',
             onClick: select,
@@ -430,7 +429,7 @@ export function CanvasArea({
         if (el.type === 'rect') {
             const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
             return (
-                <Rect {...common}
+                <Rect key={el.id} {...common}
                     x={el.x} y={el.y} width={el.width} height={el.height}
                     rotation={el.rotation} opacity={el.opacity}
                     fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth}
@@ -450,7 +449,7 @@ export function CanvasArea({
         if (el.type === 'circle') {
             const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
             return (
-                <KonvaCircle {...common}
+                <KonvaCircle key={el.id} {...common}
                     x={el.x + el.width / 2} y={el.y + el.height / 2}
                     radiusX={el.width / 2} radiusY={el.height / 2}
                     rotation={el.rotation} opacity={el.opacity}
@@ -504,7 +503,7 @@ export function CanvasArea({
         if (el.type === 'gradient') {
             const gp = gradientLinearProps(el);
             return (
-                <Rect {...common}
+                <Rect key={el.id} {...common}
                     x={el.x} y={el.y} width={el.width} height={el.height}
                     rotation={el.rotation} opacity={el.opacity}
                     fillLinearGradientStartPoint={gp.start}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { GOOGLE_FONTS, loadGoogleFont } from '@/utils/google-fonts';
+import { EDITOR_FONTS, loadGoogleFont } from '@/utils/google-fonts';
 
 /** Elementor-style: slider + inline editable number input */
 export function SliderField({
@@ -126,8 +126,8 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
     const searchRef = useRef<HTMLInputElement>(null);
 
     const filtered = query.trim()
-        ? GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(query.toLowerCase()))
-        : GOOGLE_FONTS;
+        ? EDITOR_FONTS.filter((f) => f.toLowerCase().includes(query.toLowerCase()))
+        : EDITOR_FONTS;
     const visible = filtered.slice(0, VISIBLE_LIMIT);
 
     useEffect(() => {

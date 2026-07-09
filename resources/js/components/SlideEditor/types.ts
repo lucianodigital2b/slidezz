@@ -43,6 +43,8 @@ export interface RichSpan {
     gradient?: string[];   // 2+ hex stops; renders the glyph fill as a left→right gradient
     bold?: boolean;        // render this span heavier than the element's base weight (min 700)
     weight?: number;       // explicit per-word font weight (300-900); overrides `bold`
+    fontFamily?: string;   // per-span font family (undefined = inherit el.fontFamily)
+    textDecoration?: string; // per-span 'underline' / 'line-through' (space-separated)
 }
 
 export interface TextReadabilityStyle {

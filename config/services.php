@@ -42,6 +42,9 @@ return [
         // Comma-separated user IDs allowed to see/use the Instagram integration
         // while it is gated for Meta App Review (empty = nobody).
         'feature_user_ids' => env('INSTAGRAM_FEATURE_USER_IDS', ''),
+        // Token echoed back on the Meta webhook subscription handshake. The POST
+        // deliveries are signed with `client_secret` (the Meta app secret).
+        'webhook_verify_token' => env('INSTAGRAM_WEBHOOK_VERIFY_TOKEN'),
     ],
 
     'tiktok' => [

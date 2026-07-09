@@ -40,7 +40,7 @@ export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format
                             return aIsBg - bIsBg;
                         }).map((el) => {
                             const common = {
-                                key: el.id, id: el.id,
+                                id: el.id,
                                 listening: false,
                                 shadowEnabled: el.shadowEnabled,
                                 shadowColor: el.shadowColor,
@@ -55,25 +55,25 @@ export function SlideThumbnail({ slide, format }: { slide: Slide; format: Format
                             }
                             if (el.type === 'rect') {
                                 const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
-                                return <Rect {...common} x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation} opacity={el.opacity} fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth} cornerRadius={el.cornerRadius} dash={dash.length ? dash : undefined} dashEnabled={el.dashEnabled} />;
+                                return <Rect key={el.id} {...common} x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation} opacity={el.opacity} fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth} cornerRadius={el.cornerRadius} dash={dash.length ? dash : undefined} dashEnabled={el.dashEnabled} />;
                             }
                             if (el.type === 'circle') {
                                 const dash = borderStyleToDash(el.borderStyle, el.strokeWidth);
-                                return <KonvaCircle {...common} x={el.x + el.width/2} y={el.y + el.height/2} radiusX={el.width/2} radiusY={el.height/2} rotation={el.rotation} opacity={el.opacity} fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth} dash={dash.length ? dash : undefined} dashEnabled={el.dashEnabled} />;
+                                return <KonvaCircle key={el.id} {...common} x={el.x + el.width/2} y={el.y + el.height/2} radiusX={el.width/2} radiusY={el.height/2} rotation={el.rotation} opacity={el.opacity} fill={el.fill} stroke={el.stroke} strokeWidth={el.strokeWidth} dash={dash.length ? dash : undefined} dashEnabled={el.dashEnabled} />;
                             }
                             if (el.type === 'image') {
                                 return <KonvaImageEl key={el.id} el={el} slideW={fmt.w} slideH={slideH} draggable={false} onSelect={()=>{}} onChange={()=>{}} />;
                             }
                             if (el.type === 'gradient') {
                                 const gp = gradientLinearProps(el);
-                                return <Rect {...common} x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation} opacity={el.opacity} fillLinearGradientStartPoint={gp.start} fillLinearGradientEndPoint={gp.end} fillLinearGradientColorStops={gp.stops} />;
+                                return <Rect key={el.id} {...common} x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation} opacity={el.opacity} fillLinearGradientStartPoint={gp.start} fillLinearGradientEndPoint={gp.end} fillLinearGradientColorStops={gp.stops} />;
                             }
                             if (el.type === 'button') {
                                 return <KonvaButtonEl key={el.id} el={el} draggable={false} onSelect={() => {}} onDblClick={() => {}} onChange={() => {}} />;
                             }
                             if (el.type === 'path') {
                                 return (
-                                    <KonvaPath {...common}
+                                    <KonvaPath key={el.id} {...common}
                                         x={el.x} y={el.y}
                                         data={el.data}
                                         scaleX={el.width / el.dataW}

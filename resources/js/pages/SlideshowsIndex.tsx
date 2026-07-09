@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
+import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
+import type { Format } from '@/components/SlideEditor/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +26,7 @@ interface Project {
     prompt: string | null;
     slide_count: number;
     cover_color: string;
+    first_slide: { background: string; elements: unknown[] } | null;
     created_at: string;
 }
 
@@ -68,9 +71,16 @@ function CarouselCard({ project }: { project: Project }) {
             {/* Thumbnail */}
             <div
                 className="relative flex-none overflow-hidden cursor-pointer"
-                style={{ aspectRatio: project.format === 'stories' ? '9/16' : '3/4', background: project.cover_color }}
                 onClick={() => router.visit(SlideProjectController.edit(project.id).url)}
             >
+                {project.first_slide ? (
+                    <SlideThumbnail
+                        slide={project.first_slide as Parameters<typeof SlideThumbnail>[0]['slide']}
+                        format={project.format as Format}
+                    />
+                ) : (
+                    <div style={{ aspectRatio: project.format === 'stories' ? '9/16' : '3/4', background: project.cover_color }} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 backdrop-blur-sm">
                     <BookOpen className="h-3 w-3 text-white/80" />
@@ -154,7 +164,7 @@ function Pagination({ current, last }: { current: number; last: number }) {
     }
 
     function goTo(page: number) {
-        router.get(window.location.pathname, { page } as Record<string, unknown>, { preserveScroll: true, preserveState: true });
+        router.get(window.location.pathname, { page }, { preserveScroll: true, preserveState: true });
     }
 
     return (

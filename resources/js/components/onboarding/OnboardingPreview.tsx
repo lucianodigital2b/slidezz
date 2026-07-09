@@ -132,14 +132,12 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
     const [decks, setDecks] = useState<Deck[]>([]);
     const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
     const [missingKey, setMissingKey] = useState(false);
-    const [selectedLang, setSelectedLang] = useState(language);
 
     useEffect(() => {
-        // Regenerate whenever the chosen language changes. The `cancelled` flag keeps
-        // this safe under React StrictMode's double-invoke and drops stale results when
-        // switching languages mid-generation.
+        // Generate once with the language the user chose earlier in onboarding. The
+        // `cancelled` flag keeps this safe under React StrictMode's double-invoke.
         let cancelled = false;
-        const lang = selectedLang;
+        const lang = language;
         const handle = slugHandle(brandName);
 
         setDecks([]);
@@ -246,7 +244,7 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
         return () => {
             cancelled = true;
         };
-    }, [selectedLang, brandName, brand.accent, brand.color, hasKey]);
+    }, [language, brandName, brand.accent, brand.color, hasKey]);
 
     const expectedDecks = 2;
 
@@ -262,23 +260,6 @@ export default function OnboardingPreview({ brandName, brand, hasKey, language, 
                 <p className="text-lg font-medium text-[#666660]">
                     {phase === 'loading' ? t('onboarding.preview.loading') : t('onboarding.preview.subtitle')}
                 </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-2">
-                <label htmlFor="preview-lang" className="text-xs font-semibold uppercase tracking-wide text-[#888880]">
-                    {t('onboarding.preview.language')}
-                </label>
-                <select
-                    id="preview-lang"
-                    value={selectedLang}
-                    onChange={(e) => setSelectedLang(e.target.value)}
-                    disabled={phase === 'loading'}
-                    className="rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-[#1A1A1A] outline-none transition-colors focus:border-[#FFE156] disabled:opacity-50"
-                    style={{ borderColor: BORDER }}
-                >
-                    <option value="Portuguese (Brazil)">Português (BR)</option>
-                    <option value="English">English</option>
-                </select>
             </div>
 
             {phase === 'error' && decks.length === 0 ? (
