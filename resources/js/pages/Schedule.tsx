@@ -26,7 +26,7 @@ interface ScheduleItem {
     status: string;
     publish_at: string;
     error_log: string | null;
-    content_project: { id: number; title: string; video_url: string | null };
+    content_project: { id: number; title: string; video_url: string | null; caption: string; images: string[] };
     social_account: { id: number; handle: string; provider: string; avatar: string | null };
 }
 
@@ -73,6 +73,14 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
     const [listTab, setListTab] = useState<'queue' | 'drafts' | 'sent'>('queue');
     const [calendarFilter, setCalendarFilter] = useState<'all' | 'drafts' | 'scheduled' | 'sent'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [preview, setPreview] = useState<ScheduleItem | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    const copyCaption = async (caption: string) => {
+        await navigator.clipboard.writeText(caption);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
 
     const { data, setData, post, processing, errors, reset } = useForm({
         content_project_id: '',
@@ -263,9 +271,10 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                                     </div>
                                                     <div className="flex flex-col gap-2 overflow-y-auto flex-1 no-scrollbar pb-1 mt-1 pr-1">
                                                         {filteredSchedules.map(schedule => (
-                                                            <div 
-                                                                key={schedule.id} 
-                                                                className={`text-xs p-1.5 rounded border flex items-center gap-1.5 truncate shadow-sm relative
+                                                            <div
+                                                                key={schedule.id}
+                                                                onClick={() => setPreview(schedule)}
+                                                                className={`text-xs p-1.5 rounded border flex items-center gap-1.5 truncate shadow-sm relative cursor-pointer hover:brightness-95
                                                                     ${schedule.status === 'published' ? 'bg-green-50 border-green-200 text-green-800' : 
                                                                       schedule.status === 'failed' ? 'bg-red-50 border-red-300 text-red-800' : 
                                                                       'bg-blue-50 border-blue-200 text-blue-800'}`
@@ -374,6 +383,44 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                     </>
                 )}
             </div>
+
+            <Dialog open={preview !== null} onOpenChange={(open) => !open && setPreview(null)}>
+                <DialogContent className="sm:max-w-[640px]">
+                    {preview && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>{preview.content_project.title}</DialogTitle>
+                                <DialogDescription>
+                                    @{preview.social_account.handle} ({preview.social_account.provider}) · {new Date(preview.publish_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })} · {preview.status}
+                                </DialogDescription>
+                            </DialogHeader>
+                            {preview.content_project.images.length > 0 && (
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    {preview.content_project.images.map((src, i) => (
+                                        <a key={i} href={src} target="_blank" rel="noreferrer" className="shrink-0">
+                                            <img src={src} alt={`Slide ${i + 1}`} className="h-72 w-auto rounded-md border border-gray-200" />
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">Caption</span>
+                                    {preview.content_project.caption && (
+                                        <Button type="button" variant="outline" size="sm" onClick={() => copyCaption(preview.content_project.caption)}>
+                                            {copied ? 'Copied' : 'Copy caption'}
+                                        </Button>
+                                    )}
+                                </div>
+                                <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-50 p-3 font-sans text-sm text-gray-800">
+                                    {preview.content_project.caption || 'No caption.'}
+                                </pre>
+                            </div>
+                            {preview.error_log && <p className="text-xs text-red-600">{preview.error_log}</p>}
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="sm:max-w-[425px]">

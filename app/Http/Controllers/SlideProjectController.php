@@ -11,6 +11,7 @@ use App\Models\SocialAccount;
 use App\Models\Workspace;
 use App\Services\Social\SocialPublisherFactory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -22,6 +23,12 @@ use Inertia\Response;
 
 class SlideProjectController extends Controller
 {
+    /**
+     * Design formats a project can be saved in: the two social formats plus the
+     * App Store / Google Play screenshot canvases.
+     */
+    private const FORMATS = 'post,stories,appstore,appstore_ipad,playstore';
+
     public function index(Request $request): Response
     {
         $workspace = Workspace::where('owner_id', $request->user()->id)->first();
@@ -61,6 +68,7 @@ class SlideProjectController extends Controller
         return Inertia::render('SlideEditor', [
             'slideProject' => null,
             'instagramAccounts' => $instagramAccounts,
+            'tiktokAccounts' => $this->tiktokAccounts($workspace),
             'brand' => $this->brandProfile($workspace),
         ]);
     }
@@ -89,9 +97,11 @@ class SlideProjectController extends Controller
         ] : null;
 
         return Inertia::render('SlideEditor', [
-            'slideProject' => $slideProject->only('id', 'title', 'caption', 'format', 'slides'),
+            'slideProject' => $slideProject->only('id', 'title', 'caption', 'format', 'slides', 'localizations'),
             'wizardConfig' => $wizardConfig,
+            'screenshotConfig' => session('screenshotConfig'),
             'instagramAccounts' => $instagramAccounts,
+            'tiktokAccounts' => $this->tiktokAccounts($workspace),
             'brand' => $this->brandProfile($workspace),
         ]);
     }
@@ -125,8 +135,9 @@ class SlideProjectController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'caption' => ['nullable', 'string', 'max:2200'],
-            'format' => ['required', 'string', 'in:post,stories'],
+            'format' => ['required', 'string', 'in:'.self::FORMATS],
             'slides' => ['required', 'array'],
+            'localizations' => ['nullable', 'array'],
         ]);
 
         $workspace = Workspace::where('owner_id', $request->user()->id)->firstOrFail();
@@ -137,6 +148,7 @@ class SlideProjectController extends Controller
             'caption' => $validated['caption'] ?? '',
             'format' => $validated['format'],
             'slides' => $validated['slides'],
+            'localizations' => $validated['localizations'] ?? null,
         ]);
 
         return response()->json(['id' => $project->id]);
@@ -149,8 +161,9 @@ class SlideProjectController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'caption' => ['nullable', 'string', 'max:2200'],
-            'format' => ['required', 'string', 'in:post,stories'],
+            'format' => ['required', 'string', 'in:'.self::FORMATS],
             'slides' => ['required', 'array'],
+            'localizations' => ['nullable', 'array'],
         ]);
 
         $slideProject->update($validated);
@@ -282,6 +295,18 @@ class SlideProjectController extends Controller
         $slideProject->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * @return Collection<int, SocialAccount>
+     */
+    private function tiktokAccounts(?Workspace $workspace): Collection
+    {
+        return $workspace
+            ? SocialAccount::where('workspace_id', $workspace->id)
+                ->where('provider', 'tiktok')
+                ->get(['id', 'handle', 'avatar'])
+            : new Collection;
     }
 
     private function authorizeWorkspace(Request $request, SlideProject $slideProject): void

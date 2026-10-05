@@ -9,25 +9,34 @@ import CarouselGenerationController from '@/actions/App/Http/Controllers/Carouse
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
 import SlideTemplateController from '@/actions/App/Http/Controllers/SlideTemplateController';
 import { loadGoogleFont } from '@/utils/google-fonts';
+import { csrfHeaders } from '@/lib/csrf';
 
 import {
-    SLIDE_W, FORMATS, Format, Tool,
+    SLIDE_W, FORMATS, Format, Tool, isStoreFormat, storeOf,
     SlideEl, Slide, TextEl, ImageEl, CornerKey, SlideCorners, ProfileBadge,
 } from '@/components/SlideEditor/types';
+import {
+    Localizations, applyLocale, exportTargetsFor, fitSlideToTarget, localeFolder, findLocale, resolveTheme,
+} from '@/components/SlideEditor/appStore';
 import { uid, makeSlide, SHADOW_DEFAULTS, getSafeAreaBounds, getSafeAreaPadding, measuredTextHeight, preserveSingleHighlightRichText } from '@/components/SlideEditor/utils';
 
 import { useUndoRedo } from '@/components/SlideEditor/hooks/useUndoRedo';
 import { useSlideManager } from '@/components/SlideEditor/hooks/useSlideManager';
 import { useAiGeneration, ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
+import { useLocalization } from '@/components/SlideEditor/hooks/useLocalization';
+import { SCREENSHOT_UPLOADS_KEY, ScreenshotConfig, readUploadedScreenshots, useScreenshotGeneration } from '@/components/SlideEditor/hooks/useScreenshotGeneration';
 
 import { ShapeDef } from '@/components/SlideEditor/shapes';
 import { createZip } from '@/components/SlideEditor/zip';
 import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview, resolveTemplateForBrand } from '@/components/SlideEditor/templates';
 
 import { EditorToolbar } from '@/components/SlideEditor/EditorToolbar';
+import { requestTikTokDraft } from '@/components/send-to-tiktok-button';
+import type { TikTokAccount, TikTokDraftStatus } from '@/components/send-to-tiktok-button';
 import { CanvasArea, SLIDE_GAP, slideOffsetX } from '@/components/SlideEditor/CanvasArea';
 import { SlideGlobalPanel } from '@/components/SlideEditor/SlideGlobalPanel';
 import { SlideRightPanel } from '@/components/SlideEditor/SlideRightPanel';
+import { LocalizationPanel } from '@/components/SlideEditor/LocalizationPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +46,7 @@ interface SlideProjectProp {
     caption?: string | null;
     format: Format;
     slides: Slide[];
+    localizations?: Localizations | null;
 }
 
 interface WizardConfig {
@@ -76,10 +86,12 @@ function loadSavedState(): { slides: Slide[]; currentIdx: number; format: Format
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SlideEditor() {
-    const { slideProject, wizardConfig, instagramAccounts, igEnabled, brand } = usePage<{
+    const { slideProject, wizardConfig, screenshotConfig, instagramAccounts, tiktokAccounts, igEnabled, brand } = usePage<{
         slideProject: SlideProjectProp | null;
         wizardConfig?: WizardConfig | null;
+        screenshotConfig?: ScreenshotConfig | null;
         instagramAccounts: InstagramAccount[];
+        tiktokAccounts?: TikTokAccount[];
         igEnabled: boolean;
         brand?: { color: string | null; accent: string | null; logoUrl: string | null } | null;
     }>().props;
@@ -109,9 +121,36 @@ export default function SlideEditor() {
     const [igAccountId] = useState<number | null>(instagramAccounts?.[0]?.id ?? null);
     const [igPosting, setIgPosting] = useState(false);
     const [exportingZip, setExportingZip] = useState(false);
+    const [creatingVideo, setCreatingVideo] = useState(false);
     const [elementsOpen, setElementsOpen] = useState(false);
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
     const [selectedCornerId, setSelectedCornerId] = useState<CornerKey | null>(null);
+
+    // ── Store screenshots: locales + store-sized export ─────────────────────
+    const isStore = isStoreFormat(format);
+    const screenshotTheme = useMemo(
+        () => resolveTheme(screenshotConfig?.theme ?? 'midnight', { color: brand?.color ?? null, accent: brand?.accent ?? null }),
+        [screenshotConfig?.theme, brand?.color, brand?.accent],
+    );
+    const {
+        localizations, setLocalizations, locales, activeLocale, setActiveLocale,
+        addLocale, removeLocale, setLocalizedText,
+        translateLocale, translateAll, translating,
+        error: localizationError, setError: setLocalizationError,
+    } = useLocalization(
+        slideProject?.localizations ?? {},
+        screenshotConfig?.appName ?? slideProject?.title ?? '',
+        screenshotTheme.accent,
+    );
+    const [localePanelOpen, setLocalePanelOpen] = useState(false);
+    const [exportingStore, setExportingStore] = useState(false);
+    const [exportProgress, setExportProgress] = useState('');
+    const { generate: generateScreenshots, status: screenshotStatus } = useScreenshotGeneration({
+        color: brand?.color ?? null,
+        accent: brand?.accent ?? null,
+    });
+    // Guards the screenshot auto-generation against React StrictMode's double-invoke.
+    const screenshotStartedRef = useRef(false);
 
     // ── AI carousel generation ──────────────────────────────────────────────
     const {
@@ -160,6 +199,10 @@ export default function SlideEditor() {
 
     const slideH = FORMATS[format].h;
     const scale = displayW / SLIDE_W;
+    // What the canvas actually paints: the source slides with the active locale's
+    // captions swapped in. Editing still targets the source slides (or the
+    // locale's overrides, via updateElementLocalized).
+    const displaySlides = useMemo(() => applyLocale(slides, localizations, activeLocale), [slides, localizations, activeLocale]);
     const safeAreaBounds = useMemo(() => getSafeAreaBounds(format), [format]);
     const safeAreaPadding = useMemo(() => getSafeAreaPadding(format), [format]);
 
@@ -241,7 +284,7 @@ export default function SlideEditor() {
                 await previous.catch(() => {});
             }
             setSaveStatus('saving');
-            const body = { title, caption, format, slides };
+            const body = { title, caption, format, slides, localizations };
             const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
             try {
                 const existingId = projectIdRef.current;
@@ -315,7 +358,7 @@ export default function SlideEditor() {
         const timer = setTimeout(() => { saveProject(); }, 1500);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [slides, format, title]);
+    }, [slides, format, title, localizations]);
 
     // ─── Auto-open AI modal from wizard ─────────────────────────────────────
     useEffect(() => {
@@ -348,6 +391,31 @@ export default function SlideEditor() {
                     setTimeout(() => saveAsTemplate(generated), 400);
                 }
             });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ─── Auto-build the store screenshots from the wizard ───────────────────
+    useEffect(() => {
+        if (!screenshotConfig) return;
+        if (screenshotStartedRef.current) return;
+        screenshotStartedRef.current = true;
+
+        // The uploaded device shots ride across the wizard→editor redirect in
+        // sessionStorage (same tab), like the carousel wizard's CTA image.
+        const uploads = readUploadedScreenshots();
+        sessionStorage.removeItem(SCREENSHOT_UPLOADS_KEY);
+
+        for (const code of screenshotConfig.locales ?? []) {
+            addLocale(code);
+        }
+
+        generateScreenshots(screenshotConfig, uploads).then((built) => {
+            if (built && built.length > 0) {
+                setSlides(built);
+                setCurrentIdx(0);
+                setSelectedId(null);
+            }
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -655,7 +723,7 @@ export default function SlideEditor() {
         const finish = () => {
             const nextText = textarea.value;
             const nextRichText = preserveSingleHighlightRichText(el.text, nextText, el.richText, el.fill);
-            updateElement(el.id, { text: nextText, richText: nextRichText } as Partial<TextEl>);
+            updateElementLocalized(el.id, { text: nextText, richText: nextRichText } as Partial<TextEl>);
             document.body.removeChild(textarea);
             setEditingId(null);
         };
@@ -697,15 +765,24 @@ export default function SlideEditor() {
         }
     }
 
+    /**
+     * Download the current slide. Store formats leave at the store's first
+     * accepted pixel size, never at the 1080px canvas size — App Store Connect
+     * and Play Console reject anything else.
+     */
     function exportPNG() {
         if (!stageRef.current) return;
         setSelectedId(null);
         setTimeout(() => {
-            const uri = renderSlideDataURL(safeIdx);
-            const link = document.createElement('a');
-            link.download = `slide-${safeIdx + 1}.png`;
-            link.href = uri;
-            link.click();
+            const target = exportTargetsFor(format)[0];
+            void renderSlideAtSize(safeIdx, target.w, target.h).then((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `slide-${safeIdx + 1}-${target.w}x${target.h}.png`;
+                link.href = url;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }).catch(() => window.alert(t('slideEditor.alerts.exportFailed')));
         }, 50);
     }
 
@@ -784,6 +861,99 @@ export default function SlideEditor() {
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
+    /** Load a data URL into an <img> so it can be redrawn at the store's exact size. */
+    function loadHtmlImage(src: string): Promise<HTMLImageElement> {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('render failed'));
+            img.src = src;
+        });
+    }
+
+    /**
+     * Render one slide at an exact store pixel size. The canvas is authored at
+     * 1080px wide and rasterized straight at the size it will be drawn (vector
+     * text stays crisp), then centred on the target canvas — the store sizes do
+     * not share the canvas aspect, and stretching to fill visibly squashes the
+     * design.
+     */
+    async function renderSlideAtSize(idx: number, targetW: number, targetH: number): Promise<Blob> {
+        const fit = fitSlideToTarget(SLIDE_W, slideH, targetW, targetH);
+        const dataUrl = renderSlideDataURL(idx, {
+            mimeType: 'image/png',
+            pixelRatio: (fit.w / SLIDE_W) / scale,
+        });
+        const img = await loadHtmlImage(dataUrl);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error(t('slideEditor.alerts.exportFailed'));
+
+        // Stores expect an opaque screenshot, so paint the slide background first.
+        ctx.fillStyle = displaySlides[idx]?.background ?? '#000000';
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
+
+        return await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('render failed'))), 'image/png');
+        });
+    }
+
+    /**
+     * Export the whole set as a ZIP laid out the way App Store Connect / Play
+     * Console want it: one folder per locale, one per device size inside it.
+     */
+    async function exportStoreZip(localeCodes: string[], targetIds: string[]) {
+        if (!stageRef.current || exportingStore) return;
+
+        const targets = exportTargetsFor(format).filter((target) => targetIds.includes(target.id));
+        if (targets.length === 0 || slides.length === 0) return;
+
+        setExportingStore(true);
+        setSelectedId(null);
+        const previousLocale = activeLocale;
+        const files: { name: string; data: Uint8Array }[] = [];
+
+        try {
+            for (const code of localeCodes) {
+                const localeCode = code === 'source' ? null : code;
+                await setActiveLocale(localeCode);
+                // Let React commit the swapped captions and Konva repaint them.
+                await new Promise((resolve) => setTimeout(resolve, 260));
+
+                const folder = localeCode ? localeFolder(localeCode, storeOf(format)) : 'source';
+
+                for (const target of targets) {
+                    for (let i = 0; i < slides.length; i++) {
+                        setExportProgress(`${folder} · ${i + 1}/${slides.length}`);
+                        const blob = await renderSlideAtSize(i, target.w, target.h);
+                        const name = target.folder === ''
+                            ? `${folder}/screen-${String(i + 1).padStart(2, '0')}.png`
+                            : `${folder}/${target.folder}/screen-${String(i + 1).padStart(2, '0')}.png`;
+                        files.push({ name, data: new Uint8Array(await blob.arrayBuffer()) });
+                    }
+                }
+            }
+
+            const zipName = (title.trim().replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'screenshots') + '-store.zip';
+            const url = URL.createObjectURL(createZip(files));
+            const link = document.createElement('a');
+            link.download = zipName;
+            link.href = url;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (e) {
+            window.alert(e instanceof Error ? e.message : t('slideEditor.alerts.exportFailed'));
+        } finally {
+            await setActiveLocale(previousLocale);
+            setExportProgress('');
+            setExportingStore(false);
+        }
+    }
+
     async function exportAllSlidesZip() {
         if (!stageRef.current || exportingZip) return;
         setExportingZip(true);
@@ -838,6 +1008,45 @@ export default function SlideEditor() {
             window.alert(e instanceof Error ? e.message : 'Failed to publish to Instagram.');
         } finally {
             setIgPosting(false);
+        }
+    }
+
+    /** Saves, exports every slide as a JPEG and sends them to the TikTok inbox as a photo draft. */
+    async function sendCarouselToTikTok(accountId: number): Promise<TikTokDraftStatus> {
+        const id = (await saveProject()) ?? projectId;
+        if (!id) throw new Error(t('slideEditor.alerts.exportFailed'));
+        const blobs = await exportAllSlidesJpeg();
+        if (blobs.length !== slides.length) throw new Error(t('slideEditor.alerts.exportFailed'));
+        const form = new FormData();
+        form.append('social_account_id', String(accountId));
+        form.append('caption', caption);
+        blobs.forEach((blob, idx) => form.append('images[]', blob, `slide-${idx + 1}.jpg`));
+
+        return requestTikTokDraft(`/slideshow-editor/${id}/publish/tiktok`, form);
+    }
+
+    /** Saves, exports every slide as a JPEG and opens them as clips in the video editor. */
+    async function createVideoFromSlides() {
+        if (creatingVideo || slides.length === 0) return;
+        setCreatingVideo(true);
+        try {
+            const id = (await saveProject()) ?? projectId;
+            if (!id) throw new Error(t('slideEditor.alerts.videoFailed'));
+            const blobs = await exportAllSlidesJpeg();
+            if (blobs.length !== slides.length) throw new Error(t('slideEditor.alerts.exportFailed'));
+            const form = new FormData();
+            blobs.forEach((blob, idx) => form.append('images[]', blob, `slide-${idx + 1}.jpg`));
+            const res = await fetch(`/slideshow-editor/${id}/video`, {
+                method: 'POST',
+                headers: { ...csrfHeaders(), Accept: 'application/json' },
+                body: form,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || t('slideEditor.alerts.videoFailed'));
+            router.visit(`/videos/${data.id}`);
+        } catch (e) {
+            window.alert(e instanceof Error ? e.message : t('slideEditor.alerts.videoFailed'));
+            setCreatingVideo(false);
         }
     }
 
@@ -995,9 +1204,27 @@ export default function SlideEditor() {
 
     // ─── Derived ──────────────────────────────────────────────────────────────
 
+    const displaySlide = displaySlides[safeIdx] ?? slide;
+
     const selectedEl = selectedCornerId && slide.corners
         ? makeCornerTextEl(selectedCornerId, slide.corners)
-        : (slide.elements.find((el) => el.id === selectedId) ?? null);
+        : (displaySlide.elements.find((el) => el.id === selectedId) ?? null);
+
+    /**
+     * Text edits made while a locale is active belong to that locale, not to the
+     * source deck — everything else (position, color, size) stays shared.
+     */
+    function updateElementLocalized(id: string, patch: Partial<SlideEl>) {
+        if (activeLocale) {
+            const { text, richText: _richText, ...rest } = patch as Partial<TextEl>;
+            if (text !== undefined) {
+                setLocalizedText(activeLocale, id, text);
+                if (Object.keys(rest).length > 0) updateElement(id, rest as Partial<SlideEl>);
+                return;
+            }
+        }
+        updateElement(id, patch);
+    }
 
     function cloneCorners(corners: Slide['corners']): Slide['corners'] {
         if (!corners) return undefined;
@@ -1062,6 +1289,13 @@ export default function SlideEditor() {
                     onExportAllZip={exportAllSlidesZip}
                     onExportMetadata={exportMetadata}
                     exportingZip={exportingZip}
+                    isStoreFormat={isStore}
+                    localeCount={locales.length}
+                    activeLocale={activeLocale}
+                    onOpenLocalization={() => setLocalePanelOpen(true)}
+                    onExportStore={() => setLocalePanelOpen(true)}
+                    onCreateVideo={createVideoFromSlides}
+                    creatingVideo={creatingVideo}
                     instagramAccounts={instagramAccounts}
                     igEnabled={igEnabled}
                     igPosting={igPosting}
@@ -1069,6 +1303,8 @@ export default function SlideEditor() {
                     publishAt={publishAt}
                     onPublishAtChange={setPublishAt}
                     onPublishToInstagram={publishCarouselToInstagram}
+                    tiktokAccounts={tiktokAccounts ?? []}
+                    onSendToTikTok={sendCarouselToTikTok}
                 />
 
                 <div className="flex flex-1 overflow-hidden">
@@ -1098,7 +1334,7 @@ export default function SlideEditor() {
 
                     {/* Center: Canvas — every slide in a row, all editable */}
                     <CanvasArea
-                        slides={slides}
+                        slides={displaySlides}
                         currentIdx={safeIdx}
                         slideH={slideH}
                         scale={scale}
@@ -1122,7 +1358,7 @@ export default function SlideEditor() {
                         onStageDragEnd={handleStageDragEnd}
                         onAddPath={addPathElement}
                         onStartEditing={startEditing}
-                        onElementChange={(id, patch) => updateElement(id, patch)}
+                        onElementChange={updateElementLocalized}
                         onBadgeMove={(idx, x, y) => {
                             setSlides((prev) => prev.map((s, i) => (
                                 i === idx && s.profileBadge ? { ...s, profileBadge: { ...s.profileBadge, x, y } } : s
@@ -1133,7 +1369,7 @@ export default function SlideEditor() {
                     {/* Right: Thumbnails + Editing Layer */}
                     <div className="shrink-0 overflow-hidden" style={{ width: RIGHT_PANEL_W }}>
                         <SlideRightPanel
-                            slides={slides}
+                            slides={displaySlides}
                             currentIdx={safeIdx}
                             format={format}
                             selectedEl={selectedEl}
@@ -1143,7 +1379,7 @@ export default function SlideEditor() {
                             onDeleteSlide={deleteSlide}
                             onElementChange={(patch) => {
                                 if (selectedCornerId) { handleCornerElChange(patch); }
-                                else if (selectedId) { updateElement(selectedId, patch); }
+                                else if (selectedId) { updateElementLocalized(selectedId, patch); }
                             }}
                             onElementDelete={() => {
                                 if (selectedCornerId) { handleCornerElDelete(); }
@@ -1152,6 +1388,27 @@ export default function SlideEditor() {
                         />
                     </div>
                 </div>
+
+                <LocalizationPanel
+                    open={localePanelOpen}
+                    onClose={() => { setLocalePanelOpen(false); setLocalizationError(''); }}
+                    slides={slides}
+                    format={format}
+                    localizations={localizations}
+                    locales={locales}
+                    activeLocale={activeLocale}
+                    translating={translating}
+                    error={localizationError}
+                    exporting={exportingStore}
+                    exportProgress={exportProgress}
+                    onAddLocale={addLocale}
+                    onRemoveLocale={removeLocale}
+                    onActivateLocale={setActiveLocale}
+                    onTranslateLocale={(code) => translateLocale(code, slides)}
+                    onTranslateAll={() => translateAll(slides)}
+                    onEditText={setLocalizedText}
+                    onExport={exportStoreZip}
+                />
 
                 {/* Drag-and-drop hint while dragging image files over the editor */}
                 {fileDragActive && (
@@ -1162,6 +1419,26 @@ export default function SlideEditor() {
                     </div>
                 )}
             </div>
+
+            {/* ── Store screenshot build status ────────────────────────────── */}
+            <AnimatePresence>
+                {screenshotStatus !== 'idle' && screenshotStatus !== 'error' && (
+                    <motion.div
+                        initial={{ y: 80, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 80, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                        className="fixed bottom-6 left-1/2 z-50 flex w-80 -translate-x-1/2 items-center gap-2.5 rounded-xl border border-white/10 bg-gray-900/95 px-4 py-3 shadow-xl backdrop-blur-sm"
+                    >
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#FFE156]" />
+                        <span className="flex-1 truncate text-sm font-medium text-gray-200">
+                            {screenshotStatus === 'writing'
+                                ? t('appScreenshots.status.writing')
+                                : t('appScreenshots.status.building')}
+                        </span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ── AI Generation status bar ─────────────────────────────────── */}
             <AnimatePresence>

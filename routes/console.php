@@ -20,6 +20,9 @@ FacadeSchedule::call(function () {
         ->each(fn (Schedule $s) => PublishScheduledContent::dispatch($s));
 })->everyMinute();
 
+// Every 15 minutes, generate carousels for automations whose slot came due
+FacadeSchedule::command('automations:run')->everyFifteenMinutes()->withoutOverlapping();
+
 // Every hour, sync analytics for all published posts
 FacadeSchedule::call(function () {
     Schedule::where('status', ScheduleStatus::Published)

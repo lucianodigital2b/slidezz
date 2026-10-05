@@ -27,7 +27,7 @@ class TrackStripePurchaseInMetaTest extends TestCase
                 'payment_status' => 'paid',
                 'amount_total' => 2900,
                 'currency' => 'usd',
-                'metadata' => ['user_id' => (string) $user->id],
+                'metadata' => ['type' => 'credit_pack', 'user_id' => (string) $user->id],
             ]],
         ]));
 
@@ -78,6 +78,49 @@ class TrackStripePurchaseInMetaTest extends TestCase
                 'customer' => 'cus_abc',
                 'amount_paid' => 0,
                 'currency' => 'usd',
+            ]],
+        ]));
+
+        Bus::assertNotDispatchedAfterResponse(SendMetaConversionEvent::class);
+    }
+
+    public function test_lifetime_checkout_reports_a_purchase(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+
+        (new TrackStripePurchaseInMeta)->handle(new WebhookReceived([
+            'type' => 'checkout.session.completed',
+            'data' => ['object' => [
+                'id' => 'cs_lifetime',
+                'mode' => 'payment',
+                'payment_status' => 'paid',
+                'amount_total' => 14900,
+                'currency' => 'usd',
+                'metadata' => ['type' => 'lifetime', 'user_id' => (string) $user->id],
+            ]],
+        ]));
+
+        Bus::assertDispatchedAfterResponse(
+            SendMetaConversionEvent::class,
+            fn (SendMetaConversionEvent $job) => $job->eventId === 'stripe_checkout_cs_lifetime'
+                && $job->customData['value'] === 149.0,
+        );
+    }
+
+    public function test_one_time_checkout_from_another_product_on_the_account_is_ignored(): void
+    {
+        Bus::fake();
+
+        (new TrackStripePurchaseInMeta)->handle(new WebhookReceived([
+            'type' => 'checkout.session.completed',
+            'data' => ['object' => [
+                'id' => 'cs_payment_link',
+                'mode' => 'payment',
+                'payment_status' => 'paid',
+                'amount_total' => 1790,
+                'currency' => 'usd',
+                'metadata' => ['store' => 'grandma-mae'],
             ]],
         ]));
 

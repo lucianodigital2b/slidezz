@@ -4,8 +4,10 @@ namespace App\Services\Social;
 
 use App\Contracts\SocialPublisher;
 use App\Models\ContentProject;
+use App\Models\Schedule;
 use App\Models\SocialAccount;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TikTokPublisher implements SocialPublisher
@@ -85,23 +87,242 @@ class TikTokPublisher implements SocialPublisher
         );
     }
 
-    public function publish(ContentProject $project, \App\Models\Schedule $schedule): string
+    /**
+     * Send a rendered photo carousel to the user's TikTok inbox as a draft.
+     *
+     * Uses `post_mode: MEDIA_UPLOAD`, which needs only the `video.upload` scope: the
+     * carousel lands in the TikTok app and the creator taps post. Direct publishing
+     * would require Apple-style app audit approval for `video.publish`.
+     *
+     * TikTok downloads the photos itself (`PULL_FROM_URL`), so the media disk must
+     * serve them publicly and the domain must be verified in the developer portal.
+     *
+     * @see https://developers.tiktok.com/doc/content-posting-api-reference-photo-post
+     */
+    public function publish(ContentProject $project, Schedule $schedule): string
     {
-        // To be implemented: TikTok Direct Post API
-        // https://developers.tiktok.com/doc/tiktok-api-direct-post/
-
         $account = $schedule->socialAccount;
 
-        // 2. Refresh token if expired
-        if ($account->expires_at->isPast()) {
+        if ($account->expires_at?->isPast()) {
             $this->refreshToken($account);
         }
 
-        // 3. Initialize upload
-        // 4. Upload video chunks
-        // 5. Commit upload
+        if ($project->type === 'video') {
+            return $this->uploadVideoDraft($project, $account);
+        }
 
-        return 'fake_tiktok_post_id_'.Str::random(10);
+        $data = $project->script_data ?? [];
+        $imageUrls = $this->photoUrls($data);
+
+        if ($imageUrls === []) {
+            throw new \Exception('Este projeto não tem imagens renderizadas para publicar.');
+        }
+
+        // TikTok caps a carousel at 35 photos.
+        $imageUrls = array_slice($imageUrls, 0, 35);
+
+        $response = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(60)
+            ->post('https://open.tiktokapis.com/v2/post/publish/content/init/', [
+                'media_type' => 'PHOTO',
+                'post_mode' => 'MEDIA_UPLOAD',
+                'post_info' => [
+                    // Title is capped at 90 UTF-16 runes, description at 4000.
+                    'title' => Str::limit((string) ($data['hook'] ?? $project->title), 88, ''),
+                    'description' => Str::limit($this->description($data), 3990, ''),
+                ],
+                'source_info' => [
+                    'source' => 'PULL_FROM_URL',
+                    'photo_images' => $imageUrls,
+                    'photo_cover_index' => 0,
+                ],
+            ]);
+
+        $publishId = $response->json('data.publish_id');
+        $errorCode = (string) $response->json('error.code', '');
+
+        if ($response->failed() || ! $publishId || ($errorCode !== '' && $errorCode !== 'ok')) {
+            throw new \Exception($this->publishError($errorCode, (string) $response->json('error.message', '')));
+        }
+
+        return $publishId;
+    }
+
+    /**
+     * Rebuilt from each slide's storage path when there is one, so carousels
+     * rendered before the media disk moved to the TikTok-verified domain still
+     * point at that domain rather than the URL saved at render time.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private function photoUrls(array $data): array
+    {
+        $paths = array_filter(array_column((array) ($data['slides'] ?? []), 'path'));
+
+        if ($paths !== []) {
+            $disk = Storage::disk(config('filesystems.media_disk'));
+
+            return array_values(array_map(fn (string $path): string => url($disk->url($path)), $paths));
+        }
+
+        return array_values(array_filter((array) ($data['image_urls'] ?? [])));
+    }
+
+    /**
+     * Push a rendered MP4 to the creator's TikTok inbox as a draft.
+     *
+     * Uses `FILE_UPLOAD` rather than `PULL_FROM_URL` so it works without a verified
+     * domain. The inbox endpoint takes no caption: the creator writes it in the app.
+     *
+     * @see https://developers.tiktok.com/doc/content-posting-api-reference-upload-video
+     */
+    private function uploadVideoDraft(ContentProject $project, SocialAccount $account): string
+    {
+        $path = (string) ($project->script_data['video_path'] ?? '');
+        $disk = Storage::disk(config('filesystems.media_disk'));
+
+        if ($path === '' || ! $disk->exists($path)) {
+            throw new \Exception('Este vídeo ainda não foi renderizado.');
+        }
+
+        $videoSize = $disk->size($path);
+        [$chunkSize, $chunkCount] = $this->videoChunks($videoSize);
+
+        $response = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(60)
+            ->post('https://open.tiktokapis.com/v2/post/publish/inbox/video/init/', [
+                'source_info' => [
+                    'source' => 'FILE_UPLOAD',
+                    'video_size' => $videoSize,
+                    'chunk_size' => $chunkSize,
+                    'total_chunk_count' => $chunkCount,
+                ],
+            ]);
+
+        $publishId = $response->json('data.publish_id');
+        $uploadUrl = $response->json('data.upload_url');
+        $errorCode = (string) $response->json('error.code', '');
+
+        if ($response->failed() || ! $publishId || ! $uploadUrl || ($errorCode !== '' && $errorCode !== 'ok')) {
+            throw new \Exception($this->publishError($errorCode, (string) $response->json('error.message', '')));
+        }
+
+        $stream = $disk->readStream($path);
+
+        try {
+            for ($index = 0; $index < $chunkCount; $index++) {
+                $start = $index * $chunkSize;
+                // The last chunk absorbs the remainder, so it can be bigger than chunk_size.
+                $end = $index === $chunkCount - 1 ? $videoSize - 1 : $start + $chunkSize - 1;
+                $bytes = $this->readBytes($stream, $end - $start + 1);
+
+                $upload = Http::withBody($bytes, 'video/mp4')
+                    ->withHeaders(['Content-Range' => "bytes {$start}-{$end}/{$videoSize}"])
+                    ->timeout(300)
+                    ->put($uploadUrl);
+
+                if ($upload->failed()) {
+                    throw new \Exception("Falha ao enviar o vídeo pro TikTok (HTTP {$upload->status()}).");
+                }
+            }
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        return $publishId;
+    }
+
+    /**
+     * TikTok wants chunks of 5–64 MB, a count of floor(size / chunk), and the last
+     * chunk taking the remainder. Anything up to 64 MB goes up in one piece.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function videoChunks(int $videoSize): array
+    {
+        $maxSingleChunk = 64 * 1024 * 1024;
+
+        if ($videoSize <= $maxSingleChunk) {
+            return [$videoSize, 1];
+        }
+
+        $chunkSize = 10 * 1024 * 1024;
+
+        return [$chunkSize, intdiv($videoSize, $chunkSize)];
+    }
+
+    /**
+     * @param  resource  $stream
+     */
+    private function readBytes($stream, int $length): string
+    {
+        $bytes = '';
+
+        while (strlen($bytes) < $length && ! feof($stream)) {
+            $bytes .= fread($stream, $length - strlen($bytes));
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * Poll the async publish so a rejected download surfaces instead of silently
+     * looking published.
+     *
+     * @return array{status: string, fail_reason: string}
+     */
+    public function fetchStatus(SocialAccount $account, string $publishId): array
+    {
+        if ($account->expires_at?->isPast()) {
+            $this->refreshToken($account);
+        }
+
+        $response = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(30)
+            ->post('https://open.tiktokapis.com/v2/post/publish/status/fetch/', [
+                'publish_id' => $publishId,
+            ]);
+
+        return [
+            'status' => (string) $response->json('data.status', 'UNKNOWN'),
+            'fail_reason' => (string) $response->json('data.fail_reason', ''),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function description(array $data): string
+    {
+        $caption = trim((string) ($data['caption'] ?? ''));
+        $hashtags = array_map(
+            fn ($tag): string => '#'.ltrim(trim((string) $tag), '#'),
+            (array) ($data['hashtags'] ?? []),
+        );
+
+        return trim($caption."\n\n".implode(' ', $hashtags));
+    }
+
+    /**
+     * Translate TikTok's error codes into something the user can act on; the raw
+     * code lands in the Schedule's error_log either way.
+     */
+    private function publishError(string $code, string $message): string
+    {
+        return match ($code) {
+            'url_ownership_unverified' => 'O domínio das imagens não está verificado no TikTok Developer Portal. Verifique a propriedade da URL e tente de novo.',
+            'spam_risk_too_many_posts' => 'O TikTok bloqueou o envio por excesso de posts recentes nessa conta. Tente mais tarde.',
+            'spam_risk_user_banned_from_posting' => 'Essa conta do TikTok está impedida de postar no momento.',
+            'reached_active_user_cap' => 'Limite diário de envios do app atingido no TikTok. Tente amanhã.',
+            'access_token_invalid', 'scope_not_authorized' => 'A conexão com o TikTok expirou ou perdeu permissão. Reconecte a conta.',
+            default => 'Falha ao enviar pro TikTok'.($code !== '' ? " ({$code})" : '').($message !== '' ? ": {$message}" : '.'),
+        };
     }
 
     public function getAnalytics(string $platformPostId): array

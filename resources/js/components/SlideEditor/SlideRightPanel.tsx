@@ -1,6 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Slide, SlideEl, Format } from './types';
+import { Slide, SlideEl, Format, FORMATS } from './types';
 import { SlideThumbnail } from './SlideThumbnail';
 import { PropertiesPanel } from './PropertiesPanel';
 
@@ -22,6 +22,12 @@ export function SlideRightPanel({
     onSelectSlide, onAddSlide, onDuplicateSlide, onDeleteSlide,
     onElementChange, onElementDelete,
 }: SlideRightPanelProps) {
+    // Thumbnails keep the format's real aspect, so the tall store screenshots
+    // aren't squashed into the social post's box.
+    const aspect = FORMATS[format].h / FORMATS[format].w;
+    const thumbH = Math.min(96, Math.round(52 * aspect));
+    const thumbW = Math.round(thumbH / aspect);
+
     return (
         <div className="flex flex-col h-full overflow-hidden bg-gray-50">
 
@@ -33,10 +39,7 @@ export function SlideRightPanel({
                             key={s.id}
                             onClick={() => onSelectSlide(idx)}
                             className={`relative group cursor-pointer rounded-lg overflow-hidden shrink-0 transition-all border-2 ${idx === currentIdx ? 'border-[#FFE156]' : 'border-transparent ring-1 ring-black/10'}`}
-                            style={{
-                                width: 52,
-                                height: format === 'stories' ? 76 : 60,
-                            }}
+                            style={{ width: thumbW, height: thumbH }}
                         >
                             <SlideThumbnail slide={s} format={format} />
                             <span className="absolute top-0.5 left-0.5 text-[8px] font-bold text-white rounded px-0.5 leading-4 bg-black/50">
@@ -65,10 +68,7 @@ export function SlideRightPanel({
                     <button
                         onClick={onAddSlide}
                         className="shrink-0 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                        style={{
-                            width: 52,
-                            height: format === 'stories' ? 76 : 60,
-                        }}
+                        style={{ width: thumbW, height: thumbH }}
                     >
                         <Plus className="w-4 h-4" />
                     </button>

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import {
     Undo2, Redo2, Save, Image as ImageIcon, Loader2, Download, LayoutTemplate, Check,
     ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, CalendarIcon, Bug,
+    Globe, Smartphone, Film,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format as formatFns } from 'date-fns';
@@ -11,7 +12,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import AppLogoIcon from '@/components/app-logo-icon';
 import DashboardController from '@/actions/App/Http/Controllers/DashboardController';
-import { FORMATS, Format } from './types';
+import { SendToTikTokButton } from '@/components/send-to-tiktok-button';
+import type { TikTokAccount, TikTokDraftStatus } from '@/components/send-to-tiktok-button';
+import { FORMATS, Format, isStoreFormat as isStoreFormatKey } from './types';
+
+/** Proportional preview box for a format, drawn from its real aspect ratio. */
+function formatSwatch(format: Format): { width: number; height: number } {
+    const { w, h } = FORMATS[format];
+    const max = 14;
+
+    return h >= w
+        ? { width: Math.round((w / h) * max), height: max }
+        : { width: max, height: Math.round((h / w) * max) };
+}
 
 interface InstagramAccount {
     id: number;
@@ -44,6 +57,15 @@ interface EditorToolbarProps {
     onExportAllZip: () => void;
     onExportMetadata: () => void;
     exportingZip: boolean;
+    /** True when the canvas is an App Store / Play Store screenshot format. */
+    isStoreFormat: boolean;
+    localeCount: number;
+    activeLocale: string | null;
+    onOpenLocalization: () => void;
+    onExportStore: () => void;
+    /** Turns the slides into a video project and opens the video editor. */
+    onCreateVideo: () => void;
+    creatingVideo: boolean;
     instagramAccounts: InstagramAccount[];
     igEnabled: boolean;
     igPosting: boolean;
@@ -51,6 +73,8 @@ interface EditorToolbarProps {
     publishAt: Date | undefined;
     onPublishAtChange: (date: Date | undefined) => void;
     onPublishToInstagram: () => void;
+    tiktokAccounts: TikTokAccount[];
+    onSendToTikTok: (accountId: number) => Promise<TikTokDraftStatus>;
 }
 
 export function EditorToolbar({
@@ -62,7 +86,9 @@ export function EditorToolbar({
     templateStatus, onSaveAsTemplate,
     format, onFormatChange,
     onExportPNG, onExportAllZip, onExportMetadata, exportingZip,
+    isStoreFormat, localeCount, activeLocale, onOpenLocalization, onExportStore, onCreateVideo, creatingVideo,
     instagramAccounts, igEnabled, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
+    tiktokAccounts, onSendToTikTok,
 }: EditorToolbarProps) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,20 +195,60 @@ export function EditorToolbar({
                 </span>
             </button>
 
-            {/* Format switcher */}
-            <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5">
-                {(Object.entries(FORMATS) as [Format, typeof FORMATS[Format]][]).map(([key, fmt]) => (
-                    <button key={key} onClick={() => onFormatChange(key)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${format === key ? 'bg-[#f2f2f2] text-gray-700' : 'text-gray-500 hover:text-gray-700'}`}>
+            {/* Format switcher — social formats plus the store screenshot canvases */}
+            <Popover>
+                <PopoverTrigger asChild>
+                    <button className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50">
                         <span
-                            className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === key ? 'border-gray-500' : 'border-gray-400'}`}
-                            style={{ width: key === 'post' ? 12 : 9, height: key === 'post' ? 12 : 14 }}
+                            className="inline-flex shrink-0 items-center justify-center rounded-sm border-2 border-gray-500"
+                            style={formatSwatch(format)}
                         />
-                        {t(`slideEditor.formats.${key}`)}
-                        <span className={`text-[10px] ${format === key ? 'text-gray-500' : 'text-gray-400'}`}>{fmt.ratio}</span>
+                        {t(`slideEditor.formats.${format}`)}
+                        <span className="text-[10px] text-gray-400">{FORMATS[format].ratio}</span>
+                        <ChevronDown className="h-3 w-3 text-gray-400" />
                     </button>
-                ))}
-            </div>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-60 p-1">
+                    {(Object.keys(FORMATS) as Format[]).map((key, index) => (
+                        <div key={key}>
+                            {index === 2 && (
+                                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                                    {t('slideEditor.formats.storeGroup')}
+                                </p>
+                            )}
+                            <button
+                                onClick={() => onFormatChange(key)}
+                                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-gray-100 ${format === key ? 'text-gray-900' : 'text-gray-600'}`}
+                            >
+                                <span
+                                    className={`inline-flex shrink-0 items-center justify-center rounded-sm border-2 ${format === key ? 'border-gray-700' : 'border-gray-400'}`}
+                                    style={formatSwatch(key)}
+                                />
+                                <span className="flex-1 text-left">{t(`slideEditor.formats.${key}`)}</span>
+                                <span className="text-[10px] text-gray-400">{FORMATS[key].ratio}</span>
+                                {format === key && <Check className="h-3.5 w-3.5 text-gray-700" />}
+                            </button>
+                        </div>
+                    ))}
+                </PopoverContent>
+            </Popover>
+
+            {/* Locales — store formats ship one screenshot set per language */}
+            {isStoreFormatKey(format) && (
+                <button
+                    onClick={onOpenLocalization}
+                    title={t('appScreenshots.localization.title')}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                        activeLocale ? 'border-[#FFE156] bg-[#FFE156]/10 text-[#1A1A1A]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden lg:inline">{activeLocale ?? t('appScreenshots.localization.short')}</span>
+                    {localeCount > 0 && (
+                        <span className="rounded-full bg-gray-100 px-1.5 text-[10px] font-semibold text-gray-600">{localeCount}</span>
+                    )}
+                </button>
+            )}
 
             <div className="w-px h-6 bg-gray-200 mx-1" />
 
@@ -209,6 +275,23 @@ export function EditorToolbar({
                         {exportingZip ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
                         {t('slideEditor.toolbar.exportAllZip', { count: slidesCount })}
                     </button>
+                    {!isStoreFormat && (
+                        <button
+                            onClick={onCreateVideo}
+                            disabled={creatingVideo || slidesCount === 0}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50">
+                            {creatingVideo ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Film className="w-4 h-4 shrink-0" />}
+                            {t('slideEditor.toolbar.createVideo')}
+                        </button>
+                    )}
+                    {isStoreFormat && (
+                        <button
+                            onClick={onExportStore}
+                            disabled={slidesCount === 0}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50">
+                            <Smartphone className="w-4 h-4 shrink-0" /> {t('appScreenshots.localization.exportStoreMenu')}
+                        </button>
+                    )}
                     {import.meta.env.DEV && (
                         <>
                             <div className="my-1 h-px bg-gray-100" />
@@ -221,6 +304,16 @@ export function EditorToolbar({
                     )}
                 </PopoverContent>
             </Popover>
+
+            {/* TikTok (photo draft in the creator's inbox) */}
+            {!isStoreFormat && (
+                <SendToTikTokButton
+                    accounts={tiktokAccounts}
+                    send={onSendToTikTok}
+                    disabled={slidesCount === 0 || slidesCount > 35}
+                    className="py-1 text-xs"
+                />
+            )}
 
             {/* Instagram */}
             {igEnabled && instagramAccounts.length > 0 && (

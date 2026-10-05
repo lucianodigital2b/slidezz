@@ -62,6 +62,12 @@ return [
         'access_key' => env('UNSPLASH_ACCESS_KEY'),
     ],
 
+    'pinterest' => [
+        // Pinterest has no public search API; the slideshow generator calls the same
+        // JSON resource the website uses, which rejects requests without a browser UA.
+        'user_agent' => env('PINTEREST_USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'),
+    ],
+
     'carousel_image' => [
         // Image generation driver: 'gemini' (gemini-2.5-flash-image, cinematic
         // subject-accurate), 'openai' (gpt-image-1, paid), or 'unsplash' (free stock search).
@@ -83,6 +89,17 @@ return [
     'elevenlabs' => [
         'api_key' => env('ELEVENLABS_API_KEY'),
         'voice_id' => env('ELEVENLABS_VOICE_ID'),
+    ],
+
+    'remotion' => [
+        // Node binary that runs resources/js/remotion/render.mjs.
+        'node_binary' => env('REMOTION_NODE_BINARY', 'node'),
+        // Prebuilt composition bundle (`npm run remotion:bundle`). Unset, every render
+        // bundles from source — fine locally, a ~15s tax per render in production.
+        'bundle_path' => env('REMOTION_BUNDLE_PATH'),
+        // Chrome tabs rendering frames in parallel; null lets Remotion pick from the CPU count.
+        'concurrency' => env('REMOTION_CONCURRENCY'),
+        'timeout' => (int) env('REMOTION_TIMEOUT', 1500),
     ],
 
     'meta' => [

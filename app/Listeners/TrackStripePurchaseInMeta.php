@@ -14,6 +14,13 @@ use Laravel\Cashier\Events\WebhookReceived;
  */
 class TrackStripePurchaseInMeta
 {
+    /**
+     * One-time checkout types created by Slidezz itself. Other products sold on
+     * the same Stripe account (e.g. the Grandma Mae e-book Payment Link) carry no
+     * such type and must not be reported as Slidezz purchases.
+     */
+    private const SLIDEZZ_PAYMENT_TYPES = ['credit_pack', 'lifetime'];
+
     public function handle(WebhookReceived $event): void
     {
         $payload = $event->payload;
@@ -26,9 +33,9 @@ class TrackStripePurchaseInMeta
     }
 
     /**
-     * One-time payments only (credit packs). Subscriptions arrive as
-     * mode=subscription and are tracked via their invoices instead, so they are
-     * skipped here to avoid double counting.
+     * One-time Slidezz payments only (credit packs and lifetime access).
+     * Subscriptions arrive as mode=subscription and are tracked via their
+     * invoices instead, so they are skipped here to avoid double counting.
      *
      * @param  array<string, mixed>  $payload
      */
@@ -37,6 +44,10 @@ class TrackStripePurchaseInMeta
         $session = $payload['data']['object'] ?? [];
 
         if (($session['mode'] ?? null) !== 'payment' || ($session['payment_status'] ?? null) !== 'paid') {
+            return;
+        }
+
+        if (! in_array($session['metadata']['type'] ?? null, self::SLIDEZZ_PAYMENT_TYPES, true)) {
             return;
         }
 

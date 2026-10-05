@@ -314,6 +314,26 @@ export const SAFE_AREA_PADDINGS: Record<SafeAreaFormat, SafeAreaPadding> = {
         bottom: 250,
         left: 168,
     },
+    // Store screenshots are never cropped by a UI chrome overlay, so the safe area
+    // is purely a composition margin that keeps captions off the edges.
+    appstore: {
+        top: 120,
+        right: 96,
+        bottom: 120,
+        left: 96,
+    },
+    appstore_ipad: {
+        top: 100,
+        right: 96,
+        bottom: 100,
+        left: 96,
+    },
+    playstore: {
+        top: 120,
+        right: 96,
+        bottom: 120,
+        left: 96,
+    },
 };
 
 export function getSafeAreaPadding(format: SafeAreaFormat): SafeAreaPadding {

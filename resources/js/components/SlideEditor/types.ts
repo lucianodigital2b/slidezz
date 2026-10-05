@@ -2,12 +2,38 @@ export const SLIDE_W = 1080;
 export const PANEL_LEFT = 160;
 export const PANEL_RIGHT = 300;
 
+/**
+ * Design canvases. Every format is authored 1080px wide (SLIDE_W) — the store
+ * formats keep the *aspect* of the device they target and are upscaled to the
+ * exact store pixel size on export (see EXPORT_TARGETS in ./appStore).
+ */
 export const FORMATS = {
-    post:    { w: 1080, h: 1350, ratio: '4:5' },
-    stories: { w: 1080, h: 1920, ratio: '9:16' },
+    post:          { w: 1080, h: 1350, ratio: '4:5' },
+    stories:       { w: 1080, h: 1920, ratio: '9:16' },
+    appstore:      { w: 1080, h: 2340, ratio: '19.5:9' },
+    appstore_ipad: { w: 1080, h: 1440, ratio: '3:4' },
+    playstore:     { w: 1080, h: 1920, ratio: '9:16' },
 } as const;
 
 export type Format = keyof typeof FORMATS;
+
+/** Formats that produce store listing screenshots rather than social posts. */
+export const STORE_FORMATS = ['appstore', 'appstore_ipad', 'playstore'] as const;
+
+export type StoreFormat = typeof STORE_FORMATS[number];
+
+/** Which store a format ships to — null for the social formats. */
+export type Store = 'appstore' | 'playstore';
+
+export function isStoreFormat(format: Format): format is StoreFormat {
+    return (STORE_FORMATS as readonly string[]).includes(format);
+}
+
+export function storeOf(format: Format): Store | null {
+    if (format === 'playstore') return 'playstore';
+    if (format === 'appstore' || format === 'appstore_ipad') return 'appstore';
+    return null;
+}
 
 export type Tool = 'select' | 'text' | 'rect' | 'circle' | 'image' | 'button';
 export type Align = 'left' | 'center' | 'right' | 'justify';

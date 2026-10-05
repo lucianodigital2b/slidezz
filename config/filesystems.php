@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Media Disk
+    |--------------------------------------------------------------------------
+    |
+    | Where publicly reachable post media lives (carousel exports, rendered
+    | TikTok slides). Social platforms fetch these files by URL, so this disk
+    | must serve them publicly.
+    |
+    */
+
+    'media_disk' => env('MEDIA_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -59,7 +72,7 @@ return [
             'throw' => false,
             'report' => false,
         ],
-        
+
         'r2' => [
             'driver' => 's3',
             'key' => env('R2_ACCESS_KEY_ID'),

@@ -35,7 +35,7 @@ class SlideTemplateController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'format' => ['required', 'string', 'in:post,stories'],
+            'format' => ['required', 'string', 'in:post,stories,appstore,appstore_ipad,playstore'],
             'slides' => ['required', 'array', 'min:1'],
             'thumbnail' => ['nullable', 'string'],
         ]);

@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarDays, Layers, LineChart, Sparkles, Zap, Settings, MessageCircle, Rocket } from 'lucide-react';
+import { CalendarDays, Clapperboard, Images, Layers, LineChart, MessageCircle, Music2, Rocket, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
 import { edit as billingEdit } from '@/routes/billing';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
@@ -32,8 +32,12 @@ export function AppSidebar() {
                   { title: t('sidebar.analytics'), href: '/analytics', icon: LineChart },
               ]
             : []),
-        // { title: t('sidebar.automations'), href: '/automations', icon: Zap },
+        { title: t('sidebar.tiktok'), href: '/tiktok/create', icon: Music2 },
+        { title: t('sidebar.automations'), href: '/automations', icon: Zap },
+        { title: t('sidebar.mediaLibrary'), href: '/media-library', icon: Images },
         { title: t('sidebar.slideshowEditor'), href: '/slideshow-editor', icon: Layers },
+        { title: t('sidebar.videos'), href: '/videos', icon: Clapperboard },
+        { title: t('sidebar.appScreenshots'), href: '/app-screenshots/create', icon: Smartphone },
         { title: t('sidebar.settings'), href: '/settings/profile', icon: Settings },
     ];
 

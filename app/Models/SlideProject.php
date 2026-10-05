@@ -12,12 +12,14 @@ class SlideProject extends Model
         'caption',
         'format',
         'slides',
+        'localizations',
         'prompt',
         'template',
     ];
 
     protected $casts = [
         'slides' => 'array',
+        'localizations' => 'array',
     ];
 
     public function workspace()

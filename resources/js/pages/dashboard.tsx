@@ -11,6 +11,7 @@ import {
     KeyRound,
     PenLine,
     Search,
+    Smartphone,
     Sparkles,
     Trash2,
 } from 'lucide-react';
@@ -476,6 +477,13 @@ export default function Dashboard({
                         >
                             <PenLine className="h-4 w-4" />
                             {t('dashboard.actions.scratch.button')}
+                        </Link>
+                        <Link
+                            href="/app-screenshots/create"
+                            className="inline-flex items-center gap-2 rounded-full border border-[#1A1A1A] px-6 py-2.5 text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+                        >
+                            <Smartphone className="h-4 w-4" />
+                            {t('dashboard.actions.appScreenshots.button')}
                         </Link>
                     </div>
                 </FadeIn>

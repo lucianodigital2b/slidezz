@@ -110,7 +110,8 @@
       "undo": "Undo (Ctrl+Z)",
       "redo": "Redo (Ctrl+Y)",
       "overview": "Overview",
-      "editView": "Edit"
+      "editView": "Edit",
+      "createVideo": "Create video"
     },
     "strip": {
       "clickToEdit": "Click a slide to edit it"
@@ -124,7 +125,11 @@
     },
     "formats": {
       "post": "Post",
-      "stories": "Stories"
+      "stories": "Stories",
+      "appstore": "App Store (iPhone)",
+      "appstore_ipad": "App Store (iPad)",
+      "playstore": "Play Store",
+      "storeGroup": "App stores"
     },
     "properties": {
       "panel": "PROPERTIES",
@@ -324,7 +329,8 @@
       "exportFailed": "Failed to export slides.",
       "published": "Posted to Instagram.",
       "publishFailed": "Failed to publish to Instagram.",
-      "slidesCountError": "Instagram carousels require between 2 and 10 slides."
+      "slidesCountError": "Instagram carousels require between 2 and 10 slides.",
+      "videoFailed": "Could not create the video."
     },
     "dragDrop": {
       "hint": "Drop images to add them to the slide"
@@ -734,13 +740,17 @@
     "analytics": "Analytics",
     "schedule": "Schedule",
     "slideshows": "Slideshows",
+    "tiktok": "TikToks",
     "automations": "Automations",
+    "mediaLibrary": "Media Library",
     "slideshowEditor": "Slideshow Editor",
     "imageCollections": "Image Collections",
     "database": "Database",
     "settings": "Settings",
     "credits": "Credits",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "appScreenshots": "Store screenshots",
+    "videos": "Videos"
   },
   "generate": {
     "pageTitle": "Generate Ideas",
@@ -799,6 +809,9 @@
         "title": "Start from scratch",
         "description": "Use the editor to design your slides manually.",
         "button": "Start from scratch"
+      },
+      "appScreenshots": {
+        "button": "Store screenshots"
       }
     },
     "geminiAlert": {
@@ -1038,5 +1051,163 @@
     "statusFailed": "Failed",
     "weekDays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
     "months": "January,February,March,April,May,June,July,August,September,October,November,December"
+  },
+  "appScreenshots": {
+    "wizard": {
+      "pageTitle": "Store screenshots",
+      "projectSuffix": "store screenshots",
+      "generateBtn": "Generate screenshots",
+      "uploadError": "Could not read that image.",
+      "tooLarge": "Those images are too large. Remove a few or use smaller files.",
+      "steps": {
+        "app": "App",
+        "screens": "Screens",
+        "style": "Style"
+      },
+      "step1": {
+        "title": "About the app",
+        "subtitle": "This is what the AI writes each caption from.",
+        "appNameLabel": "App name",
+        "appNamePlaceholder": "Slidezz",
+        "pitchLabel": "What the app does",
+        "pitchHint": "Describe the problem it solves and for whom. The more concrete, the better the caption.",
+        "pitchPlaceholder": "An app that generates carousels and store screenshots with AI for Instagram sellers...",
+        "formatLabel": "Format",
+        "languageLabel": "Source language",
+        "maxShots": "up to {{count}} screenshots"
+      },
+      "step2": {
+        "title": "Your screens",
+        "subtitle": "Upload your app screenshots in the order they should appear on the store (up to {{max}}).",
+        "uploadCta": "Upload screenshots",
+        "uploadHint": "PNG or JPG, straight from the simulator or the device",
+        "screenNumber": "Screen {{number}}",
+        "labelPlaceholder": "What this screen shows (optional)",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "remove": "Remove"
+      },
+      "step3": {
+        "title": "Style and languages",
+        "subtitle": "Pick how the screenshots look and which locales you ship.",
+        "themeLabel": "Theme",
+        "frameLabel": "Device",
+        "layoutLabel": "Composition",
+        "layouts": {
+          "caption_top": "Caption on top",
+          "caption_bottom": "Caption at the bottom",
+          "alternate": "Alternating"
+        },
+        "aiCopyLabel": "Write the captions with AI",
+        "aiCopyDesc": "One headline and one supporting line per screen, in the language you picked.",
+        "toneLabel": "Tone of voice",
+        "tonePlaceholder": "direct, confident, no jargon",
+        "localesLabel": "Store languages",
+        "localesHint": "Each language becomes a full translated screenshot set, exported in its own folder.",
+        "summary": "Summary",
+        "summaryLine": "{{shots}} screenshots at {{size}}, {{theme}} theme, {{locales}} languages."
+      }
+    },
+    "localization": {
+      "title": "Store languages",
+      "short": "Languages",
+      "subtitle": "{{store}} - {{count}} strings per language",
+      "sourceLabel": "Source language",
+      "sourceHint": "The screenshots as you wrote them.",
+      "progress": "{{done}} of {{total}} translated",
+      "preview": "Preview on canvas",
+      "translate": "Translate",
+      "retranslate": "Translate again",
+      "translateAll": "Translate all",
+      "remove": "Remove language",
+      "addLocale": "Add language",
+      "allAdded": "Every language has been added.",
+      "screen": "Screen {{number}}",
+      "sizesLabel": "Export sizes",
+      "exportZip": "Export ZIP ({{count}} sets)",
+      "exportStoreMenu": "Export for the store...",
+      "errors": {
+        "premium_required": "Activate lifetime access to translate screenshots with AI.",
+        "server_error": "Could not translate right now. Try again.",
+        "network_error": "Connection failed while translating."
+      }
+    },
+    "status": {
+      "writing": "Writing the screenshot captions...",
+      "building": "Composing the store screenshots..."
+    }
+  },
+  "videos": {
+    "title": "Videos",
+    "subtitle": "Turn slideshows and clips into videos for TikTok and Reels.",
+    "new": "New video",
+    "empty": "No videos yet. Start from scratch or use \"Create video\" in the slideshow editor.",
+    "clips": "{{count}} clips",
+    "delete": "Delete",
+    "confirmDelete": "Delete this video?",
+    "untitled": "Untitled video",
+    "status": {
+      "draft": "Draft",
+      "rendering": "Rendering",
+      "ready": "Ready",
+      "failed": "Failed"
+    }
+  },
+  "videoEditor": {
+    "back": "Back",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveError": "Save failed",
+    "export": "Export MP4",
+    "rendering": "Rendering {{progress}}%",
+    "download": "Download MP4",
+    "renderFailed": "Render failed: {{error}}",
+    "addMedia": "Add media",
+    "uploading": "Uploading…",
+    "uploadFailed": "Could not upload {{name}}",
+    "emptyTimeline": "Add images or videos to get started.",
+    "selectClip": "Select a clip on the timeline to edit it.",
+    "format": "Format",
+    "formats": {
+      "stories": "Vertical 9:16",
+      "post": "Feed 4:5"
+    },
+    "clip": "Clip {{index}}",
+    "duration": "Duration (s)",
+    "trimStart": "Start at (s)",
+    "transition": "Entry transition",
+    "transitions": {
+      "none": "None",
+      "fade": "Fade",
+      "slide": "Slide",
+      "wipe": "Wipe"
+    },
+    "text": "Text",
+    "textPlaceholder": "Text over the clip",
+    "textPosition": "Text position",
+    "positions": {
+      "top": "Top",
+      "center": "Center",
+      "bottom": "Bottom"
+    },
+    "zoom": "Slow zoom",
+    "muted": "Mute clip audio",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "remove": "Remove",
+    "music": "Music",
+    "addMusic": "Add music",
+    "removeMusic": "Remove music",
+    "volume": "Volume",
+    "totalDuration": "Total length: {{seconds}}s"
+  },
+  "tiktokDraft": {
+    "send": "Send to TikTok",
+    "connect": "Connect TikTok",
+    "sending": "Sending draft to TikTok…",
+    "sent": "Draft sent to TikTok",
+    "sentDescription": "Open TikTok as @{{handle}}: the draft shows up in your inbox notifications. Add a sound and caption, then post.",
+    "failed": "TikTok refused the upload.",
+    "stillSending": "The upload is taking a while. Check the calendar in a few minutes."
   }
 }

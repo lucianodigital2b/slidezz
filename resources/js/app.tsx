@@ -33,6 +33,7 @@ createInertiaApp({
             case name === 'Onboarding':
             case name === 'LandingEn':
             case name === 'SlideEditor':
+            case name === 'VideoEditor':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

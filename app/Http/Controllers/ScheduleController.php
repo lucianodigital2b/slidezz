@@ -9,6 +9,7 @@ use App\Models\SocialAccount;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,6 +42,10 @@ class ScheduleController extends Controller
                     }
                 }
 
+                $data = $s->contentProject->script_data ?? [];
+                $paths = array_filter(array_column((array) ($data['slides'] ?? []), 'path'));
+                $disk = Storage::disk(config('filesystems.media_disk'));
+
                 return [
                     'id' => $s->id,
                     'status' => $s->status->value,
@@ -50,6 +55,11 @@ class ScheduleController extends Controller
                         'id' => $s->contentProject->id,
                         'title' => Str::limit($title, 100),
                         'video_url' => $s->contentProject->video_url,
+                        'caption' => (string) ($data['caption'] ?? ''),
+                        // Same precedence as the publishers: rendered slides first, then uploaded URLs.
+                        'images' => $paths !== []
+                            ? array_values(array_map(fn (string $path): string => url($disk->url($path)), $paths))
+                            : array_values(array_filter((array) ($data['image_urls'] ?? []))),
                     ],
                     'social_account' => [
                         'id' => $s->socialAccount->id,

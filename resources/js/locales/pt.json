@@ -269,13 +269,17 @@
     "analytics": "Analytics",
     "schedule": "Agenda",
     "slideshows": "Slideshows",
+    "tiktok": "TikToks",
     "automations": "Automações",
+    "mediaLibrary": "Biblioteca de mídias",
     "slideshowEditor": "Editor de Slideshow",
     "imageCollections": "Coleções de Imagens",
     "database": "Banco de Dados",
     "settings": "Configurações",
     "credits": "Créditos",
-    "upgrade": "Fazer upgrade"
+    "upgrade": "Fazer upgrade",
+    "appScreenshots": "Fotos da loja",
+    "videos": "Vídeos"
   },
   "generate": {
     "pageTitle": "Gerar Ideias",
@@ -334,6 +338,9 @@
         "title": "Começar do zero",
         "description": "Use o editor para criar seus slides manualmente.",
         "button": "Começar do zero"
+      },
+      "appScreenshots": {
+        "button": "Fotos da loja"
       }
     },
     "geminiAlert": {
@@ -449,7 +456,8 @@
       "undo": "Desfazer (Ctrl+Z)",
       "redo": "Refazer (Ctrl+Y)",
       "overview": "Visão geral",
-      "editView": "Editar"
+      "editView": "Editar",
+      "createVideo": "Criar vídeo"
     },
     "strip": {
       "clickToEdit": "Clique em um slide para editá-lo"
@@ -463,7 +471,11 @@
     },
     "formats": {
       "post": "Post",
-      "stories": "Stories"
+      "stories": "Stories",
+      "appstore": "App Store (iPhone)",
+      "appstore_ipad": "App Store (iPad)",
+      "playstore": "Play Store",
+      "storeGroup": "Lojas de apps"
     },
     "properties": {
       "panel": "PROPRIEDADES",
@@ -663,7 +675,8 @@
       "exportFailed": "Falha ao exportar slides.",
       "published": "Publicado no Instagram.",
       "publishFailed": "Falha ao publicar no Instagram.",
-      "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides."
+      "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides.",
+      "videoFailed": "Não foi possível criar o vídeo."
     },
     "dragDrop": {
       "hint": "Solte as imagens para adicionar ao slide"
@@ -1011,5 +1024,163 @@
       "audienceRequired": "Descreva seu público-alvo.",
       "toneRequired": "Selecione pelo menos um tom de voz."
     }
+  },
+  "appScreenshots": {
+    "wizard": {
+      "pageTitle": "Fotos da loja",
+      "projectSuffix": "fotos da loja",
+      "generateBtn": "Gerar telas",
+      "uploadError": "Nao foi possivel ler essa imagem.",
+      "tooLarge": "As imagens ficaram grandes demais. Remova algumas ou use arquivos menores.",
+      "steps": {
+        "app": "App",
+        "screens": "Telas",
+        "style": "Estilo"
+      },
+      "step1": {
+        "title": "Sobre o app",
+        "subtitle": "E com isso que a IA escreve as chamadas de cada tela.",
+        "appNameLabel": "Nome do app",
+        "appNamePlaceholder": "Slidezz",
+        "pitchLabel": "O que o app faz",
+        "pitchHint": "Descreva o problema que resolve e para quem. Quanto mais concreto, melhor a chamada.",
+        "pitchPlaceholder": "App que gera carrosseis e telas de loja com IA para quem vende no Instagram...",
+        "formatLabel": "Formato",
+        "languageLabel": "Idioma original",
+        "maxShots": "ate {{count}} telas"
+      },
+      "step2": {
+        "title": "Suas telas",
+        "subtitle": "Envie os prints do app na ordem em que devem aparecer na loja (ate {{max}}).",
+        "uploadCta": "Enviar prints",
+        "uploadHint": "PNG ou JPG, direto do simulador ou do device",
+        "screenNumber": "Tela {{number}}",
+        "labelPlaceholder": "O que essa tela mostra (opcional)",
+        "moveUp": "Mover para cima",
+        "moveDown": "Mover para baixo",
+        "remove": "Remover"
+      },
+      "step3": {
+        "title": "Estilo e idiomas",
+        "subtitle": "Escolha o visual das telas e em quais idiomas voce quer publicar.",
+        "themeLabel": "Tema",
+        "frameLabel": "Aparelho",
+        "layoutLabel": "Composicao",
+        "layouts": {
+          "caption_top": "Texto em cima",
+          "caption_bottom": "Texto embaixo",
+          "alternate": "Alternado"
+        },
+        "aiCopyLabel": "Escrever as chamadas com IA",
+        "aiCopyDesc": "Uma headline e uma linha de apoio por tela, no idioma escolhido.",
+        "toneLabel": "Tom de voz",
+        "tonePlaceholder": "direto, confiante, sem jargao",
+        "localesLabel": "Idiomas da loja",
+        "localesHint": "Cada idioma vira um conjunto completo de telas traduzidas, exportado em uma pasta propria.",
+        "summary": "Resumo",
+        "summaryLine": "{{shots}} telas em {{size}}, tema {{theme}}, {{locales}} idiomas."
+      }
+    },
+    "localization": {
+      "title": "Idiomas da loja",
+      "short": "Idiomas",
+      "subtitle": "{{store}} - {{count}} textos por idioma",
+      "sourceLabel": "Idioma original",
+      "sourceHint": "As telas como voce as escreveu.",
+      "progress": "{{done}} de {{total}} traduzidos",
+      "preview": "Ver no canvas",
+      "translate": "Traduzir",
+      "retranslate": "Traduzir de novo",
+      "translateAll": "Traduzir todos",
+      "remove": "Remover idioma",
+      "addLocale": "Adicionar idioma",
+      "allAdded": "Todos os idiomas ja foram adicionados.",
+      "screen": "Tela {{number}}",
+      "sizesLabel": "Tamanhos de exportacao",
+      "exportZip": "Exportar ZIP ({{count}} conjuntos)",
+      "exportStoreMenu": "Exportar para a loja...",
+      "errors": {
+        "premium_required": "Ative o acesso vitalicio para traduzir as telas com IA.",
+        "server_error": "Nao foi possivel traduzir agora. Tente de novo.",
+        "network_error": "Falha de conexao ao traduzir."
+      }
+    },
+    "status": {
+      "writing": "Escrevendo as chamadas das telas...",
+      "building": "Montando as telas da loja..."
+    }
+  },
+  "videos": {
+    "title": "Vídeos",
+    "subtitle": "Transforme slideshows e clipes em vídeos para TikTok e Reels.",
+    "new": "Novo vídeo",
+    "empty": "Nenhum vídeo ainda. Crie um do zero ou use \"Criar vídeo\" no editor de slideshow.",
+    "clips": "{{count}} clipes",
+    "delete": "Excluir",
+    "confirmDelete": "Excluir este vídeo?",
+    "untitled": "Vídeo sem título",
+    "status": {
+      "draft": "Rascunho",
+      "rendering": "Renderizando",
+      "ready": "Pronto",
+      "failed": "Falhou"
+    }
+  },
+  "videoEditor": {
+    "back": "Voltar",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "saveError": "Erro ao salvar",
+    "export": "Exportar MP4",
+    "rendering": "Renderizando {{progress}}%",
+    "download": "Baixar MP4",
+    "renderFailed": "O render falhou: {{error}}",
+    "addMedia": "Adicionar mídia",
+    "uploading": "Enviando…",
+    "uploadFailed": "Falha ao enviar {{name}}",
+    "emptyTimeline": "Adicione imagens ou vídeos para começar.",
+    "selectClip": "Selecione um clipe na timeline para editar.",
+    "format": "Formato",
+    "formats": {
+      "stories": "Vertical 9:16",
+      "post": "Feed 4:5"
+    },
+    "clip": "Clipe {{index}}",
+    "duration": "Duração (s)",
+    "trimStart": "Começar em (s)",
+    "transition": "Transição de entrada",
+    "transitions": {
+      "none": "Nenhuma",
+      "fade": "Fade",
+      "slide": "Deslizar",
+      "wipe": "Cortina"
+    },
+    "text": "Texto",
+    "textPlaceholder": "Texto por cima do clipe",
+    "textPosition": "Posição do texto",
+    "positions": {
+      "top": "Topo",
+      "center": "Centro",
+      "bottom": "Base"
+    },
+    "zoom": "Zoom lento",
+    "muted": "Tirar o som do clipe",
+    "moveLeft": "Mover para a esquerda",
+    "moveRight": "Mover para a direita",
+    "remove": "Remover",
+    "music": "Música",
+    "addMusic": "Adicionar música",
+    "removeMusic": "Remover música",
+    "volume": "Volume",
+    "totalDuration": "Duração total: {{seconds}}s"
+  },
+  "tiktokDraft": {
+    "send": "Enviar pro TikTok",
+    "connect": "Conectar TikTok",
+    "sending": "Enviando rascunho pro TikTok…",
+    "sent": "Rascunho enviado pro TikTok",
+    "sentDescription": "Abra o TikTok em @{{handle}}: o rascunho chega nas notificações da caixa de entrada. Adicione o som e a legenda e poste.",
+    "failed": "O TikTok recusou o envio.",
+    "stillSending": "O envio está demorando. Confira o calendário em alguns minutos."
   }
 }
