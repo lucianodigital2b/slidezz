@@ -32,6 +32,9 @@ git reset --hard --quiet "$SHA"
 echo "==> composer"
 $PHP /usr/local/bin/composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --quiet
 
+# Sem isso o wayfinder lê o route cache antigo e o build quebra nas rotas novas.
+$PHP artisan optimize:clear
+
 echo "==> npm"
 npm ci --no-audit --no-fund --loglevel=error
 npm run build --silent
