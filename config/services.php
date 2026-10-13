@@ -1,0 +1,115 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Third Party Services
+    |--------------------------------------------------------------------------
+    |
+    | This file is for storing the credentials for third party services such
+    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+    | location for this type of information, allowing packages to have
+    | a conventional file to locate the various service credentials.
+    |
+    */
+
+    'postmark' => [
+        'key' => env('POSTMARK_API_KEY'),
+    ],
+
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'instagram' => [
+        'client_id' => env('INSTAGRAM_CLIENT_ID'),
+        'client_secret' => env('INSTAGRAM_CLIENT_SECRET'),
+        'redirect' => env('INSTAGRAM_REDIRECT_URI', '/social-accounts/instagram/callback'),
+        // Comma-separated user IDs allowed to see/use the Instagram integration
+        // while it is gated for Meta App Review (empty = nobody).
+        'feature_user_ids' => env('INSTAGRAM_FEATURE_USER_IDS', ''),
+        // Token echoed back on the Meta webhook subscription handshake. The POST
+        // deliveries are signed with `client_secret` (the Meta app secret).
+        'webhook_verify_token' => env('INSTAGRAM_WEBHOOK_VERIFY_TOKEN'),
+    ],
+
+    'tiktok' => [
+        'client_id' => env('TIKTOK_CLIENT_ID'),
+        'client_secret' => env('TIKTOK_CLIENT_SECRET'),
+        'redirect' => env('TIKTOK_REDIRECT_URI', '/tiktok/callback'),
+        'webhook_secret' => env('TIKTOK_WEBHOOK_SECRET'),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
+    'unsplash' => [
+        'access_key' => env('UNSPLASH_ACCESS_KEY'),
+    ],
+
+    'pinterest' => [
+        // Pinterest has no public search API; the slideshow generator calls the same
+        // JSON resource the website uses, which rejects requests without a browser UA.
+        'user_agent' => env('PINTEREST_USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'),
+    ],
+
+    'carousel_image' => [
+        // Image generation driver: 'gemini' (gemini-2.5-flash-image, cinematic
+        // subject-accurate), 'openai' (gpt-image-1, paid), or 'unsplash' (free stock search).
+        'driver' => env('CAROUSEL_IMAGE_DRIVER', 'gemini'),
+        // Kill-switch: cover the onboarding "aha" preview images on the platform key
+        // when the user hasn't connected their own Gemini key yet. Treated as marketing
+        // spend (CAC) and capped once per user. Off by default.
+        'onboarding_preview' => env('ONBOARDING_PREVIEW_IMAGES', false),
+    ],
+
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
+    'elevenlabs' => [
+        'api_key' => env('ELEVENLABS_API_KEY'),
+        'voice_id' => env('ELEVENLABS_VOICE_ID'),
+    ],
+
+    'remotion' => [
+        // Node binary that runs resources/js/remotion/render.mjs.
+        'node_binary' => env('REMOTION_NODE_BINARY', 'node'),
+        // Prebuilt composition bundle (`npm run remotion:bundle`). Unset, every render
+        // bundles from source — fine locally, a ~15s tax per render in production.
+        'bundle_path' => env('REMOTION_BUNDLE_PATH'),
+        // Chrome tabs rendering frames in parallel; null lets Remotion pick from the CPU count.
+        'concurrency' => env('REMOTION_CONCURRENCY'),
+        'timeout' => (int) env('REMOTION_TIMEOUT', 1500),
+    ],
+
+    'meta' => [
+        // Browser Pixel id (also used by the Conversions API endpoint).
+        'pixel_id' => env('META_PIXEL_ID'),
+        // Conversions API system-user access token.
+        'capi_token' => env('META_CAPI_TOKEN'),
+        // Optional: set while validating events in Events Manager > Test events.
+        'test_event_code' => env('META_TEST_EVENT_CODE'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v21.0'),
+    ],
+
+];

@@ -1,0 +1,1213 @@
+{
+  "auth": {
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "login": {
+      "title": "Good to see you again",
+      "description": "Sign in and get back to creating scroll-stopping carousels in under 1 minute.",
+      "headTitle": "Sign in",
+      "imageAlt": "Creator smiling while working on a laptop in a café",
+      "testimonialQuote": "I went from 3 hours per carousel to 3 minutes. My saves tripled.",
+      "testimonialAuthor": "Marina Duarte",
+      "testimonialRole": "Content strategist",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Keep me signed in",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create your Slidezz account",
+      "description": "Start publishing professional carousels today, without opening Canva.",
+      "headTitle": "Sign up",
+      "imageAlt": "Creator smiling with a phone in hand at a workspace",
+      "testimonialQuote": "I post every day now. I closed 4 consulting deals straight from the carousels.",
+      "testimonialAuthor": "Rafael Nunes",
+      "testimonialRole": "Marketing consultant",
+      "name": "Name",
+      "namePlaceholder": "Full name",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "passwordRequirements": {
+        "length": "At least 8 characters",
+        "mixedCase": "Uppercase and lowercase letters",
+        "number": "At least one number",
+        "symbol": "At least one symbol"
+      },
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "logIn": "Sign in"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "description": "Enter your email to receive a password reset link",
+      "headTitle": "Forgot password",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "returnToLogin": "Or, return to",
+      "logIn": "sign in"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "description": "Please enter your new password below",
+      "headTitle": "Reset password",
+      "email": "Email",
+      "password": "New password",
+      "passwordPlaceholder": "New password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Reset password"
+    },
+    "verifyEmail": {
+      "title": "Verify email",
+      "description": "Please verify your email address by clicking the link we just sent you.",
+      "headTitle": "Email verification",
+      "linkSent": "A new verification link has been sent to the email address you provided during sign up.",
+      "resend": "Resend verification email",
+      "logOut": "Log out"
+    },
+    "confirmPassword": {
+      "title": "Confirm your password",
+      "description": "This is a secure area of the application. Please confirm your password before continuing.",
+      "headTitle": "Confirm password",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "submit": "Confirm password"
+    }
+  },
+  "slideEditor": {
+    "pageTitle": "Slideshow Editor",
+    "toolbar": {
+      "select": "Select",
+      "text": "Text",
+      "button": "Button",
+      "rect": "Rectangle",
+      "circle": "Circle",
+      "image": "Image",
+      "gradient": "Gradient",
+      "background": "Background",
+      "untitled": "Untitled",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveError": "Error saving",
+      "save": "Save",
+      "saveAsTemplate": "Save as template",
+      "templateSaved": "Template saved",
+      "exportPng": "Export PNG",
+      "export": "Export",
+      "exportCurrentPng": "Current slide (PNG)",
+      "exportAllZip": "All slides (ZIP, {{count}})",
+      "exportMetadata": "Debug: export metadata (JSON)",
+      "undo": "Undo (Ctrl+Z)",
+      "redo": "Redo (Ctrl+Y)",
+      "overview": "Overview",
+      "editView": "Edit",
+      "createVideo": "Create video"
+    },
+    "strip": {
+      "clickToEdit": "Click a slide to edit it"
+    },
+    "slides": {
+      "panel": "SLIDES",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "prevSlide": "Previous slide",
+      "nextSlide": "Next slide"
+    },
+    "formats": {
+      "post": "Post",
+      "stories": "Stories",
+      "appstore": "App Store (iPhone)",
+      "appstore_ipad": "App Store (iPad)",
+      "playstore": "Play Store",
+      "storeGroup": "App stores"
+    },
+    "properties": {
+      "panel": "PROPERTIES",
+      "empty": "Select an element to edit its properties"
+    },
+    "sections": {
+      "transform": "Transform",
+      "text": "Text",
+      "typography": "Typography",
+      "textStroke": "Text Outline",
+      "accentBorder": "Accent Border",
+      "fill": "Fill",
+      "border": "Border",
+      "slideBackground": "Slide Background",
+      "colorOverlay": "Color Overlay",
+      "toneColor": "Tone & Color",
+      "effects": "Effects",
+      "rgbChannels": "RGB Channels",
+      "shadow": "Shadow",
+      "gradient": "Gradient",
+      "button": "Button",
+      "buttonSpacing": "Spacing",
+      "buttonIcon": "Icon",
+      "wordHighlight": "Word Highlight"
+    },
+    "fields": {
+      "x": "X",
+      "y": "Y",
+      "width": "Width",
+      "height": "Height",
+      "rotation": "Rotation",
+      "opacity": "Opacity",
+      "content": "Content",
+      "textColor": "Text color",
+      "font": "Font",
+      "size": "Size",
+      "weight": "Weight",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strikethrough": "Strikethrough",
+      "alignH": "Horizontal alignment",
+      "alignV": "Vertical alignment",
+      "lineHeight": "Line height",
+      "letterSpacing": "Letter spacing",
+      "padding": "Padding",
+      "lineBreak": "Line break",
+      "lineBreakWord": "By word",
+      "lineBreakChar": "By character",
+      "lineBreakNone": "No break",
+      "color": "Color",
+      "thickness": "Thickness",
+      "enableBorder": "Enable border",
+      "position": "Position",
+      "spacing": "Spacing",
+      "cornerRadius": "Corner radius",
+      "borderStyle": "Style",
+      "useAsBackground": "Use as background",
+      "bgSize": "Size",
+      "bgCover": "Cover",
+      "bgContain": "Contain",
+      "bgFill": "Stretch",
+      "focalPoint": "Focal point",
+      "positionX": "Position X",
+      "positionY": "Position Y",
+      "enableOverlay": "Enable overlay",
+      "brightness": "Brightness",
+      "contrast": "Contrast",
+      "saturation": "Saturation",
+      "hue": "Hue",
+      "luminance": "Luminance",
+      "blur": "Blur",
+      "enhance": "Enhance",
+      "noise": "Noise",
+      "pixelate": "Pixelate",
+      "grayscale": "Black & White",
+      "sepia": "Sepia",
+      "red": "Red",
+      "green": "Green",
+      "blue": "Blue",
+      "enableShadow": "Enable shadow",
+      "shadowBlur": "Blur",
+      "shadowOffsetX": "Offset X",
+      "shadowOffsetY": "Offset Y",
+      "gradientDirection": "Direction",
+      "bgColor": "Background color",
+      "bgEnabled": "Enable background",
+      "paddingX": "Horizontal padding",
+      "paddingY": "Vertical padding",
+      "stylePreset": "Style",
+      "icon": "Icon / Emoji",
+      "iconPosition": "Position",
+      "iconLeft": "← Left",
+      "iconRight": "Right →",
+      "enableIcon": "Enable icon"
+    },
+    "buttonStyles": {
+      "filled": "Filled",
+      "outlined": "Outlined",
+      "ghost": "Ghost",
+      "glass": "Glass"
+    },
+    "gradientDirections": {
+      "bottom": "↓ Bottom",
+      "top": "↑ Top",
+      "left": "← Left",
+      "right": "Right →"
+    },
+    "accentSides": {
+      "left": "← Left",
+      "right": "Right →",
+      "top": "↑ Top",
+      "bottom": "↓ Bottom"
+    },
+    "deleteElement": "Delete element",
+    "searchFont": "Search font...",
+    "moreFonts": "+{{count}} fonts — refine search",
+    "noFonts": "No fonts found",
+    "ai": {
+      "generate": "AI Generate",
+      "modalTitle": "Generate Carousel with AI",
+      "topicLabel": "Topic",
+      "topicPlaceholder": "e.g. 5 tips to grow on Instagram...",
+      "styleLabel": "Style (optional)",
+      "visualStyleLabel": "Visual Style",
+      "stylePlaceholder": "e.g. minimalist, vibrant, corporate...",
+      "imageStyleLabel": "Image style (optional)",
+      "imageStylePlaceholder": "e.g. black & white, cinematic, film grain...",
+      "slideCountLabel": "Number of slides",
+      "generateBtn": "Generate",
+      "generateImagesLabel": "Images in carousel",
+      "wordHighlight": "Highlight a word per slide",
+      "imageMode": {
+        "none": "No images",
+        "background": "Background only",
+        "backgroundShort": "Background",
+        "grid": "Grid only",
+        "gridShort": "Grid",
+        "alternate": "Alternate both",
+        "alternateShort": "Alternate",
+        "mixed": "Hero cover + varied layouts",
+        "mixedShort": "Varied"
+      },
+      "statusGenerating": "Writing your slides…",
+      "statusGeneratingHint": "Creating each slide's content with AI",
+      "statusImages": "Generating background images…",
+      "statusImagesHint": "This may take a moment",
+      "statusDone": "Carousel ready! Check your slides panel.",
+      "doneBtn": "View slides",
+      "errorNetwork": "Network error. Please try again.",
+      "errorServer": "Server error. Please try again.",
+      "errorParsing": "Could not parse the generated content. Please try again.",
+      "errorNoCredits": "You're out of viral images. Purchase more to continue.",
+      "errorNoImageCredits": "You ran out of viral images, so some slides were generated without an image. The carousel text is unaffected.",
+      "errorMissingGeminiKey": "Your slides were generated without images because you haven't connected your Gemini key yet. Go to Settings → Integrations, paste your free Google AI Studio key, and generate the images again.",
+      "errorPremiumRequired": "Activate lifetime access in Settings → Billing to generate with AI. Limited-time launch offer!"
+    },
+    "templates": {
+      "panel": "TEMPLATES",
+      "apply": "Apply"
+    },
+    "shapes": {
+      "basic": "Basic Shapes",
+      "lines": "Lines",
+      "arrows": "Arrows",
+      "decorative": "Decorative",
+      "balloons": "Balloons",
+      "icons": "Icons",
+      "searchIcons": "Search icons...",
+      "noIcons": "No icons found"
+    },
+    "elements": {
+      "title": "TITLE",
+      "subtitle": "subtitle",
+      "largeText": "Large text",
+      "cleanHere": "and clean here",
+      "slideDescription": "Slide description",
+      "brutal": "BRUTAL",
+      "style": "STYLE",
+      "investigation": "INVESTIGATION",
+      "slideTitle": "Slide Title",
+      "text": "Text",
+      "big": "BIG",
+      "subtitleHere": "Subtitle here"
+    },
+    "actions": {
+      "bringToFront": "Bring to Front",
+      "bringForward": "Bring Forward",
+      "sendBackward": "Send Backward",
+      "sendToBack": "Send to Back",
+      "elements": "Elements",
+      "clearAll": "Clear all"
+    },
+    "alerts": {
+      "switchFormat": "Switch format to Post (3:4) to publish a carousel to Instagram.",
+      "saveFirst": "Could not save slideshow before publishing.",
+      "exportFailed": "Failed to export slides.",
+      "published": "Posted to Instagram.",
+      "publishFailed": "Failed to publish to Instagram.",
+      "slidesCountError": "Instagram carousels require between 2 and 10 slides.",
+      "videoFailed": "Could not create the video."
+    },
+    "dragDrop": {
+      "hint": "Drop images to add them to the slide"
+    },
+    "globalPanel": {
+      "background": "Background",
+      "quickPalettes": "Quick Palettes",
+      "bgColor": "Background Color",
+      "transparent": "Transparent",
+      "text": "Text",
+      "addTextLayer": "Add text layer",
+      "addTextLayerHint": "Click to add to canvas",
+      "textLayers": "Text Layers",
+      "corners": "Corners",
+      "cornersTexts": "TEXTS",
+      "cornerTopLeft": "TOP L.",
+      "cornerTopRight": "TOP R.",
+      "cornerBottomLeft": "BOT. L.",
+      "cornerBottomRight": "BOT. R.",
+      "cornerPlaceholder": "Text...",
+      "showCorners": "Show corners",
+      "showDots": "Quantity indicators (dots)",
+      "cornerIcon": "ICON — BOTTOM RIGHT",
+      "profileBadge": "Profile Badge",
+      "profileBadgeDesc": "Overlay with profile photo and handle. Applied per slide.",
+      "profileBadgeShow": "Show profile badge",
+      "profileBadgeVerified": "Verified account",
+      "profileBadgeStyle": "BADGE STYLE",
+      "profileBadgeStyleGlass": "Glass",
+      "profileBadgeStyleSolid": "Solid",
+      "profileBadgeStyleMinimal": "Minimal",
+      "profileBadgeStyleDivider": "Divider",
+      "profileBadgeStyleTweet": "Tweet",
+      "profileBadgeName": "DISPLAY NAME",
+      "profileBadgeNamePlaceholder": "Your Name",
+      "profileBadgeHandle": "@ HANDLE",
+      "profileBadgeHandlePlaceholder": "your.handle",
+      "profileBadgePhoto": "BADGE PHOTO",
+      "profileBadgePhotoHint": "PHOTO (URL OR UPLOAD)",
+      "profileBadgePaste": "Paste from clipboard",
+      "profileBadgeSize": "BADGE SIZE",
+      "profileBadgeApplyAll": "Apply to all slides",
+      "caption": "Caption",
+      "captionEmpty": "Add caption",
+      "captionHint": "Click to edit",
+      "captionEdit": "Edit",
+      "captionSave": "Save",
+      "captionModalTitle": "Edit Caption",
+      "captionPlaceholder": "Write the post caption...",
+      "captionChars": "{{count}} characters",
+      "captionLimitWarning": "Near Instagram limit (2200)",
+      "layout": "Layout",
+      "layoutSlide": "Slide {{index}}",
+      "layouts": {
+        "bg_photo": {
+          "name": "Photo background",
+          "desc": "Full-bleed photo, text overlay"
+        },
+        "text_photo_text": {
+          "name": "Text · photo · text",
+          "desc": "Title, photo card, body below"
+        },
+        "photo_top": {
+          "name": "Photo on top",
+          "desc": "Photo above, text below"
+        },
+        "photo_bottom": {
+          "name": "Photo on bottom",
+          "desc": "Text above, photo below"
+        },
+        "photo_left": {
+          "name": "Side photo",
+          "desc": "Photo left, text right"
+        },
+        "text_only": {
+          "name": "Text only",
+          "desc": "Text only, no image"
+        },
+        "image_only": {
+          "name": "Image only",
+          "desc": "Image only (text hidden)"
+        }
+      }
+    },
+    "rightPanel": {
+      "editingLayer": "Editing Layer",
+      "selectElement": "Select an element to edit its properties"
+    }
+  },
+  "createCarousel": {
+    "premiumRequired": "Activate lifetime access to generate AI carousels. Limited-time launch offer!",
+    "pageTitle": "Create Carousel",
+    "back": "Back",
+    "next": "Continue",
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "steps": {
+      "input": "Content",
+      "config": "Config",
+      "generate": "Generate"
+    },
+    "step1": {
+      "title": "About your carousel",
+      "subtitle": "Define the topic and main content of the carousel.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. 5 mistakes that are stopping your Instagram growth",
+      "topicLabel": "Description / Topic",
+      "topicPlaceholder": "Describe the main content. Can be a script, key points, or the central idea...",
+      "or": "or",
+      "importBtn": "Import from a URL",
+      "formatLabel": "Format"
+    },
+    "templates": {
+      "noir-manifesto": {
+        "name": "Noir Manifesto",
+        "description": "Full-bleed dark cover with gradient overlay and ALL CAPS impact title. Inner slides with orange accent bars and bold editorial typography."
+      },
+      "dark-cards": {
+        "name": "Dark Cards",
+        "description": "Full-bleed cover photo with centered title. Inner slides with rounded image cards on a dark background."
+      },
+      "pop-magazine": {
+        "name": "Pop Magazine",
+        "description": "Bold magazine cover with giant Anton title and red left bar. Inner slides with oversized typography and pop color accent strips."
+      },
+      "twitter-x": {
+        "name": "Twitter/X Style",
+        "description": "Clean white cover with large bold headline and blue accent divider. Inner slides with minimal editorial layout for maximum readability."
+      },
+      "acid-brutalist": {
+        "name": "Acid Brutalist",
+        "description": "Black cover with neon green outlined title and brutalist border frame. Inner slides with acid-green accents on dark backgrounds."
+      },
+      "documentary": {
+        "name": "Documentary",
+        "description": "Vintage investigative journalism cover with Playfair serif and archive stamp. Inner slides with sepia tones, editorial frames, and caption strips."
+      },
+      "ticket": {
+        "name": "Ticket",
+        "description": "Aesthetic serif headline on a die-cut ticket shape. Cover uses your workspace brand color; inner tickets are white. Corners carry the deck title, slide number, handle and logo."
+      },
+      "editorial-press": {
+        "name": "Editorial Press",
+        "description": "Editorial carousel: slides alternate between your workspace color and a contrasting neutral, with a heavy grotesque headline (and a high-contrast serif on reflective slides), a keyword highlighted in your accent, a cover profile chip, and a running header (source · @handle · month). Photos run full-bleed or as cards."
+      }
+    },
+    "archetypes": {
+      "disruptor-social": {
+        "name": "Social Disruptor",
+        "description": "A phenomenon that shocks and reveals a serious consequence for society."
+      },
+      "poder-oculto": {
+        "name": "Hidden Power",
+        "description": "Why does {group} act while {vulnerable} suffers in silence?"
+      },
+      "paradoxo-social": {
+        "name": "Social Paradox",
+        "description": "A shocking statement that flips conventional wisdom and shifts perspective."
+      },
+      "profecia-provocativa": {
+        "name": "Provocative Prophecy",
+        "description": "Authority predicted it; the event revealed it. A surprise revelation hook."
+      },
+      "estrategia-inusitada": {
+        "name": "Unusual Strategy",
+        "description": "How {person} used a surprising method and won."
+      },
+      "autoridade-cientifica": {
+        "name": "Scientific Authority",
+        "description": "Study proves a surprising result with a clear cause."
+      }
+    },
+    "step2": {
+      "templateTitle": "Visual Template",
+      "archetypeTitle": "Hook Archetype — Cover Slide",
+      "archetypeSubtitle": "Defines the emotional hook of the first slide.",
+      "preview": "Preview",
+      "previewEmpty": "Select a template to preview",
+      "hook": "Hook"
+    },
+    "step3": {
+      "title": "Ready to generate",
+      "subtitle": "Review your settings and click Generate to create your carousel with AI.",
+      "summaryTitle": "Content",
+      "template": "Template",
+      "archetype": "Archetype",
+      "format": "Format",
+      "slideCountLabel": "Number of slides",
+      "imageModeLabel": "Images in carousel",
+      "imageStyleLabel": "Image style (optional)",
+      "imageStylePlaceholder": "e.g. black & white, cinematic, film grain...",
+      "ctaImageLabel": "CTA image (optional)",
+      "ctaImageUpload": "Upload CTA image",
+      "ctaImageSet": "CTA image ready - it becomes the last slide.",
+      "ctaImageRemove": "Remove CTA image",
+      "ctaImageHint": "If set, the AI skips the CTA slide and your image is added as the final slide.",
+      "ctaImageError": "Could not read that image. Try another.",
+      "ctaImageTooLarge": "Image too large. Please use a smaller one.",
+      "languageLabel": "Content language",
+      "customPromptLabel": "Additional instructions (optional)",
+      "customPromptHint": "Add specific details, tone, or constraints for the AI to follow.",
+      "customPromptPlaceholder": "e.g. Use a formal tone, focus on data and statistics, avoid jargon...",
+      "saveConfigLabel": "Save as AI autopilot default",
+      "saveConfigDesc": "This template and archetype will be used automatically in future autopilot generations.",
+      "saveAsTemplateLabel": "Save result as a template",
+      "saveAsTemplateDesc": "When the AI finishes generating, the carousel is saved as a reusable template.",
+      "savedTemplatesTitle": "Your saved templates",
+      "savedTemplatesEmpty": "You haven't saved any templates yet.",
+      "useTemplate": "Use this template",
+      "generateBtn": "Generate Carousel"
+    },
+    "import": {
+      "title": "Import Content",
+      "subtitle": "Input Parser · AI Extraction",
+      "extractBtn": "Extract with AI",
+      "extractError": "Could not extract content.",
+      "networkError": "Network error. Please try again."
+    }
+  },
+  "onboarding": {
+    "header": {
+      "subtitle": "Set up your account in 6 simple steps",
+      "step": "Step {{current}} of {{total}}"
+    },
+    "steps": {
+      "goal": "Goal",
+      "brand": "Brand",
+      "audience": "Audience",
+      "identity": "Identity",
+      "style": "Style",
+      "gemini": "AI key"
+    },
+    "gemini": {
+      "title": "Connect your Gemini key",
+      "subtitle": "Your carousel images are generated with your own free Google Gemini key — unlimited, with no extra cost from Slidezz",
+      "label": "Gemini API key",
+      "placeholder": "AIza...",
+      "hint": "Takes 2 minutes, Google offers a free tier, and the key is stored encrypted.",
+      "guideLink": "How do I get my free key?",
+      "skip": "Skip for now"
+    },
+    "nav": {
+      "back": "Back",
+      "continue": "Continue",
+      "viewPlans": "Finish",
+      "seePreview": "See my carousels",
+      "saving": "Saving..."
+    },
+    "preview": {
+      "title": "Look what we made for {{brand}}",
+      "subtitle": "2 ready carousels in your brand's style. This is what you'll generate in seconds.",
+      "loading": "Creating 2 carousels tailored to your brand...",
+      "generating": "Generating...",
+      "language": "Carousel language",
+      "viewPlans": "See plans",
+      "error": "We couldn't generate the preview right now, but you can continue.",
+      "missingKey": "These are text-only. Connect your Gemini key in settings to also generate the carousel photos."
+    },
+    "advanced": {
+      "title": "Advanced settings",
+      "description": "These details help AI create even better content, but you can fill them in later.",
+      "extraLabel": "Anything else we should know?",
+      "extraPlaceholder": "Ex: We avoid mentioning competitors, our differentiator is customer service..."
+    },
+    "step1": {
+      "title": "What is your main goal?",
+      "subtitle": "Let's start by understanding your main objective",
+      "sellProducts": "Sell more products/services",
+      "sellProductsDesc": "Increase sales and conversions",
+      "buildAuthority": "Build authority",
+      "buildAuthorityDesc": "Become the reference in your niche",
+      "increaseEngagement": "Increase engagement",
+      "increaseEngagementDesc": "Build an active community",
+      "generateLeads": "Generate qualified leads",
+      "generateLeadsDesc": "Capture potential clients"
+    },
+    "step2": {
+      "title": "Tell us about your brand",
+      "subtitle": "Basic information to personalize your content",
+      "brandNameLabel": "Brand Name",
+      "brandNamePlaceholder": "Ex: My Company",
+      "brandDescLabel": "What does the brand do?",
+      "brandDescHint": "Describe in a few sentences the business, product or service",
+      "brandDescPlaceholder": "Ex: We sell women's clothing focused on sustainable fashion..."
+    },
+    "step3": {
+      "title": "Who is your target audience?",
+      "subtitle": "Describe the people you want to reach",
+      "audienceLabel": "Who is the ideal customer?",
+      "audienceHint": "Age, gender, location, profession, lifestyle",
+      "audiencePlaceholder": "Ex: Women 25-40 years old, entrepreneurs, living in big cities, seeking practicality..."
+    },
+    "step4": {
+      "title": "What is your brand's personality?",
+      "subtitle": "How do you want people to perceive your brand?",
+      "voiceToneLabel": "Voice tone",
+      "voiceToneHint": "Select the tones that best represent your brand",
+      "tones": {
+        "casual": "Casual",
+        "professional": "Professional",
+        "inspirational": "Inspirational",
+        "educational": "Educational",
+        "fun": "Fun",
+        "welcoming": "Welcoming",
+        "direct": "Direct",
+        "sophisticated": "Sophisticated",
+        "friendly": "Friendly",
+        "motivational": "Motivational"
+      }
+    },
+    "step5": {
+      "title": "Your brand style",
+      "subtitle": "Finalize the visual identity of your content",
+      "logoTitle": "Upload logo",
+      "logoSubtitle": "PNG, JPG or WebP up to 5MB",
+      "logoHint": "SVG accepted (converted to PNG)",
+      "logoClickOrDrag": "Click or drag your logo here",
+      "logoChange": "Click to change",
+      "logoRemove": "Remove logo",
+      "paletteTitle": "Brand colors",
+      "paletteCustomize": "Customize",
+      "paletteCurrentColors": "Current colors:",
+      "palettePrimary": "Primary",
+      "paletteSecondary": "Secondary",
+      "paletteAccent": "Accent",
+      "paletteMorePalettes": "See other palettes",
+      "visualStyleTitle": "Visual style description",
+      "visualStyleHint": "Describe the visual style you want for your content.",
+      "visualStylePlaceholder": "Ex: Modern and corporate, using sans-serif typography...",
+      "refineWithAI": "Refine with AI",
+      "addVisualRef": "Add visual reference",
+      "palettes": {
+        "sunset": "Sunset",
+        "softCoral": "Soft Coral",
+        "forest": "Forest",
+        "mint": "Mint"
+      },
+      "paletteApply": "Apply"
+    },
+    "plans": {
+      "title": "Choose your plan",
+      "subtitle": "14 days free. No charge now. Cancel at any time.",
+      "startFree": "Start {{plan}}",
+      "terms": "By subscribing, you agree to our terms of use. You can cancel before the end of the free period at no cost.",
+      "skip": "Skip for now",
+      "logout": "Log out",
+      "popular": "Most popular",
+      "lifetime": {
+        "name": "Lifetime",
+        "description": "Launch offer",
+        "badge": "Launch",
+        "priceNote": "one-time payment, no subscription",
+        "cta": "Get lifetime",
+        "features": [
+          "Lifetime access, no monthly fee",
+          "Unlimited carousels",
+          "Unlimited images with your Gemini key",
+          "All templates",
+          "Future updates included"
+        ]
+      }
+    },
+    "errors": {
+      "goalRequired": "Please select your main goal.",
+      "brandNameRequired": "Please enter your brand name.",
+      "brandDescRequired": "Please describe what your brand does.",
+      "audienceRequired": "Please describe your target audience.",
+      "toneRequired": "Please select at least one voice tone."
+    }
+  },
+  "creditsModal": {
+    "title": "Get more viral images",
+    "subtitle": "Each viral image uses 1 credit. Carousels are unlimited.",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "imagesPerMonth": "{{count}} viral images/month",
+    "subscribeTo": "Subscribe to {{plan}}",
+    "redirecting": "Redirecting…",
+    "noSubscription": "Prefer no subscription? Buy individual credits.",
+    "credits": "{{count}} credits",
+    "badgeMostPopular": "MOST POPULAR",
+    "badgeBestValue": "BEST VALUE",
+    "plans": {
+      "starter": {
+        "annualSub": "/mo, billed annually",
+        "features": [
+          "10 viral images per month",
+          "All templates",
+          "Email support"
+        ]
+      },
+      "pro": {
+        "annualSub": "/mo, billed annually",
+        "features": [
+          "30 viral images per month",
+          "All templates",
+          "Priority support",
+          "Early access"
+        ]
+      }
+    }
+  },
+  "sidebar": {
+    "generate": "Generate Ideas",
+    "newAutomation": "New Automation",
+    "home": "Home",
+    "library": "Library",
+    "analytics": "Analytics",
+    "schedule": "Schedule",
+    "slideshows": "Slideshows",
+    "tiktok": "TikToks",
+    "automations": "Automations",
+    "mediaLibrary": "Media Library",
+    "slideshowEditor": "Slideshow Editor",
+    "imageCollections": "Image Collections",
+    "database": "Database",
+    "settings": "Settings",
+    "credits": "Credits",
+    "upgrade": "Upgrade",
+    "appScreenshots": "Store screenshots",
+    "videos": "Videos"
+  },
+  "generate": {
+    "pageTitle": "Generate Ideas",
+    "eyebrow": "Create with AI",
+    "question": "What do you want to post today?",
+    "subtitle": "Pick one of today's ideas or describe your own."
+  },
+  "dashboard": {
+    "title": "Home",
+    "slideshowDatabase": "Slideshow Database",
+    "tabSlideshows": "Slideshows ({{count}})",
+    "tabUgc": "UGC Videos ({{count}})",
+    "pageInfo": "Page {{current}} of {{total}}",
+    "pageTitle": "Dashboard",
+    "promptLabel": "Prompt",
+    "copy": "Copy",
+    "open": "Open",
+    "duplicate": "Duplicate",
+    "prev": "Prev",
+    "next": "Next",
+    "question": "What are you creating today?",
+    "recentLabel": "Recent Projects",
+    "heroEyebrow": "Dashboard",
+    "heroSubtitle": "Generate a complete carousel in under a minute, or start from scratch in the editor.",
+    "ideas": {
+      "label": "Ideas of the day",
+      "regenerate": "Generate others",
+      "generatingShort": "Generating…",
+      "rateLimited": "Too many tries. Wait a moment and try again.",
+      "generating": "Reading your brand DNA…",
+      "generatingCount": "Generating 3 ideas",
+      "ideaLabel": "Idea {{n}}",
+      "error": "Couldn't generate ideas right now.",
+      "retry": "Try again",
+      "or": "or",
+      "describeLabel": "Describe your idea",
+      "describePlaceholder": "Ex: why customers stop following you after the first purchase…",
+      "create": "Create carousel"
+    },
+    "searchPlaceholder": "Search projects...",
+    "noResults": "No projects found for your search.",
+    "clearSearch": "Clear search",
+    "empty": "You don't have any projects yet. Create your first carousel to get started!",
+    "actions": {
+      "createAi": {
+        "title": "Create with AI",
+        "description": "Generate a complete carousel from a topic or text.",
+        "button": "Create with AI"
+      },
+      "train": {
+        "title": "Train AI",
+        "description": "Create automations to publish content effortlessly.",
+        "button": "Train AI"
+      },
+      "scratch": {
+        "title": "Start from scratch",
+        "description": "Use the editor to design your slides manually.",
+        "button": "Start from scratch"
+      },
+      "appScreenshots": {
+        "button": "Store screenshots"
+      }
+    },
+    "geminiAlert": {
+      "title": "You still need to connect your Gemini key",
+      "body": "Without it, your carousels come out without AI images. It takes 2 minutes and it's free.",
+      "cta": "Connect now"
+    },
+    "geminiModal": {
+      "title": "Connect your Gemini key",
+      "body": "To generate carousels with AI you need to connect your Gemini key. It's free and takes 2 minutes.",
+      "cta": "Connect Gemini key",
+      "cancel": "Not now"
+    },
+    "welcome": {
+      "title": "Welcome to Slidezz!",
+      "description": "Carousels are unlimited. To generate AI images, connect your free Google Gemini key in Settings → Integrations.",
+      "credits": "Unlimited images with your Gemini key",
+      "cta": "Create my first carousel"
+    }
+  },
+  "library": {
+    "title": "Library",
+    "subtitle": "Manage all your videos and content in one place",
+    "empty": "Your library is empty. Import or create content to get started."
+  },
+  "automations": {
+    "title": "Automations",
+    "subtitle": "Create automated flows to publish content effortlessly",
+    "newAutomation": "New Automation",
+    "empty": "No automations created yet. Create your first automation to get started."
+  },
+  "database": {
+    "title": "Database",
+    "subtitle": "Manage the data used in your slideshows and automations",
+    "newEntry": "New Entry",
+    "empty": "No data yet. Add entries to the database to use in your slideshows."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "or": "Or",
+    "password": "Password",
+    "email": "Email",
+    "name": "Name"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your profile and account settings",
+    "nav": {
+      "profile": "Profile",
+      "brand": "Brand",
+      "security": "Security",
+      "appearance": "Appearance",
+      "integrations": "Integrations",
+      "apiTokens": "API & MCP",
+      "billing": "Billing"
+    },
+    "profile": {
+      "title": "Profile settings",
+      "infoTitle": "Profile information",
+      "infoDescription": "Update your name and email address",
+      "name": "Name",
+      "namePlaceholder": "Full name",
+      "email": "Email",
+      "emailPlaceholder": "Email",
+      "emailUnverified": "Your email address is not verified.",
+      "resendVerification": "Click here to resend the verification email.",
+      "verificationSent": "A new verification link has been sent to your email address.",
+      "save": "Save",
+      "connectedAccounts": {
+        "title": "Connected Accounts",
+        "description": "Connect your social accounts to schedule posts",
+        "connect": "Add {{platform}}",
+        "disconnect": "Disconnect",
+        "confirmDisconnect": "Disconnect @{{handle}}?"
+      }
+    },
+    "security": {
+      "title": "Security settings",
+      "passwordTitle": "Update password",
+      "passwordDescription": "Make sure to use a long, random password to keep your account secure",
+      "currentPassword": "Current password",
+      "currentPasswordPlaceholder": "Current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "New password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "savePassword": "Save password",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorDescription": "Manage your two-factor authentication settings",
+      "twoFactorEnabledInfo": "You will be prompted for a secure, random PIN during login, available from your phone's TOTP-compatible app.",
+      "twoFactorDisabledInfo": "When you enable two-factor authentication, you will be prompted for a secure PIN during login. This PIN can be retrieved from a TOTP-compatible app on your phone.",
+      "disable2FA": "Disable 2FA",
+      "enable2FA": "Enable 2FA",
+      "continueSetup": "Continue setup",
+      "2fa": {
+        "enabledTitle": "Two-factor authentication enabled",
+        "enabledDescription": "Two-factor authentication is active. Scan the QR code or enter the setup key in your authenticator app.",
+        "verifyTitle": "Verify authentication code",
+        "verifyDescription": "Enter the 6-digit code from your authenticator app",
+        "setupTitle": "Enable two-factor authentication",
+        "setupDescription": "To finish enabling, scan the QR code or enter the setup key in your authenticator app",
+        "close": "Close",
+        "continue": "Continue",
+        "confirm": "Confirm",
+        "orEnterManually": "Or enter the code manually"
+      },
+      "recoveryCodes": {
+        "title": "2FA recovery codes",
+        "description": "Recovery codes let you regain access if you lose your 2FA device. Store them in a secure password manager.",
+        "view": "View recovery codes",
+        "hide": "Hide recovery codes",
+        "regenerate": "Regenerate codes",
+        "loading": "Loading recovery codes",
+        "warning": "Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate codes above."
+      }
+    },
+    "appearance": {
+      "title": "Appearance settings",
+      "description": "Update your account's appearance settings"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "geminiTitle": "Gemini key",
+      "geminiDescription": "Connect your own Google Gemini key to generate your carousel images — no limits. It takes 2 minutes and Google offers a free tier.",
+      "keyLabel": "Gemini API key",
+      "keyHint": "Create your free key at ai.google.dev. We store the key encrypted and never show it back.",
+      "guideLink": "Step by step: how to get your free key",
+      "keyConnected": "Key connected. Unlimited images active.",
+      "save": "Save",
+      "lockedTitle": "Available on the Pro and Agency plans",
+      "lockedDescription": "BYOK (your own Gemini key) unlocks unlimited images. Upgrade to enable it.",
+      "upgradeCta": "View plans"
+    },
+    "brand": {
+      "title": "Brand",
+      "description": "The brand profile the AI uses to write and design your carousels. Set during onboarding — update it anytime.",
+      "goalLabel": "Main goal",
+      "nameLabel": "Brand name",
+      "namePlaceholder": "e.g. Slidezz",
+      "descriptionLabel": "Brand description",
+      "descriptionPlaceholder": "What your brand does, its personality and what makes it different.",
+      "audienceLabel": "Target audience",
+      "audiencePlaceholder": "Who you're talking to — their role, interests and pains.",
+      "toneLabel": "Tone of voice",
+      "paletteLabel": "Color palette",
+      "palettePresets": "Use preset palettes",
+      "visualStyleLabel": "Visual style (optional)",
+      "visualStylePlaceholder": "e.g. minimal, high-contrast, film grain, editorial...",
+      "visualStyleHint": "Extra art direction applied to generated images.",
+      "logoLabel": "Logo",
+      "logoUpload": "Upload logo",
+      "save": "Save changes",
+      "saved": "Saved."
+    },
+    "apiTokens": {
+      "title": "API & MCP tokens",
+      "description": "Create personal access tokens to connect Slidezz to MCP clients like Claude Code.",
+      "createdTitle": "Token created",
+      "createdHint": "Copy it now — for security, it won't be shown again.",
+      "copy": "Copy",
+      "nameLabel": "Token name",
+      "namePlaceholder": "e.g. Claude Code",
+      "nameHint": "A label to help you recognize where this token is used.",
+      "create": "Create token",
+      "listTitle": "Your tokens",
+      "empty": "No tokens yet.",
+      "createdAt": "Created {{when}}",
+      "lastUsed": "last used {{when}}",
+      "neverUsed": "never used",
+      "revoke": "Revoke",
+      "connectTitle": "Connect from Claude Code",
+      "connectHint": "Run this in your terminal, then ask Claude to list your Slidezz projects."
+    },
+    "deleteAccount": {
+      "title": "Delete account",
+      "description": "Delete your account and all of its resources",
+      "warning": "Warning",
+      "warningText": "Please proceed with caution, this cannot be undone.",
+      "deleteButton": "Delete account",
+      "dialogTitle": "Are you sure you want to delete your account?",
+      "dialogDescription": "Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you want to permanently delete your account.",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Password",
+      "cancelButton": "Cancel",
+      "confirmButton": "Delete account"
+    }
+  },
+  "analytics": {
+    "title": "Analytics Overview",
+    "subtitle": "Track your performance and engagement metrics",
+    "sync": "Refresh",
+    "tableView": "Table",
+    "gridView": "Grid",
+    "totalViews": "Total Views",
+    "totalLikes": "Total Likes",
+    "totalComments": "Total Comments",
+    "avgEngagement": "Avg. Engagement",
+    "colAccount": "Account",
+    "colViews": "Views",
+    "colLikes": "Likes",
+    "colComments": "Comments",
+    "colShares": "Shares",
+    "colBookmarks": "Bookmarks",
+    "colEngagement": "Engagement Rate",
+    "colPublished": "Published",
+    "colActions": "Actions",
+    "emptyTitle": "You don't have any posts published through Slidezz yet.",
+    "emptySubtitle": "Once you publish through Slidezz, your data will appear here.",
+    "period7": "7 days",
+    "period30": "30 days",
+    "period90": "90 days",
+    "cardViews": "Views",
+    "cardLikes": "Likes",
+    "cardEngagement": "Engagement"
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Manage and track your scheduled TikTok posts",
+    "searchPlaceholder": "Search ...",
+    "createSchedule": "Create Schedule",
+    "connectTikTok": "Connect TikTok",
+    "video": "Video",
+    "noProjects": "No content projects yet",
+    "noProjectsHint": "Create a content project to schedule it",
+    "scheduling": "Scheduling...",
+    "scheduleButton": "Schedule",
+    "yourSchedule": "Your Schedule",
+    "today": "Today",
+    "allStatuses": "All statuses",
+    "statusPending": "Pending",
+    "statusPublishing": "Publishing",
+    "statusPublished": "Published",
+    "statusFailed": "Failed",
+    "weekDays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "months": "January,February,March,April,May,June,July,August,September,October,November,December"
+  },
+  "appScreenshots": {
+    "wizard": {
+      "pageTitle": "Store screenshots",
+      "projectSuffix": "store screenshots",
+      "generateBtn": "Generate screenshots",
+      "uploadError": "Could not read that image.",
+      "tooLarge": "Those images are too large. Remove a few or use smaller files.",
+      "steps": {
+        "app": "App",
+        "screens": "Screens",
+        "style": "Style"
+      },
+      "step1": {
+        "title": "About the app",
+        "subtitle": "This is what the AI writes each caption from.",
+        "appNameLabel": "App name",
+        "appNamePlaceholder": "Slidezz",
+        "pitchLabel": "What the app does",
+        "pitchHint": "Describe the problem it solves and for whom. The more concrete, the better the caption.",
+        "pitchPlaceholder": "An app that generates carousels and store screenshots with AI for Instagram sellers...",
+        "formatLabel": "Format",
+        "languageLabel": "Source language",
+        "maxShots": "up to {{count}} screenshots"
+      },
+      "step2": {
+        "title": "Your screens",
+        "subtitle": "Upload your app screenshots in the order they should appear on the store (up to {{max}}).",
+        "uploadCta": "Upload screenshots",
+        "uploadHint": "PNG or JPG, straight from the simulator or the device",
+        "screenNumber": "Screen {{number}}",
+        "labelPlaceholder": "What this screen shows (optional)",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "remove": "Remove"
+      },
+      "step3": {
+        "title": "Style and languages",
+        "subtitle": "Pick how the screenshots look and which locales you ship.",
+        "themeLabel": "Theme",
+        "frameLabel": "Device",
+        "layoutLabel": "Composition",
+        "layouts": {
+          "caption_top": "Caption on top",
+          "caption_bottom": "Caption at the bottom",
+          "alternate": "Alternating"
+        },
+        "aiCopyLabel": "Write the captions with AI",
+        "aiCopyDesc": "One headline and one supporting line per screen, in the language you picked.",
+        "toneLabel": "Tone of voice",
+        "tonePlaceholder": "direct, confident, no jargon",
+        "localesLabel": "Store languages",
+        "localesHint": "Each language becomes a full translated screenshot set, exported in its own folder.",
+        "summary": "Summary",
+        "summaryLine": "{{shots}} screenshots at {{size}}, {{theme}} theme, {{locales}} languages."
+      }
+    },
+    "localization": {
+      "title": "Store languages",
+      "short": "Languages",
+      "subtitle": "{{store}} - {{count}} strings per language",
+      "sourceLabel": "Source language",
+      "sourceHint": "The screenshots as you wrote them.",
+      "progress": "{{done}} of {{total}} translated",
+      "preview": "Preview on canvas",
+      "translate": "Translate",
+      "retranslate": "Translate again",
+      "translateAll": "Translate all",
+      "remove": "Remove language",
+      "addLocale": "Add language",
+      "allAdded": "Every language has been added.",
+      "screen": "Screen {{number}}",
+      "sizesLabel": "Export sizes",
+      "exportZip": "Export ZIP ({{count}} sets)",
+      "exportStoreMenu": "Export for the store...",
+      "errors": {
+        "premium_required": "Activate lifetime access to translate screenshots with AI.",
+        "server_error": "Could not translate right now. Try again.",
+        "network_error": "Connection failed while translating."
+      }
+    },
+    "status": {
+      "writing": "Writing the screenshot captions...",
+      "building": "Composing the store screenshots..."
+    }
+  },
+  "videos": {
+    "title": "Videos",
+    "subtitle": "Turn slideshows and clips into videos for TikTok and Reels.",
+    "new": "New video",
+    "empty": "No videos yet. Start from scratch or use \"Create video\" in the slideshow editor.",
+    "clips": "{{count}} clips",
+    "delete": "Delete",
+    "confirmDelete": "Delete this video?",
+    "untitled": "Untitled video",
+    "status": {
+      "draft": "Draft",
+      "rendering": "Rendering",
+      "ready": "Ready",
+      "failed": "Failed"
+    }
+  },
+  "videoEditor": {
+    "back": "Back",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveError": "Save failed",
+    "export": "Export MP4",
+    "rendering": "Rendering {{progress}}%",
+    "download": "Download MP4",
+    "renderFailed": "Render failed: {{error}}",
+    "addMedia": "Add media",
+    "uploading": "Uploading…",
+    "uploadFailed": "Could not upload {{name}}",
+    "emptyTimeline": "Add images or videos to get started.",
+    "selectClip": "Select a clip on the timeline to edit it.",
+    "format": "Format",
+    "formats": {
+      "stories": "Vertical 9:16",
+      "post": "Feed 4:5"
+    },
+    "clip": "Clip {{index}}",
+    "duration": "Duration (s)",
+    "trimStart": "Start at (s)",
+    "transition": "Entry transition",
+    "transitions": {
+      "none": "None",
+      "fade": "Fade",
+      "slide": "Slide",
+      "wipe": "Wipe"
+    },
+    "text": "Text",
+    "textPlaceholder": "Text over the clip",
+    "textPosition": "Text position",
+    "positions": {
+      "top": "Top",
+      "center": "Center",
+      "bottom": "Bottom"
+    },
+    "zoom": "Slow zoom",
+    "muted": "Mute clip audio",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "remove": "Remove",
+    "music": "Music",
+    "addMusic": "Add music",
+    "removeMusic": "Remove music",
+    "volume": "Volume",
+    "totalDuration": "Total length: {{seconds}}s"
+  },
+  "tiktokDraft": {
+    "send": "Send to TikTok",
+    "connect": "Connect TikTok",
+    "sending": "Sending draft to TikTok…",
+    "sent": "Draft sent to TikTok",
+    "sentDescription": "Open TikTok as @{{handle}}: the draft shows up in your inbox notifications. Add a sound and caption, then post.",
+    "failed": "TikTok refused the upload.",
+    "stillSending": "The upload is taking a while. Check the calendar in a few minutes."
+  }
+}
