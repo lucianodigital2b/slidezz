@@ -91,83 +91,87 @@ function PlatformRow({
         router.delete(destroy.url(account.id), { preserveScroll: true });
     };
 
-    if (connected.length > 0) {
-        return (
-            <>
-                {connected.map((account) => (
-                    <div
-                        key={account.id}
-                        className="flex items-center justify-between gap-4 p-4"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div
-                                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${config.iconBg}`}
-                            >
-                                <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            {account.avatar ? (
-                                <img
-                                    src={account.avatar}
-                                    alt={account.handle}
-                                    className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
-                                />
-                            ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold ring-2 ring-border">
-                                    {account.handle.slice(0, 2).toUpperCase()}
-                                </div>
-                            )}
-                            <div className="leading-tight">
-                                <p className="text-sm font-medium">
-                                    @{account.handle}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {config.label}
-                                </p>
-                            </div>
-                        </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1.5 rounded-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => handleDisconnect(account)}
-                        >
-                            <LogOut className="h-3.5 w-3.5" />
-                            {t(
-                                'settings.profile.connectedAccounts.disconnect',
-                            )}{' '}
-                            (@{account.handle})
-                        </Button>
-                    </div>
-                ))}
-            </>
-        );
-    }
-
     return (
-        <div className="flex items-center justify-between gap-4 p-4">
-            <div className="flex items-center gap-3">
+        <>
+            {connected.map((account) => (
                 <div
-                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${config.iconBg}`}
+                    key={account.id}
+                    className="flex items-center justify-between gap-4 p-4"
                 >
-                    <Icon className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${config.iconBg}`}
+                        >
+                            <Icon className="h-4 w-4 text-white" />
+                        </div>
+                        {account.avatar ? (
+                            <img
+                                src={account.avatar}
+                                alt={account.handle}
+                                className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
+                            />
+                        ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold ring-2 ring-border">
+                                {account.handle.slice(0, 2).toUpperCase()}
+                            </div>
+                        )}
+                        <div className="leading-tight">
+                            <p className="text-sm font-medium">
+                                @{account.handle}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {config.label}
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 rounded-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleDisconnect(account)}
+                    >
+                        <LogOut className="h-3.5 w-3.5" />
+                        {t('settings.profile.connectedAccounts.disconnect')} (@
+                        {account.handle})
+                    </Button>
                 </div>
-                <span className="text-sm font-medium text-muted-foreground">
-                    {config.label}
-                </span>
+            ))}
+            {/* Always offer to connect: a workspace can hold several accounts per platform. */}
+            <div className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                    <div
+                        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${config.iconBg}`}
+                    >
+                        <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                        {config.label}
+                    </span>
+                </div>
+                <Button
+                    size="sm"
+                    variant={connected.length > 0 ? 'outline' : 'default'}
+                    className={
+                        connected.length > 0
+                            ? 'gap-1.5 rounded-full'
+                            : `gap-1.5 rounded-full text-white ${config.connectBg}`
+                    }
+                    onClick={() => {
+                        window.location.href = connect.url(provider);
+                    }}
+                >
+                    <Plus className="h-3.5 w-3.5" />
+                    {connected.length > 0
+                        ? t(
+                              'settings.profile.connectedAccounts.connectAnother',
+                              { platform: config.label },
+                          )
+                        : t('settings.profile.connectedAccounts.connect', {
+                              platform: config.label,
+                          })}
+                </Button>
             </div>
-            <Button
-                size="sm"
-                className={`gap-1.5 rounded-full text-white ${config.connectBg}`}
-                onClick={() => {
-                    window.location.href = connect.url(provider);
-                }}
-            >
-                <Plus className="h-3.5 w-3.5" />
-                {t('settings.profile.connectedAccounts.connect', {
-                    platform: config.label,
-                })}
-            </Button>
-        </div>
+        </>
     );
 }
 

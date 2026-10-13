@@ -174,6 +174,7 @@ class PostController extends Controller
 
         return [
             'id' => $s->id,
+            'group_id' => $s->group_id,
             'status' => $s->status->value,
             'publish_at' => $s->publish_at->toISOString(),
             'error_log' => $s->error_log,

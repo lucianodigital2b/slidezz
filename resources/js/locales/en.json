@@ -888,6 +888,7 @@
         "title": "Connected Accounts",
         "description": "Connect your social accounts to schedule posts",
         "connect": "Add {{platform}}",
+        "connectAnother": "Add another {{platform}} account",
         "disconnect": "Disconnect",
         "confirmDisconnect": "Disconnect @{{handle}}?"
       }

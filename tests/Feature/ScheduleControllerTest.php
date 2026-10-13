@@ -9,6 +9,7 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ScheduleControllerTest extends TestCase
@@ -54,7 +55,7 @@ class ScheduleControllerTest extends TestCase
         $this->actingAs($user)
             ->post('/schedule', [
                 'content_project_id' => $contentProject->id,
-                'social_account_id' => $socialAccount->id,
+                'social_account_ids' => [$socialAccount->id],
                 'publish_at' => $publishAt,
             ])
             ->assertRedirect('/schedule');
@@ -79,7 +80,7 @@ class ScheduleControllerTest extends TestCase
         $this->actingAs($user)
             ->post('/schedule', [
                 'content_project_id' => $contentProject->id,
-                'social_account_id' => $socialAccount->id,
+                'social_account_ids' => [$socialAccount->id],
                 'publish_at' => now()->subHour()->format('Y-m-d H:i:s'),
             ])
             ->assertSessionHasErrors('publish_at');
@@ -99,7 +100,7 @@ class ScheduleControllerTest extends TestCase
         $this->actingAs($user)
             ->post('/schedule', [
                 'content_project_id' => $contentProject->id,
-                'social_account_id' => $otherSocialAccount->id,
+                'social_account_ids' => [$otherSocialAccount->id],
                 'publish_at' => now()->addDay()->format('Y-m-d H:i:s'),
             ])
             ->assertStatus(404);
@@ -336,6 +337,206 @@ class ScheduleControllerTest extends TestCase
         $this->actingAs($intruder)->patch("/schedule/{$schedule->id}", ['publish_at' => now()->addDay()->toISOString()])->assertForbidden();
 
         $this->assertSame(1, Schedule::count());
+    }
+
+    public function test_store_schedules_one_post_to_several_accounts_as_one_group(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $accounts = SocialAccount::factory()->count(2)->create(['workspace_id' => $workspace->id, 'provider' => 'tiktok']);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'ready']);
+
+        $this->actingAs($user)
+            ->post('/schedule', [
+                'content_project_id' => $contentProject->id,
+                'social_account_ids' => $accounts->pluck('id')->all(),
+                'publish_at' => now()->addDay()->toISOString(),
+            ])
+            ->assertRedirect('/schedule');
+
+        $schedules = Schedule::all();
+        $this->assertCount(2, $schedules);
+        $this->assertEqualsCanonicalizing($accounts->pluck('id')->all(), $schedules->pluck('social_account_id')->all());
+        $this->assertCount(1, $schedules->pluck('group_id')->unique());
+    }
+
+    public function test_store_rejects_when_any_account_is_from_another_workspace(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $own = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
+        $foreign = SocialAccount::factory()->create();
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'ready']);
+
+        $this->actingAs($user)
+            ->post('/schedule', [
+                'content_project_id' => $contentProject->id,
+                'social_account_ids' => [$own->id, $foreign->id],
+                'publish_at' => now()->addDay()->toISOString(),
+            ])
+            ->assertNotFound();
+
+        $this->assertSame(0, Schedule::count());
+    }
+
+    public function test_store_requires_at_least_one_account(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'ready']);
+
+        $this->actingAs($user)
+            ->post('/schedule', [
+                'content_project_id' => $contentProject->id,
+                'social_account_ids' => [],
+                'publish_at' => now()->addDay()->toISOString(),
+            ])
+            ->assertSessionHasErrors('social_account_ids');
+    }
+
+    public function test_index_returns_the_group_id_of_each_schedule(): void
+    {
+        [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Pending]);
+
+        $day = $schedule->publish_at->day;
+
+        $this->actingAs($user)
+            ->get("/schedule?month={$schedule->publish_at->month}&year={$schedule->publish_at->year}")
+            ->assertInertia(fn ($page) => $page
+                ->has("schedulesByDay.{$day}", 2)
+                ->where("schedulesByDay.{$day}.0.group_id", $schedule->group_id)
+                ->where("schedulesByDay.{$day}.1.group_id", $second->group_id)
+            );
+    }
+
+    public function test_update_moves_every_account_of_the_post(): void
+    {
+        [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Failed]);
+        $newDate = now()->addDays(3)->startOfMinute();
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$schedule->id}", ['publish_at' => $newDate->toISOString()])
+            ->assertRedirect();
+
+        foreach ([$schedule->fresh(), $second->fresh()] as $member) {
+            $this->assertTrue($member->publish_at->equalTo($newDate));
+            $this->assertSame(ScheduleStatus::Pending, $member->status);
+            $this->assertSame($schedule->group_id, $member->group_id);
+        }
+    }
+
+    public function test_update_with_a_published_account_moves_only_the_rest_into_a_new_group(): void
+    {
+        [$user, $published, $pending] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Pending]);
+        $originalDate = $published->publish_at;
+        $newDate = now()->addDays(3)->startOfMinute();
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$published->id}", ['publish_at' => $newDate->toISOString()])
+            ->assertRedirect();
+
+        $published->refresh();
+        $pending->refresh();
+        $this->assertTrue($published->publish_at->equalTo($originalDate));
+        $this->assertTrue($pending->publish_at->equalTo($newDate));
+        $this->assertNotSame($published->group_id, $pending->group_id);
+    }
+
+    public function test_update_adds_and_removes_accounts(): void
+    {
+        [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Pending]);
+        $added = SocialAccount::factory()->create(['workspace_id' => $schedule->socialAccount->workspace_id]);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$schedule->id}", [
+                'publish_at' => $schedule->publish_at->toISOString(),
+                'social_account_ids' => [$schedule->social_account_id, $added->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertModelMissing($second);
+        $members = Schedule::where('group_id', $schedule->group_id)->get();
+        $this->assertEqualsCanonicalizing([$schedule->social_account_id, $added->id], $members->pluck('social_account_id')->all());
+        $this->assertTrue($members->every(fn (Schedule $s) => $s->content_project_id === $schedule->content_project_id));
+    }
+
+    public function test_update_refuses_to_change_accounts_once_one_published(): void
+    {
+        [$user, $published, $pending] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Pending]);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$pending->id}", [
+                'publish_at' => now()->addDay()->toISOString(),
+                'social_account_ids' => [$pending->social_account_id],
+            ])
+            ->assertStatus(422);
+
+        $this->assertModelExists($published);
+    }
+
+    public function test_update_refuses_accounts_from_another_workspace(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+        $foreign = SocialAccount::factory()->create();
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$schedule->id}", [
+                'publish_at' => now()->addDay()->toISOString(),
+                'social_account_ids' => [$foreign->id],
+            ])
+            ->assertNotFound();
+
+        $this->assertSame(1, Schedule::count());
+    }
+
+    public function test_duplicate_copies_every_account_into_a_new_group(): void
+    {
+        [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Failed]);
+
+        $this->actingAs($user)
+            ->post("/schedule/{$schedule->id}/duplicate", ['publish_at' => now()->addDays(2)->toISOString()]);
+
+        $copies = Schedule::where('group_id', '!=', $schedule->group_id)->get();
+        $this->assertCount(2, $copies);
+        $this->assertCount(1, $copies->pluck('group_id')->unique());
+        $this->assertEqualsCanonicalizing([$schedule->social_account_id, $second->social_account_id], $copies->pluck('social_account_id')->all());
+        $this->assertTrue($copies->every(fn (Schedule $s) => $s->status === ScheduleStatus::Pending));
+    }
+
+    public function test_destroy_deletes_every_account_except_one_being_published(): void
+    {
+        [$user, $schedule, $second, $third] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Published, ScheduleStatus::Publishing]);
+
+        $this->actingAs($user)->delete("/schedule/{$schedule->id}");
+
+        $this->assertModelMissing($schedule);
+        $this->assertModelMissing($second);
+        $this->assertModelExists($third);
+    }
+
+    /**
+     * One post scheduled to one account per status, all in the same group.
+     *
+     * @param  array<int, ScheduleStatus>  $statuses
+     * @return array<int, mixed> The user, then one schedule per status.
+     */
+    private function groupFor(array $statuses): array
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
+        $publishAt = now()->addDay()->startOfMinute();
+        $groupId = (string) Str::uuid();
+
+        $schedules = array_map(fn (ScheduleStatus $status) => Schedule::factory()->create([
+            'group_id' => $groupId,
+            'social_account_id' => SocialAccount::factory()->create(['workspace_id' => $workspace->id])->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => $publishAt,
+            'status' => $status,
+        ]), $statuses);
+
+        return [$user, ...$schedules];
     }
 
     /**

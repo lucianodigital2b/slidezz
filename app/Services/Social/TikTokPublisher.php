@@ -36,6 +36,9 @@ class TikTokPublisher implements SocialPublisher
             'scope' => 'user.info.basic,user.info.profile,user.info.stats,video.list,video.upload',
             'redirect_uri' => url($this->redirectUri),
             'state' => $csrfState,
+            // Always show the consent screen, so the user can switch to another
+            // TikTok account instead of re-linking the one already logged in.
+            'disable_auto_auth' => 1,
         ]);
 
         return "https://www.tiktok.com/v2/auth/authorize/?{$query}";

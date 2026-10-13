@@ -123,6 +123,7 @@
         "title": "Contas Conectadas",
         "description": "Conecte suas contas de redes sociais para agendar publicações",
         "connect": "Adicionar {{platform}}",
+        "connectAnother": "Adicionar outra conta do {{platform}}",
         "disconnect": "Desconectar",
         "confirmDisconnect": "Desconectar @{{handle}}?"
       }

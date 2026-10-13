@@ -10,8 +10,11 @@ use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,6 +57,7 @@ class ScheduleController extends Controller
 
                 return [
                     'id' => $s->id,
+                    'group_id' => $s->group_id,
                     'status' => $s->status->value,
                     'publish_at' => $s->publish_at->toISOString(),
                     'error_log' => $s->error_log,
@@ -124,11 +128,16 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * Schedule one post to one or more accounts: one row per account, all in the
+     * same group so the calendar shows and edits them as a single post.
+     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'content_project_id' => ['required', 'integer'],
-            'social_account_id' => ['required', 'integer'],
+            'social_account_ids' => ['required', 'array', 'min:1'],
+            'social_account_ids.*' => ['required', 'integer', 'distinct'],
             'publish_at' => ['required', 'date', 'after:now'],
         ]);
 
@@ -137,42 +146,101 @@ class ScheduleController extends Controller
         $contentProject = ContentProject::whereIn('workspace_id', $workspaceIds)
             ->findOrFail($validated['content_project_id']);
 
-        $socialAccount = SocialAccount::whereIn('workspace_id', $workspaceIds)
-            ->findOrFail($validated['social_account_id']);
+        $accounts = $this->workspaceAccounts($workspaceIds, $validated['social_account_ids']);
+        $groupId = (string) Str::uuid();
+        $publishAt = Carbon::parse($validated['publish_at'])->utc();
 
-        Schedule::create([
-            'content_project_id' => $contentProject->id,
-            'social_account_id' => $socialAccount->id,
-            'publish_at' => $validated['publish_at'],
-            'status' => ScheduleStatus::Pending,
-        ]);
+        DB::transaction(function () use ($accounts, $groupId, $contentProject, $publishAt) {
+            foreach ($accounts as $account) {
+                Schedule::create([
+                    'group_id' => $groupId,
+                    'content_project_id' => $contentProject->id,
+                    'social_account_id' => $account->id,
+                    'publish_at' => $publishAt,
+                    'status' => ScheduleStatus::Pending,
+                ]);
+            }
+        });
 
         return redirect()->route('schedule')
             ->with('success', 'Post scheduled successfully.');
     }
 
+    /**
+     * Change the time and/or the accounts of a scheduled post. Acts on the whole
+     * group; when some accounts already published it, only the pending or failed
+     * ones move, and they split off into a group of their own.
+     */
     public function update(Request $request, Schedule $schedule): RedirectResponse
     {
         $this->authorizeWorkspace($request, $schedule);
 
-        abort_unless(in_array($schedule->status, [ScheduleStatus::Pending, ScheduleStatus::Failed], true), 422, 'Only pending or failed posts can be moved.');
+        $members = $schedule->group()->get();
+        $movable = $members->filter(fn (Schedule $s) => $s->isMovable());
+
+        abort_if($movable->isEmpty(), 422, 'Only pending or failed posts can be moved.');
 
         $validated = $request->validate([
-            'publish_at' => ['required', 'date', 'after:now'],
+            'publish_at' => ['sometimes', 'date', 'after:now'],
+            'social_account_ids' => ['sometimes', 'array', 'min:1'],
+            'social_account_ids.*' => ['required', 'integer', 'distinct'],
         ]);
 
-        // Moving a failed post re-queues it for the new time.
-        $schedule->update([
-            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
-            'status' => ScheduleStatus::Pending,
-            'error_log' => null,
-        ]);
+        $accounts = null;
+        if (isset($validated['social_account_ids'])) {
+            abort_if($movable->count() !== $members->count(), 422, 'This post already went out on some accounts. Duplicate it to pick other accounts.');
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Post moved.']);
+            $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
+            $accounts = $this->workspaceAccounts($workspaceIds, $validated['social_account_ids']);
+        }
+
+        $publishAt = isset($validated['publish_at'])
+            ? Carbon::parse($validated['publish_at'])->utc()
+            : $movable->first()->publish_at;
+
+        if ($accounts !== null && $publishAt->isPast()) {
+            throw ValidationException::withMessages(['publish_at' => 'Pick a future time to change the accounts.']);
+        }
+
+        $groupId = $movable->count() === $members->count() ? $schedule->group_id : (string) Str::uuid();
+
+        DB::transaction(function () use ($movable, $accounts, $groupId, $publishAt, $validated, $schedule) {
+            foreach ($movable as $member) {
+                $member->group_id = $groupId;
+                if (isset($validated['publish_at'])) {
+                    // Moving a failed post re-queues it for the new time.
+                    $member->publish_at = $publishAt;
+                    $member->status = ScheduleStatus::Pending;
+                    $member->error_log = null;
+                }
+                $member->save();
+            }
+
+            if ($accounts === null) {
+                return;
+            }
+
+            $movable->whereNotIn('social_account_id', $accounts->pluck('id'))->each->delete();
+
+            foreach ($accounts->whereNotIn('id', $movable->pluck('social_account_id')) as $account) {
+                Schedule::create([
+                    'group_id' => $groupId,
+                    'content_project_id' => $schedule->content_project_id,
+                    'social_account_id' => $account->id,
+                    'publish_at' => $publishAt,
+                    'status' => ScheduleStatus::Pending,
+                ]);
+            }
+        });
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Post updated.']);
 
         return back();
     }
 
+    /**
+     * Copy the post, with all its accounts, to a new time.
+     */
     public function duplicate(Request $request, Schedule $schedule): RedirectResponse
     {
         $this->authorizeWorkspace($request, $schedule);
@@ -181,25 +249,39 @@ class ScheduleController extends Controller
             'publish_at' => ['required', 'date', 'after:now'],
         ]);
 
-        Schedule::create([
-            'content_project_id' => $schedule->content_project_id,
-            'social_account_id' => $schedule->social_account_id,
-            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
-            'status' => ScheduleStatus::Pending,
-        ]);
+        $groupId = (string) Str::uuid();
+        $publishAt = Carbon::parse($validated['publish_at'])->utc();
+
+        DB::transaction(function () use ($schedule, $groupId, $publishAt) {
+            foreach ($schedule->group()->get() as $member) {
+                Schedule::create([
+                    'group_id' => $groupId,
+                    'content_project_id' => $member->content_project_id,
+                    'social_account_id' => $member->social_account_id,
+                    'publish_at' => $publishAt,
+                    'status' => ScheduleStatus::Pending,
+                ]);
+            }
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Post duplicated.']);
 
         return back();
     }
 
+    /**
+     * Delete the post on every account, except the ones being published right now.
+     */
     public function destroy(Request $request, Schedule $schedule): RedirectResponse
     {
         $this->authorizeWorkspace($request, $schedule);
 
-        abort_if($schedule->status === ScheduleStatus::Publishing, 422, 'This post is being published right now.');
+        $deletable = $schedule->group()->get()
+            ->reject(fn (Schedule $s) => $s->status === ScheduleStatus::Publishing);
 
-        $schedule->delete();
+        abort_if($deletable->isEmpty(), 422, 'This post is being published right now.');
+
+        $deletable->each->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Post deleted.']);
 
@@ -224,5 +306,23 @@ class ScheduleController extends Controller
         $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
 
         abort_unless($workspaceIds->contains($schedule->socialAccount->workspace_id), 403);
+    }
+
+    /**
+     * The requested accounts, all of which must belong to the user's workspaces.
+     *
+     * @param  Collection<int, int>  $workspaceIds
+     * @param  array<int, int|string>  $ids
+     * @return \Illuminate\Database\Eloquent\Collection<int, SocialAccount>
+     */
+    private function workspaceAccounts(Collection $workspaceIds, array $ids): Collection
+    {
+        $accounts = SocialAccount::whereIn('workspace_id', $workspaceIds)
+            ->whereIn('id', $ids)
+            ->get();
+
+        abort_if($accounts->count() !== count($ids), 404);
+
+        return $accounts;
     }
 }

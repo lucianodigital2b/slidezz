@@ -17,9 +17,10 @@ import {
     Trash2,
     CalendarClock,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -38,11 +39,13 @@ import { schedule } from '@/routes';
 import {
     destroy as destroySchedule,
     duplicate as duplicateSchedule,
+    store as storeSchedule,
     update as updateSchedule,
 } from '@/routes/schedule';
 
 interface ScheduleItem {
     id: number;
+    group_id: string;
     status: string;
     publish_at: string;
     error_log: string | null;
@@ -119,9 +122,155 @@ const HOURS = [
     '10 PM',
 ];
 
-// Movable = can change its date; published/publishing posts can only be duplicated.
-const isMovable = (s: ScheduleItem) =>
+// One post scheduled to several accounts: one row per account sharing a group_id.
+// `lead` carries the content and time, and its id addresses the whole group on the server.
+interface PostGroup {
+    key: string;
+    lead: ScheduleItem;
+    members: ScheduleItem[];
+}
+
+const isMemberMovable = (s: ScheduleItem) =>
     s.status === 'pending' || s.status === 'failed';
+
+// Movable = can change its date; published/publishing posts can only be duplicated.
+const isMovable = (g: PostGroup) => g.members.some(isMemberMovable);
+
+// Accounts can only change while no account has published the post yet.
+const isEditable = (g: PostGroup) => g.members.every(isMemberMovable);
+
+const groupStatus = (g: PostGroup) => {
+    if (g.members.some((m) => m.status === 'failed')) {
+        return 'failed';
+    }
+
+    if (g.members.every((m) => m.status === 'published')) {
+        return 'published';
+    }
+
+    if (g.members.some((m) => m.status === 'publishing')) {
+        return 'publishing';
+    }
+
+    return 'pending';
+};
+
+const groupByPost = (items: ScheduleItem[]): PostGroup[] => {
+    const groups = new Map<string, PostGroup>();
+
+    for (const item of items) {
+        const group = groups.get(item.group_id);
+
+        if (group) {
+            group.members.push(item);
+        } else {
+            groups.set(item.group_id, {
+                key: item.group_id,
+                lead: item,
+                members: [item],
+            });
+        }
+    }
+
+    return [...groups.values()];
+};
+
+function ProviderBadge({ provider }: { provider: string }) {
+    if (provider === 'tiktok') {
+        return (
+            <span className="rounded-sm bg-white px-0.5 text-[10px] font-bold text-black">
+                ♪
+            </span>
+        );
+    }
+
+    if (provider === 'instagram') {
+        return (
+            <span className="rounded-sm bg-gradient-to-tr from-yellow-400 to-fuchsia-600 px-0.5 text-[10px] font-bold text-white">
+                ig
+            </span>
+        );
+    }
+
+    return null;
+}
+
+function AccountPicker({
+    accounts,
+    selected,
+    onChange,
+    disabled = false,
+}: {
+    accounts: SocialAccountOption[];
+    selected: number[];
+    onChange: (ids: number[]) => void;
+    disabled?: boolean;
+}) {
+    if (accounts.length === 0) {
+        return (
+            <p className="text-xs text-gray-500">
+                No accounts connected yet. Connect one in Settings.
+            </p>
+        );
+    }
+
+    const allSelected = accounts.every((a) => selected.includes(a.id));
+
+    return (
+        <div className="flex flex-col gap-1">
+            {accounts.length > 1 && !disabled && (
+                <button
+                    type="button"
+                    className="self-end text-xs font-medium text-gray-500 hover:text-gray-900"
+                    onClick={() =>
+                        onChange(allSelected ? [] : accounts.map((a) => a.id))
+                    }
+                >
+                    {allSelected ? 'Clear' : 'Select all'}
+                </button>
+            )}
+            <div className="flex max-h-48 flex-col gap-0.5 overflow-y-auto rounded-md border border-input p-1">
+                {accounts.map((account) => {
+                    const checked = selected.includes(account.id);
+
+                    return (
+                        <label
+                            key={account.id}
+                            className={`flex items-center gap-2.5 rounded px-2 py-1.5 text-sm ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50'}`}
+                        >
+                            <Checkbox
+                                checked={checked}
+                                disabled={disabled}
+                                onCheckedChange={() =>
+                                    onChange(
+                                        checked
+                                            ? selected.filter(
+                                                  (id) => id !== account.id,
+                                              )
+                                            : [...selected, account.id],
+                                    )
+                                }
+                            />
+                            {account.avatar ? (
+                                <img
+                                    src={account.avatar}
+                                    alt=""
+                                    className="h-6 w-6 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold">
+                                    {account.handle.slice(0, 2).toUpperCase()}
+                                </div>
+                            )}
+                            <span className="truncate">@{account.handle}</span>
+                            <ProviderBadge provider={account.provider} />
+                        </label>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 // Value for <input type="datetime-local"> in the browser's timezone.
 const toLocalInput = (d: Date) => {
@@ -146,18 +295,51 @@ export default function Schedule({
         'all' | 'drafts' | 'scheduled' | 'sent'
     >('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [preview, setPreview] = useState<ScheduleItem | null>(null);
+    const [preview, setPreview] = useState<PostGroup | null>(null);
     const [copied, setCopied] = useState(false);
     const [previewAt, setPreviewAt] = useState('');
+    const [previewAccounts, setPreviewAccounts] = useState<number[]>([]);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [busy, setBusy] = useState(false);
     const [dragOverDay, setDragOverDay] = useState<number | null>(null);
 
-    const openPreview = (item: ScheduleItem) => {
-        setPreview(item);
-        setPreviewAt(toLocalInput(new Date(item.publish_at)));
+    const groupsByDay = useMemo(
+        () =>
+            Object.fromEntries(
+                Object.entries(schedulesByDay).map(([day, items]) => [
+                    day,
+                    groupByPost(items),
+                ]),
+            ) as Record<string, PostGroup[]>,
+        [schedulesByDay],
+    );
+
+    const openPreview = (group: PostGroup) => {
+        setPreview(group);
+        setPreviewAt(toLocalInput(new Date(group.lead.publish_at)));
+        setPreviewAccounts(group.members.map((m) => m.social_account.id));
         setConfirmDelete(false);
     };
+
+    // Accounts offered in the preview: the connected ones plus any the post already uses.
+    const previewAccountOptions = useMemo(() => {
+        if (!preview) {
+            return [];
+        }
+
+        const options = [...socialAccounts];
+
+        for (const member of preview.members) {
+            if (!options.some((a) => a.id === member.social_account.id)) {
+                options.push(member.social_account);
+            }
+        }
+
+        return options;
+    }, [preview, socialAccounts]);
+
+    const sameIds = (a: number[], b: number[]) =>
+        a.length === b.length && a.every((id) => b.includes(id));
 
     const requestOptions = (onSuccess?: () => void) => ({
         preserveScroll: true,
@@ -171,29 +353,56 @@ export default function Schedule({
     });
 
     // publish_at goes to the server as UTC ISO, so the local time picked is the time it posts.
-    const moveTo = (item: ScheduleItem, when: Date, onSuccess?: () => void) => {
+    const moveTo = (group: PostGroup, when: Date, onSuccess?: () => void) => {
         router.patch(
-            updateSchedule(item.id).url,
+            updateSchedule(group.lead.id).url,
             { publish_at: when.toISOString() },
             requestOptions(onSuccess),
+        );
+    };
+
+    const savePreview = (group: PostGroup) => {
+        const payload: { publish_at?: string; social_account_ids?: number[] } =
+            {};
+        const when = new Date(previewAt);
+
+        if (when.getTime() !== new Date(group.lead.publish_at).getTime()) {
+            payload.publish_at = when.toISOString();
+        }
+
+        if (
+            !sameIds(
+                previewAccounts,
+                group.members.map((m) => m.social_account.id),
+            )
+        ) {
+            payload.social_account_ids = previewAccounts;
+            // Accounts added to a failed post go out at the time shown, so send it along.
+            payload.publish_at = when.toISOString();
+        }
+
+        router.patch(
+            updateSchedule(group.lead.id).url,
+            payload,
+            requestOptions(() => setPreview(null)),
         );
     };
 
     const duplicateTo = (
-        item: ScheduleItem,
+        group: PostGroup,
         when: Date,
         onSuccess?: () => void,
     ) => {
         router.post(
-            duplicateSchedule(item.id).url,
+            duplicateSchedule(group.lead.id).url,
             { publish_at: when.toISOString() },
             requestOptions(onSuccess),
         );
     };
 
-    const deleteItem = (item: ScheduleItem) => {
+    const deleteItem = (group: PostGroup) => {
         router.delete(
-            destroySchedule(item.id).url,
+            destroySchedule(group.lead.id).url,
             requestOptions(() => setPreview(null)),
         );
     };
@@ -203,16 +412,16 @@ export default function Schedule({
         setDragOverDay(null);
 
         const id = Number(e.dataTransfer.getData('text/schedule-id'));
-        const item = Object.values(schedulesByDay)
+        const item = Object.values(groupsByDay)
             .flat()
-            .find((s) => s.id === id);
+            .find((g) => g.lead.id === id);
 
         if (!item) {
             return;
         }
 
         // Keep the post's time of day, change only the date.
-        const original = new Date(item.publish_at);
+        const original = new Date(item.lead.publish_at);
         const when = new Date(
             year,
             month - 1,
@@ -247,15 +456,26 @@ export default function Schedule({
         setTimeout(() => setCopied(false), 1500);
     };
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        content_project_id: '',
-        social_account_id: '',
-        publish_at: '',
-    });
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
+            content_project_id: '',
+            social_account_ids: (socialAccounts.length === 1
+                ? [socialAccounts[0].id]
+                : []) as number[],
+            publish_at: '',
+        });
+
+    // The picker shows local time; the server gets UTC so the post goes out at the time picked.
+    transform((form) => ({
+        ...form,
+        publish_at: form.publish_at
+            ? new Date(form.publish_at).toISOString()
+            : '',
+    }));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(schedule.store().url, {
+        post(storeSchedule().url, {
             onSuccess: () => {
                 setIsModalOpen(false);
                 reset();
@@ -432,8 +652,8 @@ export default function Schedule({
                                 {calendarDays.map((day, index) => {
                                     const isToday =
                                         isCurrentMonth && day === todayDay;
-                                    const daySchedules = day
-                                        ? schedulesByDay[day] || []
+                                    const dayGroups = day
+                                        ? groupsByDay[day] || []
                                         : [];
 
                                     const isPastDay =
@@ -441,23 +661,30 @@ export default function Schedule({
                                         new Date(year, month - 1, day, 23, 59) <
                                             new Date();
 
-                                    const filteredSchedules =
-                                        daySchedules.filter((s) => {
-                                            if (calendarFilter === 'all') {
-                                                return true;
-                                            }
+                                    const filteredGroups = dayGroups.filter(
+                                        (g) =>
+                                            g.members.some((s) => {
+                                                if (calendarFilter === 'all') {
+                                                    return true;
+                                                }
 
-                                            if (
-                                                calendarFilter === 'scheduled'
-                                            ) {
+                                                if (
+                                                    calendarFilter ===
+                                                    'scheduled'
+                                                ) {
+                                                    return (
+                                                        s.status ===
+                                                            'pending' ||
+                                                        s.status ===
+                                                            'publishing'
+                                                    );
+                                                }
+
                                                 return (
-                                                    s.status === 'pending' ||
-                                                    s.status === 'publishing'
+                                                    s.status === calendarFilter
                                                 );
-                                            }
-
-                                            return s.status === calendarFilter;
-                                        });
+                                            }),
+                                    );
 
                                     return (
                                         <div
@@ -525,17 +752,14 @@ export default function Schedule({
                                                                 // Pre-fill next hour for today, or 12:00 for future dates
                                                                 const defaultTime =
                                                                     isToday
-                                                                        ? new Date(
-                                                                              new Date().getTime() +
-                                                                                  60 *
+                                                                        ? toLocalInput(
+                                                                              new Date(
+                                                                                  new Date().getTime() +
                                                                                       60 *
-                                                                                      1000,
+                                                                                          60 *
+                                                                                          1000,
+                                                                              ),
                                                                           )
-                                                                              .toISOString()
-                                                                              .slice(
-                                                                                  0,
-                                                                                  16,
-                                                                              )
                                                                         : `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00`;
 
                                                                 setData(
@@ -564,130 +788,210 @@ export default function Schedule({
                                                         </button>
                                                     </div>
                                                     <div className="no-scrollbar mt-1 flex flex-1 flex-col gap-2 overflow-y-auto pr-1 pb-1">
-                                                        {filteredSchedules.map(
-                                                            (schedule) => (
-                                                                <div
-                                                                    key={
-                                                                        schedule.id
-                                                                    }
-                                                                    draggable={
-                                                                        !busy
-                                                                    }
-                                                                    onDragStart={(
-                                                                        e,
-                                                                    ) => {
-                                                                        e.dataTransfer.setData(
-                                                                            'text/schedule-id',
-                                                                            String(
-                                                                                schedule.id,
+                                                        {filteredGroups.map(
+                                                            (group) => {
+                                                                const status =
+                                                                    groupStatus(
+                                                                        group,
+                                                                    );
+                                                                const failed =
+                                                                    group.members.filter(
+                                                                        (m) =>
+                                                                            m.status ===
+                                                                            'failed',
+                                                                    );
+                                                                const providers =
+                                                                    [
+                                                                        ...new Set(
+                                                                            group.members.map(
+                                                                                (
+                                                                                    m,
+                                                                                ) =>
+                                                                                    m
+                                                                                        .social_account
+                                                                                        .provider,
                                                                             ),
+                                                                        ),
+                                                                    ];
+                                                                const handles =
+                                                                    group.members
+                                                                        .map(
+                                                                            (
+                                                                                m,
+                                                                            ) =>
+                                                                                `@${m.social_account.handle}`,
+                                                                        )
+                                                                        .join(
+                                                                            ', ',
                                                                         );
-                                                                        e.dataTransfer.effectAllowed =
-                                                                            isMovable(
-                                                                                schedule,
+
+                                                                return (
+                                                                    <div
+                                                                        key={
+                                                                            group.key
+                                                                        }
+                                                                        draggable={
+                                                                            !busy
+                                                                        }
+                                                                        onDragStart={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.dataTransfer.setData(
+                                                                                'text/schedule-id',
+                                                                                String(
+                                                                                    group
+                                                                                        .lead
+                                                                                        .id,
+                                                                                ),
+                                                                            );
+                                                                            e.dataTransfer.effectAllowed =
+                                                                                isMovable(
+                                                                                    group,
+                                                                                )
+                                                                                    ? 'copyMove'
+                                                                                    : 'copy';
+                                                                        }}
+                                                                        onDragEnd={() =>
+                                                                            setDragOverDay(
+                                                                                null,
                                                                             )
-                                                                                ? 'copyMove'
-                                                                                : 'copy';
-                                                                    }}
-                                                                    onDragEnd={() =>
-                                                                        setDragOverDay(
-                                                                            null,
-                                                                        )
-                                                                    }
-                                                                    onClick={() =>
-                                                                        openPreview(
-                                                                            schedule,
-                                                                        )
-                                                                    }
-                                                                    className={`relative flex cursor-grab items-center gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
-                                                                        schedule.status ===
-                                                                        'published'
-                                                                            ? 'border-green-200 bg-green-50 text-green-800'
-                                                                            : schedule.status ===
-                                                                                'failed'
-                                                                              ? 'border-red-300 bg-red-50 text-red-800'
-                                                                              : 'border-blue-200 bg-blue-50 text-blue-800'
-                                                                    }`}
-                                                                >
-                                                                    {schedule.status ===
-                                                                        'failed' && (
-                                                                        <TooltipProvider
-                                                                            delayDuration={
-                                                                                100
-                                                                            }
-                                                                        >
-                                                                            <Tooltip>
-                                                                                <TooltipTrigger
-                                                                                    asChild
-                                                                                >
-                                                                                    <div className="absolute -top-1.5 -right-1.5 z-10 cursor-help rounded-full border border-red-100 bg-white shadow-sm">
-                                                                                        <AlertCircle
-                                                                                            className="h-3.5 w-3.5 text-red-500"
-                                                                                            fill="currentColor"
-                                                                                            stroke="white"
-                                                                                        />
-                                                                                    </div>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent className="max-w-[250px] border-red-200 bg-red-50 text-xs break-words text-red-900 shadow-md">
-                                                                                    <div className="flex items-start gap-2">
-                                                                                        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                                                                                        <div className="flex flex-col gap-1">
-                                                                                            <p className="font-semibold">
-                                                                                                Publishing
-                                                                                                Failed
-                                                                                            </p>
-                                                                                            <p className="text-red-800/90">
-                                                                                                {schedule.error_log ||
-                                                                                                    'An unknown error occurred while publishing to the platform.'}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </TooltipContent>
-                                                                            </Tooltip>
-                                                                        </TooltipProvider>
-                                                                    )}
-                                                                    {schedule
-                                                                        .social_account
-                                                                        .provider ===
-                                                                        'tiktok' && (
-                                                                        <span className="rounded-sm bg-white px-0.5 text-[10px] font-bold text-black">
-                                                                            ♪
-                                                                        </span>
-                                                                    )}
-                                                                    {schedule
-                                                                        .social_account
-                                                                        .provider ===
-                                                                        'instagram' && (
-                                                                        <span className="rounded-sm bg-gradient-to-tr from-yellow-400 to-fuchsia-600 px-0.5 text-[10px] font-bold text-white">
-                                                                            ig
-                                                                        </span>
-                                                                    )}
-                                                                    <span
-                                                                        className="truncate font-medium"
-                                                                        title={
-                                                                            schedule
-                                                                                .content_project
-                                                                                .title
                                                                         }
+                                                                        onClick={() =>
+                                                                            openPreview(
+                                                                                group,
+                                                                            )
+                                                                        }
+                                                                        className={`relative flex cursor-grab items-center gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
+                                                                            status ===
+                                                                            'published'
+                                                                                ? 'border-green-200 bg-green-50 text-green-800'
+                                                                                : status ===
+                                                                                    'failed'
+                                                                                  ? 'border-red-300 bg-red-50 text-red-800'
+                                                                                  : 'border-blue-200 bg-blue-50 text-blue-800'
+                                                                        }`}
                                                                     >
-                                                                        {new Date(
-                                                                            schedule.publish_at,
-                                                                        ).toLocaleTimeString(
-                                                                            [],
+                                                                        {failed.length >
+                                                                            0 && (
+                                                                            <TooltipProvider
+                                                                                delayDuration={
+                                                                                    100
+                                                                                }
+                                                                            >
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger
+                                                                                        asChild
+                                                                                    >
+                                                                                        <div className="absolute -top-1.5 -right-1.5 z-10 cursor-help rounded-full border border-red-100 bg-white shadow-sm">
+                                                                                            <AlertCircle
+                                                                                                className="h-3.5 w-3.5 text-red-500"
+                                                                                                fill="currentColor"
+                                                                                                stroke="white"
+                                                                                            />
+                                                                                        </div>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent className="max-w-[250px] border-red-200 bg-red-50 text-xs break-words text-red-900 shadow-md">
+                                                                                        <div className="flex items-start gap-2">
+                                                                                            <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                                                                                            <div className="flex flex-col gap-1">
+                                                                                                <p className="font-semibold">
+                                                                                                    Publishing
+                                                                                                    Failed
+                                                                                                </p>
+                                                                                                {failed.map(
+                                                                                                    (
+                                                                                                        m,
+                                                                                                    ) => (
+                                                                                                        <p
+                                                                                                            key={
+                                                                                                                m.id
+                                                                                                            }
+                                                                                                            className="text-red-800/90"
+                                                                                                        >
+                                                                                                            {group
+                                                                                                                .members
+                                                                                                                .length >
+                                                                                                                1 && (
+                                                                                                                <span className="font-medium">
+                                                                                                                    @
+                                                                                                                    {
+                                                                                                                        m
+                                                                                                                            .social_account
+                                                                                                                            .handle
+                                                                                                                    }
+
+                                                                                                                    :{' '}
+                                                                                                                </span>
+                                                                                                            )}
+                                                                                                            {m.error_log ||
+                                                                                                                'An unknown error occurred while publishing to the platform.'}
+                                                                                                        </p>
+                                                                                                    ),
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </TooltipProvider>
+                                                                        )}
+                                                                        {providers.map(
+                                                                            (
+                                                                                p,
+                                                                            ) => (
+                                                                                <ProviderBadge
+                                                                                    key={
+                                                                                        p
+                                                                                    }
+                                                                                    provider={
+                                                                                        p
+                                                                                    }
+                                                                                />
+                                                                            ),
+                                                                        )}
+                                                                        {group
+                                                                            .members
+                                                                            .length >
+                                                                            1 && (
+                                                                            <span
+                                                                                className="shrink-0 rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
+                                                                                title={
+                                                                                    handles
+                                                                                }
+                                                                            >
+                                                                                ×
+                                                                                {
+                                                                                    group
+                                                                                        .members
+                                                                                        .length
+                                                                                }
+                                                                            </span>
+                                                                        )}
+                                                                        <span
+                                                                            className="truncate font-medium"
+                                                                            title={`${group.lead.content_project.title} · ${handles}`}
+                                                                        >
+                                                                            {new Date(
+                                                                                group
+                                                                                    .lead
+                                                                                    .publish_at,
+                                                                            ).toLocaleTimeString(
+                                                                                [],
+                                                                                {
+                                                                                    hour: '2-digit',
+                                                                                    minute: '2-digit',
+                                                                                },
+                                                                            )}{' '}
+                                                                            -{' '}
                                                                             {
-                                                                                hour: '2-digit',
-                                                                                minute: '2-digit',
-                                                                            },
-                                                                        )}{' '}
-                                                                        -{' '}
-                                                                        {
-                                                                            schedule
-                                                                                .content_project
-                                                                                .title
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            ),
+                                                                                group
+                                                                                    .lead
+                                                                                    .content_project
+                                                                                    .title
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            },
                                                         )}
                                                     </div>
                                                 </>
@@ -812,23 +1116,24 @@ export default function Schedule({
                         <>
                             <DialogHeader>
                                 <DialogTitle>
-                                    {preview.content_project.title}
+                                    {preview.lead.content_project.title}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    @{preview.social_account.handle} (
-                                    {preview.social_account.provider}) ·{' '}
                                     {new Date(
-                                        preview.publish_at,
+                                        preview.lead.publish_at,
                                     ).toLocaleString([], {
                                         dateStyle: 'short',
                                         timeStyle: 'short',
                                     })}{' '}
-                                    · {preview.status}
+                                    ·{' '}
+                                    {preview.members.length === 1
+                                        ? `@${preview.lead.social_account.handle} · ${preview.lead.status}`
+                                        : `${preview.members.length} accounts`}
                                 </DialogDescription>
                             </DialogHeader>
-                            {preview.content_project.images.length > 0 && (
+                            {preview.lead.content_project.images.length > 0 && (
                                 <div className="flex gap-2 overflow-x-auto pb-2">
-                                    {preview.content_project.images.map(
+                                    {preview.lead.content_project.images.map(
                                         (src, i) => (
                                             <a
                                                 key={i}
@@ -852,14 +1157,14 @@ export default function Schedule({
                                     <span className="text-sm font-medium">
                                         Caption
                                     </span>
-                                    {preview.content_project.caption && (
+                                    {preview.lead.content_project.caption && (
                                         <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
                                             onClick={() =>
                                                 copyCaption(
-                                                    preview.content_project
+                                                    preview.lead.content_project
                                                         .caption,
                                                 )
                                             }
@@ -869,15 +1174,87 @@ export default function Schedule({
                                     )}
                                 </div>
                                 <pre className="max-h-64 overflow-y-auto rounded-md bg-gray-50 p-3 font-sans text-sm whitespace-pre-wrap text-gray-800">
-                                    {preview.content_project.caption ||
+                                    {preview.lead.content_project.caption ||
                                         'No caption.'}
                                 </pre>
                             </div>
-                            {preview.error_log && (
-                                <p className="text-xs text-red-600">
-                                    {preview.error_log}
-                                </p>
-                            )}
+                            <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+                                <span className="text-sm font-medium">
+                                    Accounts
+                                </span>
+                                {isEditable(preview) ? (
+                                    <AccountPicker
+                                        accounts={previewAccountOptions}
+                                        selected={previewAccounts}
+                                        onChange={setPreviewAccounts}
+                                        disabled={busy}
+                                    />
+                                ) : (
+                                    <ul className="flex flex-col gap-1.5">
+                                        {preview.members.map((m) => (
+                                            <li
+                                                key={m.id}
+                                                className="flex flex-col gap-0.5 text-sm"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <ProviderBadge
+                                                        provider={
+                                                            m.social_account
+                                                                .provider
+                                                        }
+                                                    />
+                                                    <span>
+                                                        @
+                                                        {
+                                                            m.social_account
+                                                                .handle
+                                                        }
+                                                    </span>
+                                                    <span
+                                                        className={`ml-auto rounded-full px-2 py-0.5 text-xs ${m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
+                                                    >
+                                                        {m.status}
+                                                    </span>
+                                                </div>
+                                                {m.error_log && (
+                                                    <p className="text-xs text-red-600">
+                                                        {m.error_log}
+                                                    </p>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                {isEditable(preview) &&
+                                    preview.members.some(
+                                        (m) => m.error_log,
+                                    ) && (
+                                        <div className="flex flex-col gap-1">
+                                            {preview.members
+                                                .filter((m) => m.error_log)
+                                                .map((m) => (
+                                                    <p
+                                                        key={m.id}
+                                                        className="text-xs text-red-600"
+                                                    >
+                                                        {preview.members
+                                                            .length > 1 && (
+                                                            <span className="font-medium">
+                                                                @
+                                                                {
+                                                                    m
+                                                                        .social_account
+                                                                        .handle
+                                                                }
+                                                                :{' '}
+                                                            </span>
+                                                        )}
+                                                        {m.error_log}
+                                                    </p>
+                                                ))}
+                                        </div>
+                                    )}
+                            </div>
                             <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
                                 <label
                                     htmlFor="preview_publish_at"
@@ -904,23 +1281,26 @@ export default function Schedule({
                                             disabled={
                                                 busy ||
                                                 !previewAt ||
-                                                new Date(
+                                                previewAccounts.length === 0 ||
+                                                (new Date(
                                                     previewAt,
                                                 ).getTime() ===
                                                     new Date(
-                                                        preview.publish_at,
-                                                    ).getTime()
+                                                        preview.lead.publish_at,
+                                                    ).getTime() &&
+                                                    sameIds(
+                                                        previewAccounts,
+                                                        preview.members.map(
+                                                            (m) =>
+                                                                m.social_account
+                                                                    .id,
+                                                        ),
+                                                    ))
                                             }
-                                            onClick={() =>
-                                                moveTo(
-                                                    preview,
-                                                    new Date(previewAt),
-                                                    () => setPreview(null),
-                                                )
-                                            }
+                                            onClick={() => savePreview(preview)}
                                         >
                                             <CalendarClock className="mr-1.5 h-4 w-4" />{' '}
-                                            Move
+                                            Save
                                         </Button>
                                     )}
                                     <Button
@@ -939,7 +1319,9 @@ export default function Schedule({
                                         <Copy className="mr-1.5 h-4 w-4" />{' '}
                                         Duplicate
                                     </Button>
-                                    {preview.status !== 'publishing' && (
+                                    {preview.members.some(
+                                        (m) => m.status !== 'publishing',
+                                    ) && (
                                         <Button
                                             type="button"
                                             variant={
@@ -968,9 +1350,11 @@ export default function Schedule({
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-500">
-                                    {isMovable(preview)
+                                    {isEditable(preview)
                                         ? 'Tip: drag a post to another day to move it, hold Alt or Ctrl while dropping to duplicate.'
-                                        : `This post is ${preview.status}, so it can only be duplicated.`}
+                                        : isMovable(preview)
+                                          ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
+                                          : `This post is ${groupStatus(preview)}, so it can only be duplicated.`}
                                 </p>
                             </div>
                         </>
@@ -984,8 +1368,8 @@ export default function Schedule({
                         <DialogHeader>
                             <DialogTitle>Schedule New Post</DialogTitle>
                             <DialogDescription>
-                                Select a post from your library and schedule it
-                                to be published.
+                                Select a post from your library and the accounts
+                                it goes out to.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -1028,40 +1412,19 @@ export default function Schedule({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <label
-                                    htmlFor="social_account"
-                                    className="text-sm font-medium"
-                                >
-                                    Social Account
-                                </label>
-                                <select
-                                    id="social_account"
-                                    value={data.social_account_id}
-                                    onChange={(e) =>
-                                        setData(
-                                            'social_account_id',
-                                            e.target.value,
-                                        )
+                                <span className="text-sm font-medium">
+                                    Social Accounts
+                                </span>
+                                <AccountPicker
+                                    accounts={socialAccounts}
+                                    selected={data.social_account_ids}
+                                    onChange={(ids) =>
+                                        setData('social_account_ids', ids)
                                     }
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                    required
-                                >
-                                    <option value="" disabled>
-                                        Select an account
-                                    </option>
-                                    {socialAccounts.map((account) => (
-                                        <option
-                                            key={account.id}
-                                            value={account.id}
-                                        >
-                                            @{account.handle} (
-                                            {account.provider})
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.social_account_id && (
+                                />
+                                {errors.social_account_ids && (
                                     <p className="text-xs text-red-500">
-                                        {errors.social_account_id}
+                                        {errors.social_account_ids}
                                     </p>
                                 )}
                             </div>
@@ -1077,7 +1440,7 @@ export default function Schedule({
                                     type="datetime-local"
                                     id="publish_at"
                                     value={data.publish_at}
-                                    min={new Date().toISOString().slice(0, 16)}
+                                    min={toLocalInput(new Date())}
                                     onChange={(e) =>
                                         setData('publish_at', e.target.value)
                                     }
@@ -1101,10 +1464,17 @@ export default function Schedule({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={processing}
+                                disabled={
+                                    processing ||
+                                    data.social_account_ids.length === 0
+                                }
                                 className="bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
                             >
-                                {processing ? 'Scheduling...' : 'Schedule Post'}
+                                {processing
+                                    ? 'Scheduling...'
+                                    : data.social_account_ids.length > 1
+                                      ? `Schedule to ${data.social_account_ids.length} accounts`
+                                      : 'Schedule Post'}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -95,6 +95,26 @@ class SocialAccountControllerTest extends TestCase
         $this->assertDatabaseHas('workspaces', ['owner_id' => $user->id]);
     }
 
+    public function test_tiktok_connect_always_shows_the_account_picker(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/social-accounts/tiktok/connect');
+
+        $this->assertStringContainsString('disable_auto_auth=1', $response->headers->get('Location'));
+    }
+
+    public function test_a_workspace_can_hold_several_accounts_of_the_same_platform(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        SocialAccount::factory()->count(2)->create(['workspace_id' => $workspace->id, 'provider' => 'tiktok']);
+
+        $this->actingAs($user)
+            ->get('/settings/profile')
+            ->assertInertia(fn ($page) => $page->has('socialAccounts', 2));
+    }
+
     public function test_destroy_removes_own_social_account(): void
     {
         $user = User::factory()->create();
