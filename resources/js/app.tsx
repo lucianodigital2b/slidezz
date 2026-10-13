@@ -64,3 +64,14 @@ router.on('navigate', () => trackPageView());
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+// The server reads the browser's timezone from this cookie to build the
+// calendar days (ScheduleController::viewerTimezone).
+try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) {
+        document.cookie = `tz=${encodeURIComponent(timezone)};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
+    }
+} catch {
+    // Without the cookie the calendar falls back to the app timezone.
+}

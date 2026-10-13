@@ -20,8 +20,13 @@ class ScheduleController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $month = $request->integer('month', now()->month);
-        $year = $request->integer('year', now()->year);
+        $timezone = $this->viewerTimezone($request);
+        $month = $request->integer('month', now($timezone)->month);
+        $year = $request->integer('year', now($timezone)->year);
+
+        // The month and its days are the viewer's, not UTC's: a post at 21h in
+        // São Paulo is 00h UTC on the next day and must stay on its own day.
+        $monthStart = Carbon::create($year, $month, 1, 0, 0, 0, $timezone);
 
         $workspaceIds = Workspace::where('owner_id', $user->id)->pluck('id');
 
@@ -30,10 +35,10 @@ class ScheduleController extends Controller
             fn ($q) => $q->whereIn('workspace_id', $workspaceIds)
         )
             ->with(['contentProject', 'socialAccount'])
-            ->whereYear('publish_at', $year)
-            ->whereMonth('publish_at', $month)
+            ->where('publish_at', '>=', $monthStart->copy()->utc())
+            ->where('publish_at', '<', $monthStart->copy()->addMonth()->utc())
             ->get()
-            ->groupBy(fn (Schedule $s) => $s->publish_at->day)
+            ->groupBy(fn (Schedule $s) => $s->publish_at->copy()->setTimezone($timezone)->day)
             ->map(fn ($group) => $group->map(function (Schedule $s) {
                 $title = $s->contentProject->title;
                 if (empty($title) || $title === 'Untitled') {
@@ -199,6 +204,19 @@ class ScheduleController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Post deleted.']);
 
         return back();
+    }
+
+    /**
+     * The browser's timezone, sent in the tz cookie (set in app.tsx). Falls back
+     * to the app timezone when the cookie is missing or not a valid zone.
+     */
+    private function viewerTimezone(Request $request): string
+    {
+        $timezone = (string) $request->cookie('tz');
+
+        return in_array($timezone, timezone_identifiers_list(\DateTimeZone::ALL_WITH_BC), true)
+            ? $timezone
+            : config('app.timezone');
     }
 
     private function authorizeWorkspace(Request $request, Schedule $schedule): void

@@ -197,6 +197,61 @@ class ScheduleControllerTest extends TestCase
         );
     }
 
+    public function test_calendar_days_follow_the_viewer_timezone(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
+
+        // 21h on Oct 13 in São Paulo is 00h UTC on Oct 14.
+        Schedule::factory()->create([
+            'social_account_id' => $socialAccount->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => '2026-10-14 00:00:00',
+        ]);
+
+        // 22h on Oct 31 in São Paulo is already November in UTC.
+        Schedule::factory()->create([
+            'social_account_id' => $socialAccount->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => '2026-11-01 01:00:00',
+        ]);
+
+        $this->actingAs($user)
+            ->withUnencryptedCookie('tz', 'America/Sao_Paulo')
+            ->get('/schedule?month=10&year=2026')
+            ->assertInertia(fn ($page) => $page
+                ->has('schedulesByDay.13', 1)
+                ->has('schedulesByDay.31', 1)
+                ->missing('schedulesByDay.14')
+            );
+
+        $this->actingAs($user)
+            ->withUnencryptedCookie('tz', 'America/Sao_Paulo')
+            ->get('/schedule?month=11&year=2026')
+            ->assertInertia(fn ($page) => $page->where('schedulesByDay', []));
+    }
+
+    public function test_calendar_falls_back_to_utc_without_a_valid_timezone(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
+
+        Schedule::factory()->create([
+            'social_account_id' => $socialAccount->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => '2026-10-14 00:00:00',
+        ]);
+
+        $this->actingAs($user)
+            ->withUnencryptedCookie('tz', 'Not/AZone')
+            ->get('/schedule?month=10&year=2026')
+            ->assertInertia(fn ($page) => $page->has('schedulesByDay.14', 1));
+    }
+
     public function test_update_moves_a_pending_schedule(): void
     {
         [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
