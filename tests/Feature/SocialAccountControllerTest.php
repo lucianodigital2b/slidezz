@@ -14,6 +14,17 @@ class SocialAccountControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // CI has no Instagram app keys in .env; the publisher needs strings.
+        config([
+            'services.instagram.client_id' => 'test-app-id',
+            'services.instagram.client_secret' => 'test-app-secret',
+        ]);
+    }
+
     public function test_unauthenticated_user_is_redirected_from_index(): void
     {
         $this->get('/social-accounts')->assertRedirect('/login');
