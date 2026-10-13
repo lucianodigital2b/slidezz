@@ -1,9 +1,11 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { schedule } from '@/routes';
+import { destroy as destroySchedule, duplicate as duplicateSchedule, update as updateSchedule } from '@/routes/schedule';
 import {
     Calendar as CalendarIcon, ChevronLeft, ChevronRight, List, Grid,
-    Plus, ChevronDown, MessageSquare, Tag, Globe, CheckCircle2, AlertCircle, XCircle
+    Plus, ChevronDown, MessageSquare, Tag, Globe, CheckCircle2, AlertCircle, XCircle, Copy, Trash2, CalendarClock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,6 +70,15 @@ const HOURS = [
     '12 PM', '2 PM', '4 PM', '6 PM', '8 PM', '10 PM'
 ];
 
+// Movable = can change its date; published/publishing posts can only be duplicated.
+const isMovable = (s: ScheduleItem) => s.status === 'pending' || s.status === 'failed';
+
+// Value for <input type="datetime-local"> in the browser's timezone.
+const toLocalInput = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function Schedule({ schedulesByDay = {}, month, year, counts, contentProjects = [], socialAccounts = [] }: Props) {
     const [view, setView] = useState<'calendar' | 'list'>('calendar');
     const [listTab, setListTab] = useState<'queue' | 'drafts' | 'sent'>('queue');
@@ -75,6 +86,66 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [preview, setPreview] = useState<ScheduleItem | null>(null);
     const [copied, setCopied] = useState(false);
+    const [previewAt, setPreviewAt] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+
+    const openPreview = (item: ScheduleItem) => {
+        setPreview(item);
+        setPreviewAt(toLocalInput(new Date(item.publish_at)));
+        setConfirmDelete(false);
+    };
+
+    const requestOptions = (onSuccess?: () => void) => ({
+        preserveScroll: true,
+        preserveState: true,
+        onStart: () => setBusy(true),
+        onFinish: () => setBusy(false),
+        onSuccess: () => onSuccess?.(),
+        onError: (errs: Record<string, string>) => {
+            toast.error(Object.values(errs)[0] ?? 'Something went wrong.');
+        },
+    });
+
+    // publish_at goes to the server as UTC ISO, so the local time picked is the time it posts.
+    const moveTo = (item: ScheduleItem, when: Date, onSuccess?: () => void) => {
+        router.patch(updateSchedule(item.id).url, { publish_at: when.toISOString() }, requestOptions(onSuccess));
+    };
+
+    const duplicateTo = (item: ScheduleItem, when: Date, onSuccess?: () => void) => {
+        router.post(duplicateSchedule(item.id).url, { publish_at: when.toISOString() }, requestOptions(onSuccess));
+    };
+
+    const deleteItem = (item: ScheduleItem) => {
+        router.delete(destroySchedule(item.id).url, requestOptions(() => setPreview(null)));
+    };
+
+    const handleDrop = (e: React.DragEvent, day: number) => {
+        e.preventDefault();
+        setDragOverDay(null);
+
+        const id = Number(e.dataTransfer.getData('text/schedule-id'));
+        const item = Object.values(schedulesByDay).flat().find((s) => s.id === id);
+        if (!item) return;
+
+        // Keep the post's time of day, change only the date.
+        const original = new Date(item.publish_at);
+        const when = new Date(year, month - 1, day, original.getHours(), original.getMinutes());
+        const copy = e.altKey || e.ctrlKey || e.metaKey || !isMovable(item);
+
+        if (!copy && when.getTime() === original.getTime()) return;
+        if (when <= new Date()) {
+            toast.error('That time has already passed. Open the post to pick a later time.');
+            return;
+        }
+
+        if (copy) {
+            duplicateTo(item, when);
+        } else {
+            moveTo(item, when);
+        }
+    };
 
     const copyCaption = async (caption: string) => {
         await navigator.clipboard.writeText(caption);
@@ -229,6 +300,8 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                     const isToday = isCurrentMonth && day === todayDay;
                                     const daySchedules = day ? (schedulesByDay[day] || []) : [];
                                     
+                                    const isPastDay = !!day && new Date(year, month - 1, day, 23, 59) < new Date();
+
                                     const filteredSchedules = daySchedules.filter(s => {
                                         if (calendarFilter === 'all') return true;
                                         if (calendarFilter === 'scheduled') return s.status === 'pending' || s.status === 'publishing';
@@ -236,9 +309,19 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                     });
 
                                     return (
-                                        <div 
-                                            key={index} 
-                                            className={`min-h-[100px] bg-white p-2 ${day ? 'hover:bg-gray-50/50' : 'bg-gray-50/50'} transition-colors flex flex-col gap-1 relative group`}
+                                        <div
+                                            key={index}
+                                            onDragOver={(e) => {
+                                                if (!day || isPastDay) return;
+                                                e.preventDefault();
+                                                e.dataTransfer.dropEffect = e.altKey || e.ctrlKey || e.metaKey ? 'copy' : 'move';
+                                                if (dragOverDay !== day) setDragOverDay(day);
+                                            }}
+                                            onDragLeave={(e) => {
+                                                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverDay(null);
+                                            }}
+                                            onDrop={(e) => day && handleDrop(e, day)}
+                                            className={`min-h-[100px] p-2 ${day && dragOverDay === day ? 'bg-[#FFE156]/20 ring-2 ring-inset ring-[#FFE156]' : day ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50'} transition-colors flex flex-col gap-1 relative group`}
                                         >
                                             {day && (
                                                 <>
@@ -273,8 +356,14 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                                         {filteredSchedules.map(schedule => (
                                                             <div
                                                                 key={schedule.id}
-                                                                onClick={() => setPreview(schedule)}
-                                                                className={`text-xs p-1.5 rounded border flex items-center gap-1.5 truncate shadow-sm relative cursor-pointer hover:brightness-95
+                                                                draggable={!busy}
+                                                                onDragStart={(e) => {
+                                                                    e.dataTransfer.setData('text/schedule-id', String(schedule.id));
+                                                                    e.dataTransfer.effectAllowed = isMovable(schedule) ? 'copyMove' : 'copy';
+                                                                }}
+                                                                onDragEnd={() => setDragOverDay(null)}
+                                                                onClick={() => openPreview(schedule)}
+                                                                className={`text-xs p-1.5 rounded border flex items-center gap-1.5 truncate shadow-sm relative cursor-grab active:cursor-grabbing hover:brightness-95
                                                                     ${schedule.status === 'published' ? 'bg-green-50 border-green-200 text-green-800' : 
                                                                       schedule.status === 'failed' ? 'bg-red-50 border-red-300 text-red-800' : 
                                                                       'bg-blue-50 border-blue-200 text-blue-800'}`
@@ -417,6 +506,56 @@ export default function Schedule({ schedulesByDay = {}, month, year, counts, con
                                 </pre>
                             </div>
                             {preview.error_log && <p className="text-xs text-red-600">{preview.error_log}</p>}
+                            <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+                                <label htmlFor="preview_publish_at" className="text-sm font-medium">Date & time</label>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <input
+                                        type="datetime-local"
+                                        id="preview_publish_at"
+                                        value={previewAt}
+                                        min={toLocalInput(new Date())}
+                                        onChange={(e) => setPreviewAt(e.target.value)}
+                                        className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                    {isMovable(preview) && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={busy || !previewAt || new Date(previewAt).getTime() === new Date(preview.publish_at).getTime()}
+                                            onClick={() => moveTo(preview, new Date(previewAt), () => setPreview(null))}
+                                        >
+                                            <CalendarClock className="w-4 h-4 mr-1.5" /> Move
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={busy || !previewAt}
+                                        onClick={() => duplicateTo(preview, new Date(previewAt), () => setPreview(null))}
+                                    >
+                                        <Copy className="w-4 h-4 mr-1.5" /> Duplicate
+                                    </Button>
+                                    {preview.status !== 'publishing' && (
+                                        <Button
+                                            type="button"
+                                            variant={confirmDelete ? 'destructive' : 'outline'}
+                                            size="sm"
+                                            className={confirmDelete ? 'ml-auto' : 'ml-auto text-red-600 hover:text-red-700'}
+                                            disabled={busy}
+                                            onClick={() => (confirmDelete ? deleteItem(preview) : setConfirmDelete(true))}
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-1.5" /> {confirmDelete ? 'Confirm delete' : 'Delete'}
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    {isMovable(preview)
+                                        ? 'Tip: drag a post to another day to move it, hold Alt or Ctrl while dropping to duplicate.'
+                                        : `This post is ${preview.status}, so it can only be duplicated.`}
+                                </p>
+                            </div>
                         </>
                     )}
                 </DialogContent>

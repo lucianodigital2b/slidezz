@@ -197,6 +197,112 @@ class ScheduleControllerTest extends TestCase
         );
     }
 
+    public function test_update_moves_a_pending_schedule(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+        $newDate = now()->addDays(3)->startOfMinute();
+
+        $this->actingAs($user)
+            ->from('/schedule')
+            ->patch("/schedule/{$schedule->id}", ['publish_at' => $newDate->toISOString()])
+            ->assertRedirect('/schedule');
+
+        $this->assertTrue($schedule->fresh()->publish_at->equalTo($newDate));
+    }
+
+    public function test_update_requeues_a_failed_schedule(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Failed);
+        $schedule->update(['error_log' => 'boom']);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$schedule->id}", ['publish_at' => now()->addDay()->toISOString()]);
+
+        $schedule->refresh();
+        $this->assertSame(ScheduleStatus::Pending, $schedule->status);
+        $this->assertNull($schedule->error_log);
+    }
+
+    public function test_update_rejects_published_schedule_and_past_dates(): void
+    {
+        [$user, $published] = $this->scheduleFor(ScheduleStatus::Published);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$published->id}", ['publish_at' => now()->addDay()->toISOString()])
+            ->assertStatus(422);
+
+        [$user, $pending] = $this->scheduleFor(ScheduleStatus::Pending);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$pending->id}", ['publish_at' => now()->subHour()->toISOString()])
+            ->assertSessionHasErrors('publish_at');
+    }
+
+    public function test_duplicate_creates_a_pending_copy(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Published);
+
+        $this->actingAs($user)
+            ->post("/schedule/{$schedule->id}/duplicate", ['publish_at' => now()->addDays(2)->toISOString()]);
+
+        $this->assertSame(2, Schedule::count());
+        $this->assertDatabaseHas('schedules', [
+            'content_project_id' => $schedule->content_project_id,
+            'social_account_id' => $schedule->social_account_id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_destroy_deletes_a_schedule(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+
+        $this->actingAs($user)->delete("/schedule/{$schedule->id}");
+
+        $this->assertModelMissing($schedule);
+    }
+
+    public function test_destroy_refuses_a_schedule_being_published(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Publishing);
+
+        $this->actingAs($user)->delete("/schedule/{$schedule->id}")->assertStatus(422);
+
+        $this->assertModelExists($schedule);
+    }
+
+    public function test_other_users_cannot_change_a_schedule(): void
+    {
+        [, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)->delete("/schedule/{$schedule->id}")->assertForbidden();
+        $this->actingAs($intruder)->post("/schedule/{$schedule->id}/duplicate", ['publish_at' => now()->addDay()->toISOString()])->assertForbidden();
+        $this->actingAs($intruder)->patch("/schedule/{$schedule->id}", ['publish_at' => now()->addDay()->toISOString()])->assertForbidden();
+
+        $this->assertSame(1, Schedule::count());
+    }
+
+    /**
+     * @return array{0: User, 1: Schedule}
+     */
+    private function scheduleFor(ScheduleStatus $status): array
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
+
+        $schedule = Schedule::factory()->create([
+            'social_account_id' => $socialAccount->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => now()->addDay(),
+            'status' => $status,
+        ]);
+
+        return [$user, $schedule];
+    }
+
     private function currentMonth(): int
     {
         return now()->month;

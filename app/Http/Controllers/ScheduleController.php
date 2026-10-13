@@ -9,6 +9,7 @@ use App\Models\SocialAccount;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -143,5 +144,67 @@ class ScheduleController extends Controller
 
         return redirect()->route('schedule')
             ->with('success', 'Post scheduled successfully.');
+    }
+
+    public function update(Request $request, Schedule $schedule): RedirectResponse
+    {
+        $this->authorizeWorkspace($request, $schedule);
+
+        abort_unless(in_array($schedule->status, [ScheduleStatus::Pending, ScheduleStatus::Failed], true), 422, 'Only pending or failed posts can be moved.');
+
+        $validated = $request->validate([
+            'publish_at' => ['required', 'date', 'after:now'],
+        ]);
+
+        // Moving a failed post re-queues it for the new time.
+        $schedule->update([
+            'publish_at' => Carbon::parse($validated['publish_at']),
+            'status' => ScheduleStatus::Pending,
+            'error_log' => null,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Post moved.']);
+
+        return back();
+    }
+
+    public function duplicate(Request $request, Schedule $schedule): RedirectResponse
+    {
+        $this->authorizeWorkspace($request, $schedule);
+
+        $validated = $request->validate([
+            'publish_at' => ['required', 'date', 'after:now'],
+        ]);
+
+        Schedule::create([
+            'content_project_id' => $schedule->content_project_id,
+            'social_account_id' => $schedule->social_account_id,
+            'publish_at' => Carbon::parse($validated['publish_at']),
+            'status' => ScheduleStatus::Pending,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Post duplicated.']);
+
+        return back();
+    }
+
+    public function destroy(Request $request, Schedule $schedule): RedirectResponse
+    {
+        $this->authorizeWorkspace($request, $schedule);
+
+        abort_if($schedule->status === ScheduleStatus::Publishing, 422, 'This post is being published right now.');
+
+        $schedule->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Post deleted.']);
+
+        return back();
+    }
+
+    private function authorizeWorkspace(Request $request, Schedule $schedule): void
+    {
+        $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
+
+        abort_unless($workspaceIds->contains($schedule->socialAccount->workspace_id), 403);
     }
 }

@@ -145,6 +145,9 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
     Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
+    Route::patch('schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
+    Route::post('schedule/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->name('schedule.duplicate');
+    Route::delete('schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
 
     Route::redirect('social-accounts', '/settings/profile');
     Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
