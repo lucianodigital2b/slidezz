@@ -243,7 +243,7 @@ class SlideProjectController extends Controller
             ],
         ]);
 
-        $publishAt = empty($validated['publish_at']) ? null : Carbon::parse($validated['publish_at']);
+        $publishAt = empty($validated['publish_at']) ? null : Carbon::parse($validated['publish_at'])->utc();
         $isScheduled = $publishAt && $publishAt->isFuture();
 
         $schedule = Schedule::create([

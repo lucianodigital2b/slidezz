@@ -158,7 +158,7 @@ class ScheduleController extends Controller
 
         // Moving a failed post re-queues it for the new time.
         $schedule->update([
-            'publish_at' => Carbon::parse($validated['publish_at']),
+            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
             'status' => ScheduleStatus::Pending,
             'error_log' => null,
         ]);
@@ -179,7 +179,7 @@ class ScheduleController extends Controller
         Schedule::create([
             'content_project_id' => $schedule->content_project_id,
             'social_account_id' => $schedule->social_account_id,
-            'publish_at' => Carbon::parse($validated['publish_at']),
+            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
             'status' => ScheduleStatus::Pending,
         ]);
 

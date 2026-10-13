@@ -38,8 +38,8 @@ class PostController extends Controller
 
         $schedules = $this->schedules($request)
             ->with(['contentProject', 'socialAccount'])
-            ->when($validated['from'] ?? null, fn ($q, $from) => $q->where('publish_at', '>=', Carbon::parse($from)))
-            ->when($validated['to'] ?? null, fn ($q, $to) => $q->where('publish_at', '<=', Carbon::parse($to)))
+            ->when($validated['from'] ?? null, fn ($q, $from) => $q->where('publish_at', '>=', Carbon::parse($from)->utc()))
+            ->when($validated['to'] ?? null, fn ($q, $to) => $q->where('publish_at', '<=', Carbon::parse($to)->utc()))
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->orderBy('publish_at')
             ->limit(500)
@@ -93,7 +93,7 @@ class PostController extends Controller
         $schedule = Schedule::create([
             'content_project_id' => $project->id,
             'social_account_id' => $account->id,
-            'publish_at' => Carbon::parse($validated['publish_at']),
+            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
             'status' => ScheduleStatus::Pending,
         ]);
 
@@ -127,7 +127,7 @@ class PostController extends Controller
         if (isset($validated['publish_at'])) {
             // A failed post that gets a new time goes back to the queue.
             $schedule->update([
-                'publish_at' => Carbon::parse($validated['publish_at']),
+                'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
                 'status' => ScheduleStatus::Pending,
                 'error_log' => null,
             ]);
@@ -147,7 +147,7 @@ class PostController extends Controller
         $copy = Schedule::create([
             'content_project_id' => $schedule->content_project_id,
             'social_account_id' => $schedule->social_account_id,
-            'publish_at' => Carbon::parse($validated['publish_at']),
+            'publish_at' => Carbon::parse($validated['publish_at'])->utc(),
             'status' => ScheduleStatus::Pending,
         ]);
 

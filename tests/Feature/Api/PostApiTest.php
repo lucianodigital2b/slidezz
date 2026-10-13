@@ -65,6 +65,25 @@ class PostApiTest extends TestCase
         Storage::disk('public')->assertExists($project->script_data['slides'][0]['path']);
     }
 
+    public function test_store_converts_an_offset_publish_at_to_utc(): void
+    {
+        [$user, $account] = $this->accountFor('tiktok');
+        Sanctum::actingAs($user);
+
+        $local = now()->addDay()->startOfHour()->setTimezone('America/Sao_Paulo');
+
+        $this->post('/api/posts', [
+            'social_account_id' => $account->id,
+            'publish_at' => $local->format('Y-m-d\TH:i:sP'),
+            'images' => [UploadedFile::fake()->image('a.jpg')],
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $this->assertSame(
+            $local->copy()->utc()->format('Y-m-d H:i:s'),
+            Schedule::firstOrFail()->getRawOriginal('publish_at'),
+        );
+    }
+
     public function test_store_single_instagram_image_becomes_an_image_post(): void
     {
         [$user, $account] = $this->accountFor('instagram');
