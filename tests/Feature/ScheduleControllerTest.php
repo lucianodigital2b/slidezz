@@ -32,7 +32,10 @@ class ScheduleControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Schedule')
-            ->has('schedulesByDay')
+            ->has('schedules')
+            ->has('queue')
+            ->has('sent')
+            ->has('drafts')
             ->has('socialAccounts')
             ->has('contentProjects')
             ->has('month')
@@ -149,8 +152,8 @@ class ScheduleControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/schedule?month={$publishAt->month}&year={$publishAt->year}");
 
         $response->assertInertia(fn ($page) => $page
-            ->has("schedulesByDay.{$publishAt->day}", 1)
-            ->where("schedulesByDay.{$publishAt->day}.0.status", 'pending')
+            ->has('schedules', 1)
+            ->where('schedules.0.status', 'pending')
         );
     }
 
@@ -174,7 +177,7 @@ class ScheduleControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/schedule?month={$publishAt->month}&year={$publishAt->year}");
 
         $response->assertInertia(fn ($page) => $page
-            ->where('schedulesByDay', [])
+            ->where('schedules', [])
         );
     }
 
@@ -194,7 +197,7 @@ class ScheduleControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/schedule?month={$this->currentMonth()}&year={$this->currentYear()}");
 
         $response->assertInertia(fn ($page) => $page
-            ->where('schedulesByDay', [])
+            ->where('schedules', [])
         );
     }
 
@@ -223,15 +226,15 @@ class ScheduleControllerTest extends TestCase
             ->withUnencryptedCookie('tz', 'America/Sao_Paulo')
             ->get('/schedule?month=10&year=2026')
             ->assertInertia(fn ($page) => $page
-                ->has('schedulesByDay.13', 1)
-                ->has('schedulesByDay.31', 1)
-                ->missing('schedulesByDay.14')
+                ->has('schedules', 2)
+                ->where('schedules.0.publish_at', '2026-10-14T00:00:00.000000Z')
+                ->where('schedules.1.publish_at', '2026-11-01T01:00:00.000000Z')
             );
 
         $this->actingAs($user)
             ->withUnencryptedCookie('tz', 'America/Sao_Paulo')
             ->get('/schedule?month=11&year=2026')
-            ->assertInertia(fn ($page) => $page->where('schedulesByDay', []));
+            ->assertInertia(fn ($page) => $page->where('schedules', []));
     }
 
     public function test_calendar_falls_back_to_utc_without_a_valid_timezone(): void
@@ -247,10 +250,77 @@ class ScheduleControllerTest extends TestCase
             'publish_at' => '2026-10-14 00:00:00',
         ]);
 
+        Schedule::factory()->create([
+            'social_account_id' => $socialAccount->id,
+            'content_project_id' => $contentProject->id,
+            'publish_at' => '2026-11-01 01:00:00',
+        ]);
+
         $this->actingAs($user)
             ->withUnencryptedCookie('tz', 'Not/AZone')
             ->get('/schedule?month=10&year=2026')
-            ->assertInertia(fn ($page) => $page->has('schedulesByDay.14', 1));
+            ->assertInertia(fn ($page) => $page
+                ->has('schedules', 1)
+                ->where('schedules.0.publish_at', '2026-10-14T00:00:00.000000Z')
+            );
+    }
+
+    public function test_the_list_shows_the_queue_in_order_and_the_latest_sent_first(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'handle' => 'dailyhair.app']);
+        $project = ContentProject::factory()->create([
+            'workspace_id' => $workspace->id,
+            'title' => 'Guia capilar',
+            'script_data' => ['caption' => 'Legenda', 'slides' => [['path' => 'api/1/a/01.jpg'], ['path' => 'api/1/a/02.jpg']]],
+        ]);
+
+        $at = fn (string $status, string $when) => Schedule::factory()->create([
+            'social_account_id' => $account->id,
+            'content_project_id' => $project->id,
+            'status' => $status,
+            'publish_at' => $when,
+        ]);
+
+        $later = $at('pending', '2030-01-02 15:00:00');
+        $failed = $at('failed', '2030-01-01 15:00:00');
+        $oldSent = $at('published', '2026-01-01 15:00:00');
+        $newSent = $at('published', '2026-02-01 15:00:00');
+
+        ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'drafting', 'title' => 'Rascunho']);
+
+        $this->actingAs($user)
+            ->get('/schedule')
+            ->assertInertia(fn ($page) => $page
+                ->where('queue.0.id', $failed->id)
+                ->where('queue.1.id', $later->id)
+                ->has('queue', 2)
+                ->where('queue.0.content_project.title', 'Guia capilar')
+                ->where('queue.0.content_project.caption', 'Legenda')
+                ->where('queue.0.content_project.images', [
+                    url(\Storage::disk(config('filesystems.media_disk'))->url('api/1/a/01.jpg')),
+                    url(\Storage::disk(config('filesystems.media_disk'))->url('api/1/a/02.jpg')),
+                ])
+                ->where('queue.0.social_account.handle', 'dailyhair.app')
+                ->where('sent.0.id', $newSent->id)
+                ->where('sent.1.id', $oldSent->id)
+                ->where('drafts.0.title', 'Rascunho')
+                ->where('counts.queue', 2)
+                ->where('counts.sent', 2)
+            );
+    }
+
+    public function test_a_post_to_several_accounts_counts_once(): void
+    {
+        [$user] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Pending]);
+
+        $this->actingAs($user)
+            ->get('/schedule')
+            ->assertInertia(fn ($page) => $page
+                ->has('queue', 2)
+                ->where('counts.queue', 1)
+            );
     }
 
     public function test_update_moves_a_pending_schedule(): void
@@ -398,14 +468,12 @@ class ScheduleControllerTest extends TestCase
     {
         [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Pending]);
 
-        $day = $schedule->publish_at->day;
-
         $this->actingAs($user)
             ->get("/schedule?month={$schedule->publish_at->month}&year={$schedule->publish_at->year}")
             ->assertInertia(fn ($page) => $page
-                ->has("schedulesByDay.{$day}", 2)
-                ->where("schedulesByDay.{$day}.0.group_id", $schedule->group_id)
-                ->where("schedulesByDay.{$day}.1.group_id", $second->group_id)
+                ->has('schedules', 2)
+                ->where('schedules.0.group_id', $schedule->group_id)
+                ->where('schedules.1.group_id', $second->group_id)
             );
     }
 

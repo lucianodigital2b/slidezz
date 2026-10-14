@@ -7,6 +7,7 @@ use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Models\Workspace;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,109 +23,58 @@ class ScheduleController extends Controller
 {
     public function index(Request $request): Response
     {
-        $user = $request->user();
         $timezone = $this->viewerTimezone($request);
         $month = $request->integer('month', now($timezone)->month);
         $year = $request->integer('year', now($timezone)->year);
 
-        // The month and its days are the viewer's, not UTC's: a post at 21h in
-        // São Paulo is 00h UTC on the next day and must stay on its own day.
+        // The month is the viewer's, not UTC's: a post at 21h in São Paulo is
+        // 00h UTC on the next day. The browser puts each post on its local day.
         $monthStart = Carbon::create($year, $month, 1, 0, 0, 0, $timezone);
 
-        $workspaceIds = Workspace::where('owner_id', $user->id)->pluck('id');
+        $workspaceIds = DB::table('workspaces')->where('owner_id', $request->user()->id)->pluck('id');
 
-        $schedulesByDay = Schedule::whereHas(
-            'socialAccount',
-            fn ($q) => $q->whereIn('workspace_id', $workspaceIds)
-        )
-            ->with(['contentProject', 'socialAccount'])
-            ->where('publish_at', '>=', $monthStart->copy()->utc())
-            ->where('publish_at', '<', $monthStart->copy()->addMonth()->utc())
-            ->get()
-            ->groupBy(fn (Schedule $s) => $s->publish_at->copy()->setTimezone($timezone)->day)
-            ->map(fn ($group) => $group->map(function (Schedule $s) {
-                $title = $s->contentProject->title;
-                if (empty($title) || $title === 'Untitled') {
-                    $title = $s->contentProject->script_data['caption'] ?? 'Untitled';
-                    if (empty($title)) {
-                        $title = 'Untitled';
-                    }
-                }
-
-                $data = $s->contentProject->script_data ?? [];
-                $paths = array_filter(array_column((array) ($data['slides'] ?? []), 'path'));
-                $disk = Storage::disk(config('filesystems.media_disk'));
-
-                return [
-                    'id' => $s->id,
-                    'group_id' => $s->group_id,
-                    'status' => $s->status->value,
-                    'publish_at' => $s->publish_at->toISOString(),
-                    'error_log' => $s->error_log,
-                    'content_project' => [
-                        'id' => $s->contentProject->id,
-                        'title' => Str::limit($title, 100),
-                        'video_url' => $s->contentProject->video_url,
-                        'caption' => (string) ($data['caption'] ?? ''),
-                        // Same precedence as the publishers: rendered slides first, then uploaded URLs.
-                        'images' => $paths !== []
-                            ? array_values(array_map(fn (string $path): string => url($disk->url($path)), $paths))
-                            : array_values(array_filter((array) ($data['image_urls'] ?? []))),
-                    ],
-                    'social_account' => [
-                        'id' => $s->socialAccount->id,
-                        'handle' => $s->socialAccount->handle,
-                        'provider' => $s->socialAccount->provider,
-                        'avatar' => $s->socialAccount->avatar,
-                    ],
-                ];
-            })->values());
-
-        $socialAccounts = SocialAccount::whereIn('workspace_id', $workspaceIds)
-            ->where('provider', 'tiktok')
-            ->get(['id', 'handle', 'provider', 'avatar']);
-
-        $contentProjects = ContentProject::whereIn('workspace_id', $workspaceIds)
-            ->whereIn('status', ['ready', 'drafting'])
-            ->latest()
-            ->get(['id', 'title', 'type', 'video_url', 'script_data'])
-            ->map(function ($cp) {
-                $title = $cp->title;
-                if (empty($title) || $title === 'Untitled') {
-                    $title = $cp->script_data['caption'] ?? 'Untitled';
-                    if (empty($title)) {
-                        $title = 'Untitled';
-                    }
-                }
-
-                return [
-                    'id' => $cp->id,
-                    'title' => Str::limit($title, 100),
-                    'type' => $cp->type,
-                    'video_url' => $cp->video_url,
-                ];
-            });
-
-        $counts = [
-            'queue' => Schedule::whereHas('socialAccount', fn ($q) => $q->whereIn('workspace_id', $workspaceIds))
-                ->whereIn('status', [ScheduleStatus::Pending->value, ScheduleStatus::Publishing->value])
-                ->count(),
-            'drafts' => ContentProject::whereIn('workspace_id', $workspaceIds)
-                ->where('status', 'drafting')
-                ->count(),
-            'sent' => Schedule::whereHas('socialAccount', fn ($q) => $q->whereIn('workspace_id', $workspaceIds))
-                ->where('status', ScheduleStatus::Published->value)
-                ->count(),
-        ];
+        $queueStatuses = [ScheduleStatus::Pending->value, ScheduleStatus::Publishing->value, ScheduleStatus::Failed->value];
 
         return Inertia::render('Schedule', [
-            'schedulesByDay' => $schedulesByDay,
-            'socialAccounts' => $socialAccounts,
-            'contentProjects' => $contentProjects,
+            'schedules' => $this->rows($this->schedules($workspaceIds)
+                ->where('s.publish_at', '>=', $monthStart->copy()->utc())
+                ->where('s.publish_at', '<', $monthStart->copy()->addMonth()->utc())
+                ->orderBy('s.publish_at')),
+            // The list view: every post still to go out (failed ones too, they
+            // need action) and the latest sent ones, whatever month is showing.
+            'queue' => $this->rows($this->schedules($workspaceIds)
+                ->whereIn('s.status', $queueStatuses)
+                ->orderBy('s.publish_at')
+                ->limit(500)),
+            'sent' => $this->rows($this->schedules($workspaceIds)
+                ->where('s.status', ScheduleStatus::Published->value)
+                ->orderByDesc('s.publish_at')
+                ->limit(200)),
+            'drafts' => $this->rows(DB::table('content_projects as cp')
+                ->whereIn('cp.workspace_id', $workspaceIds)
+                ->where('cp.status', 'drafting')
+                ->selectRaw("JSON_OBJECT('id', cp.id, 'title', ".self::TITLE.", 'type', cp.type, 'updated_at', ".$this->iso('cp.updated_at').", 'images', ".self::IMAGES.') as row_json', [$this->mediaBaseUrl()])
+                ->orderByDesc('cp.updated_at')
+                ->limit(200)),
+            'socialAccounts' => DB::table('social_accounts')
+                ->whereIn('workspace_id', $workspaceIds)
+                ->where('provider', 'tiktok')
+                ->get(['id', 'handle', 'provider', 'avatar']),
+            'contentProjects' => DB::table('content_projects as cp')
+                ->whereIn('cp.workspace_id', $workspaceIds)
+                ->whereIn('cp.status', ['ready', 'drafting'])
+                ->orderByDesc('cp.created_at')
+                ->selectRaw('cp.id, '.self::TITLE.' as title, cp.type, cp.video_url')
+                ->get(),
             'month' => $month,
             'year' => $year,
             'statuses' => array_column(ScheduleStatus::cases(), 'value'),
-            'counts' => $counts,
+            // Counted in posts, not rows: a post to three accounts is one post.
+            'counts' => [
+                'queue' => $this->schedules($workspaceIds)->whereIn('s.status', $queueStatuses)->distinct()->count('s.group_id'),
+                'drafts' => DB::table('content_projects')->whereIn('workspace_id', $workspaceIds)->where('status', 'drafting')->count(),
+                'sent' => $this->schedules($workspaceIds)->where('s.status', ScheduleStatus::Published->value)->distinct()->count('s.group_id'),
+            ],
         ]);
     }
 
@@ -286,6 +236,72 @@ class ScheduleController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Post deleted.']);
 
         return back();
+    }
+
+    /**
+     * Title shown for a project: its title, else its caption, else "Untitled".
+     */
+    private const TITLE = "LEFT(COALESCE(NULLIF(NULLIF(cp.title, ''), 'Untitled'), NULLIF(JSON_UNQUOTE(JSON_EXTRACT(cp.script_data, '$.caption')), ''), 'Untitled'), 100)";
+
+    /**
+     * Same precedence as the publishers: rendered slides (stored paths, served
+     * from the media disk, whose base URL is the one binding) first, then the
+     * uploaded image URLs.
+     */
+    private const IMAGES = "CAST(COALESCE((SELECT JSON_ARRAYAGG(CONCAT(?, TRIM(LEADING '/' FROM jt.path))) FROM JSON_TABLE(cp.script_data, '$.slides[*]' COLUMNS (n FOR ORDINALITY, path VARCHAR(1024) PATH '$.path')) jt WHERE jt.path <> ''), JSON_EXTRACT(cp.script_data, '$.image_urls'), JSON_ARRAY()) AS JSON)";
+
+    /**
+     * Every schedule of the workspaces, each selected as the finished JSON the
+     * page reads (row_json), so nothing is reshaped in PHP.
+     *
+     * @param  Collection<int, int>  $workspaceIds
+     */
+    private function schedules(Collection $workspaceIds): Builder
+    {
+        $json = "JSON_OBJECT(
+            'id', s.id,
+            'group_id', s.group_id,
+            'status', s.status,
+            'publish_at', ".$this->iso('s.publish_at').",
+            'error_log', s.error_log,
+            'content_project', JSON_OBJECT(
+                'id', cp.id,
+                'title', ".self::TITLE.",
+                'video_url', cp.video_url,
+                'caption', COALESCE(JSON_UNQUOTE(JSON_EXTRACT(cp.script_data, '$.caption')), ''),
+                'images', ".self::IMAGES.'
+            ),
+            \'social_account\', JSON_OBJECT(\'id\', sa.id, \'handle\', sa.handle, \'provider\', sa.provider, \'avatar\', sa.avatar)
+        ) as row_json';
+
+        return DB::table('schedules as s')
+            ->join('social_accounts as sa', 'sa.id', '=', 's.social_account_id')
+            ->join('content_projects as cp', 'cp.id', '=', 's.content_project_id')
+            ->whereIn('sa.workspace_id', $workspaceIds)
+            ->selectRaw($json, [$this->mediaBaseUrl()]);
+    }
+
+    /**
+     * The JSON rows of a query, in its order, decoded in one go.
+     *
+     * @return list<mixed>
+     */
+    private function rows(Builder $query): array
+    {
+        return json_decode('['.$query->pluck('row_json')->implode(',').']');
+    }
+
+    /**
+     * A UTC datetime column as ISO 8601, the way Carbon's toISOString writes it.
+     */
+    private function iso(string $column): string
+    {
+        return "DATE_FORMAT({$column}, '%Y-%m-%dT%H:%i:%s.000000Z')";
+    }
+
+    private function mediaBaseUrl(): string
+    {
+        return rtrim(url(Storage::disk(config('filesystems.media_disk'))->url('/')), '/').'/';
     }
 
     /**

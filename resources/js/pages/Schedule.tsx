@@ -7,9 +7,6 @@ import {
     Grid,
     Plus,
     ChevronDown,
-    MessageSquare,
-    Tag,
-    Globe,
     CheckCircle2,
     AlertCircle,
     XCircle,
@@ -78,8 +75,19 @@ interface ContentProjectOption {
     video_url: string | null;
 }
 
+interface DraftItem {
+    id: number;
+    title: string;
+    type: string;
+    updated_at: string;
+    images: string[];
+}
+
 interface Props {
-    schedulesByDay: Record<string, ScheduleItem[]>;
+    schedules: ScheduleItem[];
+    queue: ScheduleItem[];
+    sent: ScheduleItem[];
+    drafts: DraftItem[];
     socialAccounts: SocialAccountOption[];
     contentProjects: ContentProjectOption[];
     month: number;
@@ -107,20 +115,6 @@ const MONTH_NAMES = [
     'Dec',
 ];
 
-const HOURS = [
-    '12 AM',
-    '2 AM',
-    '4 AM',
-    '6 AM',
-    '8 AM',
-    '10 AM',
-    '12 PM',
-    '2 PM',
-    '4 PM',
-    '6 PM',
-    '8 PM',
-    '10 PM',
-];
 
 // One post scheduled to several accounts: one row per account sharing a group_id.
 // `lead` carries the content and time, and its id addresses the whole group on the server.
@@ -272,6 +266,148 @@ function AccountPicker({
     );
 }
 
+// "Today", "Tomorrow", "Yesterday" or "Wed, 14 Oct", in the browser's timezone.
+const dayLabel = (d: Date) => {
+    const startOf = (x: Date) =>
+        new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((startOf(d) - startOf(new Date())) / 86_400_000);
+
+    if (diff === 0) {
+        return 'Today';
+    }
+
+    if (diff === 1) {
+        return 'Tomorrow';
+    }
+
+    if (diff === -1) {
+        return 'Yesterday';
+    }
+
+    return d.toLocaleDateString([], {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        ...(d.getFullYear() !== new Date().getFullYear()
+            ? { year: 'numeric' }
+            : {}),
+    });
+};
+
+// Consecutive runs of items on the same local day, in the order given.
+function byDay<T>(items: T[], dateOf: (item: T) => Date) {
+    const days: { key: string; label: string; items: T[] }[] = [];
+
+    for (const item of items) {
+        const d = dateOf(item);
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const last = days[days.length - 1];
+
+        if (last?.key === key) {
+            last.items.push(item);
+        } else {
+            days.push({ key, label: dayLabel(d), items: [item] });
+        }
+    }
+
+    return days;
+}
+
+const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+const STATUS_PILL: Record<string, { label: string; className: string }> = {
+    pending: { label: 'Scheduled', className: 'bg-blue-50 text-blue-700' },
+    publishing: { label: 'Sending', className: 'bg-amber-50 text-amber-700' },
+    failed: { label: 'Failed', className: 'bg-red-50 text-red-700' },
+    published: { label: 'Sent', className: 'bg-green-50 text-green-700' },
+};
+
+function Thumb({ src }: { src?: string }) {
+    return src ? (
+        <img
+            src={src}
+            alt=""
+            loading="lazy"
+            className="h-12 w-9 shrink-0 rounded border border-gray-200 object-cover"
+        />
+    ) : (
+        <div className="h-12 w-9 shrink-0 rounded border border-gray-200 bg-gray-100" />
+    );
+}
+
+function DayHeader({ label, count }: { label: string; count: number }) {
+    return (
+        <div className="sticky top-0 z-10 flex items-center justify-between border-y border-gray-200 bg-gray-50 px-6 py-2">
+            <span className="text-sm font-semibold text-gray-900">{label}</span>
+            <span className="text-xs text-gray-500">
+                {count} {count === 1 ? 'post' : 'posts'}
+            </span>
+        </div>
+    );
+}
+
+function PostRow({
+    group,
+    onOpen,
+}: {
+    group: PostGroup;
+    onOpen: (group: PostGroup) => void;
+}) {
+    const status = STATUS_PILL[groupStatus(group)] ?? STATUS_PILL.pending;
+    const failed = group.members.filter((m) => m.status === 'failed');
+    const providers = [
+        ...new Set(group.members.map((m) => m.social_account.provider)),
+    ];
+
+    return (
+        <button
+            type="button"
+            onClick={() => onOpen(group)}
+            className="flex w-full items-center gap-4 border-b border-gray-100 bg-white px-6 py-3 text-left transition-colors hover:bg-gray-50"
+        >
+            <Thumb src={group.lead.content_project.images[0]} />
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
+                    {group.lead.content_project.title}
+                </p>
+                <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-gray-500">
+                    {providers.map((p) => (
+                        <span
+                            key={p}
+                            className="rounded-sm border border-gray-200"
+                        >
+                            <ProviderBadge provider={p} />
+                        </span>
+                    ))}
+                    <span className="truncate">
+                        {group.members
+                            .map((m) => `@${m.social_account.handle}`)
+                            .join(', ')}
+                    </span>
+                </div>
+                {failed.length > 0 && (
+                    <p className="mt-1 truncate text-xs text-red-600">
+                        {failed[0].error_log ||
+                            'An unknown error occurred while publishing to the platform.'}
+                    </p>
+                )}
+            </div>
+            <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}
+            >
+                {status.label}
+            </span>
+            <span className="w-14 shrink-0 text-right text-sm text-gray-700 tabular-nums">
+                {formatTime(group.lead.publish_at)}
+            </span>
+        </button>
+    );
+}
+
 // Value for <input type="datetime-local"> in the browser's timezone.
 const toLocalInput = (d: Date) => {
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -280,7 +416,10 @@ const toLocalInput = (d: Date) => {
 };
 
 export default function Schedule({
-    schedulesByDay = {},
+    schedules = [],
+    queue = [],
+    sent = [],
+    drafts = [],
     month,
     year,
     counts,
@@ -302,16 +441,39 @@ export default function Schedule({
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [busy, setBusy] = useState(false);
     const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+    const [accountFilter, setAccountFilter] = useState<number | 'all'>('all');
 
-    const groupsByDay = useMemo(
-        () =>
-            Object.fromEntries(
-                Object.entries(schedulesByDay).map(([day, items]) => [
-                    day,
-                    groupByPost(items),
-                ]),
-            ) as Record<string, PostGroup[]>,
-        [schedulesByDay],
+    // The server sends the month's posts; each lands on its local day here.
+    const groupsByDay = useMemo(() => {
+        const days: Record<string, ScheduleItem[]> = {};
+
+        for (const item of schedules) {
+            (days[new Date(item.publish_at).getDate()] ??= []).push(item);
+        }
+
+        return Object.fromEntries(
+            Object.entries(days).map(([day, items]) => [
+                day,
+                groupByPost(items),
+            ]),
+        ) as Record<string, PostGroup[]>;
+    }, [schedules]);
+
+    // Queue runs from the next post on, Sent from the latest back: both come
+    // ordered from the server, and grouping keeps that order.
+    const listDays = useMemo(() => {
+        const rows = (listTab === 'sent' ? sent : queue).filter(
+            (s) =>
+                accountFilter === 'all' ||
+                s.social_account.id === accountFilter,
+        );
+
+        return byDay(groupByPost(rows), (g) => new Date(g.lead.publish_at));
+    }, [listTab, queue, sent, accountFilter]);
+
+    const draftDays = useMemo(
+        () => byDay(drafts, (d) => new Date(d.updated_at)),
+        [drafts],
     );
 
     const openPreview = (group: PostGroup) => {
@@ -1036,73 +1198,151 @@ export default function Schedule({
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-6 text-sm text-gray-500">
-                                <select
-                                    value={calendarFilter}
-                                    onChange={(e) =>
-                                        setCalendarFilter(e.target.value as any)
-                                    }
-                                    className="flex cursor-pointer items-center gap-2 bg-transparent font-medium text-gray-500 transition-colors outline-none hover:text-gray-900"
-                                >
-                                    <option value="all">All Posts</option>
-                                    <option value="drafts">Drafts</option>
-                                    <option value="scheduled">Scheduled</option>
-                                    <option value="sent">Sent</option>
-                                </select>
-                            </div>
+                            {listTab !== 'drafts' &&
+                                socialAccounts.length > 1 && (
+                                    <select
+                                        value={accountFilter}
+                                        onChange={(e) =>
+                                            setAccountFilter(
+                                                e.target.value === 'all'
+                                                    ? 'all'
+                                                    : Number(e.target.value),
+                                            )
+                                        }
+                                        className="cursor-pointer bg-transparent text-sm font-medium text-gray-500 transition-colors outline-none hover:text-gray-900"
+                                    >
+                                        <option value="all">
+                                            All accounts
+                                        </option>
+                                        {socialAccounts.map((a) => (
+                                            <option key={a.id} value={a.id}>
+                                                @{a.handle}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                         </div>
+
+                        {listTab !== 'drafts' && listDays.length > 0 && (
+                            <div className="flex-1 overflow-y-auto pb-20">
+                                {listDays.map((day) => (
+                                    <section key={day.key}>
+                                        <DayHeader
+                                            label={day.label}
+                                            count={day.items.length}
+                                        />
+                                        {day.items.map((group) => (
+                                            <PostRow
+                                                key={group.key}
+                                                group={group}
+                                                onOpen={openPreview}
+                                            />
+                                        ))}
+                                    </section>
+                                ))}
+                            </div>
+                        )}
+
+                        {listTab === 'drafts' && draftDays.length > 0 && (
+                            <div className="flex-1 overflow-y-auto pb-20">
+                                {draftDays.map((day) => (
+                                    <section key={day.key}>
+                                        <DayHeader
+                                            label={day.label}
+                                            count={day.items.length}
+                                        />
+                                        {day.items.map((draft) => (
+                                            <button
+                                                key={draft.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setData(
+                                                        'content_project_id',
+                                                        String(draft.id),
+                                                    );
+                                                    setIsModalOpen(true);
+                                                }}
+                                                className="flex w-full items-center gap-4 border-b border-gray-100 bg-white px-6 py-3 text-left transition-colors hover:bg-gray-50"
+                                            >
+                                                <Thumb src={draft.images[0]} />
+                                                <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                                                    {draft.title}
+                                                </p>
+                                                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                                                    Draft
+                                                </span>
+                                                <span className="w-14 shrink-0 text-right text-sm text-gray-700 tabular-nums">
+                                                    {formatTime(
+                                                        draft.updated_at,
+                                                    )}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </section>
+                                ))}
+                            </div>
+                        )}
 
                         {/* List View Empty State */}
-                        <div className="flex flex-1 flex-col items-center justify-center bg-gray-50/50 pb-20">
-                            <div className="flex max-w-sm flex-col items-center text-center">
-                                {/* Stacked Cards Illustration */}
-                                <div className="relative mb-8 flex h-48 w-64 justify-center">
-                                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3">
-                                        {[1, 2, 3].map((i) => (
-                                            <div
-                                                key={i}
-                                                className={`relative flex h-16 w-56 items-center rounded-lg border border-gray-200 bg-white p-3 shadow-sm z-${10 + i}`}
-                                            >
-                                                <div className="flex flex-1 flex-col gap-2">
-                                                    <div className="h-1.5 w-3/4 rounded-full bg-gray-200" />
-                                                    <div className="h-1.5 w-1/2 rounded-full bg-gray-100" />
+                        {(listTab === 'drafts' ? draftDays : listDays)
+                            .length === 0 && (
+                            <div className="flex flex-1 flex-col items-center justify-center bg-gray-50/50 pb-20">
+                                <div className="flex max-w-sm flex-col items-center text-center">
+                                    {/* Stacked Cards Illustration */}
+                                    <div className="relative mb-8 flex h-48 w-64 justify-center">
+                                        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3">
+                                            {[1, 2, 3].map((i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`relative flex h-16 w-56 items-center rounded-lg border border-gray-200 bg-white p-3 shadow-sm z-${10 + i}`}
+                                                >
+                                                    <div className="flex flex-1 flex-col gap-2">
+                                                        <div className="h-1.5 w-3/4 rounded-full bg-gray-200" />
+                                                        <div className="h-1.5 w-1/2 rounded-full bg-gray-100" />
+                                                    </div>
+                                                    <div className="ml-4 h-10 w-10 rounded-md bg-gray-100" />
                                                 </div>
-                                                <div className="ml-4 h-10 w-10 rounded-md bg-gray-100" />
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
+                                        {/* Abstract curved arrow */}
+                                        <svg
+                                            className="absolute top-1/4 -right-4 h-32 w-12 text-gray-300"
+                                            fill="none"
+                                            viewBox="0 0 48 128"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="1.5"
+                                                d="M24 8L32 0L40 8M32 0v64c0 17.673-14.327 32-32 32"
+                                            />
+                                        </svg>
                                     </div>
-                                    {/* Abstract curved arrow */}
-                                    <svg
-                                        className="absolute top-1/4 -right-4 h-32 w-12 text-gray-300"
-                                        fill="none"
-                                        viewBox="0 0 48 128"
-                                        stroke="currentColor"
+
+                                    <h3 className="mb-2 text-base font-semibold text-gray-900">
+                                        {listTab === 'sent'
+                                            ? 'Nothing sent yet'
+                                            : listTab === 'drafts'
+                                              ? 'No drafts'
+                                              : 'No posts scheduled'}
+                                    </h3>
+                                    <p className="mb-6 text-sm text-gray-500">
+                                        {listTab === 'sent'
+                                            ? 'Posts show up here once they go out'
+                                            : 'Schedule some posts and they will appear here'}
+                                    </p>
+
+                                    <Button
+                                        className="border border-[#FFE156]/50 bg-[#FFE156] font-semibold text-[#1A1A1A] shadow-sm hover:bg-[#E6CB4D]"
+                                        onClick={() => setIsModalOpen(true)}
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="1.5"
-                                            d="M24 8L32 0L40 8M32 0v64c0 17.673-14.327 32-32 32"
-                                        />
-                                    </svg>
+                                        <Plus className="mr-2 h-4 w-4" /> New
+                                        Post
+                                    </Button>
                                 </div>
-
-                                <h3 className="mb-2 text-base font-semibold text-gray-900">
-                                    No posts scheduled
-                                </h3>
-                                <p className="mb-6 text-sm text-gray-500">
-                                    Schedule some posts and they will appear
-                                    here
-                                </p>
-
-                                <Button
-                                    className="border border-[#FFE156]/50 bg-[#FFE156] font-semibold text-[#1A1A1A] shadow-sm hover:bg-[#E6CB4D]"
-                                    onClick={() => setIsModalOpen(true)}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" /> New Post
-                                </Button>
                             </div>
-                        </div>
+                        )}
                     </>
                 )}
             </div>
