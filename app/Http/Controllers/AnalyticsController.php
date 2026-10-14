@@ -149,6 +149,7 @@ class AnalyticsController extends Controller
         $accounts = SocialAccount::query()
             ->whereIn('workspace_id', $this->ownedWorkspaceIds($userId))
             ->where('provider', 'tiktok')
+            ->orderBy('id')
             ->get(['id', 'handle', 'avatar', 'access_token', 'refresh_token', 'expires_at']);
 
         if ($accounts->isEmpty()) {
