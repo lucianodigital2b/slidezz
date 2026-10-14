@@ -1,14 +1,14 @@
 import '@/i18n';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { syncStoredLanguage } from '@/i18n';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import { trackPageView } from '@/lib/meta';
+import { syncStoredLanguage } from '@/i18n';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { trackPageView } from '@/lib/meta';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -69,6 +69,7 @@ initializeTheme();
 // calendar days (ScheduleController::viewerTimezone).
 try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
     if (timezone) {
         document.cookie = `tz=${encodeURIComponent(timezone)};path=/;max-age=${365 * 24 * 60 * 60};SameSite=Lax`;
     }
