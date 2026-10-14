@@ -21,6 +21,7 @@ class Schedule extends Model
         'publish_at',
         'status',
         'platform_post_id',
+        'public_post_id',
         'error_log',
     ];
 

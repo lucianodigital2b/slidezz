@@ -76,6 +76,21 @@ function formatNumber(n: number): string {
     return n.toString();
 }
 
+/** A post with no stats read yet shows a dash, not zeros it never had. */
+function metric(post: Post, value: string): string {
+    return post.last_synced_at ? value : '—';
+}
+
+function pendingHint(post: Post): string | undefined {
+    if (post.last_synced_at) {
+        return undefined;
+    }
+
+    return post.platform === 'tiktok'
+        ? 'Sem dados ainda: poste o rascunho do inbox no TikTok como público e clique em Atualizar.'
+        : 'Sem dados ainda: clique em Atualizar.';
+}
+
 const STAT_CARDS = [
     { key: 'total_views' as const, label: 'Total de Views', icon: Eye },
     { key: 'total_likes' as const, label: 'Total de Curtidas', icon: Heart },
@@ -233,7 +248,7 @@ export default function Analytics({ stats, posts, period, tiktokAccounts }: Prop
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-gray-100">
-                                        <th className="text-left text-xs font-medium text-gray-500 px-5 py-3 whitespace-nowrap">Conta</th>
+                                        <th className="text-left text-xs font-medium text-gray-500 px-5 py-3 whitespace-nowrap">Publicação</th>
                                         {COLUMNS.map(({ key, label }) => (
                                             <th
                                                 key={key}
@@ -271,17 +286,17 @@ export default function Analytics({ stats, posts, period, tiktokAccounts }: Prop
                                                             <AvatarFallback>{post.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <div className="min-w-0">
-                                                            <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">@{post.handle}</p>
-                                                            <p className="text-xs text-gray-400 capitalize">{post.platform}</p>
+                                                            <p className="text-sm font-medium text-gray-900 truncate max-w-[180px]">@{post.handle}</p>
+                                                            <p className="text-xs text-gray-400 truncate max-w-[180px]" title={post.title}>{post.title}</p>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 font-medium text-gray-900">{formatNumber(post.views)}</td>
-                                                <td className="px-4 py-3 text-gray-700">{formatNumber(post.likes)}</td>
-                                                <td className="px-4 py-3 text-gray-700">{formatNumber(post.comments)}</td>
-                                                <td className="px-4 py-3 text-gray-700">{formatNumber(post.shares)}</td>
-                                                <td className="px-4 py-3 text-gray-700">{formatNumber(post.bookmarks)}</td>
-                                                <td className="px-4 py-3 text-gray-700">{post.engagement_rate}%</td>
+                                                <td className="px-4 py-3 font-medium text-gray-900" title={pendingHint(post)}>{metric(post, formatNumber(post.views))}</td>
+                                                <td className="px-4 py-3 text-gray-700" title={pendingHint(post)}>{metric(post, formatNumber(post.likes))}</td>
+                                                <td className="px-4 py-3 text-gray-700" title={pendingHint(post)}>{metric(post, formatNumber(post.comments))}</td>
+                                                <td className="px-4 py-3 text-gray-700" title={pendingHint(post)}>{metric(post, formatNumber(post.shares))}</td>
+                                                <td className="px-4 py-3 text-gray-700" title={pendingHint(post)}>{metric(post, formatNumber(post.bookmarks))}</td>
+                                                <td className="px-4 py-3 text-gray-700" title={pendingHint(post)}>{metric(post, `${post.engagement_rate}%`)}</td>
                                                 <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
                                                     {new Date(post.published_at).toLocaleDateString('pt-BR', {
                                                         day: '2-digit', month: 'short', year: 'numeric',
@@ -326,9 +341,9 @@ export default function Analytics({ stats, posts, period, tiktokAccounts }: Prop
                                     <p className="text-sm text-gray-600 mb-4 line-clamp-2">{post.title}</p>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[
-                                            { label: 'Views', value: formatNumber(post.views) },
-                                            { label: 'Curtidas', value: formatNumber(post.likes) },
-                                            { label: 'Engajamento', value: `${post.engagement_rate}%` },
+                                            { label: 'Views', value: metric(post, formatNumber(post.views)) },
+                                            { label: 'Curtidas', value: metric(post, formatNumber(post.likes)) },
+                                            { label: 'Engajamento', value: metric(post, `${post.engagement_rate}%`) },
                                         ].map(({ label, value }) => (
                                             <div key={label} className="bg-gray-50 rounded-lg p-2.5 text-center">
                                                 <p className="text-xs text-gray-400 mb-0.5">{label}</p>

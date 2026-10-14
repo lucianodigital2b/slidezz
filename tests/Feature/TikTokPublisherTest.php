@@ -155,6 +155,20 @@ class TikTokPublisherTest extends TestCase
         $status = (new TikTokPublisher)->fetchStatus($account, 'v_pub_id_123');
 
         $this->assertSame('SEND_TO_USER_INBOX', $status['status']);
+        $this->assertNull($status['post_id']);
+    }
+
+    public function test_the_status_carries_the_id_of_the_video_posted_from_the_draft(): void
+    {
+        Http::fake(['*status/fetch/' => Http::response(
+            '{"data":{"publicaly_available_post_id":[7696526215116508424],"status":"SEND_TO_USER_INBOX"},"error":{"code":"ok"}}',
+        )]);
+
+        $account = SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+
+        $status = (new TikTokPublisher)->fetchStatus($account, 'p_inbox_url~v2.111');
+
+        $this->assertSame('7696526215116508424', $status['post_id']);
     }
 
     public function test_it_reads_the_account_totals_and_recent_videos(): void

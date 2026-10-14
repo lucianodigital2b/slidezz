@@ -280,7 +280,10 @@ class TikTokPublisher implements SocialPublisher
      * Poll the async publish so a rejected download surfaces instead of silently
      * looking published.
      *
-     * @return array{status: string, fail_reason: string}
+     * Once the creator posts the draft publicly and it passes moderation, the
+     * same check also carries the id of the posted video (post_id).
+     *
+     * @return array{status: string, fail_reason: string, post_id: ?string}
      */
     public function fetchStatus(SocialAccount $account, string $publishId): array
     {
@@ -298,6 +301,8 @@ class TikTokPublisher implements SocialPublisher
         return [
             'status' => (string) $response->json('data.status', 'UNKNOWN'),
             'fail_reason' => (string) $response->json('data.fail_reason', ''),
+            // TikTok misspells the field; the id is an int64, which PHP keeps whole.
+            'post_id' => ($id = $response->json('data.publicaly_available_post_id.0')) !== null ? (string) $id : null,
         ];
     }
 
@@ -490,13 +495,74 @@ class TikTokPublisher implements SocialPublisher
     }
 
     /**
-     * Nothing yet. Inbox drafts only have a publish_id, not the id of the video
-     * the creator posts from it, so there is no post to read stats from. Linking
-     * the draft to the posted video (video.list) is what would make this real.
+     * Stats of the video the creator posted from the draft with this
+     * publish_id. The draft itself has none, so the posted video's id is looked
+     * up first (and kept on the schedule); until the creator posts the draft
+     * publicly there is nothing to read and this returns no stats.
      */
     public function getAnalytics(string $platformPostId): array
     {
-        return [];
+        $schedule = Schedule::where('platform_post_id', $platformPostId)
+            ->with('socialAccount')
+            ->latest('id')
+            ->first();
+
+        if (! $schedule) {
+            return [];
+        }
+
+        $account = $schedule->socialAccount;
+
+        if ($account->expires_at?->isPast()) {
+            $this->refreshToken($account);
+        }
+
+        if (! $videoId = $this->publicPostId($schedule)) {
+            return [];
+        }
+
+        $response = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(30)
+            ->post('https://open.tiktokapis.com/v2/video/query/?fields=id,view_count,like_count,comment_count,share_count', [
+                'filters' => ['video_ids' => [$videoId]],
+            ]);
+
+        $this->failUnlessOk($response);
+
+        // Gone from the API: deleted, or made private after it was posted.
+        $video = $response->json('data.videos.0');
+
+        if (! $video) {
+            return [];
+        }
+
+        // The API has no count of saves, so bookmarks stays out.
+        return [
+            'views' => (int) ($video['view_count'] ?? 0),
+            'likes' => (int) ($video['like_count'] ?? 0),
+            'comments' => (int) ($video['comment_count'] ?? 0),
+            'shares' => (int) ($video['share_count'] ?? 0),
+        ];
+    }
+
+    /**
+     * The id of the video posted from this schedule's draft, asked of TikTok
+     * and saved the first time it is there.
+     */
+    public function publicPostId(Schedule $schedule): ?string
+    {
+        if ($schedule->public_post_id) {
+            return $schedule->public_post_id;
+        }
+
+        $postId = $this->fetchStatus($schedule->socialAccount, $schedule->platform_post_id)['post_id'];
+
+        if ($postId) {
+            $schedule->update(['public_post_id' => $postId]);
+        }
+
+        return $postId;
     }
 
     protected function refreshToken(SocialAccount $account): void

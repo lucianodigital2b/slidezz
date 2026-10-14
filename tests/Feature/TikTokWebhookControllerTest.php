@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\ScheduleStatus;
+use App\Jobs\SyncPostAnalytics;
 use App\Models\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class TikTokWebhookControllerTest extends TestCase
@@ -132,6 +134,26 @@ class TikTokWebhookControllerTest extends TestCase
         $this->postJson('/webhooks/tiktok', $this->event('post.publish.failed', ['publish_id' => 'tiktok_pub_004']));
 
         $this->assertSame(ScheduleStatus::Published, $schedule->fresh()->status);
+    }
+
+    public function test_a_draft_posted_publicly_is_linked_to_its_video_and_synced(): void
+    {
+        config(['services.tiktok.webhook_secret' => null]);
+        Queue::fake();
+
+        $schedule = Schedule::factory()->create([
+            'platform_post_id' => 'p_inbox_url~v2.111',
+            'status' => ScheduleStatus::Published,
+        ]);
+
+        // The id is an int64 inside TikTok's JSON-encoded content.
+        $this->postJson('/webhooks/tiktok', [
+            'event' => 'post.publish.publicly_available',
+            'content' => '{"publish_id":"p_inbox_url~v2.111","post_id":7696526215116508424,"publish_type":"INBOX_SHARE"}',
+        ])->assertOk();
+
+        $this->assertSame('7696526215116508424', $schedule->fresh()->public_post_id);
+        Queue::assertPushed(SyncPostAnalytics::class, fn (SyncPostAnalytics $job): bool => $job->schedule->is($schedule));
     }
 
     public function test_an_event_for_an_unknown_publish_id_does_not_crash(): void

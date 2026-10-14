@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ScheduleStatus;
+use App\Jobs\SyncPostAnalytics;
 use App\Models\Schedule;
 use App\Services\Social\TikTokPublisher;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +39,10 @@ class TikTokWebhookController extends Controller
             'post.publish.failed' => $this->settle($content, ScheduleStatus::Failed),
             default => Log::info('TikTok webhook: unhandled event', ['event' => $event, 'content' => $content]),
         };
+
+        if ($event === 'post.publish.publicly_available') {
+            $this->linkPublicPost($content);
+        }
 
         return response()->json(['message' => 'OK']);
     }
@@ -110,5 +115,34 @@ class TikTokWebhookController extends Controller
         $schedule->update($status === ScheduleStatus::Failed
             ? ['status' => $status, 'error_log' => app(TikTokPublisher::class)->describeFailure((string) ($content['reason'] ?? ''))]
             : ['status' => $status, 'error_log' => null]);
+    }
+
+    /**
+     * The creator posted the draft publicly: keep the id of the posted video,
+     * which its stats are read from, and read them right away. The status
+     * check (TikTokPublisher::publicPostId) finds it too when this never comes.
+     *
+     * @param  array<string, mixed>  $content
+     */
+    private function linkPublicPost(array $content): void
+    {
+        $publishId = $content['publish_id'] ?? null;
+        $postId = $content['post_id'] ?? null;
+
+        if (! $publishId || ! $postId) {
+            return;
+        }
+
+        $schedule = Schedule::where('platform_post_id', $publishId)
+            ->whereNull('public_post_id')
+            ->first();
+
+        if (! $schedule) {
+            return;
+        }
+
+        $schedule->update(['public_post_id' => (string) $postId]);
+
+        SyncPostAnalytics::dispatch($schedule);
     }
 }
