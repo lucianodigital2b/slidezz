@@ -33,7 +33,7 @@ class TikTokPublisher implements SocialPublisher
         $query = http_build_query([
             'client_key' => $this->clientId,
             'response_type' => 'code',
-            'scope' => 'user.info.basic,user.info.profile,user.info.stats,video.list,video.upload',
+            'scope' => 'user.info.basic,video.upload',
             'redirect_uri' => url($this->redirectUri),
             'state' => $csrfState,
             // Always show the consent screen, so the user can switch to another
