@@ -11,6 +11,8 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -218,5 +220,50 @@ class AnalyticsControllerTest extends TestCase
                     ->where('tiktokAccounts.0.error', fn ($error) => str_contains($error, 'Reconecte'))
                 )
             );
+    }
+
+    public function test_a_tiktok_account_that_times_out_shows_a_friendly_message_and_the_others_still_load(): void
+    {
+        Http::fake(function (Request $request) {
+            if ($request->hasHeader('Authorization', 'Bearer slow-token')) {
+                return Http::failedConnection('cURL error 28: Operation timed out after 15001 milliseconds')($request);
+            }
+
+            return str_contains($request->url(), 'user/info/')
+                ? Http::response(['data' => ['user' => ['follower_count' => 1200]], 'error' => ['code' => 'ok']])
+                : Http::response(['data' => ['videos' => []], 'error' => ['code' => 'ok']]);
+        });
+
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $fast = SocialAccount::factory()->create([
+            'workspace_id' => $workspace->id,
+            'provider' => 'tiktok',
+            'handle' => 'fast',
+            'expires_at' => now()->addDay(),
+        ]);
+        $slow = SocialAccount::factory()->create([
+            'workspace_id' => $workspace->id,
+            'provider' => 'tiktok',
+            'handle' => 'slow',
+            'access_token' => 'slow-token',
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->get('/analytics')
+            ->assertInertia(fn ($page) => $page
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('tiktokAccounts', 2)
+                    ->where('tiktokAccounts.0.insights.followers', 1200)
+                    ->where('tiktokAccounts.0.error', null)
+                    ->where('tiktokAccounts.1.insights', null)
+                    ->where('tiktokAccounts.1.error', fn ($error) => str_contains($error, 'demorou') && ! str_contains($error, 'cURL'))
+                )
+            );
+
+        // Only the account that answered is cached, so the slow one retries next load.
+        $this->assertTrue(Cache::has("tiktok-insights:{$fast->id}"));
+        $this->assertFalse(Cache::has("tiktok-insights:{$slow->id}"));
     }
 }

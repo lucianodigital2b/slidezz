@@ -6,6 +6,8 @@ use App\Contracts\SocialPublisher;
 use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -350,23 +352,85 @@ class TikTokPublisher implements SocialPublisher
      */
     public function accountInsights(SocialAccount $account): array
     {
-        if ($account->expires_at?->isPast()) {
-            $this->refreshToken($account);
+        $result = $this->accountsInsights([$account])[$account->id];
+
+        if ($result['error'] !== null) {
+            throw new \RuntimeException($result['error']);
         }
 
-        $user = Http::withToken($account->access_token)
-            ->timeout(30)
-            ->get('https://open.tiktokapis.com/v2/user/info/', [
-                'fields' => 'open_id,follower_count,following_count,likes_count,video_count',
-            ]);
-        $this->failUnlessOk($user);
+        return $result['insights'];
+    }
 
-        $videos = Http::withToken($account->access_token)
-            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
-            ->timeout(30)
-            ->post('https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,cover_image_url,share_url,create_time,view_count,like_count,comment_count,share_count', [
-                'max_count' => 20,
-            ]);
+    /**
+     * accountInsights for several accounts at once. Every call goes out in
+     * parallel, so the panel waits for the slowest account instead of the sum
+     * of all of them, and a failing account comes back as a message the user
+     * can act on instead of failing the others.
+     *
+     * @param  iterable<SocialAccount>  $accounts
+     * @return array<int, array{insights: ?array, error: ?string}> keyed by account id
+     */
+    public function accountsInsights(iterable $accounts): array
+    {
+        $results = [];
+        $ready = [];
+
+        foreach ($accounts as $account) {
+            try {
+                if ($account->expires_at?->isPast()) {
+                    $this->refreshToken($account);
+                }
+                $ready[] = $account;
+            } catch (\Throwable $e) {
+                $results[$account->id] = ['insights' => null, 'error' => $this->insightsError($e)];
+            }
+        }
+
+        if ($ready === []) {
+            return $results;
+        }
+
+        $responses = Http::pool(function (Pool $pool) use ($ready) {
+            foreach ($ready as $account) {
+                $pool->as("user:{$account->id}")
+                    ->withToken($account->access_token)
+                    ->connectTimeout(5)
+                    ->timeout(15)
+                    ->get('https://open.tiktokapis.com/v2/user/info/', [
+                        'fields' => 'open_id,follower_count,following_count,likes_count,video_count',
+                    ]);
+
+                $pool->as("videos:{$account->id}")
+                    ->withToken($account->access_token)
+                    ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+                    ->connectTimeout(5)
+                    ->timeout(15)
+                    ->post('https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,cover_image_url,share_url,create_time,view_count,like_count,comment_count,share_count', [
+                        'max_count' => 20,
+                    ]);
+            }
+        });
+
+        foreach ($ready as $account) {
+            try {
+                $results[$account->id] = [
+                    'insights' => $this->readInsights($responses["user:{$account->id}"], $responses["videos:{$account->id}"]),
+                    'error' => null,
+                ];
+            } catch (\Throwable $e) {
+                $results[$account->id] = ['insights' => null, 'error' => $this->insightsError($e)];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array{followers: int, following: int, likes: int, videos: int, recent: list<array<string, mixed>>}
+     */
+    private function readInsights(Response|\Throwable $user, Response|\Throwable $videos): array
+    {
+        $this->failUnlessOk($user);
         $this->failUnlessOk($videos);
 
         return [
@@ -388,13 +452,41 @@ class TikTokPublisher implements SocialPublisher
         ];
     }
 
-    private function failUnlessOk(Response $response): void
+    /**
+     * A pooled request that never got an answer comes back as the exception
+     * itself, so it is rethrown here like any other failure.
+     */
+    private function failUnlessOk(Response|\Throwable $response): void
     {
+        if ($response instanceof \Throwable) {
+            throw $response;
+        }
+
         $code = (string) $response->json('error.code', $response->successful() ? 'ok' : 'http_'.$response->status());
 
         if ($code !== 'ok') {
-            throw new \RuntimeException($this->publishError($code, (string) $response->json('error.message', '')));
+            throw new TikTokApiException($this->publishError($code, (string) $response->json('error.message', '')));
         }
+    }
+
+    /**
+     * What the panel shows for an account that failed: TikTok's own error
+     * already has a readable message; a timeout or anything unexpected never
+     * shows its raw text.
+     */
+    private function insightsError(\Throwable $e): string
+    {
+        if ($e instanceof TikTokApiException) {
+            return $e->getMessage();
+        }
+
+        if ($e instanceof ConnectionException) {
+            return 'O TikTok demorou pra responder. Clique em Atualizar daqui a pouco.';
+        }
+
+        report($e);
+
+        return 'Não deu pra ler essa conta agora. Tente de novo daqui a pouco.';
     }
 
     /**

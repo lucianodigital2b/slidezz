@@ -137,41 +137,43 @@ class AnalyticsController extends Controller
 
     /**
      * Totals and recent videos read straight from each connected TikTok account.
-     * A failing account (expired token, missing scope) shows its error instead
-     * of hiding the others.
+     * Accounts not in the cache are fetched together in parallel; a failing
+     * account (timeout, expired token, missing scope) shows its message
+     * instead of hiding the others, and is not cached so the next load retries.
      *
      * @return list<array<string, mixed>>
      */
     private function tiktokAccounts(int $userId): array
     {
-        $publisher = app(TikTokPublisher::class);
-
         // Eloquent here because the tokens are encrypted casts and a refresh writes back.
-        return SocialAccount::query()
+        $accounts = SocialAccount::query()
             ->whereIn('workspace_id', $this->ownedWorkspaceIds($userId))
             ->where('provider', 'tiktok')
-            ->get(['id', 'handle', 'avatar', 'access_token', 'refresh_token', 'expires_at'])
-            ->map(function (SocialAccount $account) use ($publisher) {
-                try {
-                    $insights = Cache::remember(
-                        self::insightsKey($account->id),
-                        now()->addMinutes(15),
-                        fn () => $publisher->accountInsights($account),
-                    );
-                    $error = null;
-                } catch (\Throwable $e) {
-                    $insights = null;
-                    $error = $e->getMessage();
-                }
+            ->get(['id', 'handle', 'avatar', 'access_token', 'refresh_token', 'expires_at']);
 
-                return [
-                    'id' => $account->id,
-                    'handle' => $account->handle,
-                    'avatar' => $account->avatar,
-                    'insights' => $insights,
-                    'error' => $error,
-                ];
-            })
+        if ($accounts->isEmpty()) {
+            return [];
+        }
+
+        $results = Cache::many($accounts->map(fn (SocialAccount $a) => self::insightsKey($a->id))->all());
+        $missing = $accounts->filter(fn (SocialAccount $a) => $results[self::insightsKey($a->id)] === null);
+
+        $fetched = $missing->isEmpty() ? [] : app(TikTokPublisher::class)->accountsInsights($missing);
+
+        foreach ($fetched as $id => $result) {
+            if ($result['insights'] !== null) {
+                Cache::put(self::insightsKey($id), $result['insights'], now()->addMinutes(15));
+            }
+        }
+
+        return $accounts
+            ->map(fn (SocialAccount $account) => [
+                'id' => $account->id,
+                'handle' => $account->handle,
+                'avatar' => $account->avatar,
+                'insights' => $fetched[$account->id]['insights'] ?? $results[self::insightsKey($account->id)],
+                'error' => $fetched[$account->id]['error'] ?? null,
+            ])
             ->values()
             ->all();
     }
