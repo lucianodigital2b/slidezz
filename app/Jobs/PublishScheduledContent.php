@@ -2,15 +2,22 @@
 
 namespace App\Jobs;
 
+use App\Enums\ScheduleStatus;
 use App\Models\Schedule;
 use App\Services\Social\SocialPublisherFactory;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Sends one claimed schedule (status publishing, see Schedule::claimDue) to its
+ * network. Never retried: a second attempt could post twice.
+ */
 class PublishScheduledContent implements ShouldQueue
 {
     use Queueable;
+
+    public int $tries = 1;
 
     public function __construct(
         public Schedule $schedule
@@ -18,35 +25,46 @@ class PublishScheduledContent implements ShouldQueue
 
     public function handle(): void
     {
-        // 1. Mark as publishing
-        $this->schedule->update(['status' => 'publishing']);
+        $schedule = $this->schedule->fresh();
+
+        // Only a claimed row that was not sent yet goes out. Anything else is a
+        // job for a row that was deleted, moved, failed by the sweep or already sent.
+        if (! $schedule || $schedule->status !== ScheduleStatus::Publishing || $schedule->platform_post_id) {
+            return;
+        }
+
+        $provider = $schedule->socialAccount->provider;
 
         try {
-            // 2. Resolve the correct social publisher strategy (TikTok, IG, etc.)
-            $provider = $this->schedule->socialAccount->provider;
-            $publisher = SocialPublisherFactory::make($provider);
-
-            // 3. Publish the video draft
-            $platformPostId = $publisher->publish($this->schedule->contentProject, $this->schedule);
-
-            // 4. Mark as success
-            $this->schedule->update([
-                'status' => 'published',
-                'platform_post_id' => $platformPostId,
-            ]);
-
+            $platformPostId = SocialPublisherFactory::make($provider)
+                ->publish($schedule->contentProject, $schedule);
         } catch (\Throwable $th) {
-            // 5. Handle failure gracefully
-            Log::error("Failed to publish schedule ID {$this->schedule->id}", [
-                'error' => $th->getMessage()
+            Log::error("Failed to publish schedule ID {$schedule->id}", [
+                'error' => $th->getMessage(),
             ]);
 
-            $this->schedule->update([
-                'status' => 'failed',
+            $schedule->update([
+                'status' => ScheduleStatus::Failed,
                 'error_log' => $th->getMessage(),
             ]);
 
-            // Depending on requirements, we could re-throw or notify the user here.
+            return;
         }
+
+        if ($provider === 'tiktok') {
+            // TikTok only accepted the request: it downloads the media and
+            // delivers the draft afterwards, so the row stays publishing until
+            // the status check (or the webhook) confirms it reached the inbox.
+            $schedule->update(['platform_post_id' => $platformPostId]);
+            CheckTikTokPublishStatus::dispatch($schedule)->delay(now()->addSeconds(CheckTikTokPublishStatus::INTERVAL));
+
+            return;
+        }
+
+        $schedule->update([
+            'status' => ScheduleStatus::Published,
+            'platform_post_id' => $platformPostId,
+            'error_log' => null,
+        ]);
     }
 }

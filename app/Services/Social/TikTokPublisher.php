@@ -316,9 +316,21 @@ class TikTokPublisher implements SocialPublisher
      * Translate TikTok's error codes into something the user can act on; the raw
      * code lands in the Schedule's error_log either way.
      */
+    /**
+     * The message for a fail_reason from the publish status check.
+     */
+    public function describeFailure(string $reason): string
+    {
+        return $this->publishError($reason, '');
+    }
+
     private function publishError(string $code, string $message): string
     {
         return match ($code) {
+            'photo_pull_failed', 'video_pull_failed' => 'O TikTok não conseguiu baixar a mídia. Confira se as imagens abrem pelo link e tente de novo.',
+            'picture_size_check_failed' => 'O TikTok recusou o tamanho das imagens (máximo 1080p).',
+            'file_format_check_failed' => 'O TikTok recusou o formato do arquivo.',
+            'auth_removed' => 'A conta do TikTok tirou a permissão do Slidezz. Reconecte a conta.',
             'url_ownership_unverified' => 'O domínio das imagens não está verificado no TikTok Developer Portal. Verifique a propriedade da URL e tente de novo.',
             'spam_risk_too_many_posts' => 'O TikTok bloqueou o envio por excesso de posts recentes nessa conta. Tente mais tarde.',
             'spam_risk_user_banned_from_posting' => 'Essa conta do TikTok está impedida de postar no momento.',
@@ -328,17 +340,14 @@ class TikTokPublisher implements SocialPublisher
         };
     }
 
+    /**
+     * Nothing yet. Inbox drafts only have a publish_id, not the id of the video
+     * the creator posts from it, so there is no post to read stats from. Linking
+     * the draft to the posted video (video.list) is what would make this real.
+     */
     public function getAnalytics(string $platformPostId): array
     {
-        $views = rand(100, 10000);
-
-        return [
-            'views' => $views,
-            'likes' => rand(10, (int) ($views * 0.1)),
-            'comments' => rand(0, (int) ($views * 0.02)),
-            'shares' => rand(0, (int) ($views * 0.05)),
-            'bookmarks' => rand(0, (int) ($views * 0.03)),
-        ];
+        return [];
     }
 
     protected function refreshToken(SocialAccount $account): void

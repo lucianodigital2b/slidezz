@@ -26,6 +26,12 @@ class SyncPostAnalytics implements ShouldQueue
             $data = SocialPublisherFactory::make($provider)
                 ->getAnalytics($this->schedule->platform_post_id);
 
+            // A network that can't read this post's stats returns nothing:
+            // keep no row rather than a row of zeros.
+            if ($data === []) {
+                return;
+            }
+
             PostAnalytic::updateOrCreate(
                 ['schedule_id' => $this->schedule->id],
                 [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ScheduleStatus;
 use App\Models\Schedule;
+use App\Services\Social\TikTokPublisher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,11 +28,15 @@ class TikTokWebhookController extends Controller
 
         $payload = $request->json()->all();
         $event = $payload['event'] ?? null;
-        $data = $payload['data'] ?? [];
+        // TikTok sends `content` as a JSON-encoded string.
+        $content = is_string($payload['content'] ?? null)
+            ? (array) json_decode($payload['content'], true)
+            : (array) ($payload['content'] ?? []);
 
         match ($event) {
-            'video.upload.status' => $this->handleVideoUploadStatus($data),
-            default => Log::info('TikTok webhook: unhandled event', ['event' => $event, 'data' => $data]),
+            'post.publish.inbox_delivered', 'post.publish.complete', 'post.publish.publicly_available' => $this->settle($content, ScheduleStatus::Published),
+            'post.publish.failed' => $this->settle($content, ScheduleStatus::Failed),
+            default => Log::info('TikTok webhook: unhandled event', ['event' => $event, 'content' => $content]),
         };
 
         return response()->json(['message' => 'OK']);
@@ -78,30 +83,32 @@ class TikTokWebhookController extends Controller
         return hash_equals($expected, $signature);
     }
 
-    private function handleVideoUploadStatus(array $data): void
+    /**
+     * Settle a schedule still waiting on TikTok, the same way the status check
+     * (CheckTikTokPublishStatus) does; whichever arrives first wins.
+     *
+     * @see https://developers.tiktok.com/doc/content-posting-api-reference-webhooks
+     *
+     * @param  array<string, mixed>  $content
+     */
+    private function settle(array $content, ScheduleStatus $status): void
     {
-        $publishId = $data['publish_id'] ?? null;
-        $status = $data['status'] ?? null;
+        $publishId = $content['publish_id'] ?? null;
 
-        if (! $publishId || ! $status) {
+        if (! $publishId) {
             return;
         }
 
-        $schedule = Schedule::where('platform_post_id', $publishId)->first();
+        $schedule = Schedule::where('platform_post_id', $publishId)
+            ->where('status', ScheduleStatus::Publishing)
+            ->first();
 
         if (! $schedule) {
-            Log::warning('TikTok webhook: no schedule found for publish_id', ['publish_id' => $publishId]);
-
             return;
         }
 
-        match ($status) {
-            'UPLOAD_COMPLETE', 'PUBLISHED' => $schedule->update(['status' => ScheduleStatus::Published]),
-            'UPLOAD_FAILED', 'FAILED' => $schedule->update([
-                'status' => ScheduleStatus::Failed,
-                'error_log' => 'TikTok reported upload failure via webhook.',
-            ]),
-            default => Log::info('TikTok webhook: unknown video status', ['status' => $status, 'publish_id' => $publishId]),
-        };
+        $schedule->update($status === ScheduleStatus::Failed
+            ? ['status' => $status, 'error_log' => app(TikTokPublisher::class)->describeFailure((string) ($content['reason'] ?? ''))]
+            : ['status' => $status, 'error_log' => null]);
     }
 }

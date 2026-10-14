@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ScheduleStatus;
 use Database\Factories\ScheduleFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -45,6 +46,41 @@ class Schedule extends Model
     public function isMovable(): bool
     {
         return in_array($this->status, [ScheduleStatus::Pending, ScheduleStatus::Failed], true);
+    }
+
+    /**
+     * Move every due pending row to publishing and return the ones this call
+     * won. Each row is switched with its own conditional update, so a row is
+     * handed out once even when the scheduler runs again before the queue
+     * gets to it, or two schedulers race.
+     *
+     * @return Collection<int, Schedule>
+     */
+    public static function claimDue(): Collection
+    {
+        $claimed = static::where('status', ScheduleStatus::Pending)
+            ->where('publish_at', '<=', now())
+            ->pluck('id')
+            ->filter(fn (int $id): bool => static::whereKey($id)
+                ->where('status', ScheduleStatus::Pending)
+                ->update(['status' => ScheduleStatus::Publishing]) === 1);
+
+        return static::with(['contentProject', 'socialAccount'])->whereIn('id', $claimed)->get();
+    }
+
+    /**
+     * Rows left in publishing for an hour lost their job: the worker died or a
+     * deploy restarted it mid-send. They are marked failed, not re-queued,
+     * because the post may already have gone out; the user checks and moves it.
+     */
+    public static function failStuck(): int
+    {
+        return static::where('status', ScheduleStatus::Publishing)
+            ->where('updated_at', '<', now()->subHour())
+            ->update([
+                'status' => ScheduleStatus::Failed,
+                'error_log' => 'A publicação travou no meio (o servidor parou antes de terminar). Confira na rede se o post saiu antes de reagendar.',
+            ]);
     }
 
     /**

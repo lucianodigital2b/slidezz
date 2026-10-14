@@ -36,7 +36,7 @@ class TikTokWebhookControllerTest extends TestCase
         config(['services.tiktok.webhook_secret' => null]);
 
         $response = $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
+            'event' => 'post.publish.complete',
             'data' => ['publish_id' => 'fake_id', 'status' => 'UPLOAD_COMPLETE'],
         ]);
 
@@ -50,7 +50,7 @@ class TikTokWebhookControllerTest extends TestCase
         config(['services.tiktok.webhook_secret' => 'test-secret']);
 
         $response = $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
+            'event' => 'post.publish.complete',
             'data' => [],
         ], ['X-TikTok-Signature' => 'sha256=invalidsignature']);
 
@@ -62,7 +62,7 @@ class TikTokWebhookControllerTest extends TestCase
         config(['services.tiktok.webhook_secret' => 'test-secret']);
 
         $response = $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
+            'event' => 'post.publish.complete',
             'data' => [],
         ]);
 
@@ -85,9 +85,9 @@ class TikTokWebhookControllerTest extends TestCase
         $response->assertStatus(200)->assertJson(['message' => 'OK']);
     }
 
-    // --- video.upload.status event ---
+    // --- post.publish.* events ---
 
-    public function test_upload_complete_marks_schedule_as_published(): void
+    public function test_inbox_delivered_marks_schedule_as_published(): void
     {
         config(['services.tiktok.webhook_secret' => null]);
 
@@ -96,10 +96,7 @@ class TikTokWebhookControllerTest extends TestCase
             'status' => ScheduleStatus::Publishing,
         ]);
 
-        $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
-            'data' => ['publish_id' => 'tiktok_pub_001', 'status' => 'UPLOAD_COMPLETE'],
-        ]);
+        $this->postJson('/webhooks/tiktok', $this->event('post.publish.inbox_delivered', ['publish_id' => 'tiktok_pub_001']));
 
         $this->assertDatabaseHas('schedules', [
             'id' => $schedule->id,
@@ -107,27 +104,7 @@ class TikTokWebhookControllerTest extends TestCase
         ]);
     }
 
-    public function test_published_status_marks_schedule_as_published(): void
-    {
-        config(['services.tiktok.webhook_secret' => null]);
-
-        $schedule = Schedule::factory()->create([
-            'platform_post_id' => 'tiktok_pub_002',
-            'status' => ScheduleStatus::Publishing,
-        ]);
-
-        $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
-            'data' => ['publish_id' => 'tiktok_pub_002', 'status' => 'PUBLISHED'],
-        ]);
-
-        $this->assertDatabaseHas('schedules', [
-            'id' => $schedule->id,
-            'status' => ScheduleStatus::Published->value,
-        ]);
-    }
-
-    public function test_upload_failed_marks_schedule_as_failed(): void
+    public function test_publish_failed_marks_schedule_as_failed_with_the_reason(): void
     {
         config(['services.tiktok.webhook_secret' => null]);
 
@@ -136,27 +113,51 @@ class TikTokWebhookControllerTest extends TestCase
             'status' => ScheduleStatus::Publishing,
         ]);
 
-        $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
-            'data' => ['publish_id' => 'tiktok_pub_003', 'status' => 'UPLOAD_FAILED'],
-        ]);
+        $this->postJson('/webhooks/tiktok', $this->event('post.publish.failed', ['publish_id' => 'tiktok_pub_003', 'reason' => 'picture_size_check_failed']));
 
-        $this->assertDatabaseHas('schedules', [
-            'id' => $schedule->id,
-            'status' => ScheduleStatus::Failed->value,
-        ]);
+        $schedule->refresh();
+        $this->assertSame(ScheduleStatus::Failed, $schedule->status);
+        $this->assertStringContainsString('1080p', $schedule->error_log);
     }
 
-    public function test_upload_status_for_unknown_publish_id_does_not_crash(): void
+    public function test_an_event_for_a_settled_schedule_changes_nothing(): void
     {
         config(['services.tiktok.webhook_secret' => null]);
 
-        $response = $this->postJson('/webhooks/tiktok', [
-            'event' => 'video.upload.status',
-            'data' => ['publish_id' => 'nonexistent_id', 'status' => 'UPLOAD_COMPLETE'],
+        $schedule = Schedule::factory()->create([
+            'platform_post_id' => 'tiktok_pub_004',
+            'status' => ScheduleStatus::Published,
         ]);
 
+        $this->postJson('/webhooks/tiktok', $this->event('post.publish.failed', ['publish_id' => 'tiktok_pub_004']));
+
+        $this->assertSame(ScheduleStatus::Published, $schedule->fresh()->status);
+    }
+
+    public function test_an_event_for_an_unknown_publish_id_does_not_crash(): void
+    {
+        config(['services.tiktok.webhook_secret' => null]);
+
+        $response = $this->postJson('/webhooks/tiktok', $this->event('post.publish.complete', ['publish_id' => 'nonexistent_id']));
+
         $response->assertStatus(200)->assertJson(['message' => 'OK']);
+    }
+
+    /**
+     * TikTok's payload shape: `content` is a JSON-encoded string.
+     *
+     * @param  array<string, string>  $content
+     * @return array<string, mixed>
+     */
+    private function event(string $event, array $content): array
+    {
+        return [
+            'client_key' => 'test',
+            'event' => $event,
+            'create_time' => now()->timestamp,
+            'user_openid' => 'open_id',
+            'content' => json_encode($content),
+        ];
     }
 
     public function test_unhandled_event_returns_ok(): void

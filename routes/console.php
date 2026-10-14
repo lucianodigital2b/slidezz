@@ -12,13 +12,13 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Every minute, dispatch due pending schedules for publishing
+// Every minute, claim the due schedules and dispatch each one exactly once
 FacadeSchedule::call(function () {
-    Schedule::where('status', ScheduleStatus::Pending)
-        ->where('publish_at', '<=', now())
-        ->get()
-        ->each(fn (Schedule $s) => PublishScheduledContent::dispatch($s));
+    Schedule::claimDue()->each(fn (Schedule $s) => PublishScheduledContent::dispatch($s));
 })->everyMinute();
+
+// Every ten minutes, fail the schedules whose publish job died midway
+FacadeSchedule::call(fn () => Schedule::failStuck())->everyTenMinutes();
 
 // Every 15 minutes, generate carousels for automations whose slot came due
 FacadeSchedule::command('automations:run')->everyFifteenMinutes()->withoutOverlapping();
