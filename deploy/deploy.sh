@@ -43,6 +43,10 @@ echo "==> artisan"
 $PHP artisan migrate --force
 $PHP artisan optimize
 $PHP artisan queue:restart
+# Octane (FrankenPHP, slidezz-octane.service) mantém o app na memória: recarrega os workers.
+if systemctl is-active --quiet slidezz-octane; then
+    $PHP artisan octane:reload
+fi
 
 echo "$SHA" > public/REVISION
 echo "==> no ar: $SHA"

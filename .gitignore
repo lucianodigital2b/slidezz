@@ -29,3 +29,7 @@ yarn-error.log
 /marketing-posts
 
 /public/REVISION
+
+**/caddy
+frankenphp
+frankenphp-worker.php

@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Octane (FrankenPHP) fica atrás do nginx local: confiar só nele pro https e IP do cliente.
+        $middleware->trustProxies(at: '127.0.0.1');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'tz']);
 
         $middleware->web(append: [
