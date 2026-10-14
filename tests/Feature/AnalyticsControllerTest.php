@@ -11,6 +11,7 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -156,5 +157,66 @@ class AnalyticsControllerTest extends TestCase
             ->assertRedirect('/analytics');
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_connected_tiktok_accounts_load_their_totals_and_videos(): void
+    {
+        Http::fake([
+            'open.tiktokapis.com/v2/user/info/*' => Http::response([
+                'data' => ['user' => ['follower_count' => 1200, 'following_count' => 3, 'likes_count' => 45000, 'video_count' => 18]],
+                'error' => ['code' => 'ok'],
+            ]),
+            'open.tiktokapis.com/v2/video/list/*' => Http::response([
+                'data' => ['videos' => [['id' => '1', 'title' => 'Rotina', 'view_count' => 5300]]],
+                'error' => ['code' => 'ok'],
+            ]),
+        ]);
+
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        SocialAccount::factory()->create([
+            'workspace_id' => $workspace->id,
+            'provider' => 'tiktok',
+            'handle' => 'dailyhair',
+            'expires_at' => now()->addDay(),
+        ]);
+        SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+
+        $this->actingAs($user)
+            ->get('/analytics')
+            ->assertInertia(fn ($page) => $page
+                ->missing('tiktokAccounts')
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('tiktokAccounts', 1)
+                    ->where('tiktokAccounts.0.handle', 'dailyhair')
+                    ->where('tiktokAccounts.0.insights.followers', 1200)
+                    ->where('tiktokAccounts.0.insights.recent.0.views', 5300)
+                    ->where('tiktokAccounts.0.error', null)
+                )
+            );
+    }
+
+    public function test_a_tiktok_account_that_fails_shows_its_error(): void
+    {
+        Http::fake(['open.tiktokapis.com/*' => Http::response([
+            'error' => ['code' => 'access_token_invalid', 'message' => ''],
+        ], 401)]);
+
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        SocialAccount::factory()->create([
+            'workspace_id' => $workspace->id,
+            'provider' => 'tiktok',
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->get('/analytics')
+            ->assertInertia(fn ($page) => $page
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->where('tiktokAccounts.0.insights', null)
+                    ->where('tiktokAccounts.0.error', fn ($error) => str_contains($error, 'Reconecte'))
+                )
+            );
     }
 }

@@ -6,6 +6,7 @@ use App\Contracts\SocialPublisher;
 use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -33,7 +34,7 @@ class TikTokPublisher implements SocialPublisher
         $query = http_build_query([
             'client_key' => $this->clientId,
             'response_type' => 'code',
-            'scope' => 'user.info.basic,video.upload',
+            'scope' => 'user.info.basic,user.info.stats,video.list,video.upload',
             'redirect_uri' => url($this->redirectUri),
             'state' => $csrfState,
             // Always show the consent screen, so the user can switch to another
@@ -338,6 +339,62 @@ class TikTokPublisher implements SocialPublisher
             'access_token_invalid', 'scope_not_authorized' => 'A conexão com o TikTok expirou ou perdeu permissão. Reconecte a conta.',
             default => 'Falha ao enviar pro TikTok'.($code !== '' ? " ({$code})" : '').($message !== '' ? ": {$message}" : '.'),
         };
+    }
+
+    /**
+     * Account totals (user.info.stats) and the latest videos with their stats
+     * (video.list) for the analytics panel. Read straight from the account, so
+     * it also covers what the creator posted outside Slidezz.
+     *
+     * @return array{followers: int, following: int, likes: int, videos: int, recent: list<array{id: string, title: string, cover: ?string, url: ?string, posted_at: ?string, views: int, likes: int, comments: int, shares: int}>}
+     */
+    public function accountInsights(SocialAccount $account): array
+    {
+        if ($account->expires_at?->isPast()) {
+            $this->refreshToken($account);
+        }
+
+        $user = Http::withToken($account->access_token)
+            ->timeout(30)
+            ->get('https://open.tiktokapis.com/v2/user/info/', [
+                'fields' => 'open_id,follower_count,following_count,likes_count,video_count',
+            ]);
+        $this->failUnlessOk($user);
+
+        $videos = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(30)
+            ->post('https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,cover_image_url,share_url,create_time,view_count,like_count,comment_count,share_count', [
+                'max_count' => 20,
+            ]);
+        $this->failUnlessOk($videos);
+
+        return [
+            'followers' => (int) $user->json('data.user.follower_count', 0),
+            'following' => (int) $user->json('data.user.following_count', 0),
+            'likes' => (int) $user->json('data.user.likes_count', 0),
+            'videos' => (int) $user->json('data.user.video_count', 0),
+            'recent' => collect($videos->json('data.videos', []))->map(fn (array $v) => [
+                'id' => (string) $v['id'],
+                'title' => (string) ($v['title'] ?? '') ?: (string) ($v['video_description'] ?? ''),
+                'cover' => $v['cover_image_url'] ?? null,
+                'url' => $v['share_url'] ?? null,
+                'posted_at' => isset($v['create_time']) ? now()->setTimestamp((int) $v['create_time'])->toISOString() : null,
+                'views' => (int) ($v['view_count'] ?? 0),
+                'likes' => (int) ($v['like_count'] ?? 0),
+                'comments' => (int) ($v['comment_count'] ?? 0),
+                'shares' => (int) ($v['share_count'] ?? 0),
+            ])->values()->all(),
+        ];
+    }
+
+    private function failUnlessOk(Response $response): void
+    {
+        $code = (string) $response->json('error.code', $response->successful() ? 'ok' : 'http_'.$response->status());
+
+        if ($code !== 'ok') {
+            throw new \RuntimeException($this->publishError($code, (string) $response->json('error.message', '')));
+        }
     }
 
     /**

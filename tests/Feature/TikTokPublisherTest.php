@@ -157,6 +157,59 @@ class TikTokPublisherTest extends TestCase
         $this->assertSame('SEND_TO_USER_INBOX', $status['status']);
     }
 
+    public function test_it_reads_the_account_totals_and_recent_videos(): void
+    {
+        Http::fake([
+            'open.tiktokapis.com/v2/user/info/*' => Http::response([
+                'data' => ['user' => ['follower_count' => 1200, 'following_count' => 3, 'likes_count' => 45000, 'video_count' => 18]],
+                'error' => ['code' => 'ok'],
+            ]),
+            'open.tiktokapis.com/v2/video/list/*' => Http::response([
+                'data' => ['videos' => [[
+                    'id' => '7300000000000000001',
+                    'title' => '',
+                    'video_description' => 'Rotina de cachos',
+                    'cover_image_url' => 'https://p16.tiktokcdn.com/cover.jpg',
+                    'share_url' => 'https://www.tiktok.com/@dailyhair/video/7300000000000000001',
+                    'create_time' => 1760400000,
+                    'view_count' => 5300,
+                    'like_count' => 410,
+                    'comment_count' => 12,
+                    'share_count' => 9,
+                ]]],
+                'error' => ['code' => 'ok'],
+            ]),
+        ]);
+
+        $account = SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+
+        $insights = (new TikTokPublisher)->accountInsights($account);
+
+        $this->assertSame(1200, $insights['followers']);
+        $this->assertSame(45000, $insights['likes']);
+        $this->assertSame(18, $insights['videos']);
+        $this->assertSame('Rotina de cachos', $insights['recent'][0]['title']);
+        $this->assertSame(5300, $insights['recent'][0]['views']);
+        $this->assertSame(9, $insights['recent'][0]['shares']);
+
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), 'video/list/')
+            && str_contains($request->url(), 'view_count')
+            && $request->data()['max_count'] === 20);
+    }
+
+    public function test_a_missing_scope_on_the_account_surfaces_a_reconnect_message(): void
+    {
+        Http::fake(['open.tiktokapis.com/*' => Http::response([
+            'error' => ['code' => 'scope_not_authorized', 'message' => 'user.info.stats'],
+        ], 401)]);
+
+        $account = SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+
+        $this->expectExceptionMessage('Reconecte a conta');
+
+        (new TikTokPublisher)->accountInsights($account);
+    }
+
     /**
      * @param  array<string, mixed>  $scriptData
      */

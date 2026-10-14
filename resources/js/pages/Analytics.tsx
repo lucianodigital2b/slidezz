@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Deferred, Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { analytics as analyticsRoute } from '@/routes';
 import { sync as analyticsSync } from '@/routes/analytics';
@@ -6,6 +6,7 @@ import {
     Eye, Heart, MessageCircle, TrendingUp,
     RefreshCw, LayoutGrid, List, ChevronDown,
     ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal,
+    Users, Film, Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,10 +34,37 @@ interface Stats {
     avg_engagement_rate: number;
 }
 
+interface TikTokVideo {
+    id: string;
+    title: string;
+    cover: string | null;
+    url: string | null;
+    posted_at: string | null;
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number;
+}
+
+interface TikTokAccount {
+    id: number;
+    handle: string;
+    avatar: string | null;
+    insights: {
+        followers: number;
+        following: number;
+        likes: number;
+        videos: number;
+        recent: TikTokVideo[];
+    } | null;
+    error: string | null;
+}
+
 interface Props {
     stats: Stats;
     posts: Post[];
     period: number;
+    tiktokAccounts?: TikTokAccount[];
 }
 
 type SortKey = 'views' | 'likes' | 'comments' | 'shares' | 'bookmarks' | 'engagement_rate' | 'published_at';
@@ -78,7 +106,7 @@ function SortIcon({ column, sort, dir }: { column: SortKey; sort: SortKey; dir: 
         : <ArrowUp className="w-3.5 h-3.5 ml-1 text-gray-700" />;
 }
 
-export default function Analytics({ stats, posts, period }: Props) {
+export default function Analytics({ stats, posts, period, tiktokAccounts }: Props) {
     const { props } = usePage<{ flash?: { success?: string } }>();
     const flash = props.flash;
 
@@ -170,6 +198,18 @@ export default function Analytics({ stats, posts, period }: Props) {
                         {flash.success}
                     </div>
                 )}
+
+                {/* TikTok accounts, read straight from TikTok */}
+                <Deferred
+                    data="tiktokAccounts"
+                    fallback={<div className="mb-6 h-40 bg-white rounded-xl border border-gray-200 animate-pulse" />}
+                >
+                    <>
+                        {(tiktokAccounts ?? []).map((account) => (
+                            <TikTokAccountPanel key={account.id} account={account} />
+                        ))}
+                    </>
+                </Deferred>
 
                 {/* Stat Cards */}
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -303,5 +343,72 @@ export default function Analytics({ stats, posts, period }: Props) {
                 )}
             </div>
         </>
+    );
+}
+
+function TikTokAccountPanel({ account }: { account: TikTokAccount }) {
+    const insights = account.insights;
+
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+                <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                        <AvatarImage src={account.avatar ?? undefined} />
+                        <AvatarFallback>{account.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="text-sm font-semibold text-gray-900">@{account.handle}</p>
+                        <p className="text-xs text-gray-400">TikTok</p>
+                    </div>
+                </div>
+                {insights && (
+                    <div className="flex gap-6">
+                        {[
+                            { label: 'Seguidores', value: insights.followers, icon: Users },
+                            { label: 'Curtidas', value: insights.likes, icon: Heart },
+                            { label: 'Vídeos', value: insights.videos, icon: Film },
+                        ].map(({ label, value, icon: Icon }) => (
+                            <div key={label}>
+                                <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                                    <Icon className="w-3.5 h-3.5" /> {label}
+                                </p>
+                                <p className="text-xl font-bold text-gray-900">{formatNumber(value)}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {account.error ? (
+                <p className="text-sm text-red-600">{account.error}</p>
+            ) : insights && insights.recent.length === 0 ? (
+                <p className="text-sm text-gray-400">Essa conta ainda não tem vídeos publicados.</p>
+            ) : insights && (
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                    {insights.recent.map((video) => (
+                        <a
+                            key={video.id}
+                            href={video.url ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-36 flex-shrink-0 group"
+                        >
+                            <div className="aspect-[9/16] rounded-lg overflow-hidden bg-gray-100 mb-2">
+                                {video.cover && (
+                                    <img src={video.cover} alt="" className="w-full h-full object-cover group-hover:opacity-90" />
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-gray-600">
+                                <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{formatNumber(video.views)}</span>
+                                <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{formatNumber(video.likes)}</span>
+                                <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{formatNumber(video.comments)}</span>
+                                <span className="flex items-center gap-1"><Share2 className="w-3 h-3" />{formatNumber(video.shares)}</span>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
