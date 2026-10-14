@@ -26,6 +26,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Tooltip,
     TooltipContent,
@@ -115,7 +116,6 @@ const MONTH_NAMES = [
     'Dec',
 ];
 
-
 // One post scheduled to several accounts: one row per account sharing a group_id.
 // `lead` carries the content and time, and its id addresses the whole group on the server.
 interface PostGroup {
@@ -123,6 +123,9 @@ interface PostGroup {
     lead: ScheduleItem;
     members: ScheduleItem[];
 }
+
+// TikTok and Instagram both cut captions at 2,200 characters.
+const CAPTION_MAX = 2200;
 
 const isMemberMovable = (s: ScheduleItem) =>
     s.status === 'pending' || s.status === 'failed';
@@ -438,6 +441,7 @@ export default function Schedule({
     const [copied, setCopied] = useState(false);
     const [previewAt, setPreviewAt] = useState('');
     const [previewAccounts, setPreviewAccounts] = useState<number[]>([]);
+    const [previewCaption, setPreviewCaption] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [busy, setBusy] = useState(false);
     const [dragOverDay, setDragOverDay] = useState<number | null>(null);
@@ -480,6 +484,7 @@ export default function Schedule({
         setPreview(group);
         setPreviewAt(toLocalInput(new Date(group.lead.publish_at)));
         setPreviewAccounts(group.members.map((m) => m.social_account.id));
+        setPreviewCaption(group.lead.content_project.caption);
         setConfirmDelete(false);
     };
 
@@ -523,24 +528,39 @@ export default function Schedule({
         );
     };
 
-    const savePreview = (group: PostGroup) => {
-        const payload: { publish_at?: string; social_account_ids?: number[] } =
-            {};
-        const when = new Date(previewAt);
+    // What the preview form changed against the post as loaded.
+    const previewChanges = (group: PostGroup) => ({
+        time:
+            new Date(previewAt).getTime() !==
+            new Date(group.lead.publish_at).getTime(),
+        accounts: !sameIds(
+            previewAccounts,
+            group.members.map((m) => m.social_account.id),
+        ),
+        caption: previewCaption !== group.lead.content_project.caption,
+    });
 
-        if (when.getTime() !== new Date(group.lead.publish_at).getTime()) {
+    const savePreview = (group: PostGroup) => {
+        const payload: {
+            publish_at?: string;
+            social_account_ids?: number[];
+            caption?: string;
+        } = {};
+        const when = new Date(previewAt);
+        const changed = previewChanges(group);
+
+        if (changed.time) {
             payload.publish_at = when.toISOString();
         }
 
-        if (
-            !sameIds(
-                previewAccounts,
-                group.members.map((m) => m.social_account.id),
-            )
-        ) {
+        if (changed.accounts) {
             payload.social_account_ids = previewAccounts;
             // Accounts added to a failed post go out at the time shown, so send it along.
             payload.publish_at = when.toISOString();
+        }
+
+        if (changed.caption) {
+            payload.caption = previewCaption;
         }
 
         router.patch(
@@ -1394,29 +1414,52 @@ export default function Schedule({
                             )}
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">
+                                    <label
+                                        htmlFor="preview_caption"
+                                        className="text-sm font-medium"
+                                    >
                                         Caption
-                                    </span>
-                                    {preview.lead.content_project.caption && (
+                                    </label>
+                                    {previewCaption && (
                                         <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
                                             onClick={() =>
-                                                copyCaption(
-                                                    preview.lead.content_project
-                                                        .caption,
-                                                )
+                                                copyCaption(previewCaption)
                                             }
                                         >
                                             {copied ? 'Copied' : 'Copy caption'}
                                         </Button>
                                     )}
                                 </div>
-                                <pre className="max-h-64 overflow-y-auto rounded-md bg-gray-50 p-3 font-sans text-sm whitespace-pre-wrap text-gray-800">
-                                    {preview.lead.content_project.caption ||
-                                        'No caption.'}
-                                </pre>
+                                {isMovable(preview) ? (
+                                    <>
+                                        <Textarea
+                                            id="preview_caption"
+                                            value={previewCaption}
+                                            maxLength={CAPTION_MAX}
+                                            rows={4}
+                                            disabled={busy}
+                                            onChange={(e) =>
+                                                setPreviewCaption(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="No caption."
+                                            className="max-h-64 text-sm"
+                                        />
+                                        <p className="text-right text-xs text-gray-400">
+                                            {previewCaption.length}/
+                                            {CAPTION_MAX}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <pre className="max-h-64 overflow-y-auto rounded-md bg-gray-50 p-3 font-sans text-sm whitespace-pre-wrap text-gray-800">
+                                        {preview.lead.content_project.caption ||
+                                            'No caption.'}
+                                    </pre>
+                                )}
                             </div>
                             <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
                                 <span className="text-sm font-medium">
@@ -1465,6 +1508,13 @@ export default function Schedule({
                                         ))}
                                     </ul>
                                 )}
+                                {isEditable(preview) &&
+                                    previewAccounts.length === 0 && (
+                                        <p className="text-xs text-amber-700">
+                                            Pick at least one account to save.
+                                            To cancel the post, delete it.
+                                        </p>
+                                    )}
                                 {isEditable(preview) &&
                                     preview.members.some(
                                         (m) => m.error_log,
@@ -1522,20 +1572,9 @@ export default function Schedule({
                                                 busy ||
                                                 !previewAt ||
                                                 previewAccounts.length === 0 ||
-                                                (new Date(
-                                                    previewAt,
-                                                ).getTime() ===
-                                                    new Date(
-                                                        preview.lead.publish_at,
-                                                    ).getTime() &&
-                                                    sameIds(
-                                                        previewAccounts,
-                                                        preview.members.map(
-                                                            (m) =>
-                                                                m.social_account
-                                                                    .id,
-                                                        ),
-                                                    ))
+                                                !Object.values(
+                                                    previewChanges(preview),
+                                                ).some(Boolean)
                                             }
                                             onClick={() => savePreview(preview)}
                                         >

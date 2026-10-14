@@ -117,9 +117,9 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Change the time and/or the accounts of a scheduled post. Acts on the whole
-     * group; when some accounts already published it, only the pending or failed
-     * ones move, and they split off into a group of their own.
+     * Change the time, the accounts and/or the caption of a scheduled post. Acts
+     * on the whole group; when some accounts already published it, only the
+     * pending or failed ones move, and they split off into a group of their own.
      */
     public function update(Request $request, Schedule $schedule): RedirectResponse
     {
@@ -134,7 +134,20 @@ class ScheduleController extends Controller
             'publish_at' => ['sometimes', 'date', 'after:now'],
             'social_account_ids' => ['sometimes', 'array', 'min:1'],
             'social_account_ids.*' => ['required', 'integer', 'distinct'],
+            'caption' => ['sometimes', 'nullable', 'string', 'max:2200'],
         ]);
+
+        // The caption lives on the content, so every post of that content gets it.
+        if (array_key_exists('caption', $validated)) {
+            $project = $schedule->contentProject;
+            $project->update(['script_data' => [...($project->script_data ?? []), 'caption' => (string) $validated['caption']]]);
+        }
+
+        if (! isset($validated['publish_at']) && ! isset($validated['social_account_ids'])) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Post updated.']);
+
+            return back();
+        }
 
         $accounts = null;
         if (isset($validated['social_account_ids'])) {

@@ -557,6 +557,32 @@ class ScheduleControllerTest extends TestCase
         $this->assertSame(1, Schedule::count());
     }
 
+    public function test_update_changes_the_caption_and_keeps_the_rest(): void
+    {
+        [$user, $published, $pending] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Pending]);
+        $project = $pending->contentProject;
+        $project->update(['script_data' => ['caption' => 'Old', 'hashtags' => ['cabelo']]]);
+        $originalDate = $pending->publish_at;
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$pending->id}", ['caption' => 'New caption #cabelo'])
+            ->assertRedirect();
+
+        $this->assertSame(['caption' => 'New caption #cabelo', 'hashtags' => ['cabelo']], $project->fresh()->script_data);
+        $pending->refresh();
+        $this->assertTrue($pending->publish_at->equalTo($originalDate));
+        $this->assertSame($published->group_id, $pending->group_id);
+    }
+
+    public function test_update_refuses_a_caption_once_every_account_published(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Published);
+
+        $this->actingAs($user)
+            ->patch("/schedule/{$schedule->id}", ['caption' => 'Too late'])
+            ->assertStatus(422);
+    }
+
     public function test_duplicate_copies_every_account_into_a_new_group(): void
     {
         [$user, $schedule, $second] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Failed]);
