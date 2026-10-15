@@ -1130,24 +1130,19 @@ export default function Schedule({
                                                                                 />
                                                                             ),
                                                                         )}
-                                                                        {group
-                                                                            .members
-                                                                            .length >
-                                                                            1 && (
-                                                                            <span
-                                                                                className="shrink-0 rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
-                                                                                title={
-                                                                                    handles
-                                                                                }
-                                                                            >
-                                                                                ×
-                                                                                {
-                                                                                    group
-                                                                                        .members
-                                                                                        .length
-                                                                                }
-                                                                            </span>
-                                                                        )}
+                                                                        <span
+                                                                            className="max-w-[45%] shrink-0 truncate rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
+                                                                            title={
+                                                                                handles
+                                                                            }
+                                                                        >
+                                                                            {group
+                                                                                .members
+                                                                                .length >
+                                                                            1
+                                                                                ? `×${group.members.length}`
+                                                                                : handles}
+                                                                        </span>
                                                                         <span
                                                                             className="truncate font-medium"
                                                                             title={`${group.lead.content_project.title} · ${handles}`}
