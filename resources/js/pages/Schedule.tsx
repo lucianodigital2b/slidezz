@@ -1043,7 +1043,7 @@ export default function Schedule({
                                                                                 group,
                                                                             )
                                                                         }
-                                                                        className={`relative flex cursor-grab items-center gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
+                                                                        className={`relative flex cursor-grab items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
                                                                             status ===
                                                                             'published'
                                                                                 ? 'border-green-200 bg-green-50 text-green-800'
@@ -1130,42 +1130,52 @@ export default function Schedule({
                                                                                 />
                                                                             ),
                                                                         )}
-                                                                        <span
-                                                                            className="max-w-[45%] shrink-0 truncate rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
-                                                                            title={
-                                                                                handles
-                                                                            }
-                                                                        >
-                                                                            {group
-                                                                                .members
-                                                                                .length >
-                                                                            1
-                                                                                ? `×${group.members.length}`
-                                                                                : handles}
-                                                                        </span>
-                                                                        <span
-                                                                            className="truncate font-medium"
-                                                                            title={`${group.lead.content_project.title} · ${handles}`}
-                                                                        >
-                                                                            {new Date(
-                                                                                group
-                                                                                    .lead
-                                                                                    .publish_at,
-                                                                            ).toLocaleTimeString(
-                                                                                [],
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div
+                                                                                className="truncate font-medium"
+                                                                                title={`${group.lead.content_project.title} · ${handles}`}
+                                                                            >
+                                                                                {new Date(
+                                                                                    group
+                                                                                        .lead
+                                                                                        .publish_at,
+                                                                                ).toLocaleTimeString(
+                                                                                    [],
+                                                                                    {
+                                                                                        hour: '2-digit',
+                                                                                        minute: '2-digit',
+                                                                                    },
+                                                                                )}{' '}
+                                                                                -{' '}
                                                                                 {
-                                                                                    hour: '2-digit',
-                                                                                    minute: '2-digit',
-                                                                                },
-                                                                            )}{' '}
-                                                                            -{' '}
-                                                                            {
-                                                                                group
-                                                                                    .lead
-                                                                                    .content_project
-                                                                                    .title
-                                                                            }
-                                                                        </span>
+                                                                                    group
+                                                                                        .lead
+                                                                                        .content_project
+                                                                                        .title
+                                                                                }
+                                                                            </div>
+                                                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                                                {group.members.map(
+                                                                                    (
+                                                                                        m,
+                                                                                    ) => (
+                                                                                        <span
+                                                                                            key={
+                                                                                                m.id
+                                                                                            }
+                                                                                            className="max-w-full truncate rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
+                                                                                        >
+                                                                                            @
+                                                                                            {
+                                                                                                m
+                                                                                                    .social_account
+                                                                                                    .handle
+                                                                                            }
+                                                                                        </span>
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 );
                                                             },
