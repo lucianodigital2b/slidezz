@@ -111,7 +111,9 @@
       "redo": "Redo (Ctrl+Y)",
       "overview": "Overview",
       "editView": "Edit",
-      "createVideo": "Create video"
+      "createVideo": "Create video",
+      "downloadMp4": "Download MP4",
+      "renderingMp4": "Rendering MP4… {{progress}}%"
     },
     "strip": {
       "clickToEdit": "Click a slide to edit it"
@@ -330,7 +332,8 @@
       "published": "Posted to Instagram.",
       "publishFailed": "Failed to publish to Instagram.",
       "slidesCountError": "Instagram carousels require between 2 and 10 slides.",
-      "videoFailed": "Could not create the video."
+      "videoFailed": "Could not create the video.",
+      "mp4Failed": "Could not render the MP4."
     },
     "dragDrop": {
       "hint": "Drop images to add them to the slide"

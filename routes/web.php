@@ -139,6 +139,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
         ->middleware('throttle:10,1')
         ->name('videos.render');
     Route::get('videos/{videoProject}/status', [VideoProjectController::class, 'status'])->name('videos.status');
+    Route::get('videos/{videoProject}/download', [VideoProjectController::class, 'download'])->name('videos.download');
     Route::delete('videos/{videoProject}', [VideoProjectController::class, 'destroy'])->name('videos.destroy');
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
     Route::inertia('database', 'Database')->name('database');

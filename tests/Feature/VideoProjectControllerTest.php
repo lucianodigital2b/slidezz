@@ -86,6 +86,42 @@ class VideoProjectControllerTest extends TestCase
         $this->assertSame($this->mediaUrl($video->storageDirectory().'/slide-02.jpg'), $clips[1]['src']);
     }
 
+    public function test_slideshow_images_can_go_straight_to_a_render(): void
+    {
+        Queue::fake();
+        [$user, $workspace] = $this->premiumUser();
+        $slideProject = $this->slideProject($workspace);
+
+        $response = $this->actingAs($user)
+            ->post("/slideshow-editor/{$slideProject->id}/video", [
+                'images' => [UploadedFile::fake()->image('slide-1.jpg')],
+                'render' => '1',
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $video = VideoProject::findOrFail($response->json('id'));
+
+        $this->assertSame('rendering', $video->status);
+        $this->assertSame(0, $video->render_progress);
+        Queue::assertPushed(RenderVideo::class, fn (RenderVideo $job): bool => $job->videoProject->is($video));
+    }
+
+    public function test_slideshow_images_are_not_rendered_unless_asked(): void
+    {
+        Queue::fake();
+        [$user, $workspace] = $this->premiumUser();
+        $slideProject = $this->slideProject($workspace);
+
+        $response = $this->actingAs($user)
+            ->post("/slideshow-editor/{$slideProject->id}/video", [
+                'images' => [UploadedFile::fake()->image('slide-1.jpg')],
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $this->assertSame('draft', VideoProject::findOrFail($response->json('id'))->status);
+        Queue::assertNothingPushed();
+    }
+
     public function test_slideshows_from_another_workspace_cannot_become_videos(): void
     {
         [$user] = $this->premiumUser();
@@ -305,6 +341,40 @@ class VideoProjectControllerTest extends TestCase
                 'render_error' => null,
                 'video_url' => null,
             ]);
+    }
+
+    public function test_download_sends_the_render_as_an_attachment(): void
+    {
+        [$user, $workspace] = $this->premiumUser();
+        $video = VideoProject::factory()->create([
+            'workspace_id' => $workspace->id,
+            'title' => 'Dicas de Skincare',
+            'status' => 'ready',
+            'video_path' => 'videos/render.mp4',
+        ]);
+        Storage::disk('public')->put('videos/render.mp4', 'mp4');
+
+        $response = $this->actingAs($user)->get("/videos/{$video->id}/download")->assertOk();
+
+        $this->assertStringContainsString('attachment; filename=dicas-de-skincare.mp4', (string) $response->headers->get('Content-Disposition'));
+        $this->assertSame('mp4', $response->streamedContent());
+    }
+
+    public function test_download_needs_a_render(): void
+    {
+        [$user, $workspace] = $this->premiumUser();
+        $video = VideoProject::factory()->create(['workspace_id' => $workspace->id, 'video_path' => null]);
+
+        $this->actingAs($user)->get("/videos/{$video->id}/download")->assertNotFound();
+    }
+
+    public function test_other_workspaces_cannot_download_a_video(): void
+    {
+        [$user] = $this->premiumUser();
+        $video = VideoProject::factory()->create(['video_path' => 'videos/render.mp4']);
+        Storage::disk('public')->put('videos/render.mp4', 'mp4');
+
+        $this->actingAs($user)->get("/videos/{$video->id}/download")->assertForbidden();
     }
 
     public function test_destroy_removes_the_video_and_its_files(): void

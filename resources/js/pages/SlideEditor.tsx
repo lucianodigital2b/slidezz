@@ -122,6 +122,8 @@ export default function SlideEditor() {
     const [igPosting, setIgPosting] = useState(false);
     const [exportingZip, setExportingZip] = useState(false);
     const [creatingVideo, setCreatingVideo] = useState(false);
+    /** Render progress (0-100) while "Download MP4" runs, null when idle. */
+    const [mp4Progress, setMp4Progress] = useState<number | null>(null);
     const [elementsOpen, setElementsOpen] = useState(false);
     const [publishAt, setPublishAt] = useState<Date | undefined>(undefined);
     const [selectedCornerId, setSelectedCornerId] = useState<CornerKey | null>(null);
@@ -1050,6 +1052,47 @@ export default function SlideEditor() {
         }
     }
 
+    /**
+     * Saves, uploads every slide as a JPEG, queues the MP4 render, follows its progress
+     * and downloads the file. The video project stays listed under /videos for later edits.
+     */
+    async function downloadSlidesMp4() {
+        if (mp4Progress !== null || slides.length === 0) return;
+        setMp4Progress(0);
+        try {
+            const id = (await saveProject()) ?? projectId;
+            if (!id) throw new Error(t('slideEditor.alerts.mp4Failed'));
+            const blobs = await exportAllSlidesJpeg();
+            if (blobs.length !== slides.length) throw new Error(t('slideEditor.alerts.exportFailed'));
+            const form = new FormData();
+            blobs.forEach((blob, idx) => form.append('images[]', blob, `slide-${idx + 1}.jpg`));
+            form.append('render', '1');
+            const res = await fetch(`/slideshow-editor/${id}/video`, {
+                method: 'POST',
+                headers: { ...csrfHeaders(), Accept: 'application/json' },
+                body: form,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || t('slideEditor.alerts.mp4Failed'));
+
+            for (;;) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const statusRes = await fetch(`/videos/${data.id}/status`, { headers: { Accept: 'application/json' } });
+                if (!statusRes.ok) continue;
+                const status = await statusRes.json();
+                if (status.status === 'failed') throw new Error(status.render_error || t('slideEditor.alerts.mp4Failed'));
+                if (status.status === 'ready') break;
+                setMp4Progress(status.render_progress ?? 0);
+            }
+
+            window.location.href = `/videos/${data.id}/download`;
+        } catch (e) {
+            window.alert(e instanceof Error ? e.message : t('slideEditor.alerts.mp4Failed'));
+        } finally {
+            setMp4Progress(null);
+        }
+    }
+
     // ─── Layout rearrangement ─────────────────────────────────────────────────
 
     function applySlideLayout(elements: SlideEl[], height: number, layoutId: string): SlideEl[] {
@@ -1296,6 +1339,8 @@ export default function SlideEditor() {
                     onExportStore={() => setLocalePanelOpen(true)}
                     onCreateVideo={createVideoFromSlides}
                     creatingVideo={creatingVideo}
+                    onDownloadMp4={downloadSlidesMp4}
+                    mp4Progress={mp4Progress}
                     instagramAccounts={instagramAccounts}
                     igEnabled={igEnabled}
                     igPosting={igPosting}

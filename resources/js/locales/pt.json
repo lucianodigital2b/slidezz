@@ -458,7 +458,9 @@
       "redo": "Refazer (Ctrl+Y)",
       "overview": "Visão geral",
       "editView": "Editar",
-      "createVideo": "Criar vídeo"
+      "createVideo": "Criar vídeo",
+      "downloadMp4": "Baixar MP4",
+      "renderingMp4": "Gerando MP4… {{progress}}%"
     },
     "strip": {
       "clickToEdit": "Clique em um slide para editá-lo"
@@ -677,7 +679,8 @@
       "published": "Publicado no Instagram.",
       "publishFailed": "Falha ao publicar no Instagram.",
       "slidesCountError": "Carrosséis no Instagram precisam de 2 a 10 slides.",
-      "videoFailed": "Não foi possível criar o vídeo."
+      "videoFailed": "Não foi possível criar o vídeo.",
+      "mp4Failed": "Não foi possível gerar o MP4."
     },
     "dragDrop": {
       "hint": "Solte as imagens para adicionar ao slide"

@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Video projects: a timeline of image/video clips and a music track, previewed in
@@ -69,7 +70,8 @@ class VideoProjectController extends Controller
 
     /**
      * Starts a video from a slideshow: the editor uploads every slide as a rendered
-     * JPEG and each one becomes an image clip.
+     * JPEG and each one becomes an image clip. With `render`, the MP4 render is queued
+     * right away so the editor can download it without opening the video editor.
      */
     public function storeFromSlides(Request $request, SlideProject $slideProject): JsonResponse
     {
@@ -78,6 +80,7 @@ class VideoProjectController extends Controller
         $validated = $request->validate([
             'images' => ['required', 'array', 'min:1', 'max:30'],
             'images.*' => ['required', 'file', 'mimes:jpg,jpeg', 'max:10240'],
+            'render' => ['sometimes', 'boolean'],
         ]);
 
         $video = VideoProject::create([
@@ -99,6 +102,12 @@ class VideoProjectController extends Controller
         }
 
         $video->update(['timeline' => ['clips' => $clips, 'audio' => null]]);
+
+        if ($request->boolean('render')) {
+            $video->update(['status' => 'rendering', 'render_progress' => 0]);
+
+            RenderVideo::dispatch($video);
+        }
 
         return response()->json(['id' => $video->id], 201);
     }
@@ -195,6 +204,21 @@ class VideoProjectController extends Controller
         return response()->json(Arr::only($this->editorPayload($videoProject), [
             'status', 'render_progress', 'render_error', 'video_url',
         ]));
+    }
+
+    /**
+     * The rendered MP4 as an attachment. The media disk lives on another origin, where
+     * the browser ignores `<a download>`, so the file is streamed through the app.
+     */
+    public function download(Request $request, VideoProject $videoProject): StreamedResponse
+    {
+        $this->authorizeWorkspace($request, $videoProject->workspace_id);
+
+        abort_unless($videoProject->video_path && $this->disk()->exists($videoProject->video_path), 404);
+
+        $name = Str::slug((string) $videoProject->title) ?: "video-{$videoProject->id}";
+
+        return $this->disk()->download($videoProject->video_path, "{$name}.mp4");
     }
 
     public function destroy(Request $request, VideoProject $videoProject): RedirectResponse

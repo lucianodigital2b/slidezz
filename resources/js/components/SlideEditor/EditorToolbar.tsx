@@ -66,6 +66,10 @@ interface EditorToolbarProps {
     /** Turns the slides into a video project and opens the video editor. */
     onCreateVideo: () => void;
     creatingVideo: boolean;
+    /** Renders the slides to MP4 and downloads it. */
+    onDownloadMp4: () => void;
+    /** Render progress (0-100) while the MP4 is being made, null when idle. */
+    mp4Progress: number | null;
     instagramAccounts: InstagramAccount[];
     igEnabled: boolean;
     igPosting: boolean;
@@ -86,7 +90,7 @@ export function EditorToolbar({
     templateStatus, onSaveAsTemplate,
     format, onFormatChange,
     onExportPNG, onExportAllZip, onExportMetadata, exportingZip,
-    isStoreFormat, localeCount, activeLocale, onOpenLocalization, onExportStore, onCreateVideo, creatingVideo,
+    isStoreFormat, localeCount, activeLocale, onOpenLocalization, onExportStore, onCreateVideo, creatingVideo, onDownloadMp4, mp4Progress,
     instagramAccounts, igEnabled, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
     tiktokAccounts, onSendToTikTok,
 }: EditorToolbarProps) {
@@ -258,7 +262,7 @@ export function EditorToolbar({
                     <button
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D] transition-colors disabled:opacity-60"
                         disabled={exportingZip}>
-                        {exportingZip ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {exportingZip || mp4Progress !== null ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         {t('slideEditor.toolbar.export')}
                     </button>
                 </PopoverTrigger>
@@ -282,6 +286,17 @@ export function EditorToolbar({
                             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50">
                             {creatingVideo ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Film className="w-4 h-4 shrink-0" />}
                             {t('slideEditor.toolbar.createVideo')}
+                        </button>
+                    )}
+                    {!isStoreFormat && (
+                        <button
+                            onClick={onDownloadMp4}
+                            disabled={mp4Progress !== null || slidesCount === 0}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50">
+                            {mp4Progress !== null ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Film className="w-4 h-4 shrink-0" />}
+                            {mp4Progress !== null
+                                ? t('slideEditor.toolbar.renderingMp4', { progress: mp4Progress })
+                                : t('slideEditor.toolbar.downloadMp4')}
                         </button>
                     )}
                     {isStoreFormat && (
