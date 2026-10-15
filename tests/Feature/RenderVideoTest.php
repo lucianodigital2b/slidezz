@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\RenderVideo;
 use App\Models\VideoProject;
+use App\Services\Rendering\SlideVideoRenderer;
 use App\Services\Rendering\VideoRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Process\PendingProcess;
@@ -140,6 +141,6 @@ class RenderVideoTest extends TestCase
 
     private function runJob(VideoProject $video): void
     {
-        (new RenderVideo($video))->handle(app(VideoRenderer::class));
+        (new RenderVideo($video))->handle(app(VideoRenderer::class), app(SlideVideoRenderer::class));
     }
 }

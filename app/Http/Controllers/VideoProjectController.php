@@ -71,7 +71,8 @@ class VideoProjectController extends Controller
     /**
      * Starts a video from a slideshow: the editor uploads every slide as a rendered
      * JPEG and each one becomes an image clip. With `render`, the MP4 render is queued
-     * right away so the editor can download it without opening the video editor.
+     * right away (plain ffmpeg, no Chrome) so the editor can download it without opening
+     * the video editor.
      */
     public function storeFromSlides(Request $request, SlideProject $slideProject): JsonResponse
     {
@@ -106,7 +107,7 @@ class VideoProjectController extends Controller
         if ($request->boolean('render')) {
             $video->update(['status' => 'rendering', 'render_progress' => 0]);
 
-            RenderVideo::dispatch($video);
+            RenderVideo::dispatch($video, useFfmpeg: true);
         }
 
         return response()->json(['id' => $video->id], 201);

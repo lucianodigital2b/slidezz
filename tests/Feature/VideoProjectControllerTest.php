@@ -103,7 +103,7 @@ class VideoProjectControllerTest extends TestCase
 
         $this->assertSame('rendering', $video->status);
         $this->assertSame(0, $video->render_progress);
-        Queue::assertPushed(RenderVideo::class, fn (RenderVideo $job): bool => $job->videoProject->is($video));
+        Queue::assertPushed(RenderVideo::class, fn (RenderVideo $job): bool => $job->videoProject->is($video) && $job->useFfmpeg);
     }
 
     public function test_slideshow_images_are_not_rendered_unless_asked(): void

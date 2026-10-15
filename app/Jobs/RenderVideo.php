@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\VideoProject;
+use App\Services\Rendering\SlideVideoRenderer;
 use App\Services\Rendering\VideoRenderer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -13,6 +14,7 @@ use Illuminate\Support\Str;
 
 /**
  * Renders a video project's timeline to MP4 and publishes it on the media disk.
+ * Remotion by default; plain ffmpeg for a still-image slideshow when `$useFfmpeg`.
  */
 class RenderVideo implements ShouldQueue
 {
@@ -26,11 +28,12 @@ class RenderVideo implements ShouldQueue
     /** Progress is written at most this often (in percentage points) to spare the DB. */
     private const PROGRESS_STEP = 5;
 
-    public function __construct(public VideoProject $videoProject) {}
+    public function __construct(public VideoProject $videoProject, public bool $useFfmpeg = false) {}
 
-    public function handle(VideoRenderer $renderer): void
+    public function handle(VideoRenderer $remotion, SlideVideoRenderer $ffmpeg): void
     {
         $project = $this->videoProject;
+        $renderer = $this->useFfmpeg && SlideVideoRenderer::supports($project->timeline) ? $ffmpeg : $remotion;
         $lastProgress = 0;
         $outputPath = null;
 

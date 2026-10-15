@@ -91,6 +91,12 @@ return [
         'voice_id' => env('ELEVENLABS_VOICE_ID'),
     ],
 
+    'ffmpeg' => [
+        // Renders still-image slideshows (App\Services\Rendering\SlideVideoRenderer).
+        'binary' => env('FFMPEG_BINARY', 'ffmpeg'),
+        'timeout' => (int) env('FFMPEG_TIMEOUT', 600),
+    ],
+
     'remotion' => [
         // Node binary that runs resources/js/remotion/render.mjs.
         'node_binary' => env('REMOTION_NODE_BINARY', 'node'),
