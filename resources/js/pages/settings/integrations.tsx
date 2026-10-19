@@ -102,7 +102,7 @@ export default function Integrations({
 Integrations.layout = {
     breadcrumbs: [
         {
-            title: 'Integrações',
+            title: 'Integrations',
             href: edit(),
         },
     ],
