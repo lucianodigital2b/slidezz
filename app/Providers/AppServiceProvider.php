@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Listeners\HandleStripeWebhookForCredits;
 use App\Listeners\HandleStripeWebhookForLifetime;
 use App\Listeners\TrackStripePurchaseInMeta;
+use App\Services\Agent\AnthropicModelClient;
+use App\Services\Agent\ModelClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ModelClient::class, AnthropicModelClient::class);
     }
 
     /**

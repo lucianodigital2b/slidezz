@@ -86,6 +86,11 @@ return [
         'api_key' => env('GEMINI_API_KEY'),
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'agent_model' => env('ANTHROPIC_AGENT_MODEL', 'claude-opus-5-5'),
+    ],
+
     'elevenlabs' => [
         'api_key' => env('ELEVENLABS_API_KEY'),
         'voice_id' => env('ELEVENLABS_VOICE_ID'),

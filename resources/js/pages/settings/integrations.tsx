@@ -13,9 +13,11 @@ import { edit } from '@/routes/integrations';
 export default function Integrations({
     byokEnabled,
     hasGeminiKey,
+    hasAnthropicKey,
 }: {
     byokEnabled: boolean;
     hasGeminiKey: boolean;
+    hasAnthropicKey: boolean;
 }) {
     const { t } = useTranslation();
 
@@ -94,6 +96,54 @@ export default function Integrations({
                         )}
                     </Form>
                 )}
+
+                <Heading
+                    variant="small"
+                    title={t('settings.integrations.anthropicTitle')}
+                    description={t('settings.integrations.anthropicDescription')}
+                />
+
+                <Form {...IntegrationsController.update.form()} options={{ preserveScroll: true }} className="space-y-6">
+                    {({ processing, errors }) => (
+                        <>
+                            {hasAnthropicKey && (
+                                <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-400">
+                                    <Check className="h-4 w-4" />
+                                    {t('settings.integrations.anthropicKeyConnected')}
+                                </div>
+                            )}
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="anthropic_api_key">{t('settings.integrations.anthropicKeyLabel')}</Label>
+                                <div className="relative">
+                                    <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        id="anthropic_api_key"
+                                        name="anthropic_api_key"
+                                        type="password"
+                                        autoComplete="off"
+                                        className="pl-9"
+                                        placeholder={hasAnthropicKey ? '••••••••••••••••' : 'sk-ant-...'}
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">{t('settings.integrations.anthropicKeyHint')}</p>
+                                <a
+                                    href="https://console.anthropic.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                                >
+                                    {t('settings.integrations.anthropicGuideLink')}
+                                </a>
+                                <InputError className="mt-1" message={errors.anthropic_api_key} />
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <Button disabled={processing}>{t('settings.integrations.save')}</Button>
+                            </div>
+                        </>
+                    )}
+                </Form>
             </div>
         </>
     );

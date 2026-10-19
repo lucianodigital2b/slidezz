@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AppScreenshotController;
 use App\Http\Controllers\AutomationController;
@@ -143,6 +144,15 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::delete('videos/{videoProject}', [VideoProjectController::class, 'destroy'])->name('videos.destroy');
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
     Route::inertia('database', 'Database')->name('database');
+
+    // Agent: converse with Slidezz, inspect TikTok posts, rebuild them, and request publishing.
+    Route::get('agent', [AgentController::class, 'index'])->name('agent.index');
+    Route::post('agent', [AgentController::class, 'store'])->name('agent.store');
+    Route::post('agent/publish-requests/{agentPublishRequest}/confirm', [AgentController::class, 'confirmPublish'])->name('agent.publish.confirm');
+    Route::post('agent/publish-requests/{agentPublishRequest}/cancel', [AgentController::class, 'cancelPublish'])->name('agent.publish.cancel');
+    Route::get('agent/{agentConversation}', [AgentController::class, 'show'])->name('agent.show');
+    Route::post('agent/{agentConversation}/messages', [AgentController::class, 'sendMessage'])->name('agent.messages.store');
+    Route::get('agent/{agentConversation}/state', [AgentController::class, 'state'])->name('agent.state');
 
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
     Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
