@@ -5,6 +5,7 @@ import { Highlighter, Loader2, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
 import SlideTemplateController from '@/actions/App/Http/Controllers/SlideTemplateController';
@@ -983,7 +984,7 @@ export default function SlideEditor() {
     async function publishCarouselToInstagram() {
         if (!igAccountId) return;
         if (slides.length < 2 || slides.length > 10) return;
-        if (format !== 'post') { window.alert(t('slideEditor.alerts.switchFormat')); return; }
+        if (format !== 'post') { toast.error(t('slideEditor.alerts.switchFormat')); return; }
         setIgPosting(true);
         try {
             const id = (await saveProject()) ?? projectId;
@@ -1004,10 +1005,10 @@ export default function SlideEditor() {
             let data: any = {};
             try { data = await res.json(); } catch { /* not JSON */ }
             if (!res.ok) throw new Error(data?.message || `Server error: ${res.status}`);
-            window.alert(data?.message || 'Posted to Instagram.');
+            toast.success(data?.message || 'Posted to Instagram.');
             setPublishAt(undefined);
         } catch (e) {
-            window.alert(e instanceof Error ? e.message : 'Failed to publish to Instagram.');
+            toast.error(e instanceof Error ? e.message : 'Failed to publish to Instagram.');
         } finally {
             setIgPosting(false);
         }
