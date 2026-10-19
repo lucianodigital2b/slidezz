@@ -203,6 +203,58 @@ class SocialAccountControllerTest extends TestCase
         $this->assertStringNotContainsString('scontent.cdninstagram.com', (string) $account->avatar);
     }
 
+    public function test_tiktok_callback_downloads_avatar_to_media_disk(): void
+    {
+        $disk = config('filesystems.media_disk');
+        Storage::fake($disk);
+
+        // TikTok CDN avatar URLs are signed and expire after a few days.
+        $expiringAvatar = 'https://p16-sign-va.tiktokcdn.com/avatar.jpeg?x-expires=1760000000&x-signature=abc';
+
+        Http::fake([
+            'open.tiktokapis.com/v2/oauth/token/' => Http::response(['access_token' => 'act', 'refresh_token' => 'rft', 'expires_in' => 86400]),
+            'open.tiktokapis.com/v2/user/info/*' => Http::response(['data' => ['user' => ['open_id' => '-000abc', 'display_name' => 'dailyhair.app', 'avatar_url' => $expiringAvatar]]]),
+            'p16-sign-va.tiktokcdn.com/*' => Http::response('fake-image-bytes', 200),
+        ]);
+
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->withSession(['tiktok_oauth_state' => 'state-123', 'current_workspace_id' => $workspace->id])
+            ->get('/social-accounts/tiktok/callback?code=auth-code&state=state-123')
+            ->assertRedirect('/settings/profile')
+            ->assertSessionHas('success');
+
+        Storage::disk($disk)->assertExists('tiktok/avatars/-000abc.jpg');
+
+        $account = SocialAccount::where('provider_id', '-000abc')->firstOrFail();
+        $this->assertStringNotContainsString('tiktokcdn.com', (string) $account->avatar);
+    }
+
+    public function test_store_avatars_command_rehosts_expired_tiktok_avatars(): void
+    {
+        $disk = config('filesystems.media_disk');
+        Storage::fake($disk);
+
+        Http::fake([
+            'open.tiktokapis.com/v2/user/info/*' => Http::response(['data' => ['user' => ['open_id' => '-000abc', 'avatar_url' => 'https://p16-sign-va.tiktokcdn.com/new.jpeg?x-expires=1']]]),
+            'p16-sign-va.tiktokcdn.com/*' => Http::response('fake-image-bytes', 200),
+        ]);
+
+        $account = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'provider_id' => '-000abc',
+            'avatar' => 'https://p16-sign-va.tiktokcdn.com/old.jpeg?x-expires=1',
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $this->artisan('social:store-avatars')->assertSuccessful();
+
+        Storage::disk($disk)->assertExists('tiktok/avatars/-000abc.jpg');
+        $this->assertStringNotContainsString('tiktokcdn.com', (string) $account->fresh()->avatar);
+    }
+
     public function test_instagram_callback_rejects_tampered_state(): void
     {
         $user = User::factory()->create();

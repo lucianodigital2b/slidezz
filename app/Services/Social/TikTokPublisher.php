@@ -85,7 +85,7 @@ class TikTokPublisher implements SocialPublisher
             [
                 'workspace_id' => session('current_workspace_id'), // Set in the auth flow context
                 'handle' => $userInfo['display_name'],
-                'avatar' => $userInfo['avatar_url'],
+                'avatar' => app(AvatarStore::class)->store($userInfo['avatar_url'] ?? null, 'tiktok', $userInfo['open_id']),
                 'access_token' => $tokenData['access_token'],
                 'refresh_token' => $tokenData['refresh_token'],
                 'expires_at' => now()->addSeconds($tokenData['expires_in']),
@@ -563,6 +563,28 @@ class TikTokPublisher implements SocialPublisher
         }
 
         return $postId;
+    }
+
+    /**
+     * Fetch the current profile picture and re-host it, for accounts linked
+     * before avatars were stored (their CDN URL has expired).
+     */
+    public function refreshAvatar(SocialAccount $account): void
+    {
+        if ($account->expires_at?->isPast()) {
+            $this->refreshToken($account);
+        }
+
+        $user = Http::withToken($account->access_token)
+            ->get('https://open.tiktokapis.com/v2/user/info/', ['fields' => 'open_id,avatar_url'])
+            ->throw()
+            ->json('data.user');
+
+        $avatar = app(AvatarStore::class)->store($user['avatar_url'] ?? null, 'tiktok', $account->provider_id);
+
+        if ($avatar) {
+            $account->update(['avatar' => $avatar]);
+        }
     }
 
     protected function refreshToken(SocialAccount $account): void

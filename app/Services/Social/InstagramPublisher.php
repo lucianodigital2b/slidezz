@@ -9,7 +9,6 @@ use App\Models\SocialAccount;
 use App\Services\Social\Instagram\InstagramSdk;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class InstagramPublisher implements SocialPublisher
@@ -170,7 +169,7 @@ class InstagramPublisher implements SocialPublisher
             [
                 'workspace_id' => $workspaceId,
                 'handle' => $igDetails['username'] ?? ($igDetails['name'] ?? null),
-                'avatar' => $this->storeAvatar($igDetails['profile_picture_url'] ?? null, (string) $igUserId),
+                'avatar' => app(AvatarStore::class)->store($igDetails['profile_picture_url'] ?? null, 'instagram', (string) $igUserId),
                 'access_token' => $userToken,
                 'refresh_token' => $userToken,
                 'expires_at' => now()->addSeconds($expiresIn),
@@ -356,43 +355,6 @@ class InstagramPublisher implements SocialPublisher
     private function publishContainer(string $accessToken, string $igUserId, string $containerId): string
     {
         return $this->sdk->publishContainer($accessToken, $igUserId, $containerId);
-    }
-
-    /**
-     * Download the Instagram profile picture and store it on the media disk so
-     * the saved avatar URL does not expire. Falls back to the original (expiring)
-     * URL if the download or upload fails for any reason.
-     */
-    private function storeAvatar(?string $remoteUrl, string $providerId): ?string
-    {
-        if (! $remoteUrl) {
-            return null;
-        }
-
-        try {
-            $response = Http::timeout(15)->get($remoteUrl);
-
-            if ($response->failed()) {
-                Log::warning('[Instagram] Failed to download avatar, keeping original URL', ['status' => $response->status(), 'provider_id' => $providerId]);
-
-                return $remoteUrl;
-            }
-
-            $disk = env('MEDIA_DISK', 'public');
-            $path = "instagram/avatars/{$providerId}.jpg";
-
-            Storage::disk($disk)->put($path, $response->body(), 'public');
-
-            $url = Storage::disk($disk)->url($path);
-
-            Log::info('[Instagram] Avatar stored on media disk', ['provider_id' => $providerId, 'disk' => $disk, 'url' => $url]);
-
-            return $url;
-        } catch (\Throwable $e) {
-            Log::warning('[Instagram] Avatar storage failed, keeping original URL', ['provider_id' => $providerId, 'message' => $e->getMessage()]);
-
-            return $remoteUrl;
-        }
     }
 
     /**
