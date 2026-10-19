@@ -836,7 +836,7 @@ export default function Schedule({
 
     const monthLabel = useMemo(
         () =>
-            rangeStartDate.toLocaleDateString([], {
+            rangeStartDate.toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
             }),
@@ -851,14 +851,16 @@ export default function Schedule({
             first.getMonth() === last.getMonth();
 
         if (sameMonthYear) {
-            return first.toLocaleDateString([], {
+            return first.toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
             });
         }
 
-        const firstLabel = first.toLocaleDateString([], { month: 'short' });
-        const lastLabel = last.toLocaleDateString([], { month: 'short' });
+        const firstLabel = first.toLocaleDateString('en-US', {
+            month: 'short',
+        });
+        const lastLabel = last.toLocaleDateString('en-US', { month: 'short' });
 
         if (first.getFullYear() === last.getFullYear()) {
             return `${firstLabel} - ${lastLabel} ${last.getFullYear()}`;
@@ -1286,23 +1288,23 @@ export default function Schedule({
                                             return (
                                                 <div
                                                     key={dateKey(day)}
-                                                    className={`flex-1 border-r border-gray-100 px-2 py-2 text-center last:border-r-0 ${
+                                                    className={`flex-1 border-r border-gray-100 px-2 py-3 text-center last:border-r-0 ${
                                                         isTodayColumn
                                                             ? 'border-b-2 border-[#FFE156] font-semibold text-gray-900'
                                                             : 'text-gray-500'
                                                     }`}
                                                 >
-                                                    <div className="text-xs">
+                                                    <span className="text-sm">
                                                         {day.toLocaleDateString(
-                                                            [],
+                                                            'en-US',
                                                             {
                                                                 weekday: 'long',
                                                             },
                                                         )}
-                                                    </div>
-                                                    <div className="mt-0.5 text-sm">
+                                                    </span>
+                                                    <span className="ml-2 text-sm">
                                                         {day.getDate()}
-                                                    </div>
+                                                    </span>
                                                 </div>
                                             );
                                         })}
@@ -1311,7 +1313,7 @@ export default function Schedule({
                                     {/* Week view body */}
                                     <div
                                         ref={weekScrollRef}
-                                        className="flex-1 overflow-y-auto"
+                                        className="max-h-[calc(100vh-16rem)] flex-1 overflow-y-auto"
                                     >
                                         {Array.from(
                                             { length: 24 },
@@ -1321,7 +1323,7 @@ export default function Schedule({
                                                     0,
                                                     1,
                                                     hour,
-                                                ).toLocaleTimeString([], {
+                                                ).toLocaleTimeString('en-US', {
                                                     hour: 'numeric',
                                                 });
 
