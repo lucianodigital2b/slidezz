@@ -24,12 +24,26 @@ class ScheduleController extends Controller
     public function index(Request $request): Response
     {
         $timezone = $this->viewerTimezone($request);
-        $month = $request->integer('month', now($timezone)->month);
-        $year = $request->integer('year', now($timezone)->year);
 
-        // The month is the viewer's, not UTC's: a post at 21h in São Paulo is
-        // 00h UTC on the next day. The browser puts each post on its local day.
-        $monthStart = Carbon::create($year, $month, 1, 0, 0, 0, $timezone);
+        // The calendar shows a week (the default) or a month, in the viewer's
+        // timezone: a post at 21h in São Paulo is 00h UTC on the next day, and
+        // the browser puts each post on its local day and hour.
+        // `?month=&year=` (older links) still opens that month.
+        if ($request->has(['month', 'year'])) {
+            $range = 'month';
+            $anchor = Carbon::create($request->integer('year'), $request->integer('month'), 1, 0, 0, 0, $timezone);
+        } else {
+            $range = $request->input('range') === 'month' ? 'month' : 'week';
+            $date = $request->date('date', 'Y-m-d', $timezone);
+            $anchor = ($date ?? now($timezone))->copy()->startOfDay();
+        }
+
+        $rangeStart = $range === 'week'
+            ? $anchor->copy()->startOfWeek(Carbon::SUNDAY)
+            : $anchor->copy()->startOfMonth();
+        $rangeEnd = $range === 'week' ? $rangeStart->copy()->addWeek() : $rangeStart->copy()->addMonth();
+        $month = $anchor->month;
+        $year = $anchor->year;
 
         $workspaceIds = DB::table('workspaces')->where('owner_id', $request->user()->id)->pluck('id');
 
@@ -37,8 +51,8 @@ class ScheduleController extends Controller
 
         return Inertia::render('Schedule', [
             'schedules' => $this->rows($this->schedules($workspaceIds)
-                ->where('s.publish_at', '>=', $monthStart->copy()->utc())
-                ->where('s.publish_at', '<', $monthStart->copy()->addMonth()->utc())
+                ->where('s.publish_at', '>=', $rangeStart->copy()->utc())
+                ->where('s.publish_at', '<', $rangeEnd->copy()->utc())
                 ->orderBy('s.publish_at')),
             // The list view: every post still to go out (failed ones too, they
             // need action) and the latest sent ones, whatever month is showing.
@@ -68,6 +82,8 @@ class ScheduleController extends Controller
                 ->get(),
             'month' => $month,
             'year' => $year,
+            'range' => $range,
+            'rangeStart' => $rangeStart->toDateString(),
             'statuses' => array_column(ScheduleStatus::cases(), 'value'),
             // Counted in posts, not rows: a post to three accounts is one post.
             'counts' => [

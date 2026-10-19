@@ -8,6 +8,7 @@ use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -109,16 +110,56 @@ class ScheduleControllerTest extends TestCase
             ->assertStatus(404);
     }
 
-    public function test_schedule_page_defaults_to_current_month_and_year(): void
+    public function test_schedule_page_defaults_to_the_current_week(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/schedule');
 
         $response->assertInertia(fn ($page) => $page
+            ->where('range', 'week')
+            ->where('rangeStart', now()->startOfWeek(Carbon::SUNDAY)->toDateString())
             ->where('month', now()->month)
             ->where('year', now()->year)
         );
+    }
+
+    public function test_week_view_returns_only_that_weeks_posts_even_across_months(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
+        $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
+
+        // The week of Wed 30 Sep 2026 runs Sun 27 Sep to Sat 3 Oct.
+        foreach (['2026-09-26 12:00', '2026-09-28 12:00', '2026-10-02 12:00', '2026-10-04 12:00'] as $at) {
+            Schedule::factory()->create([
+                'social_account_id' => $socialAccount->id,
+                'content_project_id' => $contentProject->id,
+                'publish_at' => Carbon::parse($at, config('app.timezone')),
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get('/schedule?range=week&date=2026-09-30')
+            ->assertInertia(fn ($page) => $page
+                ->where('range', 'week')
+                ->where('rangeStart', '2026-09-27')
+                ->has('schedules', 2)
+            );
+    }
+
+    public function test_month_range_returns_the_whole_month(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/schedule?range=month&date=2026-10-19')
+            ->assertInertia(fn ($page) => $page
+                ->where('range', 'month')
+                ->where('rangeStart', '2026-10-01')
+                ->where('month', 10)
+            );
     }
 
     public function test_schedule_page_accepts_month_and_year_query_params(): void

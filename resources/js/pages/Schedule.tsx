@@ -6,7 +6,6 @@ import {
     List,
     Grid,
     Plus,
-    ChevronDown,
     CheckCircle2,
     AlertCircle,
     XCircle,
@@ -14,7 +13,7 @@ import {
     Trash2,
     CalendarClock,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -93,6 +92,8 @@ interface Props {
     contentProjects: ContentProjectOption[];
     month: number;
     year: number;
+    range: 'week' | 'month';
+    rangeStart: string;
     statuses: string[];
     counts: {
         queue: number;
@@ -100,21 +101,6 @@ interface Props {
         sent: number;
     };
 }
-
-const MONTH_NAMES = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-];
 
 // One post scheduled to several accounts: one row per account sharing a group_id.
 // `lead` carries the content and time, and its id addresses the whole group on the server.
@@ -172,6 +158,30 @@ const groupByPost = (items: ScheduleItem[]): PostGroup[] => {
     return [...groups.values()];
 };
 
+const dateKey = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const filterGroups = (
+    groups: PostGroup[],
+    calendarFilter: 'all' | 'drafts' | 'scheduled' | 'sent',
+) =>
+    groups.filter((g) =>
+        g.members.some((s) => {
+            if (calendarFilter === 'all') {
+                return true;
+            }
+
+            if (calendarFilter === 'scheduled') {
+                return s.status === 'pending' || s.status === 'publishing';
+            }
+
+            return s.status === calendarFilter;
+        }),
+    );
+
 function ProviderBadge({ provider }: { provider: string }) {
     if (provider === 'tiktok') {
         return (
@@ -190,6 +200,121 @@ function ProviderBadge({ provider }: { provider: string }) {
     }
 
     return null;
+}
+
+function PostChip({
+    group,
+    busy,
+    onOpen,
+    onDragEnd,
+    compact = false,
+}: {
+    group: PostGroup;
+    busy: boolean;
+    onOpen: (group: PostGroup) => void;
+    onDragEnd: () => void;
+    compact?: boolean;
+}) {
+    const status = groupStatus(group);
+    const failed = group.members.filter((m) => m.status === 'failed');
+    const providers = [
+        ...new Set(group.members.map((m) => m.social_account.provider)),
+    ];
+    const handles = group.members
+        .map((m) => `@${m.social_account.handle}`)
+        .join(', ');
+
+    return (
+        <div
+            draggable={!busy}
+            onDragStart={(e) => {
+                e.dataTransfer.setData(
+                    'text/schedule-id',
+                    String(group.lead.id),
+                );
+                e.dataTransfer.effectAllowed = isMovable(group)
+                    ? 'copyMove'
+                    : 'copy';
+            }}
+            onDragEnd={onDragEnd}
+            onClick={() => onOpen(group)}
+            className={`relative flex cursor-grab items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
+                status === 'published'
+                    ? 'border-green-200 bg-green-50 text-green-800'
+                    : status === 'failed'
+                      ? 'border-red-300 bg-red-50 text-red-800'
+                      : 'border-blue-200 bg-blue-50 text-blue-800'
+            }`}
+        >
+            {failed.length > 0 && (
+                <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="absolute -top-1.5 -right-1.5 z-10 cursor-help rounded-full border border-red-100 bg-white shadow-sm">
+                                <AlertCircle
+                                    className="h-3.5 w-3.5 text-red-500"
+                                    fill="currentColor"
+                                    stroke="white"
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[250px] border-red-200 bg-red-50 text-xs break-words text-red-900 shadow-md">
+                            <div className="flex items-start gap-2">
+                                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                                <div className="flex flex-col gap-1">
+                                    <p className="font-semibold">
+                                        Publishing Failed
+                                    </p>
+                                    {failed.map((m) => (
+                                        <p
+                                            key={m.id}
+                                            className="text-red-800/90"
+                                        >
+                                            {group.members.length > 1 && (
+                                                <span className="font-medium">
+                                                    @{m.social_account.handle}
+                                                    :{' '}
+                                                </span>
+                                            )}
+                                            {m.error_log ||
+                                                'An unknown error occurred while publishing to the platform.'}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+            {providers.map((p) => (
+                <ProviderBadge key={p} provider={p} />
+            ))}
+            <div className="min-w-0 flex-1">
+                <div
+                    className="truncate font-medium"
+                    title={`${group.lead.content_project.title} · ${handles}`}
+                >
+                    {new Date(group.lead.publish_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}{' '}
+                    - {group.lead.content_project.title}
+                </div>
+                {!compact && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                        {group.members.map((m) => (
+                            <span
+                                key={m.id}
+                                className="max-w-full truncate rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
+                            >
+                                @{m.social_account.handle}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 function AccountPicker({
@@ -423,8 +548,8 @@ export default function Schedule({
     queue = [],
     sent = [],
     drafts = [],
-    month,
-    year,
+    range = 'week',
+    rangeStart,
     counts,
     contentProjects = [],
     socialAccounts = [],
@@ -444,20 +569,53 @@ export default function Schedule({
     const [previewCaption, setPreviewCaption] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [busy, setBusy] = useState(false);
-    const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+    const [dragOverKey, setDragOverKey] = useState<string | null>(null);
     const [accountFilter, setAccountFilter] = useState<number | 'all'>('all');
+    // The server decides what the calendar covers; navigation changes it.
+    const calendarRange = range;
+    const [now, setNow] = useState(new Date());
+    const weekScrollRef = useRef<HTMLDivElement | null>(null);
 
-    // The server sends the month's posts; each lands on its local day here.
+    useEffect(() => {
+        const id = window.setInterval(() => setNow(new Date()), 60_000);
+
+        return () => window.clearInterval(id);
+    }, []);
+
+    const today = now;
+
+    const rangeStartDate = useMemo(() => {
+        const [y, m, d] = rangeStart.split('-').map(Number);
+
+        return new Date(y, m - 1, d);
+    }, [rangeStart]);
+
+    const weekDays = useMemo(
+        () =>
+            Array.from(
+                { length: 7 },
+                (_, i) =>
+                    new Date(
+                        rangeStartDate.getFullYear(),
+                        rangeStartDate.getMonth(),
+                        rangeStartDate.getDate() + i,
+                    ),
+            ),
+        [rangeStartDate],
+    );
+
+    // The server sends the range's posts; each lands on its local day here.
     const groupsByDay = useMemo(() => {
         const days: Record<string, ScheduleItem[]> = {};
 
         for (const item of schedules) {
-            (days[new Date(item.publish_at).getDate()] ??= []).push(item);
+            const key = dateKey(new Date(item.publish_at));
+            (days[key] ??= []).push(item);
         }
 
         return Object.fromEntries(
-            Object.entries(days).map(([day, items]) => [
-                day,
+            Object.entries(days).map(([key, items]) => [
+                key,
                 groupByPost(items),
             ]),
         ) as Record<string, PostGroup[]>;
@@ -589,9 +747,13 @@ export default function Schedule({
         );
     };
 
-    const handleDrop = (e: React.DragEvent, day: number) => {
+    const handleDrop = (
+        e: React.DragEvent,
+        target: Date,
+        keepTime: boolean,
+    ) => {
         e.preventDefault();
-        setDragOverDay(null);
+        setDragOverKey(null);
 
         const id = Number(e.dataTransfer.getData('text/schedule-id'));
         const item = Object.values(groupsByDay)
@@ -602,15 +764,22 @@ export default function Schedule({
             return;
         }
 
-        // Keep the post's time of day, change only the date.
         const original = new Date(item.lead.publish_at);
-        const when = new Date(
-            year,
-            month - 1,
-            day,
-            original.getHours(),
-            original.getMinutes(),
-        );
+        const when = keepTime
+            ? new Date(
+                  target.getFullYear(),
+                  target.getMonth(),
+                  target.getDate(),
+                  original.getHours(),
+                  original.getMinutes(),
+              )
+            : new Date(
+                  target.getFullYear(),
+                  target.getMonth(),
+                  target.getDate(),
+                  target.getHours(),
+                  original.getMinutes(),
+              );
         const copy = e.altKey || e.ctrlKey || e.metaKey || !isMovable(item);
 
         if (!copy && when.getTime() === original.getTime()) {
@@ -665,16 +834,63 @@ export default function Schedule({
         });
     };
 
-    const today = new Date();
-    const isCurrentMonth =
-        today.getMonth() + 1 === month && today.getFullYear() === year;
-    const todayDay = isCurrentMonth ? today.getDate() : null;
+    const monthLabel = useMemo(
+        () =>
+            rangeStartDate.toLocaleDateString([], {
+                month: 'long',
+                year: 'numeric',
+            }),
+        [rangeStartDate],
+    );
+
+    const weekLabel = useMemo(() => {
+        const first = weekDays[0];
+        const last = weekDays[6];
+        const sameMonthYear =
+            first.getFullYear() === last.getFullYear() &&
+            first.getMonth() === last.getMonth();
+
+        if (sameMonthYear) {
+            return first.toLocaleDateString([], {
+                month: 'long',
+                year: 'numeric',
+            });
+        }
+
+        const firstLabel = first.toLocaleDateString([], { month: 'short' });
+        const lastLabel = last.toLocaleDateString([], { month: 'short' });
+
+        if (first.getFullYear() === last.getFullYear()) {
+            return `${firstLabel} - ${lastLabel} ${last.getFullYear()}`;
+        }
+
+        return `${firstLabel} ${first.getFullYear()} - ${lastLabel} ${last.getFullYear()}`;
+    }, [weekDays]);
 
     const navigate = (delta: number) => {
-        const d = new Date(year, month - 1 + delta, 1);
+        if (calendarRange === 'week') {
+            const d = new Date(rangeStartDate);
+            d.setDate(d.getDate() + delta * 7);
+            router.get(
+                schedule.url(),
+                { range: 'week', date: dateKey(d) },
+                {
+                    preserveState: true,
+                    replace: true,
+                },
+            );
+
+            return;
+        }
+
+        const d = new Date(
+            rangeStartDate.getFullYear(),
+            rangeStartDate.getMonth() + delta,
+            1,
+        );
         router.get(
             schedule.url(),
-            { month: d.getMonth() + 1, year: d.getFullYear() },
+            { range: 'month', date: dateKey(d) },
             {
                 preserveState: true,
                 replace: true,
@@ -685,7 +901,7 @@ export default function Schedule({
     const goToday = () => {
         router.get(
             schedule.url(),
-            { month: today.getMonth() + 1, year: today.getFullYear() },
+            { range: calendarRange, date: dateKey(today) },
             {
                 preserveState: true,
                 replace: true,
@@ -693,24 +909,69 @@ export default function Schedule({
         );
     };
 
-    // Calculate days for the monthly calendar
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const firstDayOfMonth = new Date(year, month - 1, 1).getDay(); // 0 is Sunday
-    const calendarDays: (number | null)[] = [];
+    const changeRange = (newRange: 'week' | 'month') => {
+        if (newRange === calendarRange) {
+            return;
+        }
 
-    for (let i = 0; i < firstDayOfMonth; i++) {
-        calendarDays.push(null);
-    }
+        let date = rangeStart;
 
-    for (let i = 1; i <= daysInMonth; i++) {
-        calendarDays.push(i);
-    }
+        if (calendarRange === 'month' && newRange === 'week') {
+            const [y, m] = rangeStart.split('-').map(Number);
 
-    const remainingCells = 42 - calendarDays.length;
+            if (today.getFullYear() === y && today.getMonth() === m - 1) {
+                date = dateKey(today);
+            }
+        }
 
-    for (let i = 0; i < remainingCells; i++) {
-        calendarDays.push(null);
-    }
+        router.get(
+            schedule.url(),
+            { range: newRange, date },
+            {
+                preserveState: true,
+                replace: true,
+            },
+        );
+    };
+
+    const calendarCells = useMemo(() => {
+        const y = rangeStartDate.getFullYear();
+        const m = rangeStartDate.getMonth();
+        const firstDayOfMonth = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const cells: (Date | null)[] = [];
+
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            cells.push(null);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            cells.push(new Date(y, m, d));
+        }
+
+        const remainingCells = 42 - cells.length;
+
+        for (let i = 0; i < remainingCells; i++) {
+            cells.push(null);
+        }
+
+        return cells;
+    }, [rangeStartDate]);
+
+    useEffect(() => {
+        if (view !== 'calendar' || calendarRange !== 'week') {
+            return;
+        }
+
+        const current = new Date();
+        const todayKey = dateKey(current);
+        const hasToday = weekDays.some((day) => dateKey(day) === todayKey);
+        const topHour = hasToday ? Math.max(0, current.getHours() - 1) : 7;
+
+        if (weekScrollRef.current) {
+            weekScrollRef.current.scrollTop = topHour * 80;
+        }
+    }, [view, calendarRange, rangeStart, weekDays]);
 
     return (
         <>
@@ -776,7 +1037,9 @@ export default function Schedule({
                                 </div>
 
                                 <span className="text-sm font-semibold text-gray-900">
-                                    {MONTH_NAMES[month - 1]} {year}
+                                    {calendarRange === 'month'
+                                        ? monthLabel
+                                        : weekLabel}
                                 </span>
 
                                 <button
@@ -786,16 +1049,31 @@ export default function Schedule({
                                     Today
                                 </button>
 
-                                <button className="ml-2 flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900">
-                                    Week <ChevronDown className="h-4 w-4" />
-                                </button>
+                                <select
+                                    value={calendarRange}
+                                    onChange={(e) =>
+                                        changeRange(
+                                            e.target.value as 'week' | 'month',
+                                        )
+                                    }
+                                    className="flex cursor-pointer items-center gap-2 bg-transparent font-medium text-gray-500 transition-colors outline-none hover:text-gray-900"
+                                >
+                                    <option value="week">Week</option>
+                                    <option value="month">Month</option>
+                                </select>
                             </div>
 
                             <div className="flex items-center gap-6 text-sm text-gray-500">
                                 <select
                                     value={calendarFilter}
                                     onChange={(e) =>
-                                        setCalendarFilter(e.target.value as any)
+                                        setCalendarFilter(
+                                            e.target.value as
+                                                | 'all'
+                                                | 'drafts'
+                                                | 'scheduled'
+                                                | 'sent',
+                                        )
                                     }
                                     className="flex cursor-pointer items-center gap-2 bg-transparent font-medium text-gray-500 transition-colors outline-none hover:text-gray-900"
                                 >
@@ -809,384 +1087,469 @@ export default function Schedule({
 
                         {/* Calendar Grid Area */}
                         <div className="flex flex-1 flex-col overflow-hidden bg-white">
-                            {/* Days Header */}
-                            <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
-                                {[
-                                    'Sun',
-                                    'Mon',
-                                    'Tue',
-                                    'Wed',
-                                    'Thu',
-                                    'Fri',
-                                    'Sat',
-                                ].map((day) => (
-                                    <div
-                                        key={day}
-                                        className="border-r border-gray-200 py-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase last:border-r-0"
-                                    >
-                                        {day}
+                            {calendarRange === 'month' ? (
+                                <>
+                                    {/* Days Header */}
+                                    <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+                                        {[
+                                            'Sun',
+                                            'Mon',
+                                            'Tue',
+                                            'Wed',
+                                            'Thu',
+                                            'Fri',
+                                            'Sat',
+                                        ].map((day) => (
+                                            <div
+                                                key={day}
+                                                className="border-r border-gray-200 py-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase last:border-r-0"
+                                            >
+                                                {day}
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
 
-                            {/* Calendar Grid */}
-                            <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-px overflow-y-auto bg-gray-200">
-                                {calendarDays.map((day, index) => {
-                                    const isToday =
-                                        isCurrentMonth && day === todayDay;
-                                    const dayGroups = day
-                                        ? groupsByDay[day] || []
-                                        : [];
+                                    {/* Calendar Grid */}
+                                    <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-px overflow-y-auto bg-gray-200">
+                                        {calendarCells.map((dayDate, index) => {
+                                            const isTodayCell =
+                                                !!dayDate &&
+                                                dateKey(dayDate) ===
+                                                    dateKey(today);
+                                            const dayKey = dayDate
+                                                ? dateKey(dayDate)
+                                                : null;
+                                            const dayGroups = dayDate
+                                                ? filterGroups(
+                                                      groupsByDay[
+                                                          dayKey ?? ''
+                                                      ] ?? [],
+                                                      calendarFilter,
+                                                  )
+                                                : [];
+                                            const isPastDay =
+                                                !!dayDate &&
+                                                new Date(
+                                                    dayDate.getFullYear(),
+                                                    dayDate.getMonth(),
+                                                    dayDate.getDate(),
+                                                    23,
+                                                    59,
+                                                ) < today;
 
-                                    const isPastDay =
-                                        !!day &&
-                                        new Date(year, month - 1, day, 23, 59) <
-                                            new Date();
+                                            return (
+                                                <div
+                                                    key={dayKey ?? index}
+                                                    onDragOver={(e) => {
+                                                        if (
+                                                            !dayDate ||
+                                                            isPastDay
+                                                        ) {
+                                                            return;
+                                                        }
 
-                                    const filteredGroups = dayGroups.filter(
-                                        (g) =>
-                                            g.members.some((s) => {
-                                                if (calendarFilter === 'all') {
-                                                    return true;
-                                                }
+                                                        e.preventDefault();
+                                                        e.dataTransfer.dropEffect =
+                                                            e.altKey ||
+                                                            e.ctrlKey ||
+                                                            e.metaKey
+                                                                ? 'copy'
+                                                                : 'move';
 
-                                                if (
-                                                    calendarFilter ===
-                                                    'scheduled'
-                                                ) {
-                                                    return (
-                                                        s.status ===
-                                                            'pending' ||
-                                                        s.status ===
-                                                            'publishing'
-                                                    );
-                                                }
+                                                        if (
+                                                            dragOverKey !==
+                                                            dayKey
+                                                        ) {
+                                                            setDragOverKey(
+                                                                dayKey,
+                                                            );
+                                                        }
+                                                    }}
+                                                    onDragLeave={(e) => {
+                                                        if (
+                                                            !e.currentTarget.contains(
+                                                                e.relatedTarget as Node,
+                                                            )
+                                                        ) {
+                                                            setDragOverKey(
+                                                                null,
+                                                            );
+                                                        }
+                                                    }}
+                                                    onDrop={(e) =>
+                                                        dayDate &&
+                                                        !isPastDay &&
+                                                        handleDrop(
+                                                            e,
+                                                            dayDate,
+                                                            true,
+                                                        )
+                                                    }
+                                                    className={`min-h-[100px] p-2 ${dayDate && dragOverKey === dayKey ? 'bg-[#FFE156]/20 ring-2 ring-[#FFE156] ring-inset' : dayDate ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50'} group relative flex flex-col gap-1 transition-colors`}
+                                                >
+                                                    {dayDate && (
+                                                        <>
+                                                            <div className="mb-1 flex items-start justify-between">
+                                                                <span
+                                                                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${isTodayCell ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-700'}`}
+                                                                >
+                                                                    {dayDate.getDate()}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (
+                                                                            isPastDay &&
+                                                                            !isTodayCell
+                                                                        ) {
+                                                                            return;
+                                                                        }
 
-                                                return (
-                                                    s.status === calendarFilter
-                                                );
-                                            }),
-                                    );
+                                                                        const defaultTime =
+                                                                            isTodayCell
+                                                                                ? toLocalInput(
+                                                                                      new Date(
+                                                                                          today.getTime() +
+                                                                                              60 *
+                                                                                                  60 *
+                                                                                                  1000,
+                                                                                      ),
+                                                                                  )
+                                                                                : toLocalInput(
+                                                                                      new Date(
+                                                                                          dayDate.getFullYear(),
+                                                                                          dayDate.getMonth(),
+                                                                                          dayDate.getDate(),
+                                                                                          12,
+                                                                                          0,
+                                                                                      ),
+                                                                                  );
 
-                                    return (
-                                        <div
-                                            key={index}
-                                            onDragOver={(e) => {
-                                                if (!day || isPastDay) {
-                                                    return;
-                                                }
-
-                                                e.preventDefault();
-                                                e.dataTransfer.dropEffect =
-                                                    e.altKey ||
-                                                    e.ctrlKey ||
-                                                    e.metaKey
-                                                        ? 'copy'
-                                                        : 'move';
-
-                                                if (dragOverDay !== day) {
-                                                    setDragOverDay(day);
-                                                }
-                                            }}
-                                            onDragLeave={(e) => {
-                                                if (
-                                                    !e.currentTarget.contains(
-                                                        e.relatedTarget as Node,
-                                                    )
-                                                ) {
-                                                    setDragOverDay(null);
-                                                }
-                                            }}
-                                            onDrop={(e) =>
-                                                day && handleDrop(e, day)
-                                            }
-                                            className={`min-h-[100px] p-2 ${day && dragOverDay === day ? 'bg-[#FFE156]/20 ring-2 ring-[#FFE156] ring-inset' : day ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50'} group relative flex flex-col gap-1 transition-colors`}
-                                        >
-                                            {day && (
-                                                <>
-                                                    <div className="mb-1 flex items-start justify-between">
-                                                        <span
-                                                            className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${isToday ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-700'}`}
-                                                        >
-                                                            {day}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => {
-                                                                // Don't allow clicking past dates
-                                                                const clickDate =
-                                                                    new Date(
-                                                                        year,
-                                                                        month -
-                                                                            1,
-                                                                        day,
-                                                                        12,
-                                                                        0,
-                                                                    );
-
-                                                                if (
-                                                                    clickDate <
-                                                                        new Date() &&
-                                                                    !isToday
-                                                                ) {
-                                                                    return;
-                                                                }
-
-                                                                // Pre-fill next hour for today, or 12:00 for future dates
-                                                                const defaultTime =
-                                                                    isToday
-                                                                        ? toLocalInput(
-                                                                              new Date(
-                                                                                  new Date().getTime() +
-                                                                                      60 *
-                                                                                          60 *
-                                                                                          1000,
-                                                                              ),
-                                                                          )
-                                                                        : `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00`;
-
-                                                                setData(
-                                                                    'publish_at',
-                                                                    defaultTime,
-                                                                );
-                                                                setIsModalOpen(
-                                                                    true,
-                                                                );
-                                                            }}
-                                                            className={`p-1 transition-opacity ${
-                                                                new Date(
-                                                                    year,
-                                                                    month - 1,
-                                                                    day,
-                                                                    23,
-                                                                    59,
-                                                                ) <
-                                                                    new Date() &&
-                                                                !isToday
-                                                                    ? 'cursor-not-allowed opacity-0'
-                                                                    : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#FFE156]'
-                                                            }`}
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                    <div className="no-scrollbar mt-1 flex flex-1 flex-col gap-2 overflow-y-auto pr-1 pb-1">
-                                                        {filteredGroups.map(
-                                                            (group) => {
-                                                                const status =
-                                                                    groupStatus(
-                                                                        group,
-                                                                    );
-                                                                const failed =
-                                                                    group.members.filter(
-                                                                        (m) =>
-                                                                            m.status ===
-                                                                            'failed',
-                                                                    );
-                                                                const providers =
-                                                                    [
-                                                                        ...new Set(
-                                                                            group.members.map(
-                                                                                (
-                                                                                    m,
-                                                                                ) =>
-                                                                                    m
-                                                                                        .social_account
-                                                                                        .provider,
-                                                                            ),
-                                                                        ),
-                                                                    ];
-                                                                const handles =
-                                                                    group.members
-                                                                        .map(
-                                                                            (
-                                                                                m,
-                                                                            ) =>
-                                                                                `@${m.social_account.handle}`,
-                                                                        )
-                                                                        .join(
-                                                                            ', ',
+                                                                        setData(
+                                                                            'publish_at',
+                                                                            defaultTime,
                                                                         );
-
-                                                                return (
-                                                                    <div
-                                                                        key={
-                                                                            group.key
-                                                                        }
-                                                                        draggable={
-                                                                            !busy
-                                                                        }
-                                                                        onDragStart={(
-                                                                            e,
-                                                                        ) => {
-                                                                            e.dataTransfer.setData(
-                                                                                'text/schedule-id',
-                                                                                String(
-                                                                                    group
-                                                                                        .lead
-                                                                                        .id,
-                                                                                ),
-                                                                            );
-                                                                            e.dataTransfer.effectAllowed =
-                                                                                isMovable(
-                                                                                    group,
+                                                                        setIsModalOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                    className={`p-1 transition-opacity ${
+                                                                        isPastDay &&
+                                                                        !isTodayCell
+                                                                            ? 'cursor-not-allowed opacity-0'
+                                                                            : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#FFE156]'
+                                                                    }`}
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="no-scrollbar mt-1 flex flex-1 flex-col gap-2 overflow-y-auto pr-1 pb-1">
+                                                                {dayGroups.map(
+                                                                    (group) => (
+                                                                        <PostChip
+                                                                            key={
+                                                                                group.key
+                                                                            }
+                                                                            group={
+                                                                                group
+                                                                            }
+                                                                            busy={
+                                                                                busy
+                                                                            }
+                                                                            onOpen={
+                                                                                openPreview
+                                                                            }
+                                                                            onDragEnd={() =>
+                                                                                setDragOverKey(
+                                                                                    null,
                                                                                 )
-                                                                                    ? 'copyMove'
-                                                                                    : 'copy';
-                                                                        }}
-                                                                        onDragEnd={() =>
-                                                                            setDragOverDay(
-                                                                                null,
-                                                                            )
-                                                                        }
-                                                                        onClick={() =>
-                                                                            openPreview(
-                                                                                group,
-                                                                            )
-                                                                        }
-                                                                        className={`relative flex cursor-grab items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
-                                                                            status ===
-                                                                            'published'
-                                                                                ? 'border-green-200 bg-green-50 text-green-800'
-                                                                                : status ===
-                                                                                    'failed'
-                                                                                  ? 'border-red-300 bg-red-50 text-red-800'
-                                                                                  : 'border-blue-200 bg-blue-50 text-blue-800'
-                                                                        }`}
-                                                                    >
-                                                                        {failed.length >
-                                                                            0 && (
-                                                                            <TooltipProvider
-                                                                                delayDuration={
-                                                                                    100
-                                                                                }
-                                                                            >
-                                                                                <Tooltip>
-                                                                                    <TooltipTrigger
-                                                                                        asChild
-                                                                                    >
-                                                                                        <div className="absolute -top-1.5 -right-1.5 z-10 cursor-help rounded-full border border-red-100 bg-white shadow-sm">
-                                                                                            <AlertCircle
-                                                                                                className="h-3.5 w-3.5 text-red-500"
-                                                                                                fill="currentColor"
-                                                                                                stroke="white"
-                                                                                            />
-                                                                                        </div>
-                                                                                    </TooltipTrigger>
-                                                                                    <TooltipContent className="max-w-[250px] border-red-200 bg-red-50 text-xs break-words text-red-900 shadow-md">
-                                                                                        <div className="flex items-start gap-2">
-                                                                                            <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                                                                                            <div className="flex flex-col gap-1">
-                                                                                                <p className="font-semibold">
-                                                                                                    Publishing
-                                                                                                    Failed
-                                                                                                </p>
-                                                                                                {failed.map(
-                                                                                                    (
-                                                                                                        m,
-                                                                                                    ) => (
-                                                                                                        <p
-                                                                                                            key={
-                                                                                                                m.id
-                                                                                                            }
-                                                                                                            className="text-red-800/90"
-                                                                                                        >
-                                                                                                            {group
-                                                                                                                .members
-                                                                                                                .length >
-                                                                                                                1 && (
-                                                                                                                <span className="font-medium">
-                                                                                                                    @
-                                                                                                                    {
-                                                                                                                        m
-                                                                                                                            .social_account
-                                                                                                                            .handle
-                                                                                                                    }
+                                                                            }
+                                                                        />
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Week view header */}
+                                    <div className="flex border-b border-gray-200 bg-white">
+                                        <div className="w-16 shrink-0 border-r border-gray-100" />
+                                        {weekDays.map((day) => {
+                                            const isTodayColumn =
+                                                dateKey(day) === dateKey(today);
 
-                                                                                                                    :{' '}
-                                                                                                                </span>
-                                                                                                            )}
-                                                                                                            {m.error_log ||
-                                                                                                                'An unknown error occurred while publishing to the platform.'}
-                                                                                                        </p>
-                                                                                                    ),
-                                                                                                )}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </TooltipContent>
-                                                                                </Tooltip>
-                                                                            </TooltipProvider>
-                                                                        )}
-                                                                        {providers.map(
-                                                                            (
-                                                                                p,
-                                                                            ) => (
-                                                                                <ProviderBadge
-                                                                                    key={
-                                                                                        p
-                                                                                    }
-                                                                                    provider={
-                                                                                        p
-                                                                                    }
-                                                                                />
-                                                                            ),
-                                                                        )}
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <div
-                                                                                className="truncate font-medium"
-                                                                                title={`${group.lead.content_project.title} · ${handles}`}
-                                                                            >
-                                                                                {new Date(
-                                                                                    group
-                                                                                        .lead
-                                                                                        .publish_at,
-                                                                                ).toLocaleTimeString(
-                                                                                    [],
-                                                                                    {
-                                                                                        hour: '2-digit',
-                                                                                        minute: '2-digit',
-                                                                                    },
-                                                                                )}{' '}
-                                                                                -{' '}
-                                                                                {
-                                                                                    group
-                                                                                        .lead
-                                                                                        .content_project
-                                                                                        .title
-                                                                                }
-                                                                            </div>
-                                                                            <div className="mt-1 flex flex-wrap gap-1">
-                                                                                {group.members.map(
-                                                                                    (
-                                                                                        m,
-                                                                                    ) => (
-                                                                                        <span
-                                                                                            key={
-                                                                                                m.id
-                                                                                            }
-                                                                                            className="max-w-full truncate rounded-sm bg-white/80 px-1 text-[10px] font-semibold"
-                                                                                        >
-                                                                                            @
-                                                                                            {
-                                                                                                m
-                                                                                                    .social_account
-                                                                                                    .handle
-                                                                                            }
-                                                                                        </span>
-                                                                                    ),
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
+                                            return (
+                                                <div
+                                                    key={dateKey(day)}
+                                                    className={`flex-1 border-r border-gray-100 px-2 py-2 text-center last:border-r-0 ${
+                                                        isTodayColumn
+                                                            ? 'border-b-2 border-[#FFE156] font-semibold text-gray-900'
+                                                            : 'text-gray-500'
+                                                    }`}
+                                                >
+                                                    <div className="text-xs">
+                                                        {day.toLocaleDateString(
+                                                            [],
+                                                            {
+                                                                weekday: 'long',
                                                             },
                                                         )}
                                                     </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                    <div className="mt-0.5 text-sm">
+                                                        {day.getDate()}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Week view body */}
+                                    <div
+                                        ref={weekScrollRef}
+                                        className="flex-1 overflow-y-auto"
+                                    >
+                                        {Array.from(
+                                            { length: 24 },
+                                            (_, hour) => {
+                                                const hourLabel = new Date(
+                                                    2000,
+                                                    0,
+                                                    1,
+                                                    hour,
+                                                ).toLocaleTimeString([], {
+                                                    hour: 'numeric',
+                                                });
+
+                                                return (
+                                                    <div
+                                                        key={hour}
+                                                        className="flex h-20 border-b border-gray-100 last:border-b-0"
+                                                    >
+                                                        <div className="w-16 shrink-0 border-r border-gray-100 pt-0.5 pr-2 text-right text-[11px] text-gray-400">
+                                                            {hourLabel}
+                                                        </div>
+                                                        {weekDays.map((day) => {
+                                                            const dayKey =
+                                                                dateKey(day);
+                                                            const cellKey = `${dayKey}-${hour}`;
+                                                            const isTodayColumn =
+                                                                dayKey ===
+                                                                dateKey(today);
+                                                            const isPastCell =
+                                                                new Date(
+                                                                    day.getFullYear(),
+                                                                    day.getMonth(),
+                                                                    day.getDate(),
+                                                                    hour,
+                                                                    59,
+                                                                ) < today;
+                                                            const isNowHour =
+                                                                isTodayColumn &&
+                                                                hour ===
+                                                                    today.getHours();
+                                                            const defaultTime =
+                                                                isNowHour
+                                                                    ? toLocalInput(
+                                                                          new Date(
+                                                                              today.getTime() +
+                                                                                  60 *
+                                                                                      60 *
+                                                                                      1000,
+                                                                          ),
+                                                                      )
+                                                                    : toLocalInput(
+                                                                          new Date(
+                                                                              day.getFullYear(),
+                                                                              day.getMonth(),
+                                                                              day.getDate(),
+                                                                              hour,
+                                                                              0,
+                                                                          ),
+                                                                      );
+                                                            const cellGroups =
+                                                                filterGroups(
+                                                                    groupsByDay[
+                                                                        dayKey
+                                                                    ] ?? [],
+                                                                    calendarFilter,
+                                                                )
+                                                                    .filter(
+                                                                        (g) =>
+                                                                            new Date(
+                                                                                g
+                                                                                    .lead
+                                                                                    .publish_at,
+                                                                            ).getHours() ===
+                                                                            hour,
+                                                                    )
+                                                                    .sort(
+                                                                        (
+                                                                            a,
+                                                                            b,
+                                                                        ) =>
+                                                                            new Date(
+                                                                                a
+                                                                                    .lead
+                                                                                    .publish_at,
+                                                                            ).getTime() -
+                                                                            new Date(
+                                                                                b
+                                                                                    .lead
+                                                                                    .publish_at,
+                                                                            ).getTime(),
+                                                                    );
+
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        cellKey
+                                                                    }
+                                                                    onDragOver={(
+                                                                        e,
+                                                                    ) => {
+                                                                        if (
+                                                                            isPastCell
+                                                                        ) {
+                                                                            return;
+                                                                        }
+
+                                                                        e.preventDefault();
+                                                                        e.dataTransfer.dropEffect =
+                                                                            e.altKey ||
+                                                                            e.ctrlKey ||
+                                                                            e.metaKey
+                                                                                ? 'copy'
+                                                                                : 'move';
+
+                                                                        if (
+                                                                            dragOverKey !==
+                                                                            cellKey
+                                                                        ) {
+                                                                            setDragOverKey(
+                                                                                cellKey,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    onDragLeave={(
+                                                                        e,
+                                                                    ) => {
+                                                                        if (
+                                                                            !e.currentTarget.contains(
+                                                                                e.relatedTarget as Node,
+                                                                            )
+                                                                        ) {
+                                                                            setDragOverKey(
+                                                                                null,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    onDrop={(
+                                                                        e,
+                                                                    ) => {
+                                                                        if (
+                                                                            isPastCell
+                                                                        ) {
+                                                                            return;
+                                                                        }
+
+                                                                        handleDrop(
+                                                                            e,
+                                                                            new Date(
+                                                                                day.getFullYear(),
+                                                                                day.getMonth(),
+                                                                                day.getDate(),
+                                                                                hour,
+                                                                            ),
+                                                                            false,
+                                                                        );
+                                                                    }}
+                                                                    className={`group relative flex min-w-0 flex-1 flex-col gap-1 border-r border-gray-100 p-1 transition-colors last:border-r-0 ${
+                                                                        isPastCell
+                                                                            ? 'bg-gray-50/60'
+                                                                            : 'bg-white'
+                                                                    } ${
+                                                                        dragOverKey ===
+                                                                        cellKey
+                                                                            ? 'bg-[#FFE156]/20 ring-2 ring-[#FFE156] ring-inset'
+                                                                            : ''
+                                                                    }`}
+                                                                >
+                                                                    <div className="no-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto pr-1 pb-1">
+                                                                        {cellGroups.map(
+                                                                            (
+                                                                                group,
+                                                                            ) => (
+                                                                                <PostChip
+                                                                                    key={
+                                                                                        group.key
+                                                                                    }
+                                                                                    group={
+                                                                                        group
+                                                                                    }
+                                                                                    busy={
+                                                                                        busy
+                                                                                    }
+                                                                                    onOpen={
+                                                                                        openPreview
+                                                                                    }
+                                                                                    onDragEnd={() =>
+                                                                                        setDragOverKey(
+                                                                                            null,
+                                                                                        )
+                                                                                    }
+                                                                                    compact
+                                                                                />
+                                                                            ),
+                                                                        )}
+                                                                    </div>
+                                                                    {!isPastCell && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setData(
+                                                                                    'publish_at',
+                                                                                    defaultTime,
+                                                                                );
+                                                                                setIsModalOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                            className="absolute top-1 right-1 z-10 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#FFE156]"
+                                                                        >
+                                                                            <Plus className="h-4 w-4" />
+                                                                        </button>
+                                                                    )}
+                                                                    {isNowHour && (
+                                                                        <div
+                                                                            className="pointer-events-none absolute inset-x-0 z-10"
+                                                                            style={{
+                                                                                top: `${
+                                                                                    ((today.getMinutes() +
+                                                                                        today.getSeconds() /
+                                                                                            60) /
+                                                                                        60) *
+                                                                                    80
+                                                                                }px`,
+                                                                            }}
+                                                                        >
+                                                                            <div className="absolute left-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500" />
+                                                                            <div className="absolute right-0 left-0 h-[2px] bg-red-500" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </>
                 ) : (
