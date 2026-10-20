@@ -85,6 +85,27 @@
     --font-display:
         'Euclid Circular A', 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
+    /* Landing (Jitter-style): ink + grey surfaces, pastel accent blocks, pill shapes */
+    --font-landing: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-landing-display: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --color-jt-ink: #19171c;
+    --color-jt-ink-soft: #2d2933;
+    --color-jt-muted: #6e6e73;
+    --color-jt-faint: #97979b;
+    --color-jt-line: #d7d7db;
+    --color-jt-surface: #f2f1f3;
+    --color-jt-surface-2: #e5e4e7;
+    --color-jt-green: #34d27b;
+    --color-jt-green-soft: #e5f8ec;
+    --color-jt-green-deep: #087a41;
+    --color-jt-lime: #f5ff63;
+    --color-jt-sky: #01b2fd;
+    --color-jt-sky-soft: #e6f4ff;
+    --radius-jt-card: 40px;
+    --radius-jt-block: 50px;
+    --shadow-jt-float: 0 9px 21px 0 rgb(25 23 28 / 0.1), 0 38px 38px 0 rgb(25 23 28 / 0.09), 0 85px 51px 0 rgb(25 23 28 / 0.05), 0 152px 61px 0 rgb(25 23 28 / 0.01);
+    --shadow-jt-soft: 0 2px 5px 0 rgb(0 0 0 / 0.04), 0 10px 10px 0 rgb(0 0 0 / 0.04), 0 22px 13px 0 rgb(0 0 0 / 0.02), 0 40px 16px 0 rgb(0 0 0 / 0.01);
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);

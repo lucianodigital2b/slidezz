@@ -17,50 +17,26 @@ import { dashboard, login, register } from '@/routes';
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const slides = [
-    {
-        src: '/landing/s2.webp',
-        hook: '5 morning habits that changed my life',
-    },
-    {
-        src: '/landing/s3.webp',
-        hook: "workouts I'd do if I started over",
-    },
-    {
-        src: '/landing/s4.webp',
-        hook: 'the only 3 skincare products you need',
-    },
+    { src: '/landing/s2.webp', hook: '5 morning habits that changed my life' },
+    { src: '/landing/s3.webp', hook: "workouts I'd do if I started over" },
+    { src: '/landing/s4.webp', hook: 'the only 3 skincare products you need' },
     {
         src: '/landing/s5.webp',
         hook: 'things nobody tells you about moving to a big city',
     },
-    {
-        src: '/landing/s6.webp',
-        hook: "signs he's actually into you",
-    },
+    { src: '/landing/s6.webp', hook: "signs he's actually into you" },
     {
         src: '/landing/s7.webp',
         hook: 'high protein breakfasts under 5 minutes',
     },
-    {
-        src: '/landing/s8.webp',
-        hook: 'how I finally grew my curls out',
-    },
-    {
-        src: '/landing/s9.webp',
-        hook: 'travel hacks I wish I knew sooner',
-    },
+    { src: '/landing/s8.webp', hook: 'how I finally grew my curls out' },
+    { src: '/landing/s9.webp', hook: 'travel hacks I wish I knew sooner' },
     {
         src: '/landing/s10.webp',
         hook: "dinners I make when I'm too tired to cook",
     },
-    {
-        src: '/landing/s11.webp',
-        hook: 'photo poses that always work',
-    },
-    {
-        src: '/landing/s12.webp',
-        hook: 'what I eat in a day (realistic)',
-    },
+    { src: '/landing/s11.webp', hook: 'photo poses that always work' },
+    { src: '/landing/s12.webp', hook: 'what I eat in a day (realistic)' },
 ];
 
 const lifetimeFeatures = [
@@ -146,37 +122,40 @@ function SlideCard({
     loading?: 'lazy' | 'eager';
 }) {
     return (
-        <div className="relative aspect-[3/4] w-36 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0 md:w-40">
-            <img
-                src={src}
-                alt=""
-                loading={loading}
-                width={480}
-                height={640}
-                className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute top-[20%] left-1/2 w-full -translate-x-1/2 px-4 text-center">
-                <p
-                    className="text-[13px] leading-tight font-extrabold text-white sm:text-[15px]"
-                    style={{
-                        WebkitTextStroke: '3px #000',
-                        paintOrder: 'stroke fill',
-                        textShadow: '0 2px 6px rgba(0,0,0,0.4)',
-                    }}
-                >
-                    {hook}
-                </p>
+        <div className="group flex w-40 flex-col overflow-hidden rounded-[28px] bg-jt-surface p-3 shadow-jt-soft transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none md:w-44">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-[20px] bg-white">
+                <img
+                    src={src}
+                    alt=""
+                    loading={loading}
+                    width={480}
+                    height={640}
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute bottom-3 left-3 flex gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <span
+                            key={i}
+                            className={cn(
+                                'h-1 w-1 rounded-full',
+                                i === 0 ? 'bg-white' : 'bg-white/40',
+                            )}
+                        />
+                    ))}
+                </div>
             </div>
-            <div className="absolute bottom-3 left-3 flex gap-1">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <span
-                        key={i}
-                        className={cn(
-                            'h-1 w-1 rounded-full',
-                            i === 0 ? 'bg-white' : 'bg-white/40',
-                        )}
-                    />
-                ))}
+            <div className="flex items-center gap-2 px-1 pt-3 text-left">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-jt-ink">
+                    <AppLogoIcon className="h-3 w-3 text-white" />
+                </span>
+                <div className="min-w-0">
+                    <p className="truncate text-[13px] leading-tight font-semibold text-jt-ink">
+                        {hook}
+                    </p>
+                    <p className="truncate text-[11px] text-jt-muted">
+                        Slidezz
+                    </p>
+                </div>
             </div>
         </div>
     );
@@ -186,9 +165,9 @@ function SlideArc() {
     const centerIndex = 5;
 
     return (
-        <div className="mt-10">
+        <div className="mt-12">
             {/* Mobile horizontal scroller */}
-            <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
                 {slides.map((slide, i) => (
                     <div key={slide.src} className="shrink-0 snap-center">
                         <SlideCard
@@ -204,12 +183,12 @@ function SlideArc() {
                 ))}
             </div>
 
-            {/* Desktop rainbow arc */}
-            <div className="relative left-1/2 hidden h-[380px] w-screen -translate-x-1/2 overflow-hidden md:block">
+            {/* Desktop arc */}
+            <div className="relative left-1/2 hidden h-[460px] w-screen -translate-x-1/2 overflow-hidden md:block">
                 {slides.map((slide, i) => {
                     const distance = i - centerIndex;
-                    const x = distance * 150;
-                    const y = distance * distance * 8;
+                    const x = distance * 160;
+                    const y = distance * distance * 9;
                     const rotation = distance * 5;
 
                     return (
@@ -231,7 +210,7 @@ function SlideArc() {
                         </div>
                     );
                 })}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28 bg-gradient-to-t from-[#F3F4EF] to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28 bg-gradient-to-t from-white to-transparent" />
             </div>
         </div>
     );
@@ -241,42 +220,40 @@ function SlideArc() {
 
 function StepOneVisual() {
     return (
-        <div className="space-y-2 rounded-xl border border-[#E6E6E0] bg-white p-3 text-left shadow-sm">
+        <div className="space-y-2 rounded-[20px] bg-white p-4 text-left shadow-jt-float">
             <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-[#1A1A1A]">
+                <span className="text-xs font-semibold text-jt-ink">
                     Format
                 </span>
-                <span className="rounded-md bg-[#F6F6F2] px-2 py-1 text-xs font-medium text-[#6B6B66]">
+                <span className="rounded-full bg-jt-surface px-2 py-1 text-xs font-medium text-jt-muted">
                     Listicle slideshow
                 </span>
             </div>
             <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-[#1A1A1A]">
-                    Niche
-                </span>
-                <span className="rounded-md bg-[#F6F6F2] px-2 py-1 text-xs font-medium text-[#6B6B66]">
+                <span className="text-xs font-semibold text-jt-ink">Niche</span>
+                <span className="rounded-full bg-jt-surface px-2 py-1 text-xs font-medium text-jt-muted">
                     Fitness
                 </span>
             </div>
             <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-[#1A1A1A]">
+                <span className="text-xs font-semibold text-jt-ink">
                     Posts per day
                 </span>
-                <span className="rounded-md bg-[#F6F6F2] px-2 py-1 text-xs font-medium text-[#6B6B66]">
+                <span className="rounded-full bg-jt-surface px-2 py-1 text-xs font-medium text-jt-muted">
                     2
                 </span>
             </div>
             <div className="flex gap-2">
-                <span className="rounded-full bg-[#F6F6F2] px-3 py-1 text-xs font-medium text-[#6B6B66]">
+                <span className="rounded-full bg-jt-surface px-3 py-1 text-xs font-medium text-jt-muted">
                     3:00 PM
                 </span>
-                <span className="rounded-full bg-[#F6F6F2] px-3 py-1 text-xs font-medium text-[#6B6B66]">
+                <span className="rounded-full bg-jt-surface px-3 py-1 text-xs font-medium text-jt-muted">
                     6:00 PM
                 </span>
             </div>
             <button
                 type="button"
-                className="w-full rounded-lg bg-[#FF4F1F] py-2 text-xs font-bold text-white"
+                className="w-full rounded-full bg-jt-ink py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-jt-ink-soft"
             >
                 Save automation
             </button>
@@ -286,34 +263,32 @@ function StepOneVisual() {
 
 function StepTwoVisual() {
     return (
-        <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
+        <div className="space-y-3 text-left">
+            <div className="flex items-center justify-between rounded-[20px] bg-white p-3 shadow-jt-float">
                 <div className="flex items-center gap-2">
-                    <TikTokMark className="h-4 w-4 text-[#6B6B66]" />
-                    <span className="text-xs font-semibold text-[#1A1A1A]">
+                    <TikTokMark className="h-4 w-4 text-jt-muted" />
+                    <span className="text-xs font-semibold text-jt-ink">
                         @yourbrand
                     </span>
                 </div>
-                <span className="rounded-full bg-green-100 px-2 py-1 text-[10px] font-bold text-green-700">
+                <span className="rounded-full bg-jt-surface px-2 py-1 text-[10px] font-semibold text-jt-ink">
                     Connected
                 </span>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between rounded-[20px] bg-white p-3 shadow-jt-float">
                 <div className="flex items-center gap-2">
-                    <InstagramMark className="h-4 w-4 text-[#6B6B66]" />
-                    <span className="text-xs font-semibold text-[#1A1A1A]">
+                    <InstagramMark className="h-4 w-4 text-jt-muted" />
+                    <span className="text-xs font-semibold text-jt-ink">
                         @yourbrand
                     </span>
                 </div>
-                <span className="rounded-full bg-green-100 px-2 py-1 text-[10px] font-bold text-green-700">
+                <span className="rounded-full bg-jt-surface px-2 py-1 text-[10px] font-semibold text-jt-ink">
                     Connected
                 </span>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-dashed border-[#D9D9D2] px-3 py-2 text-[11px] font-medium text-[#6B6B66]">
+            <div className="flex items-center justify-between rounded-[20px] border border-dashed border-white/60 px-3 py-2 text-[11px] font-medium text-white">
                 <span>Next post</span>
-                <span className="font-semibold text-[#1A1A1A]">
-                    Today, 3:00 PM
-                </span>
+                <span className="font-semibold">Today, 3:00 PM</span>
             </div>
         </div>
     );
@@ -334,7 +309,7 @@ function StepThreeVisual() {
             {thumbs.map((thumb) => (
                 <div
                     key={thumb.src}
-                    className="relative overflow-hidden rounded-lg"
+                    className="relative overflow-hidden rounded-[16px] shadow-jt-soft"
                 >
                     <img
                         src={thumb.src}
@@ -343,7 +318,7 @@ function StepThreeVisual() {
                         height={213}
                         className="aspect-square w-full object-cover"
                     />
-                    <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         {thumb.badge}
                     </span>
                 </div>
@@ -370,30 +345,48 @@ const steps = [
     },
 ];
 
+const stepStyles = [
+    { block: 'bg-jt-surface', body: 'text-jt-muted' },
+    { block: 'bg-jt-sky', body: 'text-white' },
+    { block: 'bg-jt-green', body: 'text-jt-ink/75' },
+];
+
 function StepCard({
     number,
     title,
     body,
     children,
+    className,
+    bodyClassName,
 }: {
     number: string;
     title: string;
     body: string;
     children: ReactNode;
+    className?: string;
+    bodyClassName?: string;
 }) {
     return (
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E6E6E0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-            <div className="h-60 overflow-hidden border-b border-[#E6E6E0] bg-[#F6F6F2] p-4">
-                {children}
-            </div>
-            <div className="p-6">
-                <h3 className="text-lg font-bold text-[#1A1A1A]">
+        <div
+            className={cn(
+                'flex flex-col items-center gap-8 overflow-hidden rounded-[32px] p-6 sm:rounded-jt-block sm:p-12 md:flex-row md:gap-12',
+                className,
+            )}
+        >
+            <div className="w-full md:flex-1">
+                <span className="inline-flex items-center bg-white px-2 py-0.5 text-[17px] font-semibold text-jt-ink">
                     {number}. {title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#6B6B66]">
+                </span>
+                <p
+                    className={cn(
+                        'mt-4 max-w-md text-base leading-6 tracking-[-0.02em]',
+                        bodyClassName,
+                    )}
+                >
                     {body}
                 </p>
             </div>
+            <div className="w-full md:flex-1">{children}</div>
         </div>
     );
 }
@@ -407,12 +400,12 @@ function AutomationsMock() {
                 (label) => (
                     <div
                         key={label}
-                        className="flex items-center justify-between rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm"
+                        className="flex items-center justify-between rounded-full bg-jt-surface px-4 py-2.5"
                     >
-                        <span className="text-xs font-semibold text-[#1A1A1A]">
+                        <span className="text-xs font-semibold text-jt-ink">
                             {label}
                         </span>
-                        <ToggleRight className="h-5 w-5 text-green-600" />
+                        <ToggleRight className="h-5 w-5 text-jt-green-deep" />
                     </div>
                 ),
             )}
@@ -425,37 +418,33 @@ function SchedulingMock() {
     const chips = [[0, 2], [1], [0, 1, 3], [2], [0], [1, 2], [0, 3]];
 
     return (
-        <div className="rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
-            <div className="grid grid-cols-7 gap-1">
-                {days.map((day, i) => (
-                    <div key={i} className="text-center">
-                        <div className="text-xs font-bold text-[#8A8A85]">
-                            {day}
-                        </div>
-                        <div className="mt-1 space-y-1">
-                            {chips[i].map((chip, j) => (
-                                <div
-                                    key={j}
-                                    className={cn(
-                                        'h-2 rounded-sm',
-                                        chip % 2 === 0
-                                            ? 'bg-[#FF4F1F]/70'
-                                            : 'bg-[#111]/70',
-                                    )}
-                                />
-                            ))}
-                        </div>
+        <div className="grid grid-cols-7 gap-1">
+            {days.map((day, i) => (
+                <div key={i} className="text-center">
+                    <div className="text-xs font-bold text-jt-muted">{day}</div>
+                    <div className="mt-1 space-y-1">
+                        {chips[i].map((chip, j) => (
+                            <div
+                                key={j}
+                                className={cn(
+                                    'h-2 rounded-full',
+                                    chip % 2 === 0
+                                        ? 'bg-jt-green'
+                                        : 'bg-jt-ink/70',
+                                )}
+                            />
+                        ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            ))}
         </div>
     );
 }
 
 function AnalyticsMock() {
     return (
-        <div className="rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between text-xs font-bold text-[#1A1A1A]">
+        <div>
+            <div className="flex items-center justify-between text-xs font-bold text-jt-ink">
                 <span>Views</span>
                 <span>12.4k</span>
             </div>
@@ -466,17 +455,17 @@ function AnalyticsMock() {
                 <polyline
                     points="0,24 12,20 24,22 36,14 48,16 60,8 72,10 80,4"
                     fill="none"
-                    stroke="#FF4F1F"
+                    stroke="#A981FF"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 />
             </svg>
-            <div className="mt-2 flex items-center justify-between text-xs font-medium text-[#6B6B66]">
+            <div className="mt-2 flex items-center justify-between text-xs font-medium text-jt-muted">
                 <span>Likes</span>
                 <span>834</span>
             </div>
-            <div className="mt-1 flex items-center justify-between text-xs font-medium text-[#6B6B66]">
+            <div className="mt-1 flex items-center justify-between text-xs font-medium text-jt-muted">
                 <span>Comments</span>
                 <span>92</span>
             </div>
@@ -486,7 +475,7 @@ function AnalyticsMock() {
 
 function SlideshowEditorMock() {
     return (
-        <div className="relative mx-auto aspect-[3/4] w-24 overflow-hidden rounded-lg border border-[#E6E6E0] shadow-sm">
+        <div className="relative mx-auto aspect-[3/4] w-24 overflow-hidden rounded-[16px] bg-white shadow-jt-soft">
             <img
                 src="/landing/s8.webp"
                 alt=""
@@ -495,14 +484,14 @@ function SlideshowEditorMock() {
                 className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute top-[22%] right-2 left-2">
-                <div className="rounded border-2 border-dashed border-[#FF4F1F] p-2">
+                <div className="rounded border-2 border-dashed border-jt-green-deep p-2">
                     <span className="block h-2 w-16 rounded bg-white/80" />
                     <span className="mt-1 block h-2 w-20 rounded bg-white/80" />
                 </div>
-                <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-[#FF4F1F]" />
-                <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#FF4F1F]" />
-                <div className="absolute -bottom-1 -left-1 h-2 w-2 rounded-full bg-[#FF4F1F]" />
-                <div className="absolute -right-1 -bottom-1 h-2 w-2 rounded-full bg-[#FF4F1F]" />
+                <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-jt-green-deep" />
+                <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-jt-green-deep" />
+                <div className="absolute -bottom-1 -left-1 h-2 w-2 rounded-full bg-jt-green-deep" />
+                <div className="absolute -right-1 -bottom-1 h-2 w-2 rounded-full bg-jt-green-deep" />
             </div>
         </div>
     );
@@ -510,10 +499,10 @@ function SlideshowEditorMock() {
 
 function PinterestMock() {
     return (
-        <div className="rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
-            <div className="flex items-center gap-2 rounded-lg bg-[#F6F6F2] px-3 py-2">
-                <Search className="h-4 w-4 text-[#8A8A85]" />
-                <span className="text-xs text-[#8A8A85]">aesthetic gym</span>
+        <div>
+            <div className="flex items-center gap-2 rounded-full bg-jt-surface px-3 py-2">
+                <Search className="h-4 w-4 text-jt-muted" />
+                <span className="text-xs text-jt-muted">aesthetic gym</span>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
                 {[
@@ -528,7 +517,7 @@ function PinterestMock() {
                         alt=""
                         width={80}
                         height={80}
-                        className="aspect-square w-full rounded-lg object-cover"
+                        className="aspect-square w-full rounded-[12px] object-cover"
                     />
                 ))}
             </div>
@@ -546,9 +535,9 @@ function AIHooksMock() {
             ].map((hook) => (
                 <div
                     key={hook}
-                    className="flex items-center gap-2 rounded-lg border border-[#E6E6E0] bg-white px-3 py-2 text-xs font-semibold text-[#1A1A1A] shadow-sm"
+                    className="flex items-center gap-2 rounded-full bg-jt-surface px-3 py-2 text-xs font-semibold text-jt-ink"
                 >
-                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-[#FF4F1F]" />
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-jt-green-deep" />
                     <span className="truncate">{hook}</span>
                 </div>
             ))}
@@ -558,19 +547,17 @@ function AIHooksMock() {
 
 function BulkMock() {
     return (
-        <div className="flex items-center gap-3 rounded-xl border border-[#E6E6E0] bg-white p-3 shadow-sm">
-            <div className="flex-1 rounded-lg bg-[#F6F6F2] p-3">
+        <div className="flex items-center gap-3">
+            <div className="flex-1 rounded-[16px] bg-jt-surface p-3">
                 {['hook 1', 'hook 2', 'hook 3'].map((line, i) => (
                     <div key={i} className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-[#E6E6E0]" />
-                        <span className="text-xs text-[#6B6B66]">{line}</span>
+                        <span className="h-2 w-2 rounded-full bg-jt-line" />
+                        <span className="text-xs text-jt-muted">{line}</span>
                     </div>
                 ))}
             </div>
-            <div className="flex flex-col items-center text-[#8A8A85]">
-                <span className="text-xs font-bold">→</span>
-            </div>
-            <div className="rounded-lg bg-[#111] px-3 py-2 text-xs font-bold text-white">
+            <span className="text-xs font-bold text-jt-muted">→</span>
+            <div className="rounded-full bg-jt-ink px-3 py-2 text-xs font-semibold text-white">
                 3 carousels
             </div>
         </div>
@@ -589,15 +576,15 @@ function MultipleAccountsMock() {
             {accounts.map((account) => (
                 <div
                     key={account.handle}
-                    className="flex items-center gap-2 rounded-xl border border-[#E6E6E0] bg-white px-3 py-1.5 shadow-sm"
+                    className="flex items-center gap-2 rounded-full bg-jt-surface px-3 py-1.5"
                 >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#111] text-[10px] font-bold text-white">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-jt-ink text-[10px] font-bold text-white">
                         {account.initials}
                     </span>
-                    <span className="text-xs font-semibold text-[#1A1A1A]">
+                    <span className="text-xs font-semibold text-jt-ink">
                         {account.handle}
                     </span>
-                    <span className="ml-auto h-2 w-2 rounded-full bg-green-500" />
+                    <span className="ml-auto h-2 w-2 rounded-full bg-jt-lime ring-1 ring-jt-ink/10" />
                 </div>
             ))}
         </div>
@@ -607,17 +594,23 @@ function MultipleAccountsMock() {
 function AppStoreScreenshotsMock() {
     return (
         <div className="flex items-center justify-center gap-4">
-            <div className="h-24 w-16 rounded-lg border border-[#E6E6E0] bg-gradient-to-b from-[#FF4F1F] to-[#F6B352] shadow-sm" />
-            <div className="h-24 w-16 rounded-lg border border-[#E6E6E0] bg-gradient-to-b from-[#111] to-[#4D4DFF] shadow-sm" />
+            <div className="h-24 w-16 rounded-[16px] bg-gradient-to-b from-jt-green to-jt-green-deep shadow-jt-soft" />
+            <div className="h-24 w-16 rounded-[16px] bg-gradient-to-b from-jt-sky to-jt-ink shadow-jt-soft" />
         </div>
     );
 }
 
-const features = [
+const features: {
+    title: string;
+    text: string;
+    Visual: () => ReactNode;
+    badge?: string;
+}[] = [
     {
         title: 'Automations',
         text: 'Set it up once. Slidezz creates and queues new slideshows every day.',
         Visual: AutomationsMock,
+        badge: 'new',
     },
     {
         title: 'Scheduling & publishing',
@@ -665,19 +658,28 @@ function FeatureCard({
     title,
     text,
     children,
+    badge,
 }: {
     title: string;
     text: string;
     children: ReactNode;
+    badge?: string;
 }) {
     return (
-        <div className="overflow-hidden rounded-2xl border border-[#E6E6E0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-            <div className="h-44 overflow-hidden border-b border-[#E6E6E0] bg-[#F6F6F2] p-4">
-                {children}
+        <div className="flex flex-col overflow-hidden rounded-[32px] bg-jt-surface p-5 transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none sm:rounded-jt-card sm:p-8">
+            <div className="flex min-h-[200px] items-center justify-center rounded-[20px] bg-white p-6">
+                <div className="w-full max-w-[280px]">{children}</div>
             </div>
-            <div className="p-5">
-                <h3 className="font-semibold text-[#1A1A1A]">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#6B6B66]">
+            <div className="mt-6 px-1">
+                {badge && (
+                    <span className="mb-2 inline-flex rounded-full bg-jt-lime px-2 py-0.5 text-[12px] font-semibold text-jt-ink">
+                        {badge}
+                    </span>
+                )}
+                <h3 className="text-[20px] leading-tight font-semibold tracking-[-0.02em] text-jt-ink">
+                    {title}
+                </h3>
+                <p className="mt-2 text-[16px] leading-6 tracking-[-0.02em] text-jt-muted">
                     {text}
                 </p>
             </div>
@@ -699,8 +701,9 @@ const plans = [
             'All templates',
             'Schedule posts',
         ],
-        buttonClass: 'bg-[#111] text-white hover:bg-[#333]',
+        buttonClass: 'bg-jt-ink text-white hover:bg-jt-ink-soft',
         badge: null,
+        highlighted: false,
     },
     {
         name: 'Pro',
@@ -712,8 +715,9 @@ const plans = [
             'Save your own templates',
             'Early access to new features',
         ],
-        buttonClass: 'bg-[#FF4F1F] text-white hover:bg-[#E64517]',
+        buttonClass: 'bg-jt-green text-jt-ink hover:brightness-95',
         badge: 'Recommended',
+        highlighted: true,
     },
     {
         name: 'Agency',
@@ -725,8 +729,9 @@ const plans = [
             'Team management',
             'Dedicated support',
         ],
-        buttonClass: 'bg-[#111] text-white hover:bg-[#333]',
+        buttonClass: 'bg-jt-ink text-white hover:bg-jt-ink-soft',
         badge: null,
+        highlighted: false,
     },
 ];
 
@@ -739,6 +744,7 @@ function PricingCard({
     onClick,
     buttonClass,
     badge,
+    highlighted,
 }: {
     name: string;
     price: number;
@@ -748,49 +754,77 @@ function PricingCard({
     onClick: () => void;
     buttonClass: string;
     badge?: string | null;
+    highlighted?: boolean;
 }) {
     return (
         <div
             className={cn(
-                'relative flex flex-col rounded-2xl border border-[#E6E6E0] bg-white p-6 shadow-sm',
-                badge && 'border-[#FF4F1F]/30',
+                'relative flex flex-col rounded-[32px] p-8 sm:rounded-jt-card',
+                highlighted
+                    ? 'bg-jt-ink text-white shadow-jt-soft'
+                    : 'bg-jt-surface',
             )}
         >
-            {badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#FFF1E9] px-3 py-1 text-xs font-bold text-[#FF4F1F]">
-                    {badge}
-                </div>
-            )}
-            <h3 className="text-xl font-bold text-[#1A1A1A]">{name}</h3>
-            <div className="mt-4">
+            <div className="flex items-center justify-between gap-3">
+                <h3
+                    className={cn(
+                        'text-xl font-semibold tracking-[-0.02em]',
+                        highlighted ? 'text-white' : 'text-jt-ink',
+                    )}
+                >
+                    {name}
+                </h3>
+                {badge && (
+                    <span className="rounded-full bg-jt-green px-3 py-1 text-xs font-semibold text-jt-ink">
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div className="mt-6">
                 {struckPrice && (
-                    <div className="text-sm text-[#8A8A85] line-through">
+                    <div
+                        className={cn(
+                            'text-sm line-through',
+                            highlighted ? 'text-white/50' : 'text-jt-muted',
+                        )}
+                    >
                         ${struckPrice}/mo
                     </div>
                 )}
                 <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold tracking-tight text-[#1A1A1A]">
+                    <span
+                        className={cn(
+                            'font-landing-display text-5xl font-extrabold tracking-[-0.04em]',
+                            highlighted ? 'text-white' : 'text-jt-ink',
+                        )}
+                    >
                         ${price}
                     </span>
-                    <span className="text-sm font-medium text-[#6B6B66]">
+                    <span
+                        className={cn(
+                            'text-sm font-medium',
+                            highlighted ? 'text-white/70' : 'text-jt-muted',
+                        )}
+                    >
                         per month
                     </span>
                 </div>
-                {billingCycle === 'annual' ? (
-                    <p className="mt-1 text-xs font-medium text-[#8A8A85]">
-                        billed annually
-                    </p>
-                ) : (
-                    <p className="mt-1 text-xs font-medium text-[#8A8A85]">
-                        billed monthly
-                    </p>
-                )}
+                <p
+                    className={cn(
+                        'mt-1 text-xs font-medium',
+                        highlighted ? 'text-white/50' : 'text-jt-muted',
+                    )}
+                >
+                    {billingCycle === 'annual'
+                        ? 'billed annually'
+                        : 'billed monthly'}
+                </p>
             </div>
             <button
                 type="button"
                 onClick={onClick}
                 className={cn(
-                    'mt-6 w-full rounded-xl py-3 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50',
+                    'mt-6 h-14 w-full rounded-full text-[16px] font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50',
                     buttonClass,
                 )}
             >
@@ -800,9 +834,17 @@ function PricingCard({
                 {features.map((feature) => (
                     <li
                         key={feature}
-                        className="flex items-start gap-2 text-sm text-[#6B6B66]"
+                        className={cn(
+                            'flex items-start gap-2 text-sm',
+                            highlighted ? 'text-white/75' : 'text-jt-muted',
+                        )}
                     >
-                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#FF4F1F]" />
+                        <Check
+                            className={cn(
+                                'mt-0.5 h-4 w-4 flex-shrink-0',
+                                highlighted ? 'text-jt-green' : 'text-jt-ink',
+                            )}
+                        />
                         {feature}
                     </li>
                 ))}
@@ -817,20 +859,24 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="border-b border-[#E6E6E0]">
+        <div className="border-b border-jt-line">
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
-                className="flex w-full items-center justify-between gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50 focus-visible:ring-inset"
+                className="flex w-full items-center justify-between gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50 focus-visible:ring-inset"
             >
-                <span className="text-lg font-bold text-[#1A1A1A]">{q}</span>
-                <ChevronDown
-                    className={cn(
-                        'h-5 w-5 transition-transform duration-300',
-                        open && 'rotate-180',
-                    )}
-                />
+                <span className="text-[18px] font-semibold tracking-[-0.02em] text-jt-ink sm:text-[20px]">
+                    {q}
+                </span>
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-jt-surface">
+                    <ChevronDown
+                        className={cn(
+                            'h-5 w-5 text-jt-ink transition-transform duration-300',
+                            open && 'rotate-180',
+                        )}
+                    />
+                </span>
             </button>
             <div
                 className={cn(
@@ -839,7 +885,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                 )}
             >
                 <div className="overflow-hidden">
-                    <p className="pb-6 text-sm leading-relaxed text-[#6B6B66]">
+                    <p className="pb-6 text-[16px] leading-6 tracking-[-0.02em] text-jt-muted">
                         {a}
                     </p>
                 </div>
@@ -854,83 +900,102 @@ function Footer() {
     const year = new Date().getFullYear();
 
     return (
-        <footer className="mx-auto max-w-6xl px-4 pt-16 pb-10">
-            <div className="grid gap-10 md:grid-cols-3">
-                <div>
-                    <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#111]">
-                            <AppLogoIcon className="h-4 w-4 text-white" />
+        <footer className="bg-black pb-16">
+            <div className="rounded-b-[50px] bg-white sm:rounded-b-[80px]">
+                <div className="mx-auto max-w-[1320px] px-4 pt-16 pb-12 sm:px-6">
+                    <div className="grid gap-10 md:grid-cols-3">
+                        <div>
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-jt-ink">
+                                    <AppLogoIcon className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-landing-display text-xl font-bold tracking-[-0.03em] text-jt-ink">
+                                    Slidezz
+                                </span>
+                            </div>
+                            <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-jt-muted">
+                                Automate TikTok and Instagram slideshows that
+                                bring traffic to your business.
+                            </p>
                         </div>
-                        <span className="text-xl font-bold text-[#1A1A1A]">
-                            Slidezz
-                        </span>
+                        <div>
+                            <h4 className="text-[14px] font-semibold text-jt-muted">
+                                Product
+                            </h4>
+                            <ul className="mt-4 space-y-3 text-[14px]">
+                                <li>
+                                    <a
+                                        href="#features"
+                                        className="text-jt-ink hover:text-jt-green-deep"
+                                    >
+                                        Features
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="#pricing"
+                                        className="text-jt-ink hover:text-jt-green-deep"
+                                    >
+                                        Pricing
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="#faq"
+                                        className="text-jt-ink hover:text-jt-green-deep"
+                                    >
+                                        FAQ
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="text-[14px] font-semibold text-jt-muted">
+                                Legal
+                            </h4>
+                            <ul className="mt-4 space-y-3 text-[14px]">
+                                <li>
+                                    <Link
+                                        href="/privacy-policy"
+                                        className="text-jt-ink hover:text-jt-green-deep"
+                                    >
+                                        Privacy Policy
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        href="/terms"
+                                        className="text-jt-ink hover:text-jt-green-deep"
+                                    >
+                                        Terms of Service
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                    <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#6B6B66]">
-                        Automate TikTok and Instagram slideshows that bring
-                        traffic to your business.
-                    </p>
+                    <div className="mt-12 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                        <p className="text-[14px] text-jt-muted">
+                            © {year} Slidezz. All rights reserved.
+                        </p>
+                        <div className="flex items-center gap-4 text-jt-ink">
+                            <TikTokMark className="h-5 w-5" />
+                            <InstagramMark className="h-5 w-5" />
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h4 className="text-sm font-bold text-[#1A1A1A]">
-                        Product
-                    </h4>
-                    <ul className="mt-4 space-y-3 text-sm">
-                        <li>
-                            <a
-                                href="#features"
-                                className="text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Features
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href="#pricing"
-                                className="text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Pricing
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href="#faq"
-                                className="text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                FAQ
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 className="text-sm font-bold text-[#1A1A1A]">Legal</h4>
-                    <ul className="mt-4 space-y-3 text-sm">
-                        <li>
-                            <Link
-                                href="/privacy-policy"
-                                className="text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Privacy Policy
-                            </Link>
-                        </li>
-                        <li>
-                            <Link
-                                href="/terms"
-                                className="text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Terms of Service
-                            </Link>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div className="mt-10 border-t border-[#E6E6E0] pt-6 text-center text-sm text-[#8A8A85]">
-                © {year} Slidezz. All rights reserved.
             </div>
         </footer>
     );
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
+
+const sectionTag =
+    'inline-flex rounded-full bg-jt-surface px-3 py-1 text-[14px] font-medium text-jt-ink';
+const sectionTitle =
+    'mt-5 max-w-4xl font-landing-display text-[clamp(2.25rem,5vw,4.5rem)] leading-[0.95] font-extrabold tracking-[-0.04em] text-jt-ink';
+const greenButton =
+    'inline-flex h-14 items-center justify-center rounded-full bg-jt-green px-8 text-[18px] font-semibold text-jt-ink transition duration-200 hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50';
 
 export default function LandingEn({
     canRegister = true,
@@ -960,72 +1025,61 @@ export default function LandingEn({
                     name="description"
                     content="Slidezz writes, designs and schedules faceless TikTok and Instagram slideshows for your brand, every day."
                 />
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link
-                    href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800"
-                    rel="stylesheet"
-                />
             </Head>
 
-            <div
-                className="min-h-screen overflow-x-clip font-[Inter,sans-serif]"
-                style={{ background: '#F3F4EF', color: '#1A1A1A' }}
-            >
+            <div className="min-h-screen overflow-x-clip bg-white font-landing text-jt-ink">
                 {/* ── NAV ── */}
                 <header
                     className={cn(
-                        'sticky top-0 z-50 bg-[#F3F4EF]/80 backdrop-blur-md transition-shadow',
+                        'sticky top-0 z-50 transition-colors duration-200',
                         scrolled
-                            ? 'shadow-[0_1px_0_rgba(0,0,0,0.05)]'
-                            : 'shadow-none',
+                            ? 'bg-white/85 backdrop-blur-md'
+                            : 'bg-transparent',
                     )}
                 >
-                    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
-                        >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#111]">
-                                <AppLogoIcon className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-xl font-bold tracking-tight text-[#1A1A1A]">
-                                Slidezz
-                            </span>
-                        </Link>
+                    <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between px-4 sm:h-[88px] sm:px-6">
+                        <div className="flex items-center gap-10">
+                            <Link
+                                href="/"
+                                className="flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50"
+                            >
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-jt-ink">
+                                    <AppLogoIcon className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-landing-display text-[22px] font-bold tracking-[-0.03em] text-jt-ink">
+                                    Slidezz
+                                </span>
+                            </Link>
 
-                        <nav className="hidden items-center gap-8 md:flex">
-                            <a
-                                href="#features"
-                                className="text-sm font-semibold text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Features
-                            </a>
-                            <a
-                                href="#pricing"
-                                className="text-sm font-semibold text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                Pricing
-                            </a>
-                            <a
-                                href="#faq"
-                                className="text-sm font-semibold text-[#6B6B66] hover:text-[#1A1A1A]"
-                            >
-                                FAQ
-                            </a>
-                        </nav>
+                            <nav className="hidden items-center gap-8 md:flex">
+                                {[
+                                    ['#features', 'Features'],
+                                    ['#pricing', 'Pricing'],
+                                    ['#faq', 'FAQ'],
+                                ].map(([href, label]) => (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        className="text-[15px] font-semibold text-jt-ink transition-colors hover:text-jt-muted"
+                                    >
+                                        {label}
+                                    </a>
+                                ))}
+                            </nav>
+                        </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 sm:gap-5">
                             {!auth.user && (
                                 <Link
                                     href={login()}
-                                    className="hidden text-sm font-semibold text-[#1A1A1A] hover:text-[#FF4F1F] md:inline-flex"
+                                    className="hidden text-[15px] font-semibold text-jt-ink transition-colors hover:text-jt-muted sm:inline-flex"
                                 >
                                     Log in
                                 </Link>
                             )}
                             <Link
                                 href={auth.user ? dashboard() : ctaHref}
-                                className="inline-flex items-center justify-center rounded-lg bg-[#111] px-4 py-2 text-sm font-bold text-white hover:bg-[#333] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
+                                className="inline-flex h-11 items-center justify-center rounded-full bg-jt-ink px-5 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-jt-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50 sm:h-[52px] sm:px-6 sm:text-[17px]"
                             >
                                 {auth.user ? 'Go to app' : 'Get started'}
                             </Link>
@@ -1034,38 +1088,33 @@ export default function LandingEn({
                 </header>
 
                 {/* ── HERO ── */}
-                <section className="mx-auto max-w-5xl px-4 pt-16 pb-8 text-center sm:pt-20">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#E6E6E0] bg-white px-4 py-1.5 text-sm font-semibold text-[#6B6B66]">
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
-                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                        TikTok + Instagram · Posts every day
+                <section className="mx-auto max-w-[1320px] px-4 pt-16 pb-8 text-center sm:px-6 sm:pt-28">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-jt-surface px-4 py-1.5 text-[13px] text-jt-ink sm:text-[14px]">
+                        <span className="font-semibold">
+                            TikTok + Instagram
+                        </span>
+                        <span className="text-jt-green-deep">
+                            · Posts every day
+                        </span>
                     </div>
 
-                    <h1 className="mt-6 text-4xl leading-[1.05] font-bold tracking-tight text-[#1A1A1A] sm:text-6xl">
-                        <span className="block">
-                            Automate TikTok slideshows
-                        </span>
-                        <span className="block text-[#8A8A85]">
-                            100% on autopilot
-                        </span>
+                    <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-jt-ink sm:max-w-[14ch]">
+                        Automate TikTok slideshows 100% on autopilot
                     </h1>
 
-                    <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#6B6B66]">
+                    <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-jt-muted sm:text-[20px]">
                         Slidezz writes, designs and schedules faceless
                         slideshows and carousels for your brand. They don't look
                         like AI.
                     </p>
 
-                    <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                        <Link
-                            href={ctaHref}
-                            className="inline-flex items-center justify-center rounded-xl bg-[#FF4F1F] px-6 py-3 text-sm font-bold text-white hover:bg-[#E64517] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
-                        >
+                    <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                        <Link href={ctaHref} className={greenButton}>
                             Make your first slideshow, free
                         </Link>
                         <a
                             href="#how-it-works"
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E6E6E0] bg-white px-6 py-3 text-sm font-bold text-[#1A1A1A] hover:bg-[#F6F6F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
+                            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-jt-surface px-8 text-[18px] font-semibold text-jt-ink transition-colors duration-200 hover:bg-jt-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-jt-green-deep/50"
                         >
                             <Play className="h-4 w-4 fill-current" />
                             See how it works
@@ -1074,19 +1123,18 @@ export default function LandingEn({
 
                     <SlideArc />
 
-                    <div className="mt-6 border-y border-[#E6E6E0] py-6">
-                        <div className="flex flex-col items-center gap-3 text-sm text-[#6B6B66] md:flex-row md:justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold">
-                                    Publishes to
-                                </span>
-                                <TikTokMark className="h-5 w-5" />
-                                <InstagramMark className="h-5 w-5" />
-                            </div>
-                            <p className="text-center">
+                    <div className="relative mt-10">
+                        <div className="absolute inset-x-0 top-1/2 h-px bg-jt-line" />
+                        <div className="relative mx-auto flex w-fit flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-white px-4 text-[13px] text-jt-muted">
+                            <span className="inline-flex items-center gap-1.5 font-semibold text-jt-ink">
+                                Publishes to
+                                <TikTokMark className="h-4 w-4" />
+                                <InstagramMark className="h-4 w-4" />
+                            </span>
+                            <span>
                                 Works for apps, e-commerce, coaches, agencies
                                 and creators.
-                            </p>
+                            </span>
                         </div>
                     </div>
                 </section>
@@ -1094,19 +1142,22 @@ export default function LandingEn({
                 {/* ── HOW IT WORKS ── */}
                 <section
                     id="how-it-works"
-                    className="mx-auto max-w-5xl px-4 py-20 sm:py-24"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <h2 className="text-center text-3xl font-bold tracking-tight text-[#1A1A1A] sm:text-4xl">
+                    <span className={sectionTag}>How it works</span>
+                    <h2 className={sectionTitle}>
                         Automate faceless pages.{' '}
-                        <span className="text-[#8A8A85]">On autopilot.</span>
+                        <span className="text-jt-ink/25">On autopilot.</span>
                     </h2>
-                    <div className="mt-12 grid gap-6 md:grid-cols-3">
+                    <div className="mt-12 flex flex-col gap-4 sm:gap-6">
                         {steps.map((step, i) => (
                             <StepCard
                                 key={step.title}
                                 number={String(i + 1)}
                                 title={step.title}
                                 body={step.text}
+                                className={stepStyles[i].block}
+                                bodyClassName={stepStyles[i].body}
                             >
                                 <step.Visual />
                             </StepCard>
@@ -1117,20 +1168,22 @@ export default function LandingEn({
                 {/* ── FEATURES ── */}
                 <section
                     id="features"
-                    className="mx-auto max-w-5xl px-4 py-20 sm:py-24"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <h2 className="text-center text-3xl font-bold tracking-tight text-[#1A1A1A] sm:text-4xl">
+                    <span className={sectionTag}>Features</span>
+                    <h2 className={sectionTitle}>
                         Product features.{' '}
-                        <span className="text-[#8A8A85]">
+                        <span className="text-jt-ink/25">
                             Everything you need, all in one.
                         </span>
                     </h2>
-                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-12 grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
                         {features.map((feature) => (
                             <FeatureCard
                                 key={feature.title}
                                 title={feature.title}
                                 text={feature.text}
+                                badge={feature.badge}
                             >
                                 <feature.Visual />
                             </FeatureCard>
@@ -1141,25 +1194,27 @@ export default function LandingEn({
                 {/* ── PRICING ── */}
                 <section
                     id="pricing"
-                    className="mx-auto max-w-5xl px-4 py-20 sm:py-24"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <h2 className="text-center text-3xl font-bold tracking-tight text-[#1A1A1A] sm:text-4xl">
-                        Pricing & plans
-                    </h2>
-                    <p className="mt-2 text-center text-lg text-[#6B6B66]">
-                        Start small, upgrade when your posts start working.
-                    </p>
+                    <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <span className={sectionTag}>Pricing</span>
+                            <h2 className={sectionTitle}>Pricing & plans</h2>
+                            <p className="mt-4 text-[18px] tracking-[-0.02em] text-jt-muted sm:text-[20px]">
+                                Start small, upgrade when your posts start
+                                working.
+                            </p>
+                        </div>
 
-                    <div className="mt-8 flex justify-center">
-                        <div className="inline-flex items-center gap-1 rounded-full border border-[#E6E6E0] bg-white p-1 shadow-sm">
+                        <div className="inline-flex w-fit items-center gap-1 rounded-full bg-jt-surface p-1">
                             <button
                                 type="button"
                                 onClick={() => setBillingCycle('monthly')}
                                 className={cn(
-                                    'rounded-full px-5 py-2 text-sm font-bold transition-colors',
+                                    'h-11 rounded-full px-5 text-sm font-semibold transition-colors duration-200',
                                     billingCycle === 'monthly'
-                                        ? 'bg-[#111] text-white'
-                                        : 'text-[#6B6B66] hover:text-[#1A1A1A]',
+                                        ? 'bg-white text-jt-ink shadow-jt-soft'
+                                        : 'text-jt-muted hover:text-jt-ink',
                                 )}
                             >
                                 Monthly
@@ -1168,21 +1223,21 @@ export default function LandingEn({
                                 type="button"
                                 onClick={() => setBillingCycle('annual')}
                                 className={cn(
-                                    'flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition-colors',
+                                    'flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors duration-200',
                                     billingCycle === 'annual'
-                                        ? 'bg-[#111] text-white'
-                                        : 'text-[#6B6B66] hover:text-[#1A1A1A]',
+                                        ? 'bg-white text-jt-ink shadow-jt-soft'
+                                        : 'text-jt-muted hover:text-jt-ink',
                                 )}
                             >
                                 Annual
-                                <span className="rounded-full bg-[#FF4F1F] px-2 py-0.5 text-[10px] font-extrabold text-white">
+                                <span className="rounded-full bg-jt-lime px-2 py-0.5 text-[10px] font-semibold text-jt-ink">
                                     Save up to 35%
                                 </span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="mt-12 grid gap-6 md:grid-cols-3">
+                    <div className="mt-12 grid gap-4 sm:gap-6 md:grid-cols-3">
                         {plans.map((plan) => {
                             const price =
                                 billingCycle === 'annual'
@@ -1209,46 +1264,50 @@ export default function LandingEn({
                                     }
                                     buttonClass={plan.buttonClass}
                                     badge={plan.badge}
+                                    highlighted={plan.highlighted}
                                 />
                             );
                         })}
                     </div>
 
                     {/* Lifetime offer */}
-                    <div className="mt-8 overflow-hidden rounded-2xl border border-[#E6E6E0] bg-white shadow-sm">
-                        <div className="flex flex-col gap-8 p-8 md:flex-row md:items-center md:justify-between">
+                    <div className="mt-4 overflow-hidden rounded-[32px] bg-jt-green-soft p-8 sm:mt-6 sm:rounded-jt-card sm:p-10">
+                        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <span className="inline-flex rounded-full bg-[#FFF1E9] px-3 py-1 text-xs font-bold text-[#FF4F1F]">
+                                <span className="inline-flex rounded-full bg-jt-lime px-3 py-1 text-xs font-semibold text-jt-ink">
                                     Launch offer
                                 </span>
-                                <h3 className="mt-3 text-2xl font-bold text-[#1A1A1A]">
+                                <h3 className="mt-3 font-landing-display text-3xl font-extrabold tracking-[-0.04em] text-jt-ink">
                                     Lifetime access
                                 </h3>
-                                <p className="mt-2 max-w-md text-sm text-[#6B6B66]">
+                                <p className="mt-2 max-w-md text-[16px] text-jt-muted">
                                     Pay once, use forever. No subscription.
                                 </p>
                                 <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
                                     {lifetimeFeatures.map((feature) => (
                                         <li
                                             key={feature}
-                                            className="flex items-center gap-2 text-sm font-medium text-[#1A1A1A]"
+                                            className="flex items-center gap-2 text-sm font-medium text-jt-ink"
                                         >
-                                            <Check className="h-4 w-4 text-[#FF4F1F]" />
+                                            <Check className="h-4 w-4 text-jt-green-deep" />
                                             {feature}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
-                            <div className="text-center md:text-right">
-                                <div className="text-4xl font-extrabold text-[#1A1A1A]">
+                            <div className="text-left md:text-right">
+                                <div className="font-landing-display text-5xl font-extrabold tracking-[-0.04em] text-jt-ink">
                                     $149
                                 </div>
-                                <div className="text-sm font-medium text-[#6B6B66]">
+                                <div className="text-sm font-medium text-jt-muted">
                                     one-time payment
                                 </div>
                                 <Link
                                     href={ctaHref}
-                                    className="mt-4 inline-flex rounded-xl bg-[#FF4F1F] px-6 py-3 text-sm font-bold whitespace-nowrap text-white hover:bg-[#E64517] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
+                                    className={cn(
+                                        greenButton,
+                                        'mt-4 bg-jt-ink text-[16px] whitespace-nowrap text-white hover:bg-jt-ink-soft hover:brightness-100',
+                                    )}
                                 >
                                     Claim lifetime access
                                 </Link>
@@ -1256,7 +1315,7 @@ export default function LandingEn({
                         </div>
                     </div>
 
-                    <p className="mt-4 text-center text-sm text-[#8A8A85]">
+                    <p className="mt-6 text-center text-[14px] text-jt-muted">
                         Cancel anytime. No contracts.
                     </p>
                 </section>
@@ -1264,31 +1323,31 @@ export default function LandingEn({
                 {/* ── FAQ ── */}
                 <section
                     id="faq"
-                    className="mx-auto max-w-3xl px-4 py-20 sm:py-24"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <h2 className="text-center text-3xl font-bold tracking-tight text-[#1A1A1A] sm:text-4xl">
-                        Frequently asked questions
-                    </h2>
-                    <div className="mt-12">
-                        {faqs.map(({ q, a }) => (
-                            <FaqItem key={q} q={q} a={a} />
-                        ))}
+                    <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
+                        <div>
+                            <span className={sectionTag}>FAQ</span>
+                            <h2 className={sectionTitle}>
+                                Frequently asked questions
+                            </h2>
+                        </div>
+                        <div className="border-t border-jt-line">
+                            {faqs.map(({ q, a }) => (
+                                <FaqItem key={q} q={q} a={a} />
+                            ))}
+                        </div>
                     </div>
                 </section>
 
                 {/* ── FINAL CTA ── */}
-                <section className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
-                    <div className="rounded-3xl bg-[#111] px-6 py-16 text-center text-white sm:px-16">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                            Your next 30 days of posts, done this afternoon.
-                        </h2>
-                        <Link
-                            href={ctaHref}
-                            className="mt-8 inline-flex rounded-xl bg-[#FF4F1F] px-6 py-3 text-sm font-bold text-white hover:bg-[#E64517] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4F1F]/50"
-                        >
-                            Make your first slideshow, free
-                        </Link>
-                    </div>
+                <section className="mx-auto max-w-[1320px] px-4 pt-8 pb-24 text-center sm:px-6 sm:pb-32">
+                    <h2 className="mx-auto max-w-[16ch] font-landing-display text-[clamp(2.75rem,7vw,7.5rem)] leading-[0.92] font-extrabold tracking-[-0.045em] text-balance text-jt-ink">
+                        Your next 30 days of posts, done this afternoon.
+                    </h2>
+                    <Link href={ctaHref} className={cn(greenButton, 'mt-10')}>
+                        Make your first slideshow, free
+                    </Link>
                 </section>
 
                 {/* ── FOOTER ── */}
