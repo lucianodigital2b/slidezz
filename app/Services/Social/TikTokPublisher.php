@@ -179,8 +179,10 @@ class TikTokPublisher implements SocialPublisher
     /**
      * Push a rendered MP4 to the creator's TikTok inbox as a draft.
      *
-     * Uses `FILE_UPLOAD` rather than `PULL_FROM_URL` so it works without a verified
-     * domain. The inbox endpoint takes no caption: the creator writes it in the app.
+     * TikTok downloads the file itself (`PULL_FROM_URL`), like the photo carousels:
+     * the video already sits on the media disk, under the domain verified in the
+     * developer portal, and TikTok's guidelines ask for this source in that case.
+     * The inbox endpoint takes no caption: the creator writes it in the app.
      *
      * @see https://developers.tiktok.com/doc/content-posting-api-reference-upload-video
      */
@@ -193,87 +195,24 @@ class TikTokPublisher implements SocialPublisher
             throw new \Exception('Este vídeo ainda não foi renderizado.');
         }
 
-        $videoSize = $disk->size($path);
-        [$chunkSize, $chunkCount] = $this->videoChunks($videoSize);
-
         $response = Http::withToken($account->access_token)
             ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
             ->timeout(60)
             ->post('https://open.tiktokapis.com/v2/post/publish/inbox/video/init/', [
                 'source_info' => [
-                    'source' => 'FILE_UPLOAD',
-                    'video_size' => $videoSize,
-                    'chunk_size' => $chunkSize,
-                    'total_chunk_count' => $chunkCount,
+                    'source' => 'PULL_FROM_URL',
+                    'video_url' => url($disk->url($path)),
                 ],
             ]);
 
         $publishId = $response->json('data.publish_id');
-        $uploadUrl = $response->json('data.upload_url');
         $errorCode = (string) $response->json('error.code', '');
 
-        if ($response->failed() || ! $publishId || ! $uploadUrl || ($errorCode !== '' && $errorCode !== 'ok')) {
+        if ($response->failed() || ! $publishId || ($errorCode !== '' && $errorCode !== 'ok')) {
             throw new \Exception($this->publishError($errorCode, (string) $response->json('error.message', '')));
         }
 
-        $stream = $disk->readStream($path);
-
-        try {
-            for ($index = 0; $index < $chunkCount; $index++) {
-                $start = $index * $chunkSize;
-                // The last chunk absorbs the remainder, so it can be bigger than chunk_size.
-                $end = $index === $chunkCount - 1 ? $videoSize - 1 : $start + $chunkSize - 1;
-                $bytes = $this->readBytes($stream, $end - $start + 1);
-
-                $upload = Http::withBody($bytes, 'video/mp4')
-                    ->withHeaders(['Content-Range' => "bytes {$start}-{$end}/{$videoSize}"])
-                    ->timeout(300)
-                    ->put($uploadUrl);
-
-                if ($upload->failed()) {
-                    throw new \Exception("Falha ao enviar o vídeo pro TikTok (HTTP {$upload->status()}).");
-                }
-            }
-        } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        }
-
         return $publishId;
-    }
-
-    /**
-     * TikTok wants chunks of 5–64 MB, a count of floor(size / chunk), and the last
-     * chunk taking the remainder. Anything up to 64 MB goes up in one piece.
-     *
-     * @return array{0: int, 1: int}
-     */
-    private function videoChunks(int $videoSize): array
-    {
-        $maxSingleChunk = 64 * 1024 * 1024;
-
-        if ($videoSize <= $maxSingleChunk) {
-            return [$videoSize, 1];
-        }
-
-        $chunkSize = 10 * 1024 * 1024;
-
-        return [$chunkSize, intdiv($videoSize, $chunkSize)];
-    }
-
-    /**
-     * @param  resource  $stream
-     */
-    private function readBytes($stream, int $length): string
-    {
-        $bytes = '';
-
-        while (strlen($bytes) < $length && ! feof($stream)) {
-            $bytes .= fread($stream, $length - strlen($bytes));
-        }
-
-        return $bytes;
     }
 
     /**

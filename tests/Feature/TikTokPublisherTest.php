@@ -98,19 +98,16 @@ class TikTokPublisherTest extends TestCase
         (new TikTokPublisher)->publish($schedule->contentProject, $schedule);
     }
 
-    public function test_it_uploads_a_video_to_the_tiktok_inbox_as_a_draft(): void
+    public function test_it_sends_a_video_to_the_tiktok_inbox_by_url(): void
     {
-        config(['filesystems.media_disk' => 'public']);
+        config(['filesystems.media_disk' => 'public', 'filesystems.disks.public.url' => 'https://media.verified.test']);
         Storage::fake('public');
         Storage::disk('public')->put('videos/render.mp4', str_repeat('x', 1000));
 
-        Http::fake([
-            self::VIDEO_INIT_URL => Http::response([
-                'data' => ['publish_id' => 'v_inbox_1', 'upload_url' => 'https://upload.tiktokapis.com/video/?upload_id=1'],
-                'error' => ['code' => 'ok'],
-            ]),
-            'upload.tiktokapis.com/*' => Http::response(null, 201),
-        ]);
+        Http::fake([self::VIDEO_INIT_URL => Http::response([
+            'data' => ['publish_id' => 'v_inbox_1'],
+            'error' => ['code' => 'ok'],
+        ])]);
 
         $schedule = $this->schedule(['video_path' => 'videos/render.mp4'], 'video');
 
@@ -118,17 +115,10 @@ class TikTokPublisherTest extends TestCase
 
         $this->assertSame('v_inbox_1', $publishId);
 
+        Http::assertSentCount(1);
         Http::assertSent(fn ($request): bool => $request->url() === self::VIDEO_INIT_URL
-            && $request->data()['source_info'] === [
-                'source' => 'FILE_UPLOAD',
-                'video_size' => 1000,
-                'chunk_size' => 1000,
-                'total_chunk_count' => 1,
-            ]);
-
-        Http::assertSent(fn ($request): bool => $request->method() === 'PUT'
-            && $request->hasHeader('Content-Range', 'bytes 0-999/1000')
-            && strlen($request->body()) === 1000);
+            && $request->data()['source_info']['source'] === 'PULL_FROM_URL'
+            && str_ends_with($request->data()['source_info']['video_url'], '/videos/render.mp4'));
     }
 
     public function test_a_video_that_is_missing_from_the_disk_is_refused(): void
