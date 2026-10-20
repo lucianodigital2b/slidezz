@@ -991,7 +991,8 @@
       "neverUsed": "never used",
       "revoke": "Revoke",
       "connectTitle": "Connect from Claude Code",
-      "connectHint": "Run this in your terminal, then ask Claude to list your Slidezz projects."
+      "connectHint": "Run this in your terminal, then ask Claude to create a carousel or schedule a post on Slidezz.",
+      "connectOtherHint": "Cursor, Windsurf and other MCP clients: add this to your MCP config."
     },
     "deleteAccount": {
       "title": "Delete account",

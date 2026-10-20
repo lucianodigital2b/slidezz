@@ -223,7 +223,8 @@
       "neverUsed": "nunca usado",
       "revoke": "Revogar",
       "connectTitle": "Conectar pelo Claude Code",
-      "connectHint": "Rode isto no terminal e depois peça pro Claude listar seus projetos do Slidezz."
+      "connectHint": "Rode isto no terminal e depois peça pro Claude criar um carrossel ou agendar um post no Slidezz.",
+      "connectOtherHint": "Cursor, Windsurf e outros clientes MCP: coloque isto na configuração de MCP."
     },
     "deleteAccount": {
       "title": "Excluir conta",

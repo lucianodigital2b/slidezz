@@ -8,9 +8,13 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
+use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Description('List the carousel projects belonging to the authenticated Slidezz account. Read-only; does not generate anything or consume credits.')]
+#[Name('list_projects')]
+#[IsReadOnly]
 class ListProjectsTool extends Tool
 {
     /**
