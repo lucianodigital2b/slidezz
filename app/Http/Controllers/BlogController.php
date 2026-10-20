@@ -59,7 +59,8 @@ class BlogController extends Controller
                     $urls[] = ['loc' => $post->url(), 'lastmod' => $post->updated_at->toAtomString()];
                 });
 
-            return view('blog.sitemap', ['urls' => $urls])->render();
+            // The XML declaration stays out of Blade: with short_open_tag on (production), "<?xml" is parsed as PHP.
+            return '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.view('blog.sitemap', ['urls' => $urls])->render();
         });
 
         return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);

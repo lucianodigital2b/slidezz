@@ -87,6 +87,7 @@ class BlogTest extends TestCase
         $this->get('/sitemap.xml')
             ->assertOk()
             ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+            ->assertSee('<?xml version="1.0" encoding="UTF-8"?>', false)
             ->assertSee('<loc>'.$live->url().'</loc>', false)
             ->assertSee('<loc>'.route('blog.index').'</loc>', false)
             ->assertDontSee($draft->url(), false)
