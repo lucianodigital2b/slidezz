@@ -26,7 +26,7 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|inter-tight:700,800" rel="stylesheet" />
 
         @if (config('services.meta.pixel_id'))
             <script>
@@ -56,20 +56,20 @@
         @endif
 
         <style>
-            :root { --ink: #1a1a1a; --muted: #6b6b66; --line: #e6e6e0; --soft: #f6f6f2; --accent: #ff4f1f; --accent-dark: #e64517; }
+            :root { --ink: #19171c; --muted: #6e6e73; --line: #d7d7db; --soft: #f2f1f3; --accent: #34d27b; --accent-deep: #087a41; --accent-soft: #e5f8ec; }
             * { box-sizing: border-box; }
             body { margin: 0; background: #fff; color: var(--ink); font: 18px/1.7 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-            a { color: var(--accent-dark); }
+            a { color: var(--accent-deep); }
             .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
             .site-header { border-bottom: 1px solid var(--line); }
             .site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; padding-bottom: 16px; }
-            .wordmark { font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
+            .wordmark { font-family: 'Inter Tight', Inter, sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
             .site-nav { display: flex; align-items: center; gap: 16px; font-size: 15px; }
             .site-nav a:not(.btn) { color: var(--ink); text-decoration: none; font-weight: 500; }
-            .btn { display: inline-block; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 15px; line-height: 1.2; text-decoration: none; }
-            .btn:hover { background: var(--accent-dark); }
-            main { padding: 40px 0 64px; }
-            h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; font-weight: 800; }
+            .btn { display: inline-block; background: var(--accent); color: var(--ink); padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 15px; line-height: 1.2; text-decoration: none; }
+            .btn:hover { filter: brightness(0.95); }
+            main.wrap { padding-top: 40px; padding-bottom: 64px; }
+            h1, h2, h3 { font-family: 'Inter Tight', Inter, sans-serif; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; }
             h1 { font-size: 40px; margin: 0 0 16px; }
             h2 { font-size: 28px; margin: 48px 0 12px; }
             h3 { font-size: 21px; margin: 32px 0 8px; font-weight: 700; }
@@ -88,15 +88,15 @@
             .crumbs a { color: var(--muted); }
             .meta { font-size: 15px; color: var(--muted); margin-bottom: 28px; }
             .hero { margin: 0 0 32px; }
-            .preview-banner { background: #fff4d6; border: 1px solid #f0d48a; padding: 10px 14px; border-radius: 10px; font-size: 15px; margin-bottom: 24px; }
+            .preview-banner { background: var(--accent-soft); border: 1px solid var(--accent); padding: 10px 14px; border-radius: 10px; font-size: 15px; margin-bottom: 24px; }
             .faq h3 { margin-top: 24px; }
-            .cta { margin-top: 56px; background: var(--soft); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; text-align: center; }
+            .cta { margin-top: 56px; background: var(--soft); border-radius: 32px; padding: 28px 24px; text-align: center; }
             .cta h2 { margin: 0 0 8px; font-size: 26px; }
             .cta p { color: var(--muted); }
             .post-list article { padding: 24px 0; border-bottom: 1px solid var(--line); }
             .post-list h2 { margin: 0 0 6px; font-size: 24px; }
             .post-list h2 a { color: var(--ink); text-decoration: none; }
-            .post-list h2 a:hover { color: var(--accent-dark); }
+            .post-list h2 a:hover { color: var(--accent-deep); }
             .post-list p { margin: 0 0 6px; color: var(--muted); }
             .pager { display: flex; justify-content: space-between; margin-top: 32px; }
             .site-footer { border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
