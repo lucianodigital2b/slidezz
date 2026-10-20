@@ -36,7 +36,7 @@ class RunAgentTurn implements ShouldQueue
         $apiKey = $user->byokAnthropicKey() ?? config('services.anthropic.key');
 
         if (! $apiKey) {
-            $this->fail('No Anthropic API key configured.');
+            $this->giveUp($conversation, 'Add your Anthropic API key in Settings → Integrations to use the agent.');
 
             return;
         }
@@ -66,6 +66,29 @@ class RunAgentTurn implements ShouldQueue
             if ($this->usesPlatformKey) {
                 $user->addCredits(1);
             }
+        }
+    }
+
+    /**
+     * Runs when the worker kills the job (timeout, crash), so the
+     * conversation doesn't stay "running" forever.
+     */
+    public function failed(?\Throwable $e): void
+    {
+        $conversation = $this->conversation->fresh();
+
+        if ($conversation && $conversation->status === 'running') {
+            $this->closeDanglingToolUses($conversation);
+            $this->giveUp($conversation, 'The agent could not complete the turn. Please try again.');
+        }
+    }
+
+    private function giveUp(AgentConversation $conversation, string $error): void
+    {
+        $conversation->update(['status' => 'error', 'error' => $error]);
+
+        if ($this->usesPlatformKey) {
+            $conversation->user->addCredits(1);
         }
     }
 

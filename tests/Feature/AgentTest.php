@@ -188,6 +188,40 @@ class AgentTest extends TestCase
         $this->assertSame('idle', $conversation->fresh()->status);
     }
 
+    public function test_turn_without_any_api_key_ends_in_error_and_refunds_the_credit(): void
+    {
+        config(['services.anthropic.key' => null]);
+
+        $conversation = AgentConversation::create([
+            'user_id' => $this->user->id,
+            'workspace_id' => $this->workspace->id,
+            'title' => 'New conversation',
+            'status' => 'running',
+        ]);
+
+        RunAgentTurn::dispatchSync($conversation, true);
+
+        $conversation->refresh();
+        $this->assertSame('error', $conversation->status);
+        $this->assertStringContainsString('Anthropic API key', $conversation->error);
+        $this->assertSame(11, $this->user->fresh()->credits);
+    }
+
+    public function test_killed_turn_ends_in_error_and_refunds_the_credit(): void
+    {
+        $conversation = AgentConversation::create([
+            'user_id' => $this->user->id,
+            'workspace_id' => $this->workspace->id,
+            'title' => 'New conversation',
+            'status' => 'running',
+        ]);
+
+        (new RunAgentTurn($conversation, true))->failed(new \RuntimeException('timeout'));
+
+        $this->assertSame('error', $conversation->fresh()->status);
+        $this->assertSame(11, $this->user->fresh()->credits);
+    }
+
     public function test_build_slideshow_refuses_source_assets(): void
     {
         $conversation = AgentConversation::create([
