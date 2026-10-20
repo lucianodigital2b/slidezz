@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SlideTextPreset;
 use App\Jobs\GenerateSlideshow;
 use App\Models\ContentProject;
 use App\Models\SocialAccount;
 use App\Models\Workspace;
+use App\Services\Slides\SlideshowGeneration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -35,7 +34,7 @@ class SlideshowGeneratorController extends Controller
                 ->latest('id')
                 ->limit(12)
                 ->get()
-                ->map(fn (ContentProject $project): array => $this->summarize($project))
+                ->map(fn (ContentProject $project): array => SlideshowGeneration::summarize($project))
                 ->all(),
             'tiktokAccounts' => SocialAccount::where('workspace_id', $workspace->id)
                 ->where('provider', 'tiktok')
@@ -46,16 +45,7 @@ class SlideshowGeneratorController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'topic' => ['required', 'string', 'max:500'],
-            'slide_count' => ['nullable', 'integer', 'min:2', 'max:12'],
-            'image_source' => ['nullable', 'string', 'in:pinterest,ai'],
-            'text_position' => ['nullable', 'string', 'in:top,center,bottom'],
-            'text_preset' => ['nullable', Rule::in(SlideTextPreset::values())],
-            'language' => ['nullable', 'string', 'max:50'],
-            'social_account_id' => ['nullable', 'integer'],
-            'publish_at' => ['nullable', 'date', 'after_or_equal:now'],
-        ]);
+        $validated = $request->validate(SlideshowGeneration::rules());
 
         // Soft paywall, matching CarouselGenerationController::generate().
         if (! $request->user()->hasPremiumAccess()) {
@@ -74,36 +64,16 @@ class SlideshowGeneratorController extends Controller
                 ->findOrFail($accountId);
         }
 
-        $project = ContentProject::create([
-            'workspace_id' => $workspace->id,
-            'title' => Str::limit($validated['topic'], 120, ''),
-            'type' => 'slideshow',
-            'status' => 'generating',
-            'script_data' => [
-                'topic' => $validated['topic'],
-                'slide_count' => $validated['slide_count'] ?? 6,
-                'image_source' => $validated['image_source'] ?? 'pinterest',
-                'text_position' => $validated['text_position'] ?? 'center',
-                'text_preset' => $validated['text_preset'] ?? SlideTextPreset::Classic->value,
-                'language' => $validated['language'] ?? 'Portuguese (Brazil)',
-                'social_account_id' => $accountId,
-                'publish_at' => $validated['publish_at'] ?? null,
-            ],
-        ]);
+        $project = app(SlideshowGeneration::class)->start($workspace, $validated);
 
-        GenerateSlideshow::dispatch($project);
-
-        return response()->json($this->summarize($project), 202);
+        return response()->json(SlideshowGeneration::summarize($project), 202);
     }
 
-    /**
-     * Polled by the client while the job runs.
-     */
     public function show(Request $request, ContentProject $contentProject): JsonResponse
     {
         $this->authorizeProject($request, $contentProject);
 
-        return response()->json($this->summarize($contentProject));
+        return response()->json(SlideshowGeneration::summarize($contentProject));
     }
 
     public function destroy(Request $request, ContentProject $contentProject): JsonResponse
@@ -123,9 +93,6 @@ class SlideshowGeneratorController extends Controller
         return response()->json(['deleted' => true]);
     }
 
-    /**
-     * Every slide as a ZIP, so the carousel can be posted by hand from a phone.
-     */
     public function download(Request $request, ContentProject $contentProject): BinaryFileResponse
     {
         $this->authorizeProject($request, $contentProject);
@@ -163,29 +130,6 @@ class SlideshowGeneratorController extends Controller
         return response()
             ->download($zipPath, Str::slug($contentProject->title ?: 'carrossel').'.zip')
             ->deleteFileAfterSend();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function summarize(ContentProject $project): array
-    {
-        $data = $project->script_data ?? [];
-
-        return [
-            'id' => $project->id,
-            'title' => $project->title,
-            'status' => $project->status,
-            'topic' => $data['topic'] ?? null,
-            'caption' => $data['caption'] ?? null,
-            'hashtags' => $data['hashtags'] ?? [],
-            'error' => $data['error'] ?? null,
-            'slides' => array_map(
-                fn (array $slide): array => ['text' => $slide['text'] ?? '', 'url' => $slide['url'] ?? ''],
-                $data['slides'] ?? [],
-            ),
-            'created_at' => $project->created_at?->toIso8601String(),
-        ];
     }
 
     private function workspace(Request $request): Workspace

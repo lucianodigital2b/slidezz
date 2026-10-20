@@ -49,7 +49,13 @@ export default function ApiTokens({
 }) {
     const { t } = useTranslation();
 
-    const connectCommand = `claude mcp add --transport http slidezz ${mcpUrl} \\\n  --header "Authorization: Bearer ${newToken ?? '<seu-token>'}"`;
+    const token = newToken ?? '<seu-token>';
+    const connectCommand = `claude mcp add --transport http slidezz ${mcpUrl} \\\n  --header "Authorization: Bearer ${token}"`;
+    const connectJson = JSON.stringify(
+        { mcpServers: { slidezz: { url: mcpUrl, headers: { Authorization: `Bearer ${token}` } } } },
+        null,
+        2,
+    );
 
     return (
         <>
@@ -160,6 +166,13 @@ export default function ApiTokens({
 {connectCommand}
                         </pre>
                         <CopyButton value={connectCommand} label={t('settings.apiTokens.copy')} />
+                    </div>
+                    <p className="pt-2 text-xs text-muted-foreground">{t('settings.apiTokens.connectOtherHint')}</p>
+                    <div className="flex items-start gap-2">
+                        <pre className="flex-1 overflow-x-auto rounded-md border border-border bg-background px-3 py-2 font-mono text-xs">
+{connectJson}
+                        </pre>
+                        <CopyButton value={connectJson} label={t('settings.apiTokens.copy')} />
                     </div>
                 </div>
             </div>
