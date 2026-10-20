@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AppScreenshotController;
 use App\Http\Controllers\AutomationController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CarouselGenerationController;
 use App\Http\Controllers\CarouselWizardController;
 use App\Http\Controllers\CheckoutController;
@@ -36,6 +37,12 @@ Route::inertia('/br', 'welcome', [
 
 Route::inertia('/privacy-policy', 'Policy')->name('privacy-policy');
 Route::inertia('/terms', 'Terms')->name('terms');
+
+// SEO blog: plain Blade (full HTML for crawlers), written by the SEO agent via /api/blog.
+Route::get('blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('blog/preview/{blogPost}', [BlogController::class, 'preview'])->middleware('signed')->name('blog.preview');
+Route::get('blog/{slug}', [BlogController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('blog.show');
+Route::get('sitemap.xml', [BlogController::class, 'sitemap'])->name('sitemap');
 
 // Public how-to: creating a free Gemini API key on Google AI Studio (linked
 // from the onboarding BYOK step and the integrations settings).

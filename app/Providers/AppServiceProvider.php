@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Listeners\HandleStripeWebhookForCredits;
 use App\Listeners\HandleStripeWebhookForLifetime;
 use App\Listeners\TrackStripePurchaseInMeta;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Cashier\Events\WebhookReceived;
@@ -32,6 +34,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(WebhookReceived::class, HandleStripeWebhookForCredits::class);
         Event::listen(WebhookReceived::class, HandleStripeWebhookForLifetime::class);
         Event::listen(WebhookReceived::class, TrackStripePurchaseInMeta::class);
+
+        Gate::define('manage-blog', fn (User $user): bool => in_array(
+            strtolower($user->email),
+            config('services.blog.editor_emails', []),
+            true,
+        ));
     }
 
     /**

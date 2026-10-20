@@ -118,4 +118,12 @@ return [
         'graph_version' => env('META_GRAPH_VERSION', 'v21.0'),
     ],
 
+    'blog' => [
+        // Accounts allowed to use /api/blog (comma-separated BLOG_EDITOR_EMAILS).
+        'editor_emails' => array_values(array_filter(array_map(
+            fn (string $email): string => strtolower(trim($email)),
+            explode(',', (string) env('BLOG_EDITOR_EMAILS', '')),
+        ))),
+    ],
+
 ];
