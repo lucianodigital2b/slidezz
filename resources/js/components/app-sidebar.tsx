@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CalendarDays, Clapperboard, Images, Layers, LineChart, MessageCircle, Music2, Rocket, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
+import { Bot, CalendarDays, Clapperboard, Images, Layers, LineChart, MessageCircle, Music2, Rocket, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
 import { edit as billingEdit } from '@/routes/billing';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
@@ -23,6 +23,7 @@ export function AppSidebar() {
     const { auth, igEnabled } = usePage().props;
 
     const navItems = [
+        { title: t('sidebar.agent'), href: '/agent', icon: Bot },
         { title: t('sidebar.generate'), href: '/generate', icon: Sparkles },
         // Calendar/schedule + analytics are gated to Instagram-enabled users
         // (canUseInstagram allowlist) — both depend on published social posts.

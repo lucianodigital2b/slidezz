@@ -183,7 +183,13 @@
       "save": "Salvar",
       "lockedTitle": "Disponível nos planos Pro e Agency",
       "lockedDescription": "O BYOK (sua própria chave Gemini) libera imagens ilimitadas. Faça upgrade para ativar.",
-      "upgradeCta": "Ver planos"
+      "upgradeCta": "Ver planos",
+      "anthropicTitle": "Chave da API da Anthropic",
+      "anthropicDescription": "Usada pelo Agente. Gere uma chave em console.anthropic.com. A assinatura Claude Pro/Max não funciona aqui.",
+      "anthropicKeyLabel": "Chave da API da Anthropic",
+      "anthropicKeyHint": "Começa com sk-ant-. Fica criptografada e não aparece de novo. Deixe vazio e salve pra remover.",
+      "anthropicKeyConnected": "Chave da Anthropic conectada. O Agente usa a sua chave e não gasta créditos.",
+      "anthropicGuideLink": "Gerar chave em console.anthropic.com"
     },
     "brand": {
       "title": "Marca",
@@ -281,7 +287,8 @@
     "credits": "Créditos",
     "upgrade": "Fazer upgrade",
     "appScreenshots": "Fotos da loja",
-    "videos": "Vídeos"
+    "videos": "Vídeos",
+    "agent": "Agente"
   },
   "generate": {
     "pageTitle": "Gerar Ideias",
@@ -1187,5 +1194,48 @@
     "sentDescription": "Abra o TikTok em @{{handle}}: o rascunho chega nas notificações da caixa de entrada. Adicione o som e a legenda e poste.",
     "failed": "O TikTok recusou o envio.",
     "stillSending": "O envio está demorando. Confira o calendário em alguns minutos."
+  },
+  "agent": {
+    "pageTitle": "Agente",
+    "newConversation": "Nova conversa",
+    "conversations": "Conversas",
+    "emptyTitle": "Seu agente de design",
+    "emptySubtitle": "Cole o link de um carrossel do TikTok e eu recrio pra sua marca.",
+    "examplePrompts": {
+      "tiktok": "Recria esse carrossel do TikTok pra minha marca: https://www.tiktok.com/@user/photo/...",
+      "pricing": "Faz um carrossel de 6 slides sobre 3 erros de skincare que todo mundo comete aos 20",
+      "sales": "Adapta meu último carrossel pro Instagram e agenda pra amanhã às 18h"
+    },
+    "composer": {
+      "placeholder": "Cole um link do TikTok ou descreva o carrossel que você quer…",
+      "send": "Enviar",
+      "creditsLeftPrefix": "{{credits}} créditos · 1 crédito por mensagem · use sua chave da Anthropic em",
+      "settingsLink": "Configurações",
+      "outOfCreditsTitle": "Seus créditos acabaram",
+      "outOfCreditsBody": "Coloque sua chave da Anthropic em Configurações > Integrações ou compre mais créditos.",
+      "outOfCreditsSettingsCta": "Adicionar chave da Anthropic"
+    },
+    "message": {
+      "tryAgain": "Mande outra mensagem pra tentar de novo."
+    },
+    "preview": {
+      "title": "Preview",
+      "slidesCount": "Preview ({{count}} slides)",
+      "slide": "Slide {{index}}",
+      "download": "Baixar",
+      "empty": "Os slides aparecem aqui conforme o agente monta.",
+      "publishRequests": "Pedidos de publicação",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "scheduled": "Agendado",
+      "cancelled": "Cancelado",
+      "expandCaption": "Ver mais",
+      "collapseCaption": "Ver menos"
+    },
+    "error": {
+      "generic": "Algo deu errado. Tente de novo.",
+      "confirmFailed": "Não deu pra confirmar o pedido.",
+      "cancelFailed": "Não deu pra cancelar o pedido."
+    }
   }
 }

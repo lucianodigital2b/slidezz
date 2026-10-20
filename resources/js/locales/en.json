@@ -753,7 +753,8 @@
     "credits": "Credits",
     "upgrade": "Upgrade",
     "appScreenshots": "Store screenshots",
-    "videos": "Videos"
+    "videos": "Videos",
+    "agent": "Agent"
   },
   "generate": {
     "pageTitle": "Generate Ideas",
@@ -951,7 +952,13 @@
       "save": "Save",
       "lockedTitle": "Available on the Pro and Agency plans",
       "lockedDescription": "BYOK (your own Gemini key) unlocks unlimited images. Upgrade to enable it.",
-      "upgradeCta": "View plans"
+      "upgradeCta": "View plans",
+      "anthropicTitle": "Anthropic API key",
+      "anthropicDescription": "Used by the Agent. Get a key at console.anthropic.com. Your Claude Pro/Max subscription can't be used here.",
+      "anthropicKeyLabel": "Anthropic API key",
+      "anthropicKeyHint": "Starts with sk-ant-. Stored encrypted and never shown again. Leave empty and save to remove it.",
+      "anthropicKeyConnected": "Anthropic key connected. The Agent uses your key and doesn't spend credits.",
+      "anthropicGuideLink": "Get a key at console.anthropic.com"
     },
     "brand": {
       "title": "Brand",
@@ -1214,5 +1221,48 @@
     "sentDescription": "Open TikTok as @{{handle}}: the draft shows up in your inbox notifications. Add a sound and caption, then post.",
     "failed": "TikTok refused the upload.",
     "stillSending": "The upload is taking a while. Check the calendar in a few minutes."
+  },
+  "agent": {
+    "pageTitle": "Agent",
+    "newConversation": "New conversation",
+    "conversations": "Conversations",
+    "emptyTitle": "Your design agent",
+    "emptySubtitle": "Paste a TikTok carousel link and I'll recreate it for your brand.",
+    "examplePrompts": {
+      "tiktok": "Recreate this TikTok carousel for my brand: https://www.tiktok.com/@user/photo/...",
+      "pricing": "Make a 6-slide carousel about 3 skincare mistakes people make in their 20s",
+      "sales": "Turn my last carousel into a version for Instagram and schedule it for tomorrow at 6pm"
+    },
+    "composer": {
+      "placeholder": "Paste a TikTok link or describe the carousel you want…",
+      "send": "Send",
+      "creditsLeftPrefix": "{{credits}} credits left · 1 credit per message · use your own Anthropic key in",
+      "settingsLink": "Settings",
+      "outOfCreditsTitle": "You're out of credits",
+      "outOfCreditsBody": "Add your own Anthropic key in Settings > Integrations, or buy more credits.",
+      "outOfCreditsSettingsCta": "Add Anthropic key"
+    },
+    "message": {
+      "tryAgain": "Send another message to try again."
+    },
+    "preview": {
+      "title": "Preview",
+      "slidesCount": "Preview ({{count}} slides)",
+      "slide": "Slide {{index}}",
+      "download": "Download",
+      "empty": "Your slides will show up here as the agent builds them.",
+      "publishRequests": "Publish requests",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "scheduled": "Scheduled",
+      "cancelled": "Cancelled",
+      "expandCaption": "More",
+      "collapseCaption": "Less"
+    },
+    "error": {
+      "generic": "Something went wrong. Please try again.",
+      "confirmFailed": "Could not confirm the publish request.",
+      "cancelFailed": "Could not cancel the publish request."
+    }
   }
 }

@@ -14,7 +14,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'gemini_api_key'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'gemini_api_key', 'anthropic_api_key'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -38,6 +38,9 @@ class User extends Authenticatable
             // Stored encrypted at rest; the user pastes their own Gemini key for
             // BYOK image generation. Never exposed (see Hidden above).
             'gemini_api_key' => 'encrypted',
+            // Stored encrypted at rest; the user pastes their own Anthropic key for
+            // BYOK agent turns. Never exposed (see Hidden above).
+            'anthropic_api_key' => 'encrypted',
         ];
     }
 
@@ -106,6 +109,17 @@ class User extends Authenticatable
     public function byokGeminiKey(): ?string
     {
         $key = $this->gemini_api_key;
+
+        return is_string($key) && $key !== '' ? $key : null;
+    }
+
+    /**
+     * The Anthropic API key to use for agent turns, or null when the user
+     * has not connected one yet (platform key + credits are used then).
+     */
+    public function byokAnthropicKey(): ?string
+    {
+        $key = $this->anthropic_api_key;
 
         return is_string($key) && $key !== '' ? $key : null;
     }
