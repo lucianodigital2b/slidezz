@@ -4,6 +4,18 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        {{-- Google Analytics (GA4) - só em produção, nunca em slidezz.test --}}
+        @production
+            <!-- Google tag (gtag.js) -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-CZ85M8TQDE"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-CZ85M8TQDE');
+            </script>
+        @endproduction
+
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
             (function() {
