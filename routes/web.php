@@ -15,6 +15,7 @@ use App\Http\Controllers\LifetimeController;
 use App\Http\Controllers\MediaLibraryController;
 use App\Http\Controllers\MetaEventController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SlideProjectController;
 use App\Http\Controllers\SlideshowGeneratorController;
@@ -176,6 +177,10 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
+
+    // Metricool-style client reports: on-screen preview + white-label PDF.
+    Route::get('reports', [ReportController::class, 'index'])->name('reports');
+    Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
 
     Route::post('credits/purchase', [CreditController::class, 'purchase'])->name('credits.purchase');
     Route::post('lifetime/purchase', [LifetimeController::class, 'purchase'])->name('lifetime.purchase');
