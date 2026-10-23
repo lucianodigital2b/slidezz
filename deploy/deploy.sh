@@ -37,6 +37,9 @@ $PHP artisan optimize:clear
 
 echo "==> npm"
 npm ci --no-audit --no-fund --loglevel=error
+# Browsershot (PDF dos relatórios) roda o chrome-headless-shell. A versão vem do
+# puppeteer instalado; baixa 1x no cache (~/.cache/puppeteer) e reusa nos próximos deploys.
+npx --yes puppeteer browsers install chrome-headless-shell
 npm run build --silent
 
 echo "==> artisan"
