@@ -89,6 +89,7 @@ class TikTokPublisher implements SocialPublisher
                 'access_token' => $tokenData['access_token'],
                 'refresh_token' => $tokenData['refresh_token'],
                 'expires_at' => now()->addSeconds($tokenData['expires_in']),
+                'needs_reconnect' => false,
             ]
         );
     }
@@ -526,6 +527,16 @@ class TikTokPublisher implements SocialPublisher
         }
     }
 
+    /**
+     * Refresh the token from a scheduled job, so a post never lands on a token
+     * that lapsed between the last publish and now. A thrown reconnect error is
+     * the caller's cue to leave this account flagged and move on.
+     */
+    public function keepAlive(SocialAccount $account): void
+    {
+        $this->refreshToken($account);
+    }
+
     protected function refreshToken(SocialAccount $account): void
     {
         $response = Http::asForm()->post('https://open.tiktokapis.com/v2/oauth/token/', [
@@ -537,10 +548,23 @@ class TikTokPublisher implements SocialPublisher
 
         $tokenData = $response->json();
 
+        // A failed refresh must never overwrite a working token with null: that
+        // bricks the account for good (every post then shows "reconnect" and it
+        // never heals on its own). Flag it for a manual reconnect, keep the old
+        // token untouched, and surface the reason to the caller.
+        if ($response->failed() || empty($tokenData['access_token'])) {
+            $account->forceFill(['needs_reconnect' => true])->save();
+
+            throw new TikTokApiException('A conexão com o TikTok expirou ou perdeu permissão. Reconecte a conta.');
+        }
+
         $account->update([
             'access_token' => $tokenData['access_token'],
-            'refresh_token' => $tokenData['refresh_token'],
-            'expires_at' => now()->addSeconds($tokenData['expires_in']),
+            // TikTok rotates the refresh token on each use; keep the old one only
+            // if a (valid) response somehow omitted the new one.
+            'refresh_token' => $tokenData['refresh_token'] ?? $account->refresh_token,
+            'expires_at' => now()->addSeconds((int) $tokenData['expires_in']),
+            'needs_reconnect' => false,
         ]);
     }
 }

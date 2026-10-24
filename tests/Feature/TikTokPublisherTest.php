@@ -214,6 +214,95 @@ class TikTokPublisherTest extends TestCase
         (new TikTokPublisher)->accountInsights($account);
     }
 
+    public function test_a_failed_refresh_keeps_the_old_token_and_flags_the_account(): void
+    {
+        Http::fake(['*oauth/token/' => Http::response([
+            'error' => 'invalid_grant',
+            'error_description' => 'Refresh token is invalid or expired.',
+        ], 400)]);
+
+        $account = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'access_token' => 'still-good-token',
+            'refresh_token' => 'old-refresh',
+            'expires_at' => now()->subMinute(),
+            'needs_reconnect' => false,
+        ]);
+
+        try {
+            (new TikTokPublisher)->keepAlive($account);
+            $this->fail('A failed refresh should throw a reconnect error.');
+        } catch (\App\Services\Social\TikTokApiException $e) {
+            $this->assertStringContainsString('Reconecte a conta', $e->getMessage());
+        }
+
+        $account->refresh();
+
+        // The working token is untouched: a transient failure must not brick it.
+        $this->assertSame('still-good-token', $account->access_token);
+        $this->assertSame('old-refresh', $account->refresh_token);
+        $this->assertTrue($account->needs_reconnect);
+    }
+
+    public function test_a_successful_refresh_rotates_the_token_and_clears_the_flag(): void
+    {
+        Http::fake(['*oauth/token/' => Http::response([
+            'access_token' => 'fresh-token',
+            'refresh_token' => 'rotated-refresh',
+            'expires_in' => 86400,
+        ])]);
+
+        $account = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'access_token' => 'stale-token',
+            'refresh_token' => 'old-refresh',
+            'expires_at' => now()->subMinute(),
+            'needs_reconnect' => true,
+        ]);
+
+        (new TikTokPublisher)->keepAlive($account);
+
+        $account->refresh();
+
+        $this->assertSame('fresh-token', $account->access_token);
+        $this->assertSame('rotated-refresh', $account->refresh_token);
+        $this->assertFalse($account->needs_reconnect);
+        $this->assertTrue($account->expires_at->isFuture());
+    }
+
+    public function test_the_refresh_command_only_touches_tokens_near_expiry(): void
+    {
+        Http::fake(['*oauth/token/' => Http::response([
+            'access_token' => 'fresh-token',
+            'refresh_token' => 'rotated-refresh',
+            'expires_in' => 86400,
+        ])]);
+
+        $expiring = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'expires_at' => now()->addHours(2),
+            'needs_reconnect' => false,
+        ]);
+        $healthy = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'expires_at' => now()->addDay(),
+            'needs_reconnect' => false,
+        ]);
+        $flagged = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'expires_at' => now()->subHour(),
+            'needs_reconnect' => true,
+        ]);
+
+        $this->artisan('tiktok:refresh-tokens')->assertSuccessful();
+
+        Http::assertSentCount(1);
+        $this->assertSame('fresh-token', $expiring->fresh()->access_token);
+        $this->assertNotSame('fresh-token', $healthy->fresh()->access_token);
+        // A flagged account waits for a human reconnect; the job leaves it alone.
+        $this->assertTrue($flagged->fresh()->needs_reconnect);
+    }
+
     /**
      * @param  array<string, mixed>  $scriptData
      */

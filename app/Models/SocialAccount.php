@@ -20,12 +20,14 @@ class SocialAccount extends Model
         'access_token',
         'refresh_token',
         'expires_at',
+        'needs_reconnect',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'access_token' => 'encrypted',
         'refresh_token' => 'encrypted',
+        'needs_reconnect' => 'boolean',
     ];
 
     /**
