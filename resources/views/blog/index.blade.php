@@ -1,14 +1,18 @@
 @extends('blog.layout')
 
-@section('title', 'Slidezz Blog: carousel and content playbooks')
-@section('canonical', $posts->currentPage() > 1 ? $posts->url($posts->currentPage()) : route('blog.index'))
+@section('title', __('blog.index_title'))
+@section('canonical', $canonical)
+
+@push('head')
+    @include('blog.partials.hreflang', ['alternates' => $alternates])
+@endpush
 
 @section('content')
-    <h1>Slidezz Blog</h1>
-    <p class="meta">Carousel, content and growth playbooks for creators who post every week.</p>
+    <h1>{{ __('blog.index_h1') }}</h1>
+    <p class="meta">{{ __('blog.index_sub') }}</p>
 
     @if ($posts->isEmpty())
-        <p>No posts yet. The first ones are on the way.</p>
+        <p>{{ __('blog.empty') }}</p>
     @else
         <div class="post-list">
             @foreach ($posts as $post)
@@ -17,14 +21,14 @@
                     @if ($post->excerpt)
                         <p>{{ $post->excerpt }}</p>
                     @endif
-                    <small class="meta">{{ $post->published_at->format('M j, Y') }} · {{ $post->readingMinutes() }} min read</small>
+                    <small class="meta">{{ $post->publishedDate() }} · {{ $post->readingMinutes() }} {{ __('blog.min_read') }}</small>
                 </article>
             @endforeach
         </div>
 
         <nav class="pager">
-            <span>@if ($posts->previousPageUrl())<a href="{{ $posts->previousPageUrl() }}">&larr; Newer</a>@endif</span>
-            <span>@if ($posts->nextPageUrl())<a href="{{ $posts->nextPageUrl() }}">Older &rarr;</a>@endif</span>
+            <span>@if ($posts->previousPageUrl())<a href="{{ $posts->previousPageUrl() }}">{!! __('blog.newer') !!}</a>@endif</span>
+            <span>@if ($posts->nextPageUrl())<a href="{{ $posts->nextPageUrl() }}">{!! __('blog.older') !!}</a>@endif</span>
         </nav>
     @endif
 @endsection

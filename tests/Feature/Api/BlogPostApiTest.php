@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Api;
 
+use App\Jobs\SubmitToIndexNow;
 use App\Models\BlogPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -176,6 +178,31 @@ class BlogPostApiTest extends TestCase
             ->assertJsonPath('data.alt', 'A carousel on a phone');
 
         Storage::disk('public')->assertExists($response->json('data.path'));
+    }
+
+    public function test_publishing_pings_indexnow_when_a_key_is_set(): void
+    {
+        config(['services.indexnow.key' => 'test-indexnow-key-123456']);
+        Queue::fake();
+        $this->actingAsEditor(['blog:write', 'blog:publish']);
+
+        $this->postJson('/api/blog/posts', $this->payload(['status' => 'published']))->assertCreated();
+
+        Queue::assertPushed(
+            SubmitToIndexNow::class,
+            fn (SubmitToIndexNow $job): bool => in_array(url('/blog/instagram-carousel-ideas'), $job->urls, true),
+        );
+    }
+
+    public function test_a_draft_does_not_ping_indexnow(): void
+    {
+        config(['services.indexnow.key' => 'test-indexnow-key-123456']);
+        Queue::fake();
+        $this->actingAsEditor(['blog:write']);
+
+        $this->postJson('/api/blog/posts', $this->payload())->assertCreated();
+
+        Queue::assertNothingPushed();
     }
 
     /**

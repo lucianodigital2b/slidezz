@@ -1,11 +1,15 @@
+@php
+    $htmlLang = app()->getLocale() === 'pt' ? 'pt-BR' : 'en';
+    $blogIndex = \App\Models\BlogPost::blogIndexUrl($htmlLang);
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $htmlLang }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>@yield('title', 'Slidezz Blog')</title>
-        <meta name="description" content="@yield('description', 'Carousel, content and growth playbooks for creators who post every week.')">
+        <title>@yield('title', __('blog.default_title'))</title>
+        <meta name="description" content="@yield('description', __('blog.default_description'))">
         <link rel="canonical" href="@yield('canonical', url()->current())">
         @hasSection('noindex')
             <meta name="robots" content="noindex, nofollow">
@@ -13,8 +17,8 @@
 
         <meta property="og:site_name" content="Slidezz">
         <meta property="og:type" content="@yield('og_type', 'website')">
-        <meta property="og:title" content="@yield('title', 'Slidezz Blog')">
-        <meta property="og:description" content="@yield('description', 'Carousel, content and growth playbooks for creators who post every week.')">
+        <meta property="og:title" content="@yield('title', __('blog.default_title'))">
+        <meta property="og:description" content="@yield('description', __('blog.default_description'))">
         <meta property="og:url" content="@yield('canonical', url()->current())">
         @hasSection('og_image')
             <meta property="og:image" content="@yield('og_image')">
@@ -117,8 +121,8 @@
             <div class="wrap">
                 <a href="{{ url('/') }}" class="wordmark">Slidezz</a>
                 <nav class="site-nav">
-                    <a href="{{ route('blog.index') }}">Blog</a>
-                    <a href="{{ route('register', ['utm_source' => 'blog', 'utm_medium' => 'header']) }}" class="btn">Get started</a>
+                    <a href="{{ $blogIndex }}">{{ __('blog.nav_blog') }}</a>
+                    <a href="{{ route('register', ['utm_source' => 'blog', 'utm_medium' => 'header']) }}" class="btn">{{ __('blog.cta_button') }}</a>
                 </nav>
             </div>
         </header>
@@ -130,7 +134,7 @@
         <footer class="site-footer">
             <div class="wrap">
                 <span>&copy; {{ date('Y') }} Slidezz</span>
-                <a href="{{ route('blog.index') }}">Blog</a>
+                <a href="{{ $blogIndex }}">{{ __('blog.nav_blog') }}</a>
                 <a href="{{ route('privacy-policy') }}">Privacy</a>
                 <a href="{{ route('terms') }}">Terms</a>
             </div>

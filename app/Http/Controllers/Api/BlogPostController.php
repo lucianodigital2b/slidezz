@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\BlogPostStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\SubmitToIndexNow;
 use App\Models\BlogPost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,12 +28,14 @@ class BlogPostController extends Controller
 
         return response()->json(['data' => [
             'body_format' => 'markdown-gfm',
-            'url_pattern' => url('/blog/{slug}'),
+            'url_pattern' => ['en' => url('/blog/{slug}'), 'pt-BR' => url('/pt/blog/{slug}')],
             'statuses' => array_column(BlogPostStatus::cases(), 'value'),
             'locales' => ['en', 'pt-BR'],
             'default_status' => 'draft',
             'publish_ability' => 'blog:publish',
             'fields' => [
+                'locale' => 'en (default) or pt-BR. pt-BR posts are served under /pt/blog. Use a native keyword, never a literal translation of the slug.',
+                'translation_key' => 'optional, max 64. Give a post and its translation in the other locale the same translation_key so hreflang links them.',
                 'slug' => 'required on create, lowercase a-z 0-9 and hyphens, max 160, unique per locale',
                 'title' => 'required on create, max 200, rendered as the H1',
                 'body' => 'required on create, GitHub-flavored Markdown (tables ok). Start at H2, the title is the H1.',
@@ -116,6 +119,8 @@ class BlogPostController extends Controller
 
         $post = BlogPost::create([...$validated, 'last_editor_id' => $request->user()->id]);
 
+        $this->pingIndexNow($post);
+
         return response()->json(['data' => $this->present($post->refresh())], 201);
     }
 
@@ -138,6 +143,8 @@ class BlogPostController extends Controller
         }
 
         $blogPost->fill([...$validated, 'last_editor_id' => $request->user()->id])->save();
+
+        $this->pingIndexNow($blogPost);
 
         return response()->json(['data' => $this->present($blogPost->refresh())]);
     }
@@ -177,6 +184,7 @@ class BlogPostController extends Controller
 
         return $request->validate([
             'locale' => ['sometimes', 'string', Rule::in(['en', 'pt-BR'])],
+            'translation_key' => ['sometimes', 'nullable', 'string', 'max:64'],
             'slug' => [$required, 'string', 'max:160', 'regex:'.self::SLUG_PATTERN,
                 Rule::unique('blog_posts', 'slug')->where('locale', $locale)->ignore($post?->id)],
             'title' => [$required, 'string', 'max:200'],
@@ -207,6 +215,14 @@ class BlogPostController extends Controller
         ]);
     }
 
+    /** Notify IndexNow (Bing + Brave) when a live, indexable post is created or changed. */
+    private function pingIndexNow(BlogPost $post): void
+    {
+        if (config('services.indexnow.key') && $post->isLive() && ! $post->noindex) {
+            SubmitToIndexNow::dispatch([$post->url()]);
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $validated
      */
@@ -228,10 +244,11 @@ class BlogPostController extends Controller
     {
         return [
             ...$post->only([
-                'id', 'locale', 'slug', 'title', 'meta_title', 'meta_description', 'excerpt', 'body', 'faqs', 'json_ld',
+                'id', 'locale', 'translation_key', 'slug', 'title', 'meta_title', 'meta_description', 'excerpt', 'body', 'faqs', 'json_ld',
                 'category', 'tags', 'author_name', 'hero_image_url', 'hero_image_alt', 'canonical_url',
                 'primary_keyword', 'secondary_keywords', 'search_intent', 'task_ref', 'noindex', 'last_editor_id',
             ]),
+            'alternates' => $post->alternates(),
             'status' => $post->status->value,
             'is_live' => $post->isLive(),
             'published_at' => $post->published_at?->toIso8601String(),

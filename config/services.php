@@ -131,4 +131,10 @@ return [
         ))),
     ],
 
+    'indexnow' => [
+        // IndexNow key (Bing + Brave instant indexing). The verification file is served
+        // at /{key}.txt. Empty = IndexNow disabled (no ping on publish).
+        'key' => env('INDEXNOW_KEY'),
+    ],
+
 ];

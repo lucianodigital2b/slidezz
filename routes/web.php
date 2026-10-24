@@ -43,8 +43,18 @@ Route::inertia('/terms', 'Terms')->name('terms');
 // SEO blog: plain Blade (full HTML for crawlers), written by the SEO agent via /api/blog.
 Route::get('blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('blog/preview/{blogPost}', [BlogController::class, 'preview'])->middleware('signed')->name('blog.preview');
+// Markdown mirror (registered before blog/{slug} so the .md suffix is never swallowed by the slug route).
+Route::get('blog/{slug}.md', [BlogController::class, 'markdown'])->where('slug', '[a-z0-9-]+')->name('blog.markdown');
 Route::get('blog/{slug}', [BlogController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('blog.show');
 Route::get('sitemap.xml', [BlogController::class, 'sitemap'])->name('sitemap');
+
+// Localized blog (pt-BR served under /pt). The {locale} segment is the URL prefix, mapped to the stored locale in the controller.
+Route::get('{locale}/blog', [BlogController::class, 'index'])->where('locale', 'pt')->name('blog.index.localized');
+Route::get('{locale}/blog/{slug}.md', [BlogController::class, 'markdown'])->where(['locale' => 'pt', 'slug' => '[a-z0-9-]+'])->name('blog.markdown.localized');
+Route::get('{locale}/blog/{slug}', [BlogController::class, 'show'])->where(['locale' => 'pt', 'slug' => '[a-z0-9-]+'])->name('blog.show.localized');
+
+// IndexNow verification file (served only when INDEXNOW_KEY is set; the length rule keeps robots.txt etc. out).
+Route::get('{key}.txt', [BlogController::class, 'indexNowKey'])->where('key', '[A-Za-z0-9-]{8,}')->name('indexnow.key');
 
 // Public how-to: creating a free Gemini API key on Google AI Studio (linked
 // from the onboarding BYOK step and the integrations settings).
