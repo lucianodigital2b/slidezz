@@ -209,16 +209,17 @@ export function DonutChart({ slices }: { slices: DonutSlice[] }) {
 
     const R = 54;
     const C = 2 * Math.PI * R;
-    let offset = 0;
 
     return (
         <div className="flex items-center gap-6">
             <svg viewBox="0 0 140 140" className="h-32 w-32 shrink-0">
                 <g transform="rotate(-90 70 70)">
-                    {slices.map((s) => {
-                        const frac = s.value / total;
-                        const dash = frac * C;
-                        const el = (
+                    {slices.map((s, i) => {
+                        const dash = (s.value / total) * C;
+                        // Offset = tudo que vem antes desta fatia, sem acumulador mutável.
+                        const offset = slices.slice(0, i).reduce((sum, p) => sum + (p.value / total) * C, 0);
+
+                        return (
                             <circle
                                 key={s.label}
                                 cx={70}
@@ -231,9 +232,6 @@ export function DonutChart({ slices }: { slices: DonutSlice[] }) {
                                 strokeDashoffset={-offset}
                             />
                         );
-                        offset += dash;
-
-                        return el;
                     })}
                 </g>
                 <text x={70} y={66} textAnchor="middle" className="fill-gray-900" fontSize={18} fontWeight={700}>
