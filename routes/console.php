@@ -1,9 +1,12 @@
 <?php
 
+use App\Enums\CampaignStatus;
 use App\Enums\ScheduleStatus;
 use App\Jobs\PublishScheduledContent;
 use App\Jobs\SyncPostAnalytics;
+use App\Jobs\SyncTrackedVideo;
 use App\Models\Schedule;
+use App\Models\TrackedVideo;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule as FacadeSchedule;
@@ -35,3 +38,11 @@ FacadeSchedule::call(function () {
         ->get()
         ->each(fn (Schedule $s) => SyncPostAnalytics::dispatch($s));
 })->hourly();
+
+// Every 6 hours, refresh public metrics for TikTok videos in active UGC campaigns
+FacadeSchedule::call(function () {
+    TrackedVideo::where('platform', 'tiktok')
+        ->whereHas('campaign', fn ($q) => $q->where('status', CampaignStatus::Active->value))
+        ->get()
+        ->each(fn (TrackedVideo $v) => SyncTrackedVideo::dispatch($v));
+})->everySixHours();

@@ -276,6 +276,7 @@
     "library": "Biblioteca",
     "analytics": "Analytics",
     "reports": "Relatórios",
+    "ugc": "Campanhas UGC",
     "schedule": "Agenda",
     "slideshows": "Slideshows",
     "tiktok": "TikToks",
@@ -692,7 +693,11 @@
       "mp4Failed": "Não foi possível gerar o MP4."
     },
     "dragDrop": {
-      "hint": "Solte as imagens para adicionar ao slide"
+      "hint": "Solte as imagens para adicionar ao slide",
+      "splitTitle": "Adicionar estas imagens",
+      "splitDescription": "Você soltou {{count}} imagens. Transformar cada uma num slide separado, ou adicionar todas no slide atual?",
+      "splitEach": "Uma por slide",
+      "splitKeep": "Todas neste slide"
     },
     "globalPanel": {
       "background": "Fundo",

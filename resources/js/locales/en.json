@@ -336,7 +336,11 @@
       "mp4Failed": "Could not render the MP4."
     },
     "dragDrop": {
-      "hint": "Drop images to add them to the slide"
+      "hint": "Drop images to add them to the slide",
+      "splitTitle": "Add these images",
+      "splitDescription": "You dropped {{count}} images. Turn each one into its own slide, or add them all to the current slide?",
+      "splitEach": "One per slide",
+      "splitKeep": "All on this slide"
     },
     "globalPanel": {
       "background": "Background",
@@ -742,6 +746,7 @@
     "library": "Library",
     "analytics": "Analytics",
     "reports": "Reports",
+    "ugc": "UGC Tracker",
     "schedule": "Schedule",
     "slideshows": "Slideshows",
     "tiktok": "TikToks",

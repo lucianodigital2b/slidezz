@@ -22,6 +22,7 @@ use App\Http\Controllers\SlideshowGeneratorController;
 use App\Http\Controllers\SlideTemplateController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\TikTokDraftController;
+use App\Http\Controllers\UgcCampaignController;
 use App\Http\Controllers\VideoProjectController;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
@@ -191,6 +192,20 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     // Metricool-style client reports: on-screen preview + white-label PDF.
     Route::get('reports', [ReportController::class, 'index'])->name('reports');
     Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
+
+    // UGC campaign tracker: public-link video tracking, creator payouts, charts.
+    Route::get('ugc', [UgcCampaignController::class, 'index'])->name('ugc.index');
+    Route::post('ugc', [UgcCampaignController::class, 'store'])->name('ugc.store');
+    Route::get('ugc/{campaign}', [UgcCampaignController::class, 'show'])->name('ugc.show');
+    Route::put('ugc/{campaign}', [UgcCampaignController::class, 'update'])->name('ugc.update');
+    Route::delete('ugc/{campaign}', [UgcCampaignController::class, 'destroy'])->name('ugc.destroy');
+    Route::post('ugc/{campaign}/videos', [UgcCampaignController::class, 'addVideo'])
+        ->middleware('throttle:30,1')->name('ugc.videos.add');
+    Route::post('ugc/videos/{video}/sync', [UgcCampaignController::class, 'syncVideo'])
+        ->middleware('throttle:60,1')->name('ugc.videos.sync');
+    Route::patch('ugc/videos/{video}', [UgcCampaignController::class, 'updateVideo'])->name('ugc.videos.update');
+    Route::delete('ugc/videos/{video}', [UgcCampaignController::class, 'destroyVideo'])->name('ugc.videos.destroy');
+    Route::post('ugc/creators', [UgcCampaignController::class, 'storeCreator'])->name('ugc.creators.store');
 
     Route::post('credits/purchase', [CreditController::class, 'purchase'])->name('credits.purchase');
     Route::post('lifetime/purchase', [LifetimeController::class, 'purchase'])->name('lifetime.purchase');

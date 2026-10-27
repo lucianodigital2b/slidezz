@@ -1,6 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bot, CalendarDays, Clapperboard, FileText, Images, Layers, LineChart, MessageCircle, Music2, Rocket, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
-import { edit as billingEdit } from '@/routes/billing';
+import { Bot, CalendarDays, Clapperboard, FileText, Images, Layers, LineChart, MessageCircle, Music2, Radar, Rocket, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
 import { NavUser } from '@/components/nav-user';
@@ -15,6 +14,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { edit as billingEdit } from '@/routes/billing';
 
 
 export function AppSidebar() {
@@ -34,6 +34,7 @@ export function AppSidebar() {
                   { title: t('sidebar.reports'), href: '/reports', icon: FileText },
               ]
             : []),
+        { title: t('sidebar.ugc'), href: '/ugc', icon: Radar },
         { title: t('sidebar.tiktok'), href: '/tiktok/create', icon: Music2 },
         { title: t('sidebar.automations'), href: '/automations', icon: Zap },
         { title: t('sidebar.mediaLibrary'), href: '/media-library', icon: Images },
