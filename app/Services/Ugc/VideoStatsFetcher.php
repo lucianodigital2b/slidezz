@@ -131,7 +131,7 @@ class VideoStatsFetcher
 
     private function instagramShortcode(string $url): ?string
     {
-        return preg_match('#instagram\.com/(?:reel|reels|p|tv)/([^/?#]+)#', $url, $m) ? $m[1] : null;
+        return preg_match('~instagram\.com/(?:reel|reels|p|tv)/([^/?#]+)~', $url, $m) ? $m[1] : null;
     }
 
     /**
