@@ -38,6 +38,8 @@ import { CanvasArea, SLIDE_GAP, slideOffsetX } from '@/components/SlideEditor/Ca
 import { SlideGlobalPanel } from '@/components/SlideEditor/SlideGlobalPanel';
 import { SlideRightPanel } from '@/components/SlideEditor/SlideRightPanel';
 import { LocalizationPanel } from '@/components/SlideEditor/LocalizationPanel';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,6 +189,9 @@ export default function SlideEditor() {
     const [showSafeAreaGuide, setShowSafeAreaGuide] = useState(false);
     const [fileDragActive, setFileDragActive] = useState(false);
     const dragDepthRef = useRef(0);
+    // When 2+ images are dropped at once we hold them here and ask whether each
+    // one should become its own slide before placing anything.
+    const [imageDropPrompt, setImageDropPrompt] = useState<{ files: File[]; idx: number; x: number; y: number } | null>(null);
 
     const safeIdx = Math.max(0, Math.min(currentIdx, slides.length - 1));
     useEffect(() => {
@@ -195,7 +200,7 @@ export default function SlideEditor() {
 
     const {
         slide, updateSlide,
-        addSlide, deleteSlide, duplicateSlide,
+        addSlide, addSlidesWithElements, deleteSlide, duplicateSlide,
         bringToFront, bringForward, sendBackward, sendToBack,
         addElement, updateElement, deleteElement,
     } = useSlideManager(slides, setSlides, safeIdx, setCurrentIdx, setSelectedId, setTool);
@@ -678,12 +683,57 @@ export default function SlideEditor() {
         const idx = mapped?.idx ?? safeIdx;
         const baseX = mapped?.x ?? SLIDE_W / 2;
         const baseY = mapped?.y ?? slideH / 2;
+        // A single image just lands where it was dropped. Two or more let the user
+        // choose between stacking them on one slide or spreading one per slide.
+        if (files.length < 2) {
+            placeImagesOnSlide(files, idx, baseX, baseY);
+            return;
+        }
+        setImageDropPrompt({ files, idx, x: baseX, y: baseY });
+    }
+
+    // Place every dropped image on a single slide, staggered so they don't land
+    // exactly on top of each other.
+    function placeImagesOnSlide(files: File[], idx: number, baseX: number, baseY: number) {
         files.forEach((file, i) => {
             const reader = new FileReader();
-            // Stagger multiple drops so they don't land exactly on top of each other.
             reader.onload = () => placeImageFromSrc(reader.result as string, idx, baseX + i * 24, baseY + i * 24);
             reader.readAsDataURL(file);
         });
+    }
+
+    // Read a File into a data URL plus its natural dimensions.
+    function readImageFile(file: File): Promise<{ src: string; w: number; h: number }> {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const src = reader.result as string;
+                const img = new Image();
+                img.onload = () => resolve({ src, w: img.naturalWidth || 400, h: img.naturalHeight || 400 });
+                img.onerror = () => resolve({ src, w: 400, h: 400 });
+                img.src = src;
+            };
+            reader.onerror = () => resolve({ src: '', w: 400, h: 400 });
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Turn each dropped image into its own new slide, the image fit (contained)
+    // and centered within the slide. Inserts them after the current slide.
+    async function placeImagesAsSlides(files: File[]) {
+        const loaded = await Promise.all(files.map(readImageFile));
+        const newSlides: Slide[] = loaded
+            .filter((im) => im.src)
+            .map((im) => {
+                const r = Math.min(SLIDE_W / im.w, slideH / im.h, 1);
+                const w = Math.round(im.w * r);
+                const h = Math.round(im.h * r);
+                const x = Math.round((SLIDE_W - w) / 2);
+                const y = Math.round((slideH - h) / 2);
+                const el = makeImageEl(im.src, x, y, w, h);
+                return { ...makeSlide(slide.background), elements: [el] } as Slide;
+            });
+        addSlidesWithElements(newSlides);
     }
 
     // ─── Text inline editing ──────────────────────────────────────────────────
@@ -1464,6 +1514,39 @@ export default function SlideEditor() {
                         </div>
                     </div>
                 )}
+
+                {/* Ask how to place multiple dropped images: one per slide, or all on this slide */}
+                <Dialog open={!!imageDropPrompt} onOpenChange={(open) => { if (!open) setImageDropPrompt(null); }}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>{t('slideEditor.dragDrop.splitTitle')}</DialogTitle>
+                            <DialogDescription>
+                                {t('slideEditor.dragDrop.splitDescription', { count: imageDropPrompt?.files.length ?? 0 })}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="gap-2 sm:gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    const p = imageDropPrompt;
+                                    setImageDropPrompt(null);
+                                    if (p) placeImagesOnSlide(p.files, p.idx, p.x, p.y);
+                                }}
+                            >
+                                {t('slideEditor.dragDrop.splitKeep')}
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    const p = imageDropPrompt;
+                                    setImageDropPrompt(null);
+                                    if (p) void placeImagesAsSlides(p.files);
+                                }}
+                            >
+                                {t('slideEditor.dragDrop.splitEach')}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* ── Store screenshot build status ────────────────────────────── */}

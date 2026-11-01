@@ -1,21 +1,95 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Check, ChevronDown, X } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
-import { useState } from 'react';
+import {
+    Check,
+    ChevronDown,
+    Play,
+    Sparkles,
+    ToggleRight,
+    X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
-import CtaButton from '@/components/cta-button';
-import FadeIn from '@/components/fade-in';
-import FeatureBento, {
-    type FeatureBentoCopy,
-} from '@/components/feature-bento';
-import LandingFooter from '@/components/landing-footer';
-import ScrollStack from '@/components/scroll-stack';
-import { TextShimmer } from '@/components/text-shimmer';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
+
+const slides = [
+    {
+        src: '/landing/s2.webp',
+        hook: '5 hábitos matinais que mudaram minha vida',
+    },
+    {
+        src: '/landing/s3.webp',
+        hook: 'treinos que eu faria se começasse de novo',
+    },
+    {
+        src: '/landing/s4.webp',
+        hook: 'os únicos 3 produtos de skincare que você precisa',
+    },
+    {
+        src: '/landing/s5.webp',
+        hook: 'coisas que ninguém te conta sobre morar em cidade grande',
+    },
+    { src: '/landing/s6.webp', hook: 'sinais de que ele está a fim de você' },
+    {
+        src: '/landing/s7.webp',
+        hook: 'cafés da manhã proteicos em menos de 5 minutos',
+    },
+    {
+        src: '/landing/s8.webp',
+        hook: 'como finalmente deixei meus cachos crescerem',
+    },
+    {
+        src: '/landing/s9.webp',
+        hook: 'hacks de viagem que eu queria saber antes',
+    },
+    {
+        src: '/landing/s10.webp',
+        hook: 'jantares que faço quando estou cansado demais para cozinhar',
+    },
+    { src: '/landing/s11.webp', hook: 'poses para fotos que sempre funcionam' },
+    { src: '/landing/s12.webp', hook: 'o que eu como em um dia (realista)' },
+];
+
+const lifetimeFeatures = [
+    'Carrosséis ilimitados, pra sempre',
+    'Imagens ilimitadas com sua chave Gemini',
+    'Todos os templates + atualizações futuras',
+];
+
+const faqs = [
+    {
+        q: 'Preciso saber design?',
+        a: 'Não. A IA faz tudo. Você só digita o tema e o carrossel sai pronto, texto, layout e design profissional.',
+    },
+    {
+        q: 'Funciona pra qualquer nicho?',
+        a: 'Sim. Marketing digital, fitness, gastronomia, educação, moda, coaching, finanças, a IA se adapta ao seu nicho e tom de voz.',
+    },
+    {
+        q: 'Posso cancelar quando quiser?',
+        a: 'Sim. Sem multa, sem fidelidade. Cancele direto no painel em 2 cliques.',
+    },
+    {
+        q: 'A IA também gera os textos?',
+        a: 'Sim! Títulos, subtítulos, textos persuasivos e CTAs, tudo gerado automaticamente e otimizado pra engajamento.',
+    },
+    {
+        q: 'Quantos carrosséis posso criar?',
+        a: 'Carrosséis são ilimitados em todos os planos, sem cota, sem crédito, sem pegadinha. As imagens geradas por IA usam a sua própria chave do Google Gemini, então também não têm limite do nosso lado.',
+    },
+    {
+        q: 'Como funcionam as imagens geradas por IA?',
+        a: 'Você conecta a sua própria chave do Google Gemini (leva 2 minutos e o Google oferece um nível gratuito). As imagens são geradas direto na sua conta Google, sem custo extra do Slidezz e sem limite de créditos.',
+    },
+    {
+        q: 'Funciona no celular?',
+        a: 'Funciona no navegador em qualquer dispositivo, computador, tablet ou celular. Sem instalar nada.',
+    },
+];
 
 const comparisonItems = [
     { label: 'Canva Pro (design)', price: 'R$34,90/mês' },
@@ -28,107 +102,721 @@ const comparisonItems = [
 
 const totalComparison = 'R$2.656,90/mês';
 
-const featureBentoCopy: FeatureBentoCopy = {
-    carousels: {
-        title: 'Carrosséis gerados por IA',
-        body: 'Você dá o tema e o tom; a IA monta os slides com layout coerente, prontos pra publicar. Sem começar do zero no Canva.',
-    },
-    script: {
-        title: 'Texto e roteiro prontos',
-        body: 'Títulos, ganchos e o texto dos slides sugeridos pela IA, sem pular pro ChatGPT em outra aba.',
-    },
-    editor: {
-        title: 'Editor visual simples',
-        body: 'Ajuste cores, fontes e imagens no arrastar e soltar. Sem curva de aprendizado.',
-    },
-    export: {
-        title: 'Exportação em Full HD',
-        body: 'Baixe em PNG a 1080px, o tamanho certo pro Instagram. Sem perder qualidade.',
-    },
-    minutes: {
-        title: 'Conteúdo em minutos',
-        body: 'Produza vários carrosséis numa sessão. Menos tempo no design, mais tempo vendendo.',
-    },
-    community: {
-        title: 'Comunidade de criadores',
-        body: 'Troque referências e ritmo de postagem com criadores que querem consistência, não postar no escuro.',
-    },
-};
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-const faqs = [
+function TikTokMark({ className = '' }: { className?: string }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={className}
+            aria-hidden="true"
+        >
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.9 2.9 0 1 1-2.31-2.84v-3.5a6.37 6.37 0 1 0 5.76 6.34V8.69a8.16 8.16 0 0 0 4.77 1.52V6.69Z" />
+        </svg>
+    );
+}
+
+function InstagramMark({ className = '' }: { className?: string }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            aria-hidden="true"
+        >
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+        </svg>
+    );
+}
+
+// ─── Reveal animation ────────────────────────────────────────────────────────
+
+function Reveal({
+    children,
+    className,
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+
+        if (!el) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.unobserve(el);
+                }
+            },
+            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' },
+        );
+        observer.observe(el);
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div
+            ref={ref}
+            className={cn('reveal', visible && 'is-visible', className)}
+        >
+            {children}
+        </div>
+    );
+}
+
+// ─── Hero pieces ─────────────────────────────────────────────────────────────
+
+function SlideCard({
+    src,
+    hook,
+    loading,
+}: {
+    src: string;
+    hook: string;
+    loading?: 'lazy' | 'eager';
+}) {
+    return (
+        <div className="group flex w-40 flex-col overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-3 shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none md:w-44">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-[16px] bg-[#111114]">
+                <img
+                    src={src}
+                    alt=""
+                    loading={loading}
+                    width={480}
+                    height={640}
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute bottom-3 left-3 flex gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <span
+                            key={i}
+                            className={cn(
+                                'h-1 w-1 rounded-full',
+                                i === 0 ? 'bg-[#FAFAFA]' : 'bg-[#FAFAFA]/40',
+                            )}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="flex items-center gap-2 px-1 pt-3 text-left">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7C5CFF]">
+                    <AppLogoIcon className="h-3 w-3 text-white" />
+                </span>
+                <div className="min-w-0">
+                    <p className="truncate text-[13px] leading-tight font-semibold text-[#FAFAFA]">
+                        {hook}
+                    </p>
+                    <p className="truncate text-[11px] text-[#A1A1AA]">
+                        Slidezz
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SlideArc() {
+    const centerIndex = 5;
+
+    return (
+        <div className="mt-12">
+            {/* Mobile horizontal scroller */}
+            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
+                {slides.map((slide, i) => (
+                    <div key={slide.src} className="shrink-0 snap-center">
+                        <SlideCard
+                            src={slide.src}
+                            hook={slide.hook}
+                            loading={
+                                Math.abs(i - centerIndex) <= 2
+                                    ? 'eager'
+                                    : 'lazy'
+                            }
+                        />
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop arc */}
+            <div className="relative left-1/2 hidden h-[460px] w-screen -translate-x-1/2 overflow-hidden md:block">
+                {slides.map((slide, i) => {
+                    const distance = i - centerIndex;
+                    const x = distance * 160;
+                    const y = distance * distance * 9;
+                    const rotation = distance * 5;
+
+                    return (
+                        <div
+                            key={slide.src}
+                            className="absolute top-4 left-1/2"
+                            style={{
+                                transform: `translateX(calc(-50% + ${x}px)) translateY(${y}px) rotate(${rotation}deg)`,
+                                zIndex: 20 - Math.abs(distance),
+                            }}
+                        >
+                            <SlideCard
+                                src={slide.src}
+                                hook={slide.hook}
+                                loading={
+                                    Math.abs(distance) <= 2 ? 'eager' : 'lazy'
+                                }
+                            />
+                        </div>
+                    );
+                })}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28 bg-gradient-to-t from-[#08080A] to-transparent" />
+            </div>
+        </div>
+    );
+}
+
+// ─── How it works mocks ──────────────────────────────────────────────────────
+
+function StepOneVisual() {
+    return (
+        <div className="space-y-2 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-4 text-left">
+            <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-[#FAFAFA]">
+                    Formato
+                </span>
+                <span className="rounded-full bg-[#111114] px-2 py-1 text-xs font-medium text-[#A1A1AA]">
+                    Carrossel de listas
+                </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-[#FAFAFA]">
+                    Nicho
+                </span>
+                <span className="rounded-full bg-[#111114] px-2 py-1 text-xs font-medium text-[#A1A1AA]">
+                    Fitness
+                </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-[#FAFAFA]">
+                    Posts por dia
+                </span>
+                <span className="rounded-full bg-[#111114] px-2 py-1 text-xs font-medium text-[#A1A1AA]">
+                    2
+                </span>
+            </div>
+            <div className="flex gap-2">
+                <span className="rounded-full bg-[#111114] px-3 py-1 text-xs font-medium text-[#A1A1AA]">
+                    15:00
+                </span>
+                <span className="rounded-full bg-[#111114] px-3 py-1 text-xs font-medium text-[#A1A1AA]">
+                    18:00
+                </span>
+            </div>
+            <button
+                type="button"
+                className="w-full rounded-full bg-[#7C5CFF] py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#6D4AE6]"
+            >
+                Salvar automação
+            </button>
+        </div>
+    );
+}
+
+function StepTwoVisual() {
+    return (
+        <div className="space-y-3 text-left">
+            <div className="flex items-center justify-between rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-3">
+                <div className="flex items-center gap-2">
+                    <TikTokMark className="h-4 w-4 text-[#A1A1AA]" />
+                    <span className="text-xs font-semibold text-[#FAFAFA]">
+                        @suamarca
+                    </span>
+                </div>
+                <span className="rounded-full bg-[#7C5CFF] px-2 py-1 text-[10px] font-semibold text-white">
+                    Conectado
+                </span>
+            </div>
+            <div className="flex items-center justify-between rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-3">
+                <div className="flex items-center gap-2">
+                    <InstagramMark className="h-4 w-4 text-[#A1A1AA]" />
+                    <span className="text-xs font-semibold text-[#FAFAFA]">
+                        @suamarca
+                    </span>
+                </div>
+                <span className="rounded-full bg-[#7C5CFF] px-2 py-1 text-[10px] font-semibold text-white">
+                    Conectado
+                </span>
+            </div>
+            <div className="flex items-center justify-between rounded-[16px] border border-dashed border-[rgba(255,255,255,0.2)] px-3 py-2 text-[11px] font-medium text-[#FAFAFA]">
+                <span>Próxima publicação</span>
+                <span className="font-semibold">Hoje, 15:00</span>
+            </div>
+        </div>
+    );
+}
+
+function StepThreeVisual() {
+    const thumbs = [
+        { src: '/landing/s2.webp', badge: 'Publicado' },
+        { src: '/landing/s3.webp', badge: 'Publicado' },
+        { src: '/landing/s7.webp', badge: 'Publicado' },
+        { src: '/landing/s10.webp', badge: 'Agendado' },
+        { src: '/landing/s11.webp', badge: 'Agendado' },
+        { src: '/landing/s12.webp', badge: 'Agendado' },
+    ];
+
+    return (
+        <div className="grid grid-cols-3 gap-2">
+            {thumbs.map((thumb) => (
+                <div
+                    key={thumb.src}
+                    className="relative overflow-hidden rounded-[12px] border border-[rgba(255,255,255,0.08)]"
+                >
+                    <img
+                        src={thumb.src}
+                        alt=""
+                        width={160}
+                        height={213}
+                        className="aspect-square w-full object-cover"
+                    />
+                    <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {thumb.badge}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+const steps = [
     {
-        q: 'Preciso saber design?',
-        a: 'Não. A IA faz tudo. Você só digita o tema e o carrossel sai pronto — texto, layout e design profissional.',
+        title: 'Descreva seu conteúdo',
+        text: 'Digite o tema, o nicho e o tom de voz. Pode ser uma frase simples como "5 dicas de marketing digital."',
+        Visual: StepOneVisual,
     },
     {
-        q: 'Funciona pra qualquer nicho?',
-        a: 'Sim. Marketing digital, fitness, gastronomia, educação, moda, coaching, finanças — a IA se adapta ao seu nicho e tom de voz.',
+        title: 'A IA cria tudo',
+        text: 'Em segundos, a IA gera o texto persuasivo, escolhe o layout perfeito e monta o carrossel completo.',
+        Visual: StepTwoVisual,
     },
     {
-        q: 'Posso cancelar quando quiser?',
-        a: 'Sim. Sem multa, sem fidelidade. Cancele direto no painel em 2 cliques.',
-    },
-    {
-        q: 'A IA também gera os textos?',
-        a: 'Sim! Títulos, subtítulos, textos persuasivos e CTAs — tudo gerado automaticamente e otimizado pra engajamento.',
-    },
-    {
-        q: 'Quantos carrosséis posso criar?',
-        a: 'Carrosséis são ilimitados em todos os planos — sem cota, sem crédito, sem pegadinha. As imagens geradas por IA usam a sua própria chave do Google Gemini, então também não têm limite do nosso lado.',
-    },
-    {
-        q: 'Como funcionam as imagens geradas por IA?',
-        a: 'Você conecta a sua própria chave do Google Gemini (leva 2 minutos e o Google oferece um nível gratuito). As imagens são geradas direto na sua conta Google, sem custo extra do Slidezz e sem limite de créditos.',
-    },
-    {
-        q: 'Funciona no celular?',
-        a: 'Funciona no navegador em qualquer dispositivo — computador, tablet ou celular. Sem instalar nada.',
+        title: 'Publique e viralize',
+        text: 'Exporte em Full HD ou agende direto. Pronto. Seu carrossel está no ar, ganhando seguidores.',
+        Visual: StepThreeVisual,
     },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function StepCard({
+    number,
+    title,
+    body,
+    children,
+}: {
+    number: string;
+    title: string;
+    body: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex flex-col items-start gap-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#111114] p-6 transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none">
+            <span className="inline-flex items-center rounded-full bg-[#7C5CFF] px-3 py-1 text-xs font-semibold text-white">
+                {number}
+            </span>
+            <h3 className="text-lg font-semibold text-[#FAFAFA]">{title}</h3>
+            <p className="text-sm leading-6 text-[#A1A1AA]">{body}</p>
+            <div className="mt-auto w-full">{children}</div>
+        </div>
+    );
+}
+
+// ─── Feature mocks ───────────────────────────────────────────────────────────
+
+function AutomationsMock() {
+    return (
+        <div className="space-y-3">
+            {['Dicas de fitness', 'Destaque de produto'].map((label) => (
+                <div
+                    key={label}
+                    className="flex items-center justify-between rounded-full bg-[#111114] px-4 py-2.5"
+                >
+                    <span className="text-xs font-semibold text-[#FAFAFA]">
+                        {label}
+                    </span>
+                    <ToggleRight className="h-5 w-5 text-[#7C5CFF]" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function SchedulingMock() {
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const chips = [[0, 2], [1], [0, 1, 3], [2], [0], [1, 2], [0, 3]];
+
+    return (
+        <div className="grid grid-cols-7 gap-1">
+            {days.map((day, i) => (
+                <div key={i} className="text-center">
+                    <div className="text-xs font-bold text-[#A1A1AA]">
+                        {day}
+                    </div>
+                    <div className="mt-1 space-y-1">
+                        {chips[i].map((chip, j) => (
+                            <div
+                                key={j}
+                                className={cn(
+                                    'h-2 rounded-full',
+                                    chip % 2 === 0
+                                        ? 'bg-[#7C5CFF]'
+                                        : 'bg-[#A1A1AA]/60',
+                                )}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function SlideshowEditorMock() {
+    return (
+        <div className="relative mx-auto aspect-[3/4] w-24 overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#111114]">
+            <img
+                src="/landing/s8.webp"
+                alt=""
+                width={160}
+                height={213}
+                className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute top-[22%] right-2 left-2">
+                <div className="rounded border-2 border-dashed border-[#A78BFA] p-2">
+                    <span className="block h-2 w-16 rounded bg-white/80" />
+                    <span className="mt-1 block h-2 w-20 rounded bg-white/80" />
+                </div>
+                <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-[#A78BFA]" />
+                <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#A78BFA]" />
+                <div className="absolute -bottom-1 -left-1 h-2 w-2 rounded-full bg-[#A78BFA]" />
+                <div className="absolute -right-1 -bottom-1 h-2 w-2 rounded-full bg-[#A78BFA]" />
+            </div>
+        </div>
+    );
+}
+
+function AIHooksMock() {
+    return (
+        <div className="space-y-2">
+            {[
+                '5 hábitos matinais que mudaram minha vida',
+                'treinos que eu faria se começasse de novo',
+                'os únicos 3 produtos de skincare que você precisa',
+            ].map((hook) => (
+                <div
+                    key={hook}
+                    className="flex items-center gap-2 rounded-full bg-[#111114] px-3 py-2 text-xs font-semibold text-[#FAFAFA]"
+                >
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-[#A78BFA]" />
+                    <span className="truncate">{hook}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function BulkMock() {
+    return (
+        <div className="flex items-center gap-3">
+            <div className="flex-1 rounded-[16px] bg-[#111114] p-3">
+                {['gancho 1', 'gancho 2', 'gancho 3'].map((line, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#A1A1AA]/50" />
+                        <span className="text-xs text-[#A1A1AA]">{line}</span>
+                    </div>
+                ))}
+            </div>
+            <span className="text-xs font-bold text-[#A1A1AA]">→</span>
+            <div className="rounded-full bg-[#7C5CFF] px-3 py-2 text-xs font-semibold text-white">
+                3 carrosséis
+            </div>
+        </div>
+    );
+}
+
+function MultipleAccountsMock() {
+    const accounts = [
+        { initials: 'SM', handle: '@suamarca' },
+        { initials: 'SA', handle: '@seuapp' },
+        { initials: 'SL', handle: '@sualoja' },
+    ];
+
+    return (
+        <div className="space-y-2">
+            {accounts.map((account) => (
+                <div
+                    key={account.handle}
+                    className="flex items-center gap-2 rounded-full bg-[#111114] px-3 py-1.5"
+                >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7C5CFF] text-[10px] font-bold text-white">
+                        {account.initials}
+                    </span>
+                    <span className="text-xs font-semibold text-[#FAFAFA]">
+                        {account.handle}
+                    </span>
+                    <span className="ml-auto h-2 w-2 rounded-full bg-[#A78BFA] ring-1 ring-[#A78BFA]/20" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+const features: {
+    title: string;
+    text: string;
+    Visual: () => ReactNode;
+    badge?: string;
+}[] = [
+    {
+        title: 'Carrosséis gerados por IA',
+        text: 'Você dá o tema e o tom; a IA monta os slides com layout coerente, prontos pra publicar. Sem começar do zero no Canva.',
+        Visual: AutomationsMock,
+        badge: 'novo',
+    },
+    {
+        title: 'Texto e roteiro prontos',
+        text: 'Títulos, ganchos e o texto dos slides sugeridos pela IA, sem pular pro ChatGPT em outra aba.',
+        Visual: AIHooksMock,
+    },
+    {
+        title: 'Editor visual simples',
+        text: 'Ajuste cores, fontes e imagens no arrastar e soltar. Sem curva de aprendizado.',
+        Visual: SlideshowEditorMock,
+    },
+    {
+        title: 'Exportação em Full HD',
+        text: 'Baixe em PNG a 1080px, o tamanho certo pro Instagram. Sem perder qualidade.',
+        Visual: BulkMock,
+    },
+    {
+        title: 'Conteúdo em minutos',
+        text: 'Produza vários carrosséis numa sessão. Menos tempo no design, mais tempo vendendo.',
+        Visual: SchedulingMock,
+    },
+    {
+        title: 'Comunidade de criadores',
+        text: 'Troque referências e ritmo de postagem com criadores que querem consistência, não postar no escuro.',
+        Visual: MultipleAccountsMock,
+    },
+];
+
+function FeatureCard({
+    title,
+    text,
+    children,
+    badge,
+}: {
+    title: string;
+    text: string;
+    children: ReactNode;
+    badge?: string;
+}) {
+    return (
+        <div className="flex flex-col overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-5 transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transform-none sm:p-8">
+            <div className="flex min-h-[200px] items-center justify-center rounded-[12px] bg-[#111114] p-6">
+                <div className="w-full max-w-[280px]">{children}</div>
+            </div>
+            <div className="mt-6 px-1">
+                {badge && (
+                    <span className="mb-2 inline-flex rounded-full bg-[#7C5CFF] px-2 py-0.5 text-[12px] font-semibold text-white">
+                        {badge}
+                    </span>
+                )}
+                <h3 className="text-[20px] leading-tight font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+                    {title}
+                </h3>
+                <p className="mt-2 text-[16px] leading-6 tracking-[-0.02em] text-[#A1A1AA]">
+                    {text}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// ─── Pricing ─────────────────────────────────────────────────────────────────
+
+const plans = [
+    {
+        name: 'Starter',
+        monthly: 67,
+        annual: 47,
+        features: [
+            'Carrosséis ilimitados',
+            'Imagens ilimitadas com sua chave Gemini',
+            'Copy e hooks com IA',
+            'Todos os templates',
+        ],
+        buttonClass:
+            'bg-[#111114] text-[#FAFAFA] border border-[rgba(255,255,255,0.08)] hover:bg-[#16161B]',
+        badge: null,
+        highlighted: false,
+    },
+    {
+        name: 'Pro',
+        monthly: 127,
+        annual: 87,
+        features: [
+            'Tudo no Starter',
+            'Suporte prioritário',
+            'Salvar seus templates',
+            'Acesso antecipado a novidades',
+        ],
+        buttonClass: 'bg-[#7C5CFF] text-white hover:bg-[#6D4AE6]',
+        badge: 'Recomendado',
+        highlighted: true,
+    },
+    {
+        name: 'Agency',
+        monthly: 247,
+        annual: 177,
+        features: [
+            'Tudo no Pro',
+            'Múltiplos projetos',
+            'Gestão de equipe',
+            'Suporte dedicado',
+        ],
+        buttonClass:
+            'bg-[#111114] text-[#FAFAFA] border border-[rgba(255,255,255,0.08)] hover:bg-[#16161B]',
+        badge: null,
+        highlighted: false,
+    },
+];
+
+function PricingCard({
+    name,
+    price,
+    struckPrice,
+    billingCycle,
+    features,
+    href,
+    buttonClass,
+    badge,
+    highlighted,
+}: {
+    name: string;
+    price: number;
+    struckPrice?: number | null;
+    billingCycle: 'monthly' | 'annual';
+    features: string[];
+    href: ComponentProps<typeof Link>['href'];
+    buttonClass: string;
+    badge?: string | null;
+    highlighted?: boolean;
+}) {
+    return (
+        <div
+            className={cn(
+                'relative flex flex-col rounded-[16px] p-8',
+                highlighted
+                    ? 'border-2 border-[#7C5CFF] bg-[#16161B] shadow-[0_0_30px_rgba(124,92,255,0.2)]'
+                    : 'border border-[rgba(255,255,255,0.08)] bg-[#111114]',
+            )}
+        >
+            <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA]">
+                    {name}
+                </h3>
+                {badge && (
+                    <span className="rounded-full bg-[#7C5CFF] px-3 py-1 text-xs font-semibold text-white">
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div className="mt-6">
+                {struckPrice && (
+                    <div className="text-sm text-[#A1A1AA] line-through">
+                        R${struckPrice}/mês
+                    </div>
+                )}
+                <div className="flex items-baseline gap-1">
+                    <span className="font-landing-display text-5xl font-extrabold tracking-[-0.04em] text-[#FAFAFA]">
+                        R${price}
+                    </span>
+                    <span className="text-sm font-medium text-[#A1A1AA]">
+                        por mês
+                    </span>
+                </div>
+                <p className="mt-1 text-xs font-medium text-[#A1A1AA]">
+                    {billingCycle === 'annual'
+                        ? 'cobrado anualmente'
+                        : 'cobrado mensalmente'}
+                </p>
+            </div>
+            <Link
+                href={href}
+                className={cn(
+                    'mt-6 flex h-12 w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50',
+                    buttonClass,
+                )}
+            >
+                Testar agora
+            </Link>
+            <ul className="mt-6 space-y-3">
+                {features.map((feature) => (
+                    <li
+                        key={feature}
+                        className="flex items-start gap-2 text-sm text-[#A1A1AA]"
+                    >
+                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#A1A1AA]" />
+                        {feature}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+// ─── FAQ item ────────────────────────────────────────────────────────────────
 
 function FaqItem({ q, a }: { q: string; a: string }) {
     const [open, setOpen] = useState(false);
+
     return (
-        <div
-            className="rounded-2xl bg-white transition-shadow duration-300"
-            style={{
-                border: '1px solid #E8E7E2',
-                boxShadow: open ? '0 14px 36px rgba(0,0,0,0.08)' : 'none',
-            }}
-        >
+        <div className="border-b border-[rgba(255,255,255,0.08)]">
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
-                className="flex w-full items-center justify-between gap-5 px-7 py-6 text-left sm:px-8 sm:py-7"
+                className="flex w-full items-center justify-between gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50 focus-visible:ring-inset"
             >
-                <span className="text-xl font-extrabold text-[#1A1A1A]">
+                <span className="text-[18px] font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-[20px]">
                     {q}
                 </span>
-                <span
-                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300"
-                    style={{
-                        border: '1px solid #E8E7E2',
-                        background: open ? '#FFE156' : '#F3EEE8',
-                    }}
-                >
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#111114]">
                     <ChevronDown
-                        className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                        style={{
-                            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                            color: open ? '#fff' : '#1A1A1A',
-                        }}
+                        className={cn(
+                            'h-5 w-5 text-[#A78BFA] transition-transform duration-300',
+                            open && 'rotate-180',
+                        )}
                     />
                 </span>
             </button>
             <div
-                className="grid transition-[grid-template-rows] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+                className={cn(
+                    'grid transition-[grid-template-rows] duration-300 ease-out',
+                    open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+                )}
             >
                 <div className="overflow-hidden">
-                    <p className="px-7 pb-7 text-lg leading-relaxed font-medium text-[#555550] sm:px-8">
+                    <p className="pb-6 text-[16px] leading-6 tracking-[-0.02em] text-[#A1A1AA]">
                         {a}
                     </p>
                 </div>
@@ -137,7 +825,106 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     );
 }
 
+// ─── Footer ──────────────────────────────────────────────────────────────────
+
+function Footer() {
+    const year = new Date().getFullYear();
+
+    return (
+        <footer className="border-t border-[rgba(255,255,255,0.08)] bg-[#08080A] pb-16">
+            <div className="mx-auto max-w-[1320px] px-4 pt-16 pb-12 sm:px-6">
+                <div className="grid gap-10 md:grid-cols-3">
+                    <div>
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C5CFF]">
+                                <AppLogoIcon className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="font-landing-display text-xl font-bold tracking-[-0.03em] text-[#FAFAFA]">
+                                Slidezz
+                            </span>
+                        </div>
+                        <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-[#A1A1AA]">
+                            Automatize slideshows do TikTok e Instagram que
+                            trazem tráfego para o seu negócio.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 className="text-[14px] font-semibold text-[#A1A1AA]">
+                            Produto
+                        </h4>
+                        <ul className="mt-4 space-y-3 text-[14px]">
+                            <li>
+                                <a
+                                    href="#como-funciona"
+                                    className="text-[#FAFAFA] hover:text-[#A78BFA]"
+                                >
+                                    Como funciona
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#pricing"
+                                    className="text-[#FAFAFA] hover:text-[#A78BFA]"
+                                >
+                                    Preços
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#faq"
+                                    className="text-[#FAFAFA] hover:text-[#A78BFA]"
+                                >
+                                    FAQ
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="text-[14px] font-semibold text-[#A1A1AA]">
+                            Legal
+                        </h4>
+                        <ul className="mt-4 space-y-3 text-[14px]">
+                            <li>
+                                <Link
+                                    href="/privacy-policy"
+                                    className="text-[#FAFAFA] hover:text-[#A78BFA]"
+                                >
+                                    Política de Privacidade
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/terms"
+                                    className="text-[#FAFAFA] hover:text-[#A78BFA]"
+                                >
+                                    Termos de Uso
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div className="mt-12 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                    <p className="text-[14px] text-[#A1A1AA]">
+                        © {year} Slidezz. Todos os direitos reservados.
+                    </p>
+                    <div className="flex items-center gap-4 text-[#FAFAFA]">
+                        <TikTokMark className="h-5 w-5" />
+                        <InstagramMark className="h-5 w-5" />
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
+
+const sectionTag =
+    'inline-flex rounded-full bg-[#111114] px-3 py-1 text-[14px] font-medium text-[#A1A1AA]';
+const sectionTitle =
+    'mt-5 max-w-4xl font-landing-display text-[clamp(2.25rem,5vw,4.5rem)] leading-[0.95] font-extrabold tracking-[-0.04em] text-[#FAFAFA]';
+const primaryButton =
+    'inline-flex h-12 items-center justify-center rounded-[12px] bg-[#7C5CFF] px-8 text-[18px] font-semibold text-white transition duration-200 hover:bg-[#6D4AE6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50';
 
 export default function Welcome({
     canRegister = true,
@@ -155,372 +942,269 @@ export default function Welcome({
         'annual',
     );
     const scrolled = useScrolled();
-    const reduceMotion = useReducedMotion();
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const scrollGallery = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const amount = 320;
+            scrollRef.current.scrollBy({
+                left: direction === 'left' ? -amount : amount,
+                behavior: 'smooth',
+            });
+        }
+    };
 
     return (
         <>
             <Head title="Slidezz — Transforme o TikTok em uma Máquina de Vendas">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link
-                    href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800"
-                    rel="stylesheet"
+                <meta
+                    name="description"
+                    content="Slidezz escreve, desenha e agenda carrosséis para TikTok e Instagram, todos os dias, no piloto automático."
                 />
             </Head>
 
-            <div
-                className="min-h-screen font-[Outfit,sans-serif]"
-                style={{
-                    background: '#F3EEE8',
-                    backgroundImage:
-                        'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    color: '#1A1A1A',
-                }}
-            >
+            <style>{`
+                .reveal {
+                    opacity: 0;
+                    transform: translateY(16px);
+                    transition: opacity 0.6s ease, transform 0.6s ease;
+                }
+                .reveal.is-visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                .dotted-grid {
+                    background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+                    background-size: 24px 24px;
+                }
+                @keyframes pulse-glow {
+                    0%, 100% { opacity: 0.5; transform: scale(1); }
+                    50% { opacity: 1; transform: scale(1.05); }
+                }
+                .pulse-glow {
+                    animation: pulse-glow 4s ease-in-out infinite;
+                }
+                @keyframes flow-dash {
+                    to { stroke-dashoffset: -100; }
+                }
+                .animated-path {
+                    stroke-dasharray: 8 4;
+                    animation: flow-dash 2s linear infinite;
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .reveal {
+                        opacity: 1;
+                        transform: none;
+                        transition: none;
+                    }
+                    .pulse-glow {
+                        animation: none;
+                    }
+                    .animated-path {
+                        animation: none;
+                    }
+                }
+            `}</style>
+
+            <div className="min-h-screen overflow-x-clip bg-[#08080A] font-landing text-[#FAFAFA]">
                 {/* ── NAV ── */}
-                <header className="sticky top-0 z-50">
-                    <div
-                        className={cn(
-                            'mx-auto max-w-6xl transition-all duration-300',
-                            scrolled ? 'px-4 pt-3' : 'px-6 pt-0',
-                        )}
-                    >
-                        <div
-                            className={cn(
-                                'flex h-16 items-center justify-between transition-all duration-300',
-                                scrolled
-                                    ? 'rounded-[64px] border border-black/10 bg-white/70 px-6 shadow-[0_8px_30px_rgba(0,0,0,0.10)] backdrop-blur-xl'
-                                    : 'px-0',
-                            )}
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1A1A1A]">
+                <header
+                    className={cn(
+                        'sticky top-0 z-50 transition-colors duration-200',
+                        scrolled
+                            ? 'border-b border-[rgba(255,255,255,0.08)] bg-[#08080A]/85 backdrop-blur-md'
+                            : 'bg-transparent',
+                    )}
+                >
+                    <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between px-4 sm:h-[88px] sm:px-6">
+                        <div className="flex items-center gap-10">
+                            <Link
+                                href="/"
+                                className="flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50"
+                            >
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7C5CFF]">
                                     <AppLogoIcon className="h-4 w-4 text-white" />
                                 </div>
-                                <span className="mt-1 font-display text-2xl tracking-wide">
+                                <span className="font-landing-display text-[22px] font-bold tracking-[-0.03em] text-[#FAFAFA]">
                                     Slidezz
                                 </span>
-                            </div>
+                            </Link>
 
-                            <nav className="hidden items-center gap-8 text-lg font-semibold text-[#444440] md:flex">
-                                <a
-                                    href="#como-funciona"
-                                    className="transition-colors hover:text-[#1A1A1A]"
-                                >
-                                    Como funciona
-                                </a>
-                                <a
-                                    href="#pricing"
-                                    className="transition-colors hover:text-[#1A1A1A]"
-                                >
-                                    Preços
-                                </a>
+                            <nav className="hidden items-center gap-8 md:flex">
+                                {[
+                                    ['#como-funciona', 'Como funciona'],
+                                    ['#exemplos', 'Exemplos'],
+                                    ['#pricing', 'Preços'],
+                                    ['#faq', 'FAQ'],
+                                ].map(([href, label]) => (
+                                    <a
+                                        key={href}
+                                        href={href}
+                                        className="text-[15px] font-semibold text-[#FAFAFA] transition-colors hover:text-[#A1A1AA]"
+                                    >
+                                        {label}
+                                    </a>
+                                ))}
                             </nav>
+                        </div>
 
-                            <CtaButton
-                                href={ctaHref}
-                                className="py-1 pr-1 pl-5 text-base"
+                        <div className="flex items-center gap-3 sm:gap-5">
+                            {!auth.user && (
+                                <Link
+                                    href={login()}
+                                    className="hidden text-[15px] font-semibold text-[#FAFAFA] transition-colors hover:text-[#A1A1AA] sm:inline-flex"
+                                >
+                                    Entrar
+                                </Link>
+                            )}
+                            <Link
+                                href={auth.user ? dashboard() : ctaHref}
+                                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#7C5CFF] px-5 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#6D4AE6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50 sm:h-[52px] sm:px-6 sm:text-[17px]"
                             >
                                 {auth.user
                                     ? 'Ir para o app'
                                     : 'Parar de perder tempo'}
-                            </CtaButton>
+                            </Link>
                         </div>
                     </div>
                 </header>
 
                 {/* ── HERO ── */}
-                <section className="mx-auto grid max-w-6xl items-center gap-16 px-6 pt-24 pb-16 lg:grid-cols-2">
-                    {/* Left */}
-                    <FadeIn>
-                        <div
-                            className="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold"
-                            style={{
-                                border: '1px solid #E8E7E2',
-                                background: '#fff',
-                            }}
-                        >
-                            <svg
-                                className="h-3.5 w-3.5 fill-[#FFE156]"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
-                            </svg>
-                            Automação para TikTok
+                <section className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(124,92,255,0.25),transparent)]" />
+                    <div className="dotted-grid absolute inset-0 opacity-20" />
+                    <div className="relative mx-auto max-w-[1320px] px-4 pt-16 pb-8 text-center sm:px-6 sm:pt-28">
+                        <Reveal>
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#111114] px-4 py-1.5 text-[13px] text-[#FAFAFA] sm:text-[14px]">
+                                <span className="text-[#A78BFA]">●</span>
+                                <span className="font-semibold">
+                                    Novo · gere carrosséis em 1 minuto
+                                </span>
+                            </div>
+                        </Reveal>
+
+                        <Reveal>
+                            <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA] sm:max-w-[14ch]">
+                                Transforme o TikTok em uma máquina de tráfego e
+                                vendas{' '}
+                                <span className="bg-gradient-to-r from-[#A78BFA] to-[#71717A] bg-clip-text text-transparent">
+                                    sem criar conteúdo
+                                </span>
+                            </h1>
+                        </Reveal>
+
+                        <Reveal>
+                            <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-[#A1A1AA] sm:text-[20px]">
+                                Geramos e publicamos carrosséis virais
+                                automaticamente todos os dias para você atrair
+                                leads, seguidores e clientes, enquanto você foca
+                                no seu negócio.
+                            </p>
+                        </Reveal>
+
+                        <Reveal>
+                            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                                <Link href={ctaHref} className={primaryButton}>
+                                    Criar minha máquina de conteúdo
+                                </Link>
+                                <a
+                                    href="#exemplos"
+                                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] border border-[rgba(255,255,255,0.08)] px-8 text-[18px] font-semibold text-[#FAFAFA] transition-colors duration-200 hover:bg-[#111114] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50"
+                                >
+                                    <Play className="h-4 w-4 fill-current" />
+                                    Ver exemplos
+                                </a>
+                            </div>
+                        </Reveal>
+
+                        <div className="relative mt-12 rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[#111114] p-4">
+                            <div className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-[#111114]" />
+                            <div className="dotted-grid absolute inset-0 opacity-20" />
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#7C5CFF] to-transparent" />
+                            <div className="relative">
+                                <SlideArc />
+                            </div>
                         </div>
 
-                        <h1 className="mb-6 font-display text-[64px] leading-[0.95] tracking-normal lg:text-[76px]">
-                            Transforme o TikTok em uma máquina de tráfego e
-                            vendas —{' '}
-                            <TextShimmer as="span" duration={2.5} spread={3}>
-                                sem criar conteúdo.
-                            </TextShimmer>
-                        </h1>
+                        <div className="relative mt-10">
+                            <div className="absolute inset-x-0 top-1/2 h-px bg-[rgba(255,255,255,0.08)]" />
+                            <div className="relative mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[#08080A] px-4 text-[13px] text-[#A1A1AA]">
+                                <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA]">
+                                    Publica no
+                                    <TikTokMark className="h-4 w-4" />
+                                    <InstagramMark className="h-4 w-4" />
+                                </span>
+                                <span>· Economia de milhares em UGC</span>
+                                <span>
+                                    · Conteúdo publicado todos os dias, no
+                                    piloto automático
+                                </span>
+                                <span>
+                                    · Sem briefing, sem aprovação, sem atraso
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-                        <p className="mb-6 max-w-lg text-xl leading-relaxed font-medium text-[#555550]">
-                            Geramos e publicamos carrosséis virais
-                            automaticamente todos os dias para você atrair
-                            leads, seguidores e clientes — enquanto você foca no
-                            seu negócio.
-                        </p>
-
-                        <div className="mb-10 flex flex-col gap-2">
-                            {[
-                                'Economia de milhares em UGC',
-                                'Conteúdo publicado todos os dias, no piloto automático',
-                                'Sem briefing, sem aprovação, sem atraso',
-                            ].map((item) => (
-                                <div
-                                    key={item}
-                                    className="flex items-center gap-2.5 text-sm font-semibold"
-                                >
-                                    <span
-                                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full"
-                                        style={{
-                                            border: '1px solid #1A1A1A',
-                                            background: '#1A1A1A',
-                                        }}
-                                    >
-                                        <Check className="h-2.5 w-2.5 text-white" />
-                                    </span>
-                                    {item}
+                {/* ── TRANSFORMATION STRIP ── */}
+                <section className="mx-auto max-w-[1320px] px-4 py-14 sm:px-6 sm:py-16">
+                    <div className="mb-10 text-center">
+                        <Reveal>
+                            <span className={sectionTag}>Como funciona</span>
+                            <h2 className={sectionTitle}>
+                                De uma ideia simples a um carrossel completo
+                            </h2>
+                        </Reveal>
+                    </div>
+                    <Reveal>
+                        <div className="flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
+                            {/* Input mock */}
+                            <div className="w-full rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[#111114] p-6 md:flex-1">
+                                <div className="mb-4 flex items-center gap-2">
+                                    <div className="h-3 w-3 rounded-full bg-[#71717A]" />
+                                    <div className="h-3 w-3 rounded-full bg-[#71717A]" />
+                                    <div className="h-3 w-3 rounded-full bg-[#71717A]" />
                                 </div>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center gap-5">
-                            <CtaButton
-                                href={ctaHref}
-                                className="py-2 pr-2 pl-8"
-                            >
-                                Criar minha máquina de conteúdo
-                            </CtaButton>
-                        </div>
-                    </FadeIn>
-
-                    {/* Right: App mockup */}
-                    <FadeIn className="relative" delay={0.12}>
-                        <div
-                            className="absolute inset-0 -z-0 rounded-2xl opacity-25 blur-2xl"
-                            style={{
-                                background:
-                                    'linear-gradient(135deg, #FF6B6B, #FF9F45, #FFD93D, #6BCF7F, #4D9FFF, #B06BFF)',
-                                transform: 'scale(0.95) translateY(10px)',
-                            }}
-                        />
-                        <div
-                            className="relative z-10 overflow-hidden rounded-2xl bg-white"
-                            style={{
-                                boxShadow: '0 24px 48px rgba(0,0,0,0.1)',
-                            }}
-                        >
-                            {/* Window chrome */}
-                            <div
-                                className="flex items-center gap-2 border-b px-4 py-3"
-                                style={{
-                                    borderColor: '#E0E0DA',
-                                    background: '#FAFAF7',
-                                }}
-                            >
-                                <span
-                                    className="h-3 w-3 rounded-full bg-[#FF5F57]"
-                                    style={{
-                                        border: '1px solid rgba(0,0,0,0.12)',
-                                    }}
-                                />
-                                <span
-                                    className="h-3 w-3 rounded-full bg-[#FFBD2E]"
-                                    style={{
-                                        border: '1px solid rgba(0,0,0,0.12)',
-                                    }}
-                                />
-                                <span
-                                    className="h-3 w-3 rounded-full bg-[#28CA41]"
-                                    style={{
-                                        border: '1px solid rgba(0,0,0,0.12)',
-                                    }}
-                                />
-                                <div
-                                    className="mx-4 flex h-6 flex-1 items-center rounded-md bg-[#EDECE8] px-3"
-                                    style={{ border: '1px solid #DDDDD8' }}
-                                >
-                                    <span className="text-[10px] font-medium text-[#999993]">
-                                        slidezz.app/analytics
-                                    </span>
+                                <div className="rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[#16161B] p-4">
+                                    <p className="text-sm text-[#A1A1AA]">
+                                        Digite seu tema...
+                                    </p>
+                                    <p className="mt-2 text-lg font-semibold text-[#FAFAFA]">
+                                        5 erros de quem tem cabelo oleoso
+                                    </p>
                                 </div>
                             </div>
-
-                            <div className="flex" style={{ height: 360 }}>
-                                {/* Sidebar */}
-                                <div
-                                    className="flex w-40 flex-shrink-0 flex-col gap-1 border-r p-3"
-                                    style={{
-                                        borderColor: '#E8E7E2',
-                                        background: '#F5F4EE',
-                                    }}
-                                >
-                                    <div className="mb-2 flex items-center gap-2 px-2 py-1.5">
-                                        <div className="flex h-5 w-5 items-center justify-center rounded bg-[#1A1A1A]">
-                                            <AppLogoIcon className="h-3 w-3 text-white" />
-                                        </div>
-                                        <span className="text-xs font-extrabold">
-                                            Slidezz
-                                        </span>
-                                    </div>
-                                    {[
-                                        'Início',
-                                        'Biblioteca',
-                                        'Analytics',
-                                        'Agenda',
-                                    ].map((label, i) => (
-                                        <div
-                                            key={label}
-                                            className="rounded-md px-2.5 py-1.5 text-[11px] font-semibold"
-                                            style={
-                                                i === 2
-                                                    ? {
-                                                          background: '#fff',
-                                                          border: '1px solid #E8E7E2',
-                                                          color: '#1A1A1A',
-                                                      }
-                                                    : { color: '#888880' }
-                                            }
-                                        >
-                                            {label}
-                                        </div>
-                                    ))}
-                                    <div className="mt-2 px-2.5 py-1 text-[9px] font-bold tracking-widest text-[#BBBBAA] uppercase">
-                                        Slideshows
-                                    </div>
-                                    {[
-                                        'Automações',
-                                        'Editor',
-                                        'Banco de Dados',
-                                    ].map((label) => (
-                                        <div
-                                            key={label}
-                                            className="rounded-md px-2.5 py-1.5 text-[11px] font-semibold text-[#888880]"
-                                        >
-                                            {label}
+                            {/* Arrow */}
+                            <div className="flex items-center justify-center text-4xl text-[#A78BFA] md:self-center">
+                                →
+                            </div>
+                            {/* Carousel preview */}
+                            <div className="w-full rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[#111114] p-6 md:flex-1">
+                                <div className="flex space-x-4 overflow-hidden">
+                                    {slides.slice(0, 4).map((slide, i) => (
+                                        <div key={i} className="w-32 shrink-0">
+                                            <SlideCard
+                                                src={slide.src}
+                                                hook={slide.hook}
+                                                loading="lazy"
+                                            />
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Content */}
-                                <div className="flex-1 overflow-hidden p-4">
-                                    <div className="mb-3 text-xs font-extrabold">
-                                        Analytics do TikTok
-                                    </div>
-                                    <div className="mb-4 grid grid-cols-3 gap-2">
-                                        {[
-                                            {
-                                                label: 'Views',
-                                                value: '84.2k',
-                                                bg: '#FFD60A22',
-                                            },
-                                            {
-                                                label: 'Curtidas',
-                                                value: '12.8k',
-                                                bg: '#FF6B6B22',
-                                            },
-                                            {
-                                                label: 'Engaj.',
-                                                value: '5.4%',
-                                                bg: '#6BCF7F22',
-                                            },
-                                        ].map((s) => (
-                                            <div
-                                                key={s.label}
-                                                className="rounded-lg p-2.5"
-                                                style={{
-                                                    border: '1px solid #E8E7E2',
-                                                    background: s.bg,
-                                                }}
-                                            >
-                                                <div className="text-sm font-extrabold">
-                                                    {s.value}
-                                                </div>
-                                                <div className="mt-0.5 text-[9px] font-bold text-[#888880]">
-                                                    {s.label}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div
-                                        className="mb-3 rounded-lg p-3"
-                                        style={{
-                                            border: '1px solid #E8E7E2',
-                                            background: '#FAFAF7',
-                                        }}
-                                    >
-                                        <div className="mb-2 text-[9px] font-bold text-[#888880]">
-                                            Carrosséis publicados — últimos 14
-                                            dias
-                                        </div>
-                                        <div className="flex h-12 items-end gap-1">
-                                            {[
-                                                35, 60, 42, 78, 50, 88, 65, 82,
-                                                55, 92, 70, 85, 48, 95,
-                                            ].map((h, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex-1 rounded-sm"
-                                                    style={{
-                                                        height: `${h}%`,
-                                                        background:
-                                                            i === 13
-                                                                ? '#1A1A1A'
-                                                                : '#1A1A1A22',
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div
-                                        className="rounded-lg p-2.5"
-                                        style={{
-                                            border: '1px solid #E8E7E2',
-                                            background: '#FAFAF7',
-                                        }}
-                                    >
-                                        <div className="mb-1.5 text-[9px] font-bold text-[#888880]">
-                                            Próximas publicações automáticas
-                                        </div>
-                                        {[
-                                            'Hoje 14:00 · TikTok',
-                                            'Hoje 20:00 · TikTok',
-                                            'Amanhã 09:30 · TikTok',
-                                        ].map((t) => (
-                                            <div
-                                                key={t}
-                                                className="mb-1 flex items-center gap-1.5"
-                                            >
-                                                <div className="h-1.5 w-1.5 rounded-full bg-[#1A1A1A]" />
-                                                <span className="text-[9px] font-semibold text-[#555550]">
-                                                    {t}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             </div>
                         </div>
-                    </FadeIn>
+                    </Reveal>
                 </section>
 
                 {/* ── PROBLEMA ── */}
-                <section
-                    style={{
-                        borderTop: '1px solid #1A1A1A',
-                        borderBottom: '1px solid #1A1A1A',
-                        background: '#1A1A1A',
-                    }}
-                >
-                    <FadeIn className="mx-auto max-w-4xl px-6 py-24 text-center">
-                        <p className="mb-4 font-bold tracking-widest text-[#1A1A1A] uppercase">
+                <section className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32">
+                    <Reveal className="mx-auto max-w-4xl text-center">
+                        <p className="mb-4 font-bold tracking-widest text-[#A1A1AA] uppercase">
                             A verdade que ninguém te conta
                         </p>
-                        <h2 className="mb-8 font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
+                        <h2 className="mb-8 font-landing-display text-5xl leading-[0.95] tracking-normal text-white lg:text-7xl">
                             A verdade brutal sobre o Instagram em 2026
                         </h2>
                         <div className="mx-auto max-w-2xl space-y-5 text-left">
@@ -541,9 +1225,9 @@ export default function Welcome({
                                 <strong className="text-white">
                                     2–3 horas no Canva
                                 </strong>{' '}
-                                tentando montar um post bonito, seus concorrentes
-                                usam IA pra criar 10 carrosséis virais no tempo em
-                                que você faz 1.
+                                tentando montar um post bonito, seus
+                                concorrentes usam IA pra criar 10 carrosséis
+                                virais no tempo em que você faz 1.
                             </p>
                             <p className="text-lg leading-relaxed font-medium text-[#AAAAAA]">
                                 A diferença entre quem vende no Instagram e quem
@@ -555,153 +1239,299 @@ export default function Welcome({
                             </p>
                         </div>
                         <div className="mt-10 flex justify-center">
-                            <CtaButton href={ctaHref} className="py-2 pr-2 pl-8">
+                            <Link
+                                href={ctaHref}
+                                className="inline-flex h-12 items-center justify-center rounded-[12px] bg-[#7C5CFF] px-8 text-[18px] font-semibold text-white transition duration-200 hover:bg-[#6D4AE6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF]/50"
+                            >
                                 Quero parar de perder tempo
-                            </CtaButton>
+                            </Link>
                         </div>
-                    </FadeIn>
+                    </Reveal>
                 </section>
 
                 {/* ── COMO FUNCIONA ── */}
                 <section
                     id="como-funciona"
-                    className="mx-auto max-w-6xl px-6 pt-24"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <FadeIn className="mb-4 text-center">
-                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                            Em 3 passos
-                        </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
+                    <Reveal>
+                        <span className={sectionTag}>Em 3 passos</span>
+                        <h2 className={sectionTitle}>
                             Tão simples que parece mágica
                         </h2>
-                    </FadeIn>
-
-                    <ScrollStack
-                        items={[
-                            {
-                                step: '01',
-                                title: 'Descreva seu conteúdo',
-                                body: 'Digite o tema, o nicho e o tom de voz. Pode ser uma frase simples como "5 dicas de marketing digital."',
-                            },
-                            {
-                                step: '02',
-                                title: 'A IA cria tudo',
-                                body: 'Em segundos, a IA gera o texto persuasivo, escolhe o layout perfeito e monta o carrossel completo.',
-                            },
-                            {
-                                step: '03',
-                                title: 'Publique e viralize',
-                                body: 'Exporte em Full HD ou agende direto. Pronto. Seu carrossel está no ar, ganhando seguidores.',
-                            },
-                        ].map(({ step, title, body }) => (
-                            <div
-                                key={step}
-                                className="flex min-h-[300px] flex-col justify-center rounded-[24px] bg-white p-10 sm:p-12"
-                                style={{
-                                    boxShadow: '0 24px 48px rgba(0,0,0,0.10)',
-                                }}
+                    </Reveal>
+                    <div className="mt-12 grid gap-4 md:grid-cols-3 md:divide-x md:divide-[rgba(255,255,255,0.08)]">
+                        {steps.map((step, i) => (
+                            <Reveal
+                                key={step.title}
+                                className="md:px-6 first:md:pl-0 last:md:pr-0"
                             >
-                                <div className="mb-6 flex items-center gap-4">
+                                <StepCard
+                                    number={`0${i + 1}`}
+                                    title={step.title}
+                                    body={step.text}
+                                >
+                                    <step.Visual />
+                                </StepCard>
+                            </Reveal>
+                        ))}
+                    </div>
+                </section>
+
+                {/* ── TOOLS HUB ── */}
+                <section className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32">
+                    <Reveal>
+                        <span className={sectionTag}>Tools hub</span>
+                        <h2 className={sectionTitle}>
+                            Suas ferramentas entram, um carrossel pronto sai
+                        </h2>
+                    </Reveal>
+                    <div className="relative mt-12 overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[#111114] p-8">
+                        <div className="dotted-grid absolute inset-0 opacity-10" />
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#7C5CFF] to-transparent" />
+                        <div className="relative grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_auto_1fr]">
+                            {/* Left chips */}
+                            <div className="space-y-4">
+                                {[
+                                    'Tema',
+                                    'Marca e cores',
+                                    'Referências',
+                                    'Tom de voz',
+                                ].map((item) => (
                                     <div
-                                        className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-extrabold"
-                                        style={{
-                                            background: '#1A1A1A',
-                                            color: '#fff',
-                                        }}
+                                        key={item}
+                                        className="flex items-center justify-end"
                                     >
-                                        {step}
+                                        <span className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[#16161B] px-4 py-2 text-sm font-medium text-[#FAFAFA]">
+                                            {item}
+                                        </span>
                                     </div>
-                                    <span className="text-sm font-bold tracking-widest text-[#888880] uppercase">
-                                        Passo {step}
-                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Center node */}
+                            <div className="flex justify-center">
+                                <div className="pulse-glow relative flex h-24 w-24 items-center justify-center rounded-full bg-[#7C5CFF] shadow-[0_0_40px_rgba(124,92,255,0.5)]">
+                                    <AppLogoIcon className="h-10 w-10 text-white" />
                                 </div>
-                                <h3 className="mb-3 font-display text-3xl leading-none tracking-normal sm:text-4xl">
-                                    {title}
-                                </h3>
-                                <p className="max-w-xl text-lg leading-relaxed font-medium text-[#555550]">
-                                    {body}
-                                </p>
+                            </div>
+
+                            {/* Right chips */}
+                            <div className="space-y-4">
+                                {[
+                                    'Carrossel pronto',
+                                    'Legendas',
+                                    'Posts agendados',
+                                    'Instagram + TikTok',
+                                ].map((item) => (
+                                    <div
+                                        key={item}
+                                        className="flex items-center"
+                                    >
+                                        <span className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[#16161B] px-4 py-2 text-sm font-medium text-[#FAFAFA]">
+                                            {item}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* SVG connecting lines */}
+                        <svg
+                            className="pointer-events-none absolute inset-0 h-full w-full"
+                            viewBox="0 0 1000 400"
+                            preserveAspectRatio="none"
+                        >
+                            {/* Left to center */}
+                            <path
+                                d="M250,100 C350,100 400,200 500,200"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                            <path
+                                d="M250,200 C350,200 400,200 500,200"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                            <path
+                                d="M250,300 C350,300 400,200 500,200"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                            {/* Center to right */}
+                            <path
+                                d="M500,200 C600,200 650,100 750,100"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                            <path
+                                d="M500,200 C600,200 650,200 750,200"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                            <path
+                                d="M500,200 C600,200 650,300 750,300"
+                                fill="none"
+                                stroke="#7C5CFF"
+                                strokeWidth="2"
+                                className="animated-path"
+                            />
+                        </svg>
+                    </div>
+                </section>
+
+                {/* ── GALLERY ── */}
+                <section
+                    id="exemplos"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
+                >
+                    <Reveal>
+                        <div className="flex items-end justify-between gap-4">
+                            <div>
+                                <span className={sectionTag}>Exemplos</span>
+                                <h2 className={sectionTitle}>
+                                    Carrosséis feitos com Slidezz
+                                </h2>
+                            </div>
+                            <div className="hidden gap-2 sm:flex">
+                                <button
+                                    onClick={() => scrollGallery('left')}
+                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.08)] text-[#FAFAFA] hover:bg-[#111114]"
+                                    aria-label="Rolar para a esquerda"
+                                >
+                                    ←
+                                </button>
+                                <button
+                                    onClick={() => scrollGallery('right')}
+                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.08)] text-[#FAFAFA] hover:bg-[#111114]"
+                                    aria-label="Rolar para a direita"
+                                >
+                                    →
+                                </button>
+                            </div>
+                        </div>
+                    </Reveal>
+                    <div
+                        ref={scrollRef}
+                        className="mt-12 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                        {[
+                            {
+                                niche: 'Beleza',
+                                idea: '5 erros de quem tem cabelo oleoso',
+                            },
+                            {
+                                niche: 'Finanças',
+                                idea: 'Como economizar seus primeiros R$10 mil',
+                            },
+                            {
+                                niche: 'Fitness',
+                                idea: '5 treinos matinais que realmente funcionam',
+                            },
+                            {
+                                niche: 'Viagem',
+                                idea: 'Lugares escondidos na Europa por menos de R$200',
+                            },
+                            {
+                                niche: 'Comida',
+                                idea: 'Jantares ricos em proteína em 15 min',
+                            },
+                            {
+                                niche: 'Lifestyle',
+                                idea: 'Coisas que ninguém te conta sobre morar fora',
+                            },
+                        ].map((item, i) => (
+                            <div
+                                key={i}
+                                className="w-64 shrink-0 overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#111114]"
+                            >
+                                <div className="relative aspect-[4/5] bg-gradient-to-br from-[#A78BFA]/30 via-[#7C5CFF]/20 to-[#111114]">
+                                    <div className="absolute top-3 left-3 rounded-full bg-[#7C5CFF] px-3 py-1 text-xs font-semibold text-white">
+                                        {item.niche}
+                                    </div>
+                                    <div className="absolute bottom-3 left-3 text-sm font-medium text-[#FAFAFA]">
+                                        <span className="text-[#A1A1AA]">
+                                            IDEIA
+                                        </span>{' '}
+                                        {item.idea}
+                                    </div>
+                                </div>
                             </div>
                         ))}
-                    />
-
-                    <div className="flex justify-center pb-24">
-                        <CtaButton href={ctaHref} className="py-2 pr-2 pl-8">
-                            Criar minha máquina de conteúdo
-                        </CtaButton>
                     </div>
                 </section>
 
                 {/* ── FEATURES ── */}
                 <section
-                    style={{
-                        borderTop: '1px solid #E8E7E2',
-                        background: '#FAFAF7',
-                    }}
+                    id="features"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
                 >
-                    <div className="mx-auto max-w-6xl px-6 py-24">
-                        <FadeIn className="mb-16 text-center">
-                            <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                                O que tem dentro
-                            </p>
-                            <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
-                                IA treinada pra prender atenção
-                            </h2>
-                            <p className="mx-auto mt-3 max-w-lg text-lg leading-relaxed font-medium text-[#555550]">
-                                Você não precisa de um mega prompt de outras IAs:
-                                o fluxo inteiro já é calibrado pra viralizar e se
-                                destacar no feed.
-                            </p>
-                        </FadeIn>
-
-                        <FeatureBento copy={featureBentoCopy} />
+                    <Reveal>
+                        <span className={sectionTag}>Recursos</span>
+                        <h2 className={sectionTitle}>
+                            Recursos do produto.{' '}
+                            <span className="text-[#FAFAFA]/25">
+                                Tudo o que você precisa, em um só lugar.
+                            </span>
+                        </h2>
+                    </Reveal>
+                    <div className="mt-12 grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+                        {features.map((feature) => (
+                            <Reveal key={feature.title}>
+                                <FeatureCard
+                                    title={feature.title}
+                                    text={feature.text}
+                                    badge={feature.badge}
+                                >
+                                    <feature.Visual />
+                                </FeatureCard>
+                            </Reveal>
+                        ))}
                     </div>
                 </section>
 
-                {/* ── ÂNCORA DE PREÇO ── */}
-                <section
-                    style={{
-                        borderTop: '1px solid #1A1A1A',
-                        borderBottom: '1px solid #1A1A1A',
-                        background: '#1A1A1A',
-                    }}
-                >
-                    <div className="mx-auto max-w-3xl px-6 py-24">
-                        <FadeIn className="mb-12 text-center">
-                            <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                                Faça as contas
-                            </p>
-                            <h2 className="font-display text-5xl leading-[0.95] tracking-normal text-white lg:text-6xl">
-                                Quanto você pagaria
-                                <br />
-                                por tudo isso separado?
-                            </h2>
-                        </FadeIn>
-
-                        <FadeIn
-                            className="overflow-hidden rounded-2xl"
-                            style={{ border: '1px solid #333330' }}
-                        >
+                {/* ── COST COMPARISON ── */}
+                <section className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32">
+                    <Reveal className="mb-12 text-center">
+                        <span className={sectionTag}>Faça as contas</span>
+                        <h2 className={sectionTitle}>
+                            Quanto você pagaria
+                            <br />
+                            por tudo isso separado?
+                        </h2>
+                    </Reveal>
+                    <Reveal>
+                        <div className="overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#111114]">
                             {comparisonItems.map(({ label, price }, i) => (
                                 <div
                                     key={label}
                                     className="flex items-center justify-between px-6 py-4"
                                     style={{
                                         background:
-                                            i % 2 === 0 ? '#222220' : '#1E1E1C',
+                                            i % 2 === 0 ? '#16161B' : '#111114',
                                         borderBottom:
                                             i < comparisonItems.length - 1
-                                                ? '1px solid #2A2A28'
+                                                ? '1px solid rgba(255,255,255,0.08)'
                                                 : 'none',
                                     }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <X className="h-3.5 w-3.5 flex-shrink-0 text-[#555550]" />
-                                        <span className="text-lg font-semibold text-[#AAAAAA]">
+                                        <X className="h-3.5 w-3.5 flex-shrink-0 text-[#71717A]" />
+                                        <span className="text-lg font-semibold text-[#A1A1AA]">
                                             {label}
                                         </span>
                                     </div>
-                                    <span className="text-lg font-bold text-[#666660]">
+                                    <span className="text-lg font-bold text-[#71717A]">
                                         {price}
                                     </span>
                                 </div>
@@ -709,524 +1539,205 @@ export default function Welcome({
                             <div
                                 className="flex items-center justify-between px-6 py-5"
                                 style={{
-                                    background: '#2A0E00',
-                                    borderTop: '1px solid #FFE156',
+                                    background: '#7C5CFF',
+                                    borderTop: '1px solid #7C5CFF',
                                 }}
                             >
                                 <span className="text-lg font-extrabold text-white">
                                     Total (se comprado separado)
                                 </span>
-                                <span className="text-xl font-extrabold text-[#1A1A1A]">
+                                <span className="text-xl font-extrabold text-white">
                                     {totalComparison}
                                 </span>
                             </div>
-                        </FadeIn>
-
-                        <p className="mt-6 text-center text-lg leading-relaxed font-medium text-[#666660]">
-                            É isso que você <em>poderia</em> gastar. Com o
-                            Slidezz, tudo num lugar só — por uma fração do custo.
-                        </p>
-                    </div>
+                        </div>
+                    </Reveal>
+                    <p className="mt-6 text-center text-lg leading-relaxed font-medium text-[#A1A1AA]">
+                        É isso que você <em>poderia</em> gastar. Com o Slidezz,
+                        tudo num lugar só, por uma fração do custo.
+                    </p>
                 </section>
 
                 {/* ── PRICING ── */}
-                <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
-                    <FadeIn className="mb-12 text-center">
-                        <h2 className="mb-3 font-display text-6xl tracking-normal text-[#1A1A1A]">
-                            Simples, como deve ser
-                        </h2>
-                        <p className="text-lg font-medium text-[#666660]">
-                            Sem surpresas. Cancele quando quiser.
-                        </p>
-                    </FadeIn>
-
-                    {/* ── OFERTA DE LANÇAMENTO: LIFETIME ── */}
-                    <FadeIn className="mx-auto mb-16 max-w-3xl">
-                        <div
-                            className="relative overflow-hidden rounded-[24px] border-2 border-[#FFE156] bg-[#1A1A1A] p-10 text-center shadow-xl sm:p-12"
-                        >
-                            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#FFE156] px-4 py-1.5 text-xs font-extrabold tracking-widest text-[#1A1A1A] uppercase">
-                                Oferta de lançamento
+                <section
+                    id="pricing"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
+                >
+                    <Reveal>
+                        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                <span className={sectionTag}>Preços</span>
+                                <h2 className={sectionTitle}>
+                                    Simples, como deve ser
+                                </h2>
+                                <p className="mt-4 text-[18px] tracking-[-0.02em] text-[#A1A1AA] sm:text-[20px]">
+                                    Sem surpresas. Cancele quando quiser.
+                                </p>
                             </div>
-                            <h3 className="mb-2 font-display text-5xl leading-none tracking-normal text-white sm:text-6xl">
-                                Acesso vitalício
-                            </h3>
-                            <div className="mb-2 flex items-baseline justify-center gap-2">
-                                <span className="text-[56px] leading-none font-extrabold text-[#FFE156]">
-                                    R$297
-                                </span>
-                                <span className="text-lg font-semibold text-[#AAAAAA]">
-                                    pagamento único
-                                </span>
-                            </div>
-                            <p className="mb-7 text-lg font-medium text-[#AAAAAA]">
-                                Pague uma vez, use pra sempre. Sem mensalidade.
-                            </p>
-                            <ul className="mx-auto mb-8 flex max-w-md flex-col gap-2.5 text-left">
-                                {[
-                                    'Carrosséis ilimitados, pra sempre',
-                                    'Imagens ilimitadas com sua chave Gemini',
-                                    'Todos os templates + atualizações futuras',
-                                ].map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]"
-                                    >
-                                        <Check className="mt-1 h-4 w-4 flex-shrink-0 text-[#FFE156]" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link
-                                href={ctaHref}
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFE156] px-10 py-4 text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
-                            >
-                                Garantir oferta vitalícia{' '}
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                            <p className="mt-4 text-sm font-medium text-[#666660]">
-                                Por tempo limitado. Depois, só nos planos mensais.
-                            </p>
-                        </div>
-                    </FadeIn>
 
-                    <FadeIn className="mb-8 text-center">
-                        <p className="text-lg font-bold text-[#888880]">
-                            Prefere pagar por mês? Assine um plano:
-                        </p>
-                    </FadeIn>
-
-                    {/* Toggle */}
-                    <div className="mb-12 flex justify-center">
-                        <div className="flex items-center gap-1 rounded-full border border-[#E8E7E2] bg-white p-1 shadow-sm">
-                            <button
-                                onClick={() => setBillingCycle('monthly')}
-                                className="relative rounded-full px-6 py-2 text-lg font-bold"
-                            >
-                                {billingCycle === 'monthly' && (
-                                    <motion.span
-                                        layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
-                                        transition={
-                                            reduceMotion
-                                                ? { duration: 0 }
-                                                : {
-                                                      type: 'spring',
-                                                      stiffness: 420,
-                                                      damping: 20,
-                                                      mass: 0.9,
-                                                  }
-                                        }
-                                    />
-                                )}
-                                <span
-                                    className={`relative z-10 transition-colors duration-200 ${
+                            <div className="inline-flex w-fit items-center gap-1 rounded-full bg-[#111114] p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycle('monthly')}
+                                    className={cn(
+                                        'h-11 rounded-full px-5 text-sm font-semibold transition-colors duration-200',
                                         billingCycle === 'monthly'
-                                            ? 'text-white'
-                                            : 'text-[#666660] hover:text-[#1A1A1A]'
-                                    }`}
+                                            ? 'bg-[#7C5CFF] text-white'
+                                            : 'text-[#A1A1AA] hover:text-[#FAFAFA]',
+                                    )}
                                 >
                                     Mensal
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => setBillingCycle('annual')}
-                                className="relative flex items-center gap-2 rounded-full px-6 py-2 text-lg font-bold"
-                            >
-                                {billingCycle === 'annual' && (
-                                    <motion.span
-                                        layoutId="billing-pill"
-                                        className="absolute inset-0 rounded-full bg-[#FFE156]"
-                                        transition={
-                                            reduceMotion
-                                                ? { duration: 0 }
-                                                : {
-                                                      type: 'spring',
-                                                      stiffness: 420,
-                                                      damping: 20,
-                                                      mass: 0.9,
-                                                  }
-                                        }
-                                    />
-                                )}
-                                <span
-                                    className={`relative z-10 transition-colors duration-200 ${
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBillingCycle('annual')}
+                                    className={cn(
+                                        'flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors duration-200',
                                         billingCycle === 'annual'
-                                            ? 'text-white'
-                                            : 'text-[#666660] hover:text-[#1A1A1A]'
-                                    }`}
+                                            ? 'bg-[#7C5CFF] text-white'
+                                            : 'text-[#A1A1AA] hover:text-[#FAFAFA]',
+                                    )}
                                 >
                                     Anual
-                                </span>
-                                <span
-                                    className={`relative z-10 rounded-full px-2 py-0.5 text-xs font-bold tracking-wide uppercase transition-colors duration-200 ${
-                                        billingCycle === 'annual'
-                                            ? 'bg-[#A3E635] text-[#1A1A1A]'
-                                            : 'bg-[#E8F5E9] text-[#28CA41]'
-                                    }`}
-                                >
-                                    até 30% OFF
-                                </span>
-                            </button>
+                                    <span className="rounded-full bg-[#A78BFA] px-2 py-0.5 text-[10px] font-semibold text-white">
+                                        Economize até 31%
+                                    </span>
+                                </button>
+                            </div>
                         </div>
+                    </Reveal>
+
+                    <div className="mt-12 grid gap-4 sm:gap-6 md:grid-cols-3">
+                        {plans.map((plan) => {
+                            const price =
+                                billingCycle === 'annual'
+                                    ? plan.annual
+                                    : plan.monthly;
+                            const struckPrice =
+                                billingCycle === 'annual' ? plan.monthly : null;
+
+                            return (
+                                <Reveal key={plan.name}>
+                                    <PricingCard
+                                        name={plan.name}
+                                        price={price}
+                                        struckPrice={struckPrice}
+                                        billingCycle={billingCycle}
+                                        features={plan.features}
+                                        href={ctaHref}
+                                        buttonClass={plan.buttonClass}
+                                        badge={plan.badge}
+                                        highlighted={plan.highlighted}
+                                    />
+                                </Reveal>
+                            );
+                        })}
                     </div>
 
-                    <FadeIn className="mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-3">
-                        {/* Starter */}
-                        <div className="relative flex flex-col rounded-[24px] border border-[#E8E7E2] bg-white p-8 shadow-sm">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">
-                                    Starter
-                                </h3>
-                                {billingCycle === 'annual' && (
-                                    <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        30% OFF
+                    {/* Lifetime offer */}
+                    <Reveal>
+                        <div className="mt-4 overflow-hidden rounded-[24px] border border-[#7C5CFF]/30 bg-[#111114] p-8 sm:mt-6 sm:p-10">
+                            <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <span className="inline-flex rounded-full bg-[#7C5CFF] px-3 py-1 text-xs font-semibold text-white">
+                                        Oferta de lançamento
                                     </span>
-                                )}
-                            </div>
-                            <div className="mb-6">
-                                {billingCycle === 'annual' ? (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            R$67/mês
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                R$47
-                                            </span>
-                                            <span className="text-lg font-medium text-[#666660]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado anualmente
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-transparent select-none">
-                                            &nbsp;
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                R$67
-                                            </span>
-                                            <span className="text-lg font-medium text-[#666660]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado mensalmente
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#1A1A1A]" />
-                                Carrosséis ilimitados
-                            </div>
-
-                            <div className="mb-4 text-sm font-bold text-[#888880]">
-                                Inclui:
-                            </div>
-                            <ul className="mb-8 flex flex-1 flex-col gap-3">
-                                {[
-                                    'Imagens ilimitadas com sua chave Gemini',
-                                    'Copy e hooks com IA',
-                                    'Todos os templates',
-                                ].map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-start gap-3 text-lg font-medium text-[#555550]"
+                                    <h3 className="mt-3 font-landing-display text-3xl font-extrabold tracking-[-0.04em] text-[#FAFAFA]">
+                                        Acesso vitalício
+                                    </h3>
+                                    <p className="mt-2 max-w-md text-[16px] text-[#A1A1AA]">
+                                        Pague uma vez, use pra sempre. Sem
+                                        mensalidade.
+                                    </p>
+                                    <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+                                        {lifetimeFeatures.map((feature) => (
+                                            <li
+                                                key={feature}
+                                                className="flex items-center gap-2 text-sm font-medium text-[#FAFAFA]"
+                                            >
+                                                <Check className="h-4 w-4 text-[#A78BFA]" />
+                                                {feature}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="text-left md:text-right">
+                                    <div className="font-landing-display text-5xl font-extrabold tracking-[-0.04em] text-[#FAFAFA]">
+                                        R$297
+                                    </div>
+                                    <div className="text-sm font-medium text-[#A1A1AA]">
+                                        pagamento único
+                                    </div>
+                                    <Link
+                                        href={ctaHref}
+                                        className={cn(
+                                            primaryButton,
+                                            'mt-4 text-[16px] whitespace-nowrap',
+                                        )}
                                     >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={ctaHref}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] py-3.5 text-center text-lg font-bold text-white transition-colors hover:bg-[#333]"
-                            >
-                                Testar agora <ArrowRight className="h-4 w-4" />
-                            </Link>
+                                        Garantir oferta vitalícia
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
+                    </Reveal>
 
-                        {/* Pro */}
-                        <div className="relative flex flex-col rounded-[24px] border-2 border-[#FFE156] bg-white p-8 shadow-lg">
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0F766E] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
-                                Mais popular
-                            </div>
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-2xl font-extrabold text-[#1A1A1A]">
-                                    Pro
-                                </h3>
-                                {billingCycle === 'annual' && (
-                                    <span className="rounded-full bg-[#E8F5E9] px-2.5 py-1 text-xs font-bold tracking-wide text-[#28CA41] uppercase">
-                                        31% OFF
-                                    </span>
-                                )}
-                            </div>
-                            <div className="mb-6">
-                                {billingCycle === 'annual' ? (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            R$127/mês
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                R$87
-                                            </span>
-                                            <span className="text-lg font-medium text-[#666660]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado anualmente
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-transparent select-none">
-                                            &nbsp;
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-[#1A1A1A]">
-                                                R$127
-                                            </span>
-                                            <span className="text-lg font-medium text-[#666660]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado mensalmente
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="mb-6 flex items-center gap-3 border-b border-[#E8E7E2] pb-6 text-lg font-bold text-[#1A1A1A]">
-                                <Check className="h-4 w-4 text-[#1A1A1A]" />
-                                Carrosséis ilimitados
-                            </div>
-
-                            <div className="mb-4 text-sm font-bold text-[#888880]">
-                                Tudo no Starter, mais:
-                            </div>
-                            <ul className="mb-8 flex flex-1 flex-col gap-3">
-                                {[
-                                    'Suporte prioritário',
-                                    'Salvar seus templates',
-                                    'Acesso antecipado a novidades',
-                                ].map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-start gap-3 text-lg font-medium text-[#555550]"
-                                    >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1A1A1A]" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={ctaHref}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
-                            >
-                                Testar agora <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </div>
-
-                        {/* Agency */}
-                        <div className="relative flex flex-col rounded-[24px] border border-[#333330] bg-[#1A1A1A] p-8 shadow-lg">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-2xl font-extrabold text-white">
-                                    Agency
-                                </h3>
-                                {billingCycle === 'annual' && (
-                                    <span className="rounded-full bg-[#FCD34D]/15 px-2.5 py-1 text-xs font-bold tracking-wide text-[#FCD34D] uppercase">
-                                        28% OFF
-                                    </span>
-                                )}
-                            </div>
-                            <div className="mb-6">
-                                {billingCycle === 'annual' ? (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-[#888880] line-through">
-                                            R$247/mês
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-white">
-                                                R$177
-                                            </span>
-                                            <span className="text-lg font-medium text-[#AAAAAA]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado anualmente
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="mb-1 text-lg font-semibold text-transparent select-none">
-                                            &nbsp;
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[40px] leading-none font-extrabold text-white">
-                                                R$247
-                                            </span>
-                                            <span className="text-lg font-medium text-[#AAAAAA]">
-                                                /mês
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 text-sm font-medium text-[#888880]">
-                                            cobrado mensalmente
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="mb-6 flex items-center gap-3 border-b border-[#333330] pb-6 text-lg font-bold text-[#FCD34D]">
-                                <Check className="h-4 w-4 text-[#FCD34D]" />
-                                Carrosséis ilimitados
-                            </div>
-
-                            <div className="mb-4 text-sm font-bold text-[#AAAAAA]">
-                                Tudo no Pro, mais:
-                            </div>
-                            <ul className="mb-8 flex flex-1 flex-col gap-3">
-                                {[
-                                    'Múltiplos projetos',
-                                    'Gestão de equipe',
-                                    'Suporte dedicado',
-                                ].map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-start gap-3 text-lg font-medium text-[#DDDDCC]"
-                                    >
-                                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#FCD34D]" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={ctaHref}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFE156] py-3.5 text-center text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
-                            >
-                                Testar agora <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </div>
-                    </FadeIn>
+                    <p className="mt-6 text-center text-[14px] text-[#A1A1AA]">
+                        Sem cartão de crédito. Cancele quando quiser.
+                    </p>
                 </section>
 
                 {/* ── FAQ ── */}
-                <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
-                    <FadeIn className="mb-14 text-center">
-                        <p className="mb-3 font-bold tracking-widest text-[#888880] uppercase">
-                            FAQ
-                        </p>
-                        <h2 className="font-display text-5xl leading-none tracking-normal lg:text-6xl">
-                            Perguntas frequentes
-                        </h2>
-                    </FadeIn>
-
-                    <div className="space-y-4">
-                        {faqs.map(({ q, a }) => (
-                            <FaqItem key={q} q={q} a={a} />
-                        ))}
+                <section
+                    id="faq"
+                    className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 sm:py-32"
+                >
+                    <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
+                        <Reveal>
+                            <span className={sectionTag}>FAQ</span>
+                            <h2 className={sectionTitle}>
+                                Perguntas frequentes
+                            </h2>
+                        </Reveal>
+                        <Reveal>
+                            <div className="border-t border-[rgba(255,255,255,0.08)]">
+                                {faqs.map(({ q, a }) => (
+                                    <FaqItem key={q} q={q} a={a} />
+                                ))}
+                            </div>
+                        </Reveal>
                     </div>
                 </section>
 
-                {/* ── CTA FINAL ── */}
-                <section id="cta" className="mx-auto max-w-6xl px-6 pb-24">
-                    <FadeIn
-                        className="rounded-2xl p-16 text-center"
-                        style={{
-                            border: '1px solid #1A1A1A',
-                            background: '#1A1A1A',
-                        }}
-                    >
-                        <div
-                            className="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold"
-                            style={{
-                                border: '1px solid #333330',
-                                background: '#222220',
-                                color: '#888880',
-                            }}
-                        >
-                            <svg
-                                className="h-3.5 w-3.5 fill-current"
-                                viewBox="0 0 24 24"
+                {/* ── FINAL CTA ── */}
+                <section className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(124,92,255,0.25),transparent)]" />
+                    <div className="dotted-grid absolute inset-0 opacity-20" />
+                    <div className="relative mx-auto max-w-[1320px] px-4 pt-8 pb-24 text-center sm:px-6 sm:pb-32">
+                        <Reveal>
+                            <h2 className="mx-auto max-w-[16ch] font-landing-display text-[clamp(2.75rem,7vw,7.5rem)] leading-[0.92] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA]">
+                                Comece a automatizar seu TikTok hoje.
+                            </h2>
+                            <p className="mx-auto mt-6 max-w-sm text-lg leading-relaxed font-medium text-[#A1A1AA]">
+                                Pare de depender de criadores. Tenha um sistema
+                                que gera e publica conteúdo viral todos os dias
+                                , no piloto automático.
+                            </p>
+                            <Link
+                                href={ctaHref}
+                                className={cn(primaryButton, 'mt-10')}
                             >
-                                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
-                            </svg>
-                            TikTok · Automação com IA
-                        </div>
-
-                        <h2 className="mb-4 font-display text-6xl leading-[0.95] tracking-normal text-white lg:text-[80px]">
-                            Comece a automatizar
-                            <br />
-                            seu TikTok hoje.
-                        </h2>
-                        <p className="mx-auto mb-10 max-w-sm text-lg leading-relaxed font-medium text-[#666660]">
-                            Pare de depender de criadores. Tenha um sistema que
-                            gera e publica conteúdo viral todos os dias — no
-                            piloto automático.
-                        </p>
-                        <CtaButton
-                            href={ctaHref}
-                            className="py-2.5 pr-2.5 pl-9"
-                        >
-                            Criar minha máquina de conteúdo
-                        </CtaButton>
-                        <p className="mt-5 font-medium text-[#444440]">
-                            Sem cartão de crédito. Cancele quando quiser.
-                        </p>
-                    </FadeIn>
+                                Criar minha máquina de conteúdo
+                            </Link>
+                            <p className="mt-5 font-medium text-[#A1A1AA]">
+                                Sem cartão de crédito. Cancele quando quiser.
+                            </p>
+                        </Reveal>
+                    </div>
                 </section>
 
                 {/* ── FOOTER ── */}
-                <LandingFooter
-                    reachOutTitle="Precisa de ajuda?"
-                    contact={{
-                        title: 'Fale com a gente',
-                        subtitle: 'Respondemos em até 24h',
-                        href: 'https://wa.me/5527997798070?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20com%20o%20Slidezz.',
-                    }}
-                    columns={[
-                        {
-                            title: 'Explorar',
-                            links: [
-                                {
-                                    label: 'Como funciona',
-                                    href: '#como-funciona',
-                                },
-                                { label: 'Preços', href: '#pricing' },
-                            ],
-                        },
-                        {
-                            title: 'Ajuda',
-                            links: [
-                                { label: 'Perguntas frequentes', href: '#faq' },
-                                {
-                                    label: 'Contato',
-                                    href: 'mailto:contato@slidezz.app',
-                                },
-                            ],
-                        },
-                    ]}
-                    socialLabel="Redes sociais"
-                    rights="© 2026 Slidezz. Todos os direitos reservados."
-                    legal={[
-                        { label: 'Termos de Uso', href: '#' },
-                        { label: 'Privacidade', href: '#' },
-                        { label: 'Cookies', href: '#' },
-                    ]}
-                />
+                <Footer />
             </div>
         </>
     );

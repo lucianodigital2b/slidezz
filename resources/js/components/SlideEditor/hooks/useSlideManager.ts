@@ -22,6 +22,16 @@ export function useSlideManager(
         setSelectedId(null);
     }
 
+    // Insert one or more already-built slides right after the current one and
+    // select the first new slide. Used when each dropped image becomes its own slide.
+    function addSlidesWithElements(newSlides: Slide[]) {
+        if (newSlides.length === 0) return;
+        setSlides((prev) => [...prev.slice(0, currentIdx + 1), ...newSlides, ...prev.slice(currentIdx + 1)]);
+        setCurrentIdx(currentIdx + 1);
+        setSelectedId(newSlides[0].elements[0]?.id ?? null);
+        setTool('select');
+    }
+
     function deleteSlide(idx: number) {
         if (slides.length === 1) return;
         setSlides((prev) => prev.filter((_, i) => i !== idx));
@@ -83,6 +93,7 @@ export function useSlideManager(
         slide,
         updateSlide,
         addSlide,
+        addSlidesWithElements,
         deleteSlide,
         duplicateSlide,
         bringToFront,
