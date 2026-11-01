@@ -12,6 +12,10 @@ import {
     Copy,
     Trash2,
     CalendarClock,
+    Check,
+    ListChecks,
+    Users,
+    X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,6 +38,7 @@ import {
 } from '@/components/ui/tooltip';
 import { schedule } from '@/routes';
 import {
+    bulk as bulkSchedule,
     destroy as destroySchedule,
     duplicate as duplicateSchedule,
     store as storeSchedule,
@@ -208,12 +213,18 @@ function PostChip({
     onOpen,
     onDragEnd,
     compact = false,
+    selected = false,
+    selectMode = false,
+    onToggleSelect,
 }: {
     group: PostGroup;
     busy: boolean;
     onOpen: (group: PostGroup) => void;
     onDragEnd: () => void;
     compact?: boolean;
+    selected?: boolean;
+    selectMode?: boolean;
+    onToggleSelect?: (group: PostGroup) => void;
 }) {
     const status = groupStatus(group);
     const failed = group.members.filter((m) => m.status === 'failed');
@@ -226,7 +237,7 @@ function PostChip({
 
     return (
         <div
-            draggable={!busy}
+            draggable={!busy && !selectMode}
             onDragStart={(e) => {
                 e.dataTransfer.setData(
                     'text/schedule-id',
@@ -237,14 +248,24 @@ function PostChip({
                     : 'copy';
             }}
             onDragEnd={onDragEnd}
-            onClick={() => onOpen(group)}
-            className={`relative flex cursor-grab items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 active:cursor-grabbing ${
+            onClick={(e) => {
+                // Ctrl/Cmd+click selects without entering select mode first.
+                if (selectMode || e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    onToggleSelect?.(group);
+
+                    return;
+                }
+
+                onOpen(group);
+            }}
+            className={`relative flex items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 ${selectMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${
                 status === 'published'
                     ? 'border-green-200 bg-green-50 text-green-800'
                     : status === 'failed'
                       ? 'border-red-300 bg-red-50 text-red-800'
                       : 'border-blue-200 bg-blue-50 text-blue-800'
-            }`}
+            } ${selected ? 'ring-2 ring-gray-900 ring-inset' : ''}`}
         >
             {failed.length > 0 && (
                 <TooltipProvider delayDuration={100}>
@@ -286,6 +307,7 @@ function PostChip({
                     </Tooltip>
                 </TooltipProvider>
             )}
+            {selected && <Check className="mt-0.5 h-3 w-3 shrink-0" />}
             {providers.map((p) => (
                 <ProviderBadge key={p} provider={p} />
             ))}
@@ -317,16 +339,47 @@ function PostChip({
     );
 }
 
+// Falls back to the handle's initials when there is no avatar or the image
+// fails to load (expired CDN links are common).
+function AccountAvatar({
+    src,
+    handle,
+}: {
+    src: string | null;
+    handle: string;
+}) {
+    const [failed, setFailed] = useState(false);
+
+    if (src && !failed) {
+        return (
+            <img
+                src={src}
+                alt=""
+                onError={() => setFailed(true)}
+                className="h-6 w-6 shrink-0 rounded-full object-cover"
+            />
+        );
+    }
+
+    return (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold text-gray-600">
+            {handle.slice(0, 2).toUpperCase()}
+        </div>
+    );
+}
+
 function AccountPicker({
     accounts,
     selected,
     onChange,
     disabled = false,
+    showSelectAll = true,
 }: {
     accounts: SocialAccountOption[];
     selected: number[];
     onChange: (ids: number[]) => void;
     disabled?: boolean;
+    showSelectAll?: boolean;
 }) {
     if (accounts.length === 0) {
         return (
@@ -340,7 +393,7 @@ function AccountPicker({
 
     return (
         <div className="flex flex-col gap-1">
-            {accounts.length > 1 && !disabled && (
+            {showSelectAll && accounts.length > 1 && !disabled && (
                 <button
                     type="button"
                     className="self-end text-xs font-medium text-gray-500 hover:text-gray-900"
@@ -373,17 +426,10 @@ function AccountPicker({
                                     )
                                 }
                             />
-                            {account.avatar ? (
-                                <img
-                                    src={account.avatar}
-                                    alt=""
-                                    className="h-6 w-6 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold">
-                                    {account.handle.slice(0, 2).toUpperCase()}
-                                </div>
-                            )}
+                            <AccountAvatar
+                                src={account.avatar}
+                                handle={account.handle}
+                            />
                             <span className="truncate">@{account.handle}</span>
                             <ProviderBadge provider={account.provider} />
                         </label>
@@ -481,9 +527,15 @@ function DayHeader({ label, count }: { label: string; count: number }) {
 function PostRow({
     group,
     onOpen,
+    selected = false,
+    selectMode = false,
+    onToggleSelect,
 }: {
     group: PostGroup;
     onOpen: (group: PostGroup) => void;
+    selected?: boolean;
+    selectMode?: boolean;
+    onToggleSelect?: (group: PostGroup) => void;
 }) {
     const status = STATUS_PILL[groupStatus(group)] ?? STATUS_PILL.pending;
     const failed = group.members.filter((m) => m.status === 'failed');
@@ -494,9 +546,27 @@ function PostRow({
     return (
         <button
             type="button"
-            onClick={() => onOpen(group)}
-            className="flex w-full items-center gap-4 border-b border-gray-100 bg-white px-6 py-3 text-left transition-colors hover:bg-gray-50"
+            aria-pressed={selectMode ? selected : undefined}
+            onClick={(e) => {
+                if (selectMode || e.ctrlKey || e.metaKey) {
+                    onToggleSelect?.(group);
+
+                    return;
+                }
+
+                onOpen(group);
+            }}
+            className={`flex w-full items-center gap-4 border-b border-gray-100 px-6 py-3 text-left transition-colors hover:bg-gray-50 ${selected ? 'bg-gray-50' : 'bg-white'}`}
         >
+            {selectMode && (
+                // A look-alike, not the Checkbox component: a button can't hold a button.
+                <span
+                    aria-hidden
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border shadow-xs ${selected ? 'border-gray-900 bg-gray-900 text-white' : 'border-input bg-background'}`}
+                >
+                    {selected && <Check className="h-3 w-3" />}
+                </span>
+            )}
             <Thumb src={group.lead.content_project.images[0]} />
             <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
@@ -571,6 +641,14 @@ export default function Schedule({
     const [busy, setBusy] = useState(false);
     const [dragOverKey, setDragOverKey] = useState<string | null>(null);
     const [accountFilter, setAccountFilter] = useState<number | 'all'>('all');
+    // Bulk actions: lead ids of the selected posts.
+    const [selectMode, setSelectMode] = useState(false);
+    const [pickedIds, setSelected] = useState<number[]>([]);
+    const [bulkTime, setBulkTime] = useState('');
+    const [bulkTimeOpen, setBulkTimeOpen] = useState(false);
+    const [bulkAccounts, setBulkAccounts] = useState<number[]>([]);
+    const [bulkAccountsOpen, setBulkAccountsOpen] = useState(false);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     // The server decides what the calendar covers; navigation changes it.
     const calendarRange = range;
     const [now, setNow] = useState(new Date());
@@ -581,6 +659,49 @@ export default function Schedule({
 
         return () => window.clearInterval(id);
     }, []);
+
+    // Ignore selected posts that no longer exist (deleted, merged) after a reload.
+    const selected = useMemo(() => {
+        const ids = new Set(
+            [...schedules, ...queue, ...sent, ...drafts].map((s) => s.id),
+        );
+
+        return pickedIds.filter((id) => ids.has(id));
+    }, [pickedIds, schedules, queue, sent, drafts]);
+
+    const clearBulk = () => {
+        setSelected([]);
+        setSelectMode(false);
+        setBulkTimeOpen(false);
+        setBulkAccountsOpen(false);
+        setConfirmBulkDelete(false);
+    };
+
+    // Esc leaves select mode, unless it is closing a dialog.
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (
+                event.key === 'Escape' &&
+                !document.querySelector('[role="dialog"]')
+            ) {
+                clearBulk();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
+
+    const toggleSelect = (group: PostGroup) => {
+        setSelectMode(true);
+        setConfirmBulkDelete(false);
+        setSelected((current) =>
+            current.includes(group.lead.id)
+                ? current.filter((id) => id !== group.lead.id)
+                : [...current, group.lead.id],
+        );
+    };
 
     const today = now;
 
@@ -662,6 +783,9 @@ export default function Schedule({
 
         return options;
     }, [preview, socialAccounts]);
+    const allPreviewAccounts = previewAccountOptions.every((a) =>
+        previewAccounts.includes(a.id),
+    );
 
     const sameIds = (a: number[], b: number[]) =>
         a.length === b.length && a.every((id) => b.includes(id));
@@ -676,6 +800,21 @@ export default function Schedule({
             toast.error(Object.values(errs)[0] ?? 'Something went wrong.');
         },
     });
+
+    const submitBulk = (
+        action: 'delete' | 'time' | 'accounts',
+        payload: { time?: string; social_account_ids?: number[] } = {},
+    ) => {
+        router.post(
+            bulkSchedule().url,
+            { schedule_ids: selected, action, ...payload },
+            requestOptions(() => {
+                clearBulk();
+                setBulkTime('');
+                setBulkAccounts([]);
+            }),
+        );
+    };
 
     // publish_at goes to the server as UTC ISO, so the local time picked is the time it posts.
     const moveTo = (group: PostGroup, when: Date, onSuccess?: () => void) => {
@@ -995,6 +1134,22 @@ export default function Schedule({
                         <button className="p-2 text-gray-400 transition-colors hover:text-gray-600">
                             <CheckCircle2 className="h-5 w-5" />
                         </button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            aria-pressed={selectMode}
+                            className={
+                                selectMode
+                                    ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 hover:text-white'
+                                    : undefined
+                            }
+                            onClick={() =>
+                                selectMode ? clearBulk() : setSelectMode(true)
+                            }
+                        >
+                            <ListChecks className="mr-2 h-4 w-4" />
+                            {selectMode ? 'Done' : 'Select'}
+                        </Button>
                         <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
                             <button
                                 onClick={() => setView('list')}
@@ -1248,6 +1403,17 @@ export default function Schedule({
                                                                 {dayGroups.map(
                                                                     (group) => (
                                                                         <PostChip
+                                                                            selected={selected.includes(
+                                                                                group
+                                                                                    .lead
+                                                                                    .id,
+                                                                            )}
+                                                                            selectMode={
+                                                                                selectMode
+                                                                            }
+                                                                            onToggleSelect={
+                                                                                toggleSelect
+                                                                            }
                                                                             key={
                                                                                 group.key
                                                                             }
@@ -1487,6 +1653,17 @@ export default function Schedule({
                                                                                 group,
                                                                             ) => (
                                                                                 <PostChip
+                                                                                    selected={selected.includes(
+                                                                                        group
+                                                                                            .lead
+                                                                                            .id,
+                                                                                    )}
+                                                                                    selectMode={
+                                                                                        selectMode
+                                                                                    }
+                                                                                    onToggleSelect={
+                                                                                        toggleSelect
+                                                                                    }
                                                                                     key={
                                                                                         group.key
                                                                                     }
@@ -1623,6 +1800,11 @@ export default function Schedule({
                                         />
                                         {day.items.map((group) => (
                                             <PostRow
+                                                selected={selected.includes(
+                                                    group.lead.id,
+                                                )}
+                                                selectMode={selectMode}
+                                                onToggleSelect={toggleSelect}
                                                 key={group.key}
                                                 group={group}
                                                 onOpen={openPreview}
@@ -1737,11 +1919,166 @@ export default function Schedule({
                 )}
             </div>
 
+            {selectMode && (
+                <div
+                    role="toolbar"
+                    aria-label="Bulk actions"
+                    className="fixed bottom-6 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-1 rounded-xl border bg-background p-1.5 shadow-lg"
+                >
+                    <span className="px-3 text-sm font-medium tabular-nums">
+                        {selected.length === 0
+                            ? 'Click posts to select'
+                            : `${selected.length} selected`}
+                    </span>
+                    <div className="mx-1 h-5 w-px bg-gray-200" />
+                    {bulkTimeOpen ? (
+                        <div className="flex items-center gap-1">
+                            <input
+                                type="time"
+                                aria-label="New time"
+                                value={bulkTime}
+                                autoFocus
+                                onChange={(e) => setBulkTime(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && bulkTime) {
+                                        submitBulk('time', { time: bulkTime });
+                                    }
+                                }}
+                                className="h-8 rounded-md border border-input bg-background px-2 text-sm shadow-xs focus:ring-2 focus:ring-ring focus:outline-none"
+                            />
+                            <Button
+                                type="button"
+                                size="sm"
+                                disabled={
+                                    busy || !bulkTime || selected.length === 0
+                                }
+                                onClick={() =>
+                                    submitBulk('time', { time: bulkTime })
+                                }
+                            >
+                                Apply
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setBulkTimeOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy || selected.length === 0}
+                            onClick={() => {
+                                setBulkTimeOpen(true);
+                                setConfirmBulkDelete(false);
+                            }}
+                        >
+                            <CalendarClock className="mr-1.5 h-4 w-4" />
+                            Change time
+                        </Button>
+                    )}
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy || selected.length === 0}
+                        onClick={() => {
+                            setBulkAccountsOpen(true);
+                            setConfirmBulkDelete(false);
+                        }}
+                    >
+                        <Users className="mr-1.5 h-4 w-4" />
+                        Change accounts
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={confirmBulkDelete ? 'destructive' : 'ghost'}
+                        size="sm"
+                        className={
+                            confirmBulkDelete
+                                ? undefined
+                                : 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                        }
+                        disabled={busy || selected.length === 0}
+                        onClick={() =>
+                            confirmBulkDelete
+                                ? submitBulk('delete')
+                                : setConfirmBulkDelete(true)
+                        }
+                    >
+                        <Trash2 className="mr-1.5 h-4 w-4" />
+                        {confirmBulkDelete
+                            ? `Delete ${selected.length}`
+                            : 'Delete'}
+                    </Button>
+                    <div className="mx-1 h-5 w-px bg-gray-200" />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Leave select mode"
+                        onClick={clearBulk}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+
+            <Dialog open={bulkAccountsOpen} onOpenChange={setBulkAccountsOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Change accounts</DialogTitle>
+                        <DialogDescription>
+                            The {selected.length} selected{' '}
+                            {selected.length === 1 ? 'post' : 'posts'} will go
+                            out only on these accounts. Posts already published
+                            on some account are skipped.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <AccountPicker
+                        accounts={socialAccounts}
+                        selected={bulkAccounts}
+                        onChange={setBulkAccounts}
+                        disabled={busy}
+                    />
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => setBulkAccountsOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={busy || bulkAccounts.length === 0}
+                            onClick={() =>
+                                submitBulk('accounts', {
+                                    social_account_ids: bulkAccounts,
+                                })
+                            }
+                        >
+                            Apply
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog
                 open={preview !== null}
                 onOpenChange={(open) => !open && setPreview(null)}
             >
-                <DialogContent className="sm:max-w-[640px]">
+                <DialogContent
+                    side="bottom"
+                    className="flex flex-col"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                >
                     {preview && (
                         <>
                             <DialogHeader>
@@ -1762,7 +2099,7 @@ export default function Schedule({
                                 </DialogDescription>
                             </DialogHeader>
                             {preview.lead.content_project.images.length > 0 && (
-                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                <div className="flex justify-center gap-3">
                                     {preview.lead.content_project.images.map(
                                         (src, i) => (
                                             <a
@@ -1770,127 +2107,179 @@ export default function Schedule({
                                                 href={src}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="shrink-0"
+                                                className="min-w-0 flex-1"
+                                                style={{
+                                                    maxWidth:
+                                                        'calc(58vh * 9 / 16)',
+                                                }}
                                             >
                                                 <img
                                                     src={src}
                                                     alt={`Slide ${i + 1}`}
-                                                    className="h-72 w-auto rounded-md border border-gray-200"
+                                                    className="h-auto w-full rounded-lg border border-gray-200"
                                                 />
                                             </a>
                                         ),
                                     )}
                                 </div>
                             )}
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                    <label
-                                        htmlFor="preview_caption"
-                                        className="text-sm font-medium"
-                                    >
-                                        Caption
-                                    </label>
-                                    {previewCaption && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                copyCaption(previewCaption)
-                                            }
+                            <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                                <section className="flex flex-col gap-2">
+                                    <div className="flex h-8 items-center justify-between">
+                                        <label
+                                            htmlFor="preview_caption"
+                                            className="text-sm font-medium"
                                         >
-                                            {copied ? 'Copied' : 'Copy caption'}
-                                        </Button>
-                                    )}
-                                </div>
-                                {isMovable(preview) ? (
-                                    <>
-                                        <Textarea
-                                            id="preview_caption"
-                                            value={previewCaption}
-                                            maxLength={CAPTION_MAX}
-                                            rows={4}
-                                            disabled={busy}
-                                            onChange={(e) =>
-                                                setPreviewCaption(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="No caption."
-                                            className="max-h-64 text-sm"
-                                        />
-                                        <p className="text-right text-xs text-gray-400">
-                                            {previewCaption.length}/
-                                            {CAPTION_MAX}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <pre className="max-h-64 overflow-y-auto rounded-md bg-gray-50 p-3 font-sans text-sm whitespace-pre-wrap text-gray-800">
-                                        {preview.lead.content_project.caption ||
-                                            'No caption.'}
-                                    </pre>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
-                                <span className="text-sm font-medium">
-                                    Accounts
-                                </span>
-                                {isEditable(preview) ? (
-                                    <AccountPicker
-                                        accounts={previewAccountOptions}
-                                        selected={previewAccounts}
-                                        onChange={setPreviewAccounts}
-                                        disabled={busy}
-                                    />
-                                ) : (
-                                    <ul className="flex flex-col gap-1.5">
-                                        {preview.members.map((m) => (
-                                            <li
-                                                key={m.id}
-                                                className="flex flex-col gap-0.5 text-sm"
+                                            Caption
+                                        </label>
+                                        {previewCaption && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-gray-600"
+                                                onClick={() =>
+                                                    copyCaption(previewCaption)
+                                                }
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <ProviderBadge
-                                                        provider={
-                                                            m.social_account
-                                                                .provider
-                                                        }
-                                                    />
-                                                    <span>
-                                                        @
-                                                        {
-                                                            m.social_account
-                                                                .handle
-                                                        }
-                                                    </span>
-                                                    <span
-                                                        className={`ml-auto rounded-full px-2 py-0.5 text-xs ${m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
-                                                    >
-                                                        {m.status}
-                                                    </span>
-                                                </div>
-                                                {m.error_log && (
-                                                    <p className="text-xs text-red-600">
-                                                        {m.error_log}
-                                                    </p>
+                                                {copied ? (
+                                                    <Check className="mr-1.5 h-3.5 w-3.5" />
+                                                ) : (
+                                                    <Copy className="mr-1.5 h-3.5 w-3.5" />
                                                 )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {isEditable(preview) &&
-                                    previewAccounts.length === 0 && (
-                                        <p className="text-xs text-amber-700">
-                                            Pick at least one account to save.
-                                            To cancel the post, delete it.
-                                        </p>
+                                                {copied ? 'Copied' : 'Copy'}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {isMovable(preview) ? (
+                                        <>
+                                            <Textarea
+                                                id="preview_caption"
+                                                value={previewCaption}
+                                                maxLength={CAPTION_MAX}
+                                                rows={6}
+                                                disabled={busy}
+                                                onChange={(e) =>
+                                                    setPreviewCaption(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="No caption."
+                                                className="min-h-36 resize-y text-sm leading-relaxed"
+                                            />
+                                            <p className="text-right text-xs text-gray-400 tabular-nums">
+                                                {previewCaption.length}/
+                                                {CAPTION_MAX}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <pre className="min-h-36 overflow-y-auto rounded-md border border-input bg-gray-50 px-3 py-2 font-sans text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+                                            {preview.lead.content_project
+                                                .caption || 'No caption.'}
+                                        </pre>
                                     )}
-                                {isEditable(preview) &&
-                                    preview.members.some(
-                                        (m) => m.error_log,
-                                    ) && (
-                                        <div className="flex flex-col gap-1">
-                                            {preview.members
+                                </section>
+
+                                <div className="flex flex-col gap-3">
+                                    <section className="flex flex-col gap-2">
+                                        <div className="flex h-8 items-center justify-between">
+                                            <span className="text-sm font-medium">
+                                                Accounts
+                                            </span>
+                                            {isEditable(preview) &&
+                                                previewAccountOptions.length >
+                                                    1 && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 text-gray-600"
+                                                        disabled={busy}
+                                                        onClick={() =>
+                                                            setPreviewAccounts(
+                                                                allPreviewAccounts
+                                                                    ? []
+                                                                    : previewAccountOptions.map(
+                                                                          (a) =>
+                                                                              a.id,
+                                                                      ),
+                                                            )
+                                                        }
+                                                    >
+                                                        {allPreviewAccounts
+                                                            ? 'Clear'
+                                                            : 'Select all'}
+                                                    </Button>
+                                                )}
+                                        </div>
+                                        {isEditable(preview) ? (
+                                            <AccountPicker
+                                                accounts={previewAccountOptions}
+                                                selected={previewAccounts}
+                                                onChange={setPreviewAccounts}
+                                                disabled={busy}
+                                                showSelectAll={false}
+                                            />
+                                        ) : (
+                                            <ul className="flex flex-col gap-0.5 rounded-md border border-input p-1">
+                                                {preview.members.map((m) => (
+                                                    <li
+                                                        key={m.id}
+                                                        className="flex flex-col gap-0.5 px-2 py-1.5 text-sm"
+                                                    >
+                                                        <div className="flex items-center gap-2.5">
+                                                            <AccountAvatar
+                                                                src={
+                                                                    m
+                                                                        .social_account
+                                                                        .avatar
+                                                                }
+                                                                handle={
+                                                                    m
+                                                                        .social_account
+                                                                        .handle
+                                                                }
+                                                            />
+                                                            <span className="truncate">
+                                                                @
+                                                                {
+                                                                    m
+                                                                        .social_account
+                                                                        .handle
+                                                                }
+                                                            </span>
+                                                            <ProviderBadge
+                                                                provider={
+                                                                    m
+                                                                        .social_account
+                                                                        .provider
+                                                                }
+                                                            />
+                                                            <span
+                                                                className={`ml-auto rounded-full px-2 py-0.5 text-xs ${m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
+                                                            >
+                                                                {m.status}
+                                                            </span>
+                                                        </div>
+                                                        {m.error_log && (
+                                                            <p className="text-xs text-red-600">
+                                                                {m.error_log}
+                                                            </p>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        {isEditable(preview) &&
+                                            previewAccounts.length === 0 && (
+                                                <p className="text-xs text-amber-700">
+                                                    Pick at least one account to
+                                                    save. To cancel the post,
+                                                    delete it.
+                                                </p>
+                                            )}
+                                        {isEditable(preview) &&
+                                            preview.members
                                                 .filter((m) => m.error_log)
                                                 .map((m) => (
                                                     <p
@@ -1912,17 +2301,54 @@ export default function Schedule({
                                                         {m.error_log}
                                                     </p>
                                                 ))}
-                                        </div>
-                                    )}
+                                    </section>
+
+                                    <p className="text-xs leading-relaxed text-gray-500">
+                                        {isEditable(preview)
+                                            ? 'Drag a post to another day to move it. Hold Alt or Ctrl while dropping to duplicate.'
+                                            : isMovable(preview)
+                                              ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
+                                              : `This post is ${groupStatus(preview)}, so it can only be duplicated.`}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
-                                <label
-                                    htmlFor="preview_publish_at"
-                                    className="text-sm font-medium"
-                                >
-                                    Date & time
-                                </label>
-                                <div className="flex flex-wrap items-center gap-2">
+
+                            <div className="sticky bottom-0 -mx-6 mt-auto -mb-6 flex items-center gap-2 border-t bg-background px-6 py-4 sm:-mx-10 sm:px-10">
+                                {preview.members.some(
+                                    (m) => m.status !== 'publishing',
+                                ) && (
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            confirmDelete
+                                                ? 'destructive'
+                                                : 'ghost'
+                                        }
+                                        className={
+                                            confirmDelete
+                                                ? undefined
+                                                : 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                                        }
+                                        disabled={busy}
+                                        onClick={() =>
+                                            confirmDelete
+                                                ? deleteItem(preview)
+                                                : setConfirmDelete(true)
+                                        }
+                                    >
+                                        <Trash2 className="mr-1.5 h-4 w-4" />
+                                        {confirmDelete
+                                            ? 'Confirm delete'
+                                            : 'Delete'}
+                                    </Button>
+                                )}
+                                <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                                    <label
+                                        htmlFor="preview_publish_at"
+                                        className="mr-1 text-sm text-gray-500"
+                                    >
+                                        Publish at
+                                    </label>
                                     <input
                                         type="datetime-local"
                                         id="preview_publish_at"
@@ -1931,13 +2357,26 @@ export default function Schedule({
                                         onChange={(e) =>
                                             setPreviewAt(e.target.value)
                                         }
-                                        className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                                        className="mr-2 flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:ring-2 focus:ring-ring focus:outline-none"
                                     />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={busy || !previewAt}
+                                        onClick={() =>
+                                            duplicateTo(
+                                                preview,
+                                                new Date(previewAt),
+                                                () => setPreview(null),
+                                            )
+                                        }
+                                    >
+                                        <Copy className="mr-1.5 h-4 w-4" />
+                                        Duplicate
+                                    </Button>
                                     {isMovable(preview) && (
                                         <Button
                                             type="button"
-                                            variant="outline"
-                                            size="sm"
                                             disabled={
                                                 busy ||
                                                 !previewAt ||
@@ -1948,63 +2387,11 @@ export default function Schedule({
                                             }
                                             onClick={() => savePreview(preview)}
                                         >
-                                            <CalendarClock className="mr-1.5 h-4 w-4" />{' '}
-                                            Save
-                                        </Button>
-                                    )}
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={busy || !previewAt}
-                                        onClick={() =>
-                                            duplicateTo(
-                                                preview,
-                                                new Date(previewAt),
-                                                () => setPreview(null),
-                                            )
-                                        }
-                                    >
-                                        <Copy className="mr-1.5 h-4 w-4" />{' '}
-                                        Duplicate
-                                    </Button>
-                                    {preview.members.some(
-                                        (m) => m.status !== 'publishing',
-                                    ) && (
-                                        <Button
-                                            type="button"
-                                            variant={
-                                                confirmDelete
-                                                    ? 'destructive'
-                                                    : 'outline'
-                                            }
-                                            size="sm"
-                                            className={
-                                                confirmDelete
-                                                    ? 'ml-auto'
-                                                    : 'ml-auto text-red-600 hover:text-red-700'
-                                            }
-                                            disabled={busy}
-                                            onClick={() =>
-                                                confirmDelete
-                                                    ? deleteItem(preview)
-                                                    : setConfirmDelete(true)
-                                            }
-                                        >
-                                            <Trash2 className="mr-1.5 h-4 w-4" />{' '}
-                                            {confirmDelete
-                                                ? 'Confirm delete'
-                                                : 'Delete'}
+                                            <CalendarClock className="mr-1.5 h-4 w-4" />
+                                            Save changes
                                         </Button>
                                     )}
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                    {isEditable(preview)
-                                        ? 'Tip: drag a post to another day to move it, hold Alt or Ctrl while dropping to duplicate.'
-                                        : isMovable(preview)
-                                          ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
-                                          : `This post is ${groupStatus(preview)}, so it can only be duplicated.`}
-                                </p>
                             </div>
                         </>
                     )}

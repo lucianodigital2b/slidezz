@@ -649,6 +649,126 @@ class ScheduleControllerTest extends TestCase
         $this->assertModelExists($third);
     }
 
+    public function test_bulk_delete_skips_the_members_being_published(): void
+    {
+        [$user, $pending, $publishing] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Publishing]);
+        [, $other] = $this->scheduleFor(ScheduleStatus::Failed);
+        $other->update(['social_account_id' => SocialAccount::factory()->create(['workspace_id' => $pending->socialAccount->workspace_id])->id]);
+
+        $this->actingAs($user)
+            ->from('/schedule')
+            ->post('/schedule/bulk', ['schedule_ids' => [$pending->id, $other->id], 'action' => 'delete'])
+            ->assertRedirect('/schedule');
+
+        $this->assertModelMissing($pending);
+        $this->assertModelMissing($other);
+        $this->assertModelExists($publishing);
+    }
+
+    public function test_bulk_time_sets_the_time_of_day_and_keeps_each_day(): void
+    {
+        [$user, $first] = $this->scheduleFor(ScheduleStatus::Pending);
+        $second = Schedule::factory()->create([
+            'social_account_id' => $first->social_account_id,
+            'content_project_id' => $first->content_project_id,
+            'publish_at' => now()->addDays(10)->setTime(18, 0),
+            'status' => ScheduleStatus::Failed,
+            'error_log' => 'boom',
+        ]);
+        $first->update(['publish_at' => now()->addDays(3)->setTime(15, 0)]);
+
+        $this->actingAs($user)
+            ->withUnencryptedCookie('tz', 'America/Sao_Paulo')
+            ->from('/schedule')
+            ->post('/schedule/bulk', ['schedule_ids' => [$first->id, $second->id], 'action' => 'time', 'time' => '21:30'])
+            ->assertRedirect('/schedule');
+
+        foreach ([[$first, 3], [$second, 10]] as [$schedule, $days]) {
+            $local = $schedule->fresh()->publish_at->copy()->setTimezone('America/Sao_Paulo');
+            $this->assertSame('21:30', $local->format('H:i'));
+            $this->assertTrue($local->isSameDay(now()->addDays($days)->setTime(15, 0)->setTimezone('America/Sao_Paulo')));
+        }
+
+        $this->assertSame(ScheduleStatus::Pending, $second->fresh()->status);
+        $this->assertNull($second->fresh()->error_log);
+    }
+
+    public function test_bulk_time_skips_posts_whose_new_time_is_in_the_past(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Failed);
+        $before = now()->subDay()->setTime(10, 0)->startOfMinute();
+        $schedule->update(['publish_at' => $before]);
+
+        $this->actingAs($user)
+            ->from('/schedule')
+            ->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'time', 'time' => '09:00'])
+            ->assertRedirect('/schedule');
+
+        $this->assertTrue($schedule->fresh()->publish_at->equalTo($before));
+    }
+
+    public function test_bulk_accounts_replaces_the_accounts_of_each_post(): void
+    {
+        [$user, $kept, $dropped] = $this->groupFor([ScheduleStatus::Pending, ScheduleStatus::Pending]);
+        $added = SocialAccount::factory()->create(['workspace_id' => $kept->socialAccount->workspace_id]);
+
+        $this->actingAs($user)
+            ->from('/schedule')
+            ->post('/schedule/bulk', [
+                'schedule_ids' => [$kept->id],
+                'action' => 'accounts',
+                'social_account_ids' => [$kept->social_account_id, $added->id],
+            ])
+            ->assertRedirect('/schedule');
+
+        $this->assertModelMissing($dropped);
+        $this->assertEqualsCanonicalizing(
+            [$kept->social_account_id, $added->id],
+            Schedule::where('group_id', $kept->group_id)->pluck('social_account_id')->all(),
+        );
+    }
+
+    public function test_bulk_accounts_skips_posts_already_out_on_some_account(): void
+    {
+        [$user, $published, $pending] = $this->groupFor([ScheduleStatus::Published, ScheduleStatus::Pending]);
+        $added = SocialAccount::factory()->create(['workspace_id' => $pending->socialAccount->workspace_id]);
+
+        $this->actingAs($user)
+            ->from('/schedule')
+            ->post('/schedule/bulk', [
+                'schedule_ids' => [$published->id],
+                'action' => 'accounts',
+                'social_account_ids' => [$added->id],
+            ])
+            ->assertRedirect('/schedule');
+
+        $this->assertModelExists($published);
+        $this->assertModelExists($pending);
+        $this->assertSame(2, Schedule::count());
+    }
+
+    public function test_bulk_rejects_posts_from_another_users_workspace(): void
+    {
+        [, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+
+        $this->actingAs(User::factory()->create())
+            ->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'delete'])
+            ->assertForbidden();
+
+        $this->assertModelExists($schedule);
+    }
+
+    public function test_bulk_validates_the_payload(): void
+    {
+        [$user, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
+        $this->actingAs($user);
+
+        $this->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'time'])->assertSessionHasErrors('time');
+        $this->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'accounts'])->assertSessionHasErrors('social_account_ids');
+        $this->post('/schedule/bulk', ['schedule_ids' => [], 'action' => 'delete'])->assertSessionHasErrors('schedule_ids');
+        $this->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'nope'])->assertSessionHasErrors('action');
+    }
+
     /**
      * One post scheduled to one account per status, all in the same group.
      *

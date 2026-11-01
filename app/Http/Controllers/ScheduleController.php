@@ -7,6 +7,7 @@ use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Models\Workspace;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -133,6 +134,64 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Delete, retime or change the accounts of many posts at once. Takes one
+     * schedule id per post (the group lead); groups are deduplicated.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'schedule_ids' => ['required', 'array', 'min:1', 'max:200'],
+            'schedule_ids.*' => ['integer', 'distinct'],
+            'action' => ['required', 'in:delete,time,accounts'],
+            'time' => ['required_if:action,time', 'nullable', 'date_format:H:i'],
+            'social_account_ids' => ['required_if:action,accounts', 'array', 'min:1'],
+            'social_account_ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $workspaceIds = $this->workspaceIdsForUser($request);
+        $schedules = Schedule::with('socialAccount')
+            ->whereIn('id', $validated['schedule_ids'])
+            ->get();
+
+        foreach ($schedules as $schedule) {
+            abort_unless($workspaceIds->contains($schedule->socialAccount->workspace_id), 403);
+        }
+
+        $leads = $schedules->unique('group_id');
+
+        $accounts = $validated['action'] === 'accounts'
+            ? $this->workspaceAccounts($workspaceIds, $validated['social_account_ids'])
+            : null;
+
+        $timezone = $this->viewerTimezone($request);
+        $applied = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($leads, $validated, $accounts, $timezone, &$applied, &$skipped) {
+            foreach ($leads as $lead) {
+                $done = match ($validated['action']) {
+                    'delete' => $this->deleteGroupRows($lead) > 0,
+                    'time' => $this->retimeGroup($lead, $validated['time'], $timezone),
+                    'accounts' => $this->replaceGroupAccounts($lead, $accounts),
+                };
+
+                $done ? $applied++ : $skipped++;
+            }
+        });
+
+        $verb = $validated['action'] === 'delete' ? 'deleted' : 'updated';
+        $message = $applied.' '.($applied === 1 ? 'post' : 'posts')." {$verb}.";
+
+        if ($skipped > 0) {
+            $message .= " {$skipped} skipped (already published or in the past).";
+        }
+
+        Inertia::flash('toast', ['type' => $applied > 0 ? 'success' : 'error', 'message' => $message]);
+
+        return back();
+    }
+
+    /**
      * Change the time, the accounts and/or the caption of a scheduled post. Acts
      * on the whole group; when some accounts already published it, only the
      * pending or failed ones move, and they split off into a group of their own.
@@ -169,8 +228,7 @@ class ScheduleController extends Controller
         if (isset($validated['social_account_ids'])) {
             abort_if($movable->count() !== $members->count(), 422, 'This post already went out on some accounts. Duplicate it to pick other accounts.');
 
-            $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
-            $accounts = $this->workspaceAccounts($workspaceIds, $validated['social_account_ids']);
+            $accounts = $this->workspaceAccounts($this->workspaceIdsForUser($request), $validated['social_account_ids']);
         }
 
         $publishAt = isset($validated['publish_at'])
@@ -187,28 +245,13 @@ class ScheduleController extends Controller
             foreach ($movable as $member) {
                 $member->group_id = $groupId;
                 if (isset($validated['publish_at'])) {
-                    // Moving a failed post re-queues it for the new time.
-                    $member->publish_at = $publishAt;
-                    $member->status = ScheduleStatus::Pending;
-                    $member->error_log = null;
+                    $this->requeue($member, $publishAt);
                 }
                 $member->save();
             }
 
-            if ($accounts === null) {
-                return;
-            }
-
-            $movable->whereNotIn('social_account_id', $accounts->pluck('id'))->each->delete();
-
-            foreach ($accounts->whereNotIn('id', $movable->pluck('social_account_id')) as $account) {
-                Schedule::create([
-                    'group_id' => $groupId,
-                    'content_project_id' => $schedule->content_project_id,
-                    'social_account_id' => $account->id,
-                    'publish_at' => $publishAt,
-                    'status' => ScheduleStatus::Pending,
-                ]);
+            if ($accounts !== null) {
+                $this->syncAccounts($movable, $accounts, $groupId, $schedule->content_project_id, $publishAt);
             }
         });
 
@@ -255,12 +298,7 @@ class ScheduleController extends Controller
     {
         $this->authorizeWorkspace($request, $schedule);
 
-        $deletable = $schedule->group()->get()
-            ->reject(fn (Schedule $s) => $s->status === ScheduleStatus::Publishing);
-
-        abort_if($deletable->isEmpty(), 422, 'This post is being published right now.');
-
-        $deletable->each->delete();
+        abort_if($this->deleteGroupRows($schedule) === 0, 422, 'This post is being published right now.');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Post deleted.']);
 
@@ -346,11 +384,116 @@ class ScheduleController extends Controller
             : config('app.timezone');
     }
 
+    /**
+     * @return Collection<int, int>
+     */
+    private function workspaceIdsForUser(Request $request): Collection
+    {
+        return Workspace::where('owner_id', $request->user()->id)->pluck('id');
+    }
+
     private function authorizeWorkspace(Request $request, Schedule $schedule): void
     {
-        $workspaceIds = Workspace::where('owner_id', $request->user()->id)->pluck('id');
+        abort_unless($this->workspaceIdsForUser($request)->contains($schedule->socialAccount->workspace_id), 403);
+    }
 
-        abort_unless($workspaceIds->contains($schedule->socialAccount->workspace_id), 403);
+    /**
+     * Deletes every member of the post except the ones being published right
+     * now. Returns how many were deleted.
+     */
+    private function deleteGroupRows(Schedule $schedule): int
+    {
+        $deletable = $schedule->group()->get()
+            ->reject(fn (Schedule $s) => $s->status === ScheduleStatus::Publishing);
+
+        $deletable->each->delete();
+
+        return $deletable->count();
+    }
+
+    /**
+     * Moving a failed post re-queues it for the new time. Does not save.
+     */
+    private function requeue(Schedule $member, CarbonInterface $publishAt): void
+    {
+        $member->publish_at = $publishAt;
+        $member->status = ScheduleStatus::Pending;
+        $member->error_log = null;
+    }
+
+    /**
+     * Makes the post go out only on $accounts: drops the members on other
+     * accounts and adds one for each new account.
+     *
+     * @param  Collection<int, Schedule>  $movable
+     * @param  Collection<int, SocialAccount>  $accounts
+     */
+    private function syncAccounts(Collection $movable, Collection $accounts, string $groupId, int $contentProjectId, CarbonInterface $publishAt): void
+    {
+        $movable->whereNotIn('social_account_id', $accounts->pluck('id'))->each->delete();
+
+        foreach ($accounts->whereNotIn('id', $movable->pluck('social_account_id')) as $account) {
+            Schedule::create([
+                'group_id' => $groupId,
+                'content_project_id' => $contentProjectId,
+                'social_account_id' => $account->id,
+                'publish_at' => $publishAt,
+                'status' => ScheduleStatus::Pending,
+            ]);
+        }
+    }
+
+    /**
+     * Bulk "change time": same time of day in the viewer's timezone, each post
+     * keeps its own day. Skips the post when the new time would be in the past.
+     * Members already published stay; the moved ones split into their own group.
+     */
+    private function retimeGroup(Schedule $lead, string $time, string $timezone): bool
+    {
+        $members = $lead->group()->get();
+        $movable = $members->filter(fn (Schedule $s) => $s->isMovable());
+
+        if ($movable->isEmpty()) {
+            return false;
+        }
+
+        $publishAt = $movable->first()->publish_at->copy()
+            ->setTimezone($timezone)
+            ->setTimeFromTimeString($time)
+            ->utc();
+
+        if ($publishAt->isPast()) {
+            return false;
+        }
+
+        $groupId = $movable->count() === $members->count() ? $lead->group_id : (string) Str::uuid();
+
+        foreach ($movable as $member) {
+            $member->group_id = $groupId;
+            $this->requeue($member, $publishAt);
+            $member->save();
+        }
+
+        return true;
+    }
+
+    /**
+     * Bulk "change accounts". Only for posts not yet out on any account and
+     * still in the future, same rule as update().
+     *
+     * @param  Collection<int, SocialAccount>  $accounts
+     */
+    private function replaceGroupAccounts(Schedule $lead, Collection $accounts): bool
+    {
+        $members = $lead->group()->get();
+
+        if ($members->isEmpty() || $members->contains(fn (Schedule $s) => ! $s->isMovable()) || $lead->publish_at->isPast()) {
+            return false;
+        }
+
+        $this->syncAccounts($members, $accounts, $lead->group_id, $lead->content_project_id, $lead->publish_at);
+
+        return true;
     }
 
     /**

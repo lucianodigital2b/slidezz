@@ -175,6 +175,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
     Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
+    Route::post('schedule/bulk', [ScheduleController::class, 'bulk'])->name('schedule.bulk');
     Route::patch('schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
     Route::post('schedule/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->name('schedule.duplicate');
     Route::delete('schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
