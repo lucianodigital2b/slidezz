@@ -207,6 +207,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::patch('ugc/videos/{video}', [UgcCampaignController::class, 'updateVideo'])->name('ugc.videos.update');
     Route::delete('ugc/videos/{video}', [UgcCampaignController::class, 'destroyVideo'])->name('ugc.videos.destroy');
     Route::post('ugc/creators', [UgcCampaignController::class, 'storeCreator'])->name('ugc.creators.store');
+    Route::post('ugc/{campaign}/payouts', [UgcCampaignController::class, 'payCreator'])->name('ugc.payouts.pay');
 
     Route::post('credits/purchase', [CreditController::class, 'purchase'])->name('credits.purchase');
     Route::post('lifetime/purchase', [LifetimeController::class, 'purchase'])->name('lifetime.purchase');

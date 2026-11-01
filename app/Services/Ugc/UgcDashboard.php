@@ -23,7 +23,7 @@ class UgcDashboard
     public function overview(int $workspaceId, int $days): array
     {
         $campaigns = UgcCampaign::where('workspace_id', $workspaceId)
-            ->with(['videos.creator'])
+            ->with(['videos.creator', 'videos.snapshots' => self::snapshotColumns(...)])
             ->orderByDesc('created_at')
             ->get();
 
@@ -45,21 +45,40 @@ class UgcDashboard
      */
     public function forCampaign(UgcCampaign $campaign, int $days): array
     {
-        $campaign->loadMissing(['videos.creator']);
+        $campaign->loadMissing(['videos.creator', 'videos.snapshots' => self::snapshotColumns(...)]);
         $videos = $campaign->videos;
         $single = collect([$campaign]);
+        $fallbackAnchor = self::fallbackAnchor($videos);
 
         return [
             'kpis' => $this->kpis($single, $videos, $campaign),
             'timeseries' => $this->viewsOverTime($videos, $days),
             'platforms' => $this->platformSplit($videos),
             'creators' => $this->creatorLeaderboard($campaign, $videos),
+            'payouts' => $this->payoutSchedule($campaign, $videos, $fallbackAnchor),
             'videos' => $videos
                 ->sortByDesc('views')
                 ->values()
-                ->map(fn (TrackedVideo $v) => $this->videoRow($campaign, $v))
+                ->map(fn (TrackedVideo $v) => $this->videoRow($campaign, $v, $fallbackAnchor))
                 ->all(),
         ];
+    }
+
+    /** Only what payableViews() needs from the snapshot history. */
+    private static function snapshotColumns($query): void
+    {
+        $query->select(['id', 'tracked_video_id', 'views', 'captured_at']);
+    }
+
+    /**
+     * Without a payday set on the campaign, the payout series starts on the
+     * earliest day a video finalizes.
+     *
+     * @param  Collection<int, TrackedVideo>  $videos
+     */
+    public static function fallbackAnchor(Collection $videos): ?CarbonImmutable
+    {
+        return $videos->map(fn (TrackedVideo $v) => $v->finalizesAt()->startOfDay())->min();
     }
 
     /**
@@ -74,7 +93,7 @@ class UgcDashboard
         $comments = (int) $videos->sum('comments');
         $shares = (int) $videos->sum('shares');
 
-        $spend = $videos->sum(fn (TrackedVideo $v) => ($campaign ?? $v->campaign)->payoutForCents($v));
+        $spend = $videos->sum(fn (TrackedVideo $v) => ($campaign ?? $v->campaign)->payoutForCents($v, $v->payableViews()));
 
         return [
             'campaigns' => $campaigns->count(),
@@ -208,7 +227,7 @@ class UgcDashboard
                     'avatar' => $creator?->avatar,
                     'videos' => $group->count(),
                     'views' => (int) $group->sum('views'),
-                    'spend_cents' => (int) $group->sum(fn (TrackedVideo $v) => $campaign->payoutForCents($v)),
+                    'spend_cents' => (int) $group->sum(fn (TrackedVideo $v) => $campaign->payoutForCents($v, $v->payableViews())),
                 ];
             })
             ->sortByDesc('views')
@@ -219,9 +238,66 @@ class UgcDashboard
     /**
      * @return array<string, mixed>
      */
-    private function videoRow(UgcCampaign $campaign, TrackedVideo $v): array
+    /**
+     * One row per creator: when she gets paid next and how much, what is owed
+     * right now (finalized, payday reached, not paid), everything still open
+     * (estimates included) and what was already paid.
+     *
+     * @param  Collection<int, TrackedVideo>  $videos
+     * @return list<array<string, mixed>>
+     */
+    private function payoutSchedule(UgcCampaign $campaign, Collection $videos, ?CarbonImmutable $fallbackAnchor): array
     {
+        $today = CarbonImmutable::now()->startOfDay();
+
+        return $videos->groupBy(fn (TrackedVideo $v) => $v->ugc_creator_id ?? 0)
+            ->map(function (Collection $group) use ($campaign, $fallbackAnchor, $today) {
+                $creator = $group->first()->creator;
+                [$paid, $unpaid] = $group->partition(fn (TrackedVideo $v) => $v->paid_at !== null);
+
+                $open = $unpaid->map(fn (TrackedVideo $v) => [
+                    'payday' => $campaign->paydayFor($v->finalizesAt(), $fallbackAnchor)?->toDateString(),
+                    'final' => $v->isFinalized(),
+                    'cents' => $campaign->payoutForCents($v, $v->payableViews()),
+                ]);
+
+                $next = $open->pluck('payday')->filter()->min();
+                $nextBatch = $open->where('payday', $next);
+
+                $due = $open->filter(fn (array $r) => $r['final'] && $r['payday'] !== null && $r['payday'] <= $today->toDateString());
+                $duePayday = $due->pluck('payday')->min();
+
+                return [
+                    'creator_id' => $creator?->id,
+                    'name' => $creator?->name ?? 'Sem criadora',
+                    'handle' => $creator?->handle,
+                    'videos' => $group->count(),
+                    'next_payout_on' => $next,
+                    'next_payout_cents' => (int) $nextBatch->sum('cents'),
+                    'next_payout_final' => $nextBatch->isNotEmpty() && $nextBatch->every(fn (array $r) => $r['final']),
+                    'due_cents' => (int) $due->sum('cents'),
+                    'due_payout_on' => $duePayday,
+                    'open_cents' => (int) $open->sum('cents'),
+                    'paid_cents' => (int) $paid->sum(fn (TrackedVideo $v) => $campaign->payoutForCents($v, $v->payableViews())),
+                    'last_paid_at' => $paid->max(fn (TrackedVideo $v) => $v->paid_at->toDateString()),
+                ];
+            })
+            ->sortBy([
+                fn (array $a, array $b) => ($a['next_payout_on'] ?? '9999-12-31') <=> ($b['next_payout_on'] ?? '9999-12-31'),
+                fn (array $a, array $b) => strcmp($a['name'], $b['name']),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function videoRow(UgcCampaign $campaign, TrackedVideo $v, ?CarbonImmutable $fallbackAnchor = null): array
+    {
+        $finalizesAt = $v->finalizesAt();
+
         return [
+            'finalizes_on' => $finalizesAt->toDateString(),
+            'payout_on' => $campaign->paydayFor($finalizesAt, $fallbackAnchor)?->toDateString(),
+            'finalized' => $v->isFinalized(),
             'id' => $v->id,
             'platform' => $v->platform,
             'url' => $v->url,
@@ -239,7 +315,7 @@ class UgcDashboard
             'engagement_rate' => $v->engagementRate(),
             'fetch_status' => $v->fetch_status,
             'last_synced_at' => $v->last_synced_at?->toISOString(),
-            'payout_cents' => $campaign->payoutForCents($v),
+            'payout_cents' => $campaign->payoutForCents($v, $v->payableViews()),
             'payout_override_cents' => $v->payout_override_cents,
             'paid' => $v->paid_at !== null,
         ];
@@ -252,7 +328,7 @@ class UgcDashboard
     {
         $videos = $c->videos;
         $views = (int) $videos->sum('views');
-        $spend = (int) $videos->sum(fn (TrackedVideo $v) => $c->payoutForCents($v));
+        $spend = (int) $videos->sum(fn (TrackedVideo $v) => $c->payoutForCents($v, $v->payableViews()));
 
         return [
             'id' => $c->id,

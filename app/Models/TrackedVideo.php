@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,6 +64,39 @@ class TrackedVideo extends Model
         return $this->views > 0
             ? round(($this->likes + $this->comments + $this->shares) / $this->views * 100, 2)
             : 0.0;
+    }
+
+    /** When this video's payout freezes: 30 days after posting (or after it was added). */
+    public function finalizesAt(): CarbonImmutable
+    {
+        return CarbonImmutable::parse($this->posted_at ?? $this->created_at)->addDays(30);
+    }
+
+    public function isFinalized(): bool
+    {
+        return $this->finalizesAt()->lessThanOrEqualTo(CarbonImmutable::now());
+    }
+
+    /**
+     * Views the payout is computed from. Before the 30-day mark it is the live
+     * number (an estimate that keeps moving). After it, an auto-synced row uses
+     * the last snapshot taken up to that mark; manual rows (Instagram) keep the
+     * typed number, since that is entered from the 30-day count.
+     */
+    public function payableViews(): int
+    {
+        if ($this->fetch_status !== 'ok' || ! $this->isFinalized()) {
+            return $this->views;
+        }
+
+        $mark = $this->finalizesAt();
+
+        $frozen = $this->snapshots
+            ->filter(fn (TrackedVideoSnapshot $s) => $s->captured_at->lessThanOrEqualTo($mark))
+            ->sortByDesc(fn (TrackedVideoSnapshot $s) => $s->captured_at->getTimestamp())
+            ->first();
+
+        return $frozen ? (int) $frozen->views : $this->views;
     }
 
     /**

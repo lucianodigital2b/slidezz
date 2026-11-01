@@ -59,6 +59,8 @@ class UgcCampaignController extends Controller
                 'flat_fee_cents' => $campaign->flat_fee_cents,
                 'payout_cap_cents' => $campaign->payout_cap_cents,
                 'budget_cents' => $campaign->budget_cents,
+                'payout_anchor_on' => $campaign->payout_anchor_on?->toDateString(),
+                'payout_interval_days' => $campaign->payout_interval_days ?? 14,
                 'starts_on' => $campaign->starts_on?->toDateString(),
                 'ends_on' => $campaign->ends_on?->toDateString(),
                 'notes' => $campaign->notes,
@@ -198,6 +200,32 @@ class UgcCampaignController extends Controller
         return back()->with('flash', 'Vídeo atualizado.');
     }
 
+    /**
+     * Mark one creator's payout as paid: every unpaid video of hers whose payday
+     * is the given date. A null creator means the videos with no creator.
+     */
+    public function payCreator(Request $request, UgcCampaign $campaign): RedirectResponse
+    {
+        $this->authorizeCampaign($request, $campaign);
+
+        $validated = $request->validate([
+            'ugc_creator_id' => ['nullable', Rule::exists('ugc_creators', 'id')->where('workspace_id', $campaign->workspace_id)],
+            'payout_on' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $fallbackAnchor = UgcDashboard::fallbackAnchor($campaign->videos()->get());
+
+        $campaign->videos()
+            ->where('ugc_creator_id', $validated['ugc_creator_id'] ?? null)
+            ->whereNull('paid_at')
+            ->get()
+            ->filter(fn (TrackedVideo $v) => $v->isFinalized()
+                && $campaign->paydayFor($v->finalizesAt(), $fallbackAnchor)?->toDateString() === $validated['payout_on'])
+            ->each(fn (TrackedVideo $v) => $v->update(['paid_at' => now()]));
+
+        return back()->with('flash', 'Pagamento registrado.');
+    }
+
     public function destroyVideo(Request $request, TrackedVideo $video): RedirectResponse
     {
         $this->authorizeVideo($request, $video);
@@ -227,7 +255,7 @@ class UgcCampaignController extends Controller
      */
     private function validateCampaign(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
             'status' => ['nullable', Rule::enum(CampaignStatus::class)],
             'objective' => ['nullable', 'string', 'max:255'],
@@ -237,11 +265,20 @@ class UgcCampaignController extends Controller
             'flat_fee_cents' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'payout_cap_cents' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'budget_cents' => ['nullable', 'integer', 'min:0'],
+            'payout_anchor_on' => ['nullable', 'date'],
+            'payout_interval_days' => ['nullable', 'integer', 'min:1', 'max:90'],
             'starts_on' => ['nullable', 'date'],
             'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
             'color' => ['nullable', 'string', 'max:9'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        // The interval column is not nullable: an emptied field keeps the default.
+        if (array_key_exists('payout_interval_days', $data) && $data['payout_interval_days'] === null) {
+            unset($data['payout_interval_days']);
+        }
+
+        return $data;
     }
 
     private function days(Request $request): int

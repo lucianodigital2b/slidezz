@@ -23,6 +23,8 @@ interface Campaign {
     flat_fee_cents: number;
     payout_cap_cents: number | null;
     budget_cents: number | null;
+    payout_anchor_on: string | null;
+    payout_interval_days: number;
     starts_on: string | null;
     ends_on: string | null;
     notes: string | null;
@@ -46,6 +48,9 @@ interface VideoRow {
     engagement_rate: number;
     fetch_status: string;
     last_synced_at: string | null;
+    finalizes_on: string;
+    payout_on: string | null;
+    finalized: boolean;
     payout_cents: number;
     payout_override_cents: number | null;
     paid: boolean;
@@ -61,6 +66,21 @@ interface CreatorRow {
     spend_cents: number;
 }
 
+interface PayoutRow {
+    creator_id: number | null;
+    name: string;
+    handle: string | null;
+    videos: number;
+    next_payout_on: string | null;
+    next_payout_cents: number;
+    next_payout_final: boolean;
+    due_cents: number;
+    due_payout_on: string | null;
+    open_cents: number;
+    paid_cents: number;
+    last_paid_at: string | null;
+}
+
 interface Props {
     campaign: Campaign;
     data: {
@@ -72,6 +92,7 @@ interface Props {
         platforms: { platform: string; videos: number; views: number }[];
         creators: CreatorRow[];
         videos: VideoRow[];
+        payouts: PayoutRow[];
     };
     creators: { id: number; name: string }[];
     days: number;
@@ -84,8 +105,19 @@ const PLATFORM_META: Record<string, { label: string; color: string }> = {
 
 const DAYS = [7, 30, 90];
 
+/** "2026-11-27" -> "27/11/2026" (or "27/11" when short). */
+const formatDate = (value: string | null, short = false) => {
+    if (!value) {
+return '-';
+}
+
+    const [year, month, day] = value.split('-');
+
+    return short ? `${day}/${month}` : `${day}/${month}/${year}`;
+};
+
 export default function CampaignShow({ campaign, data, creators, days }: Props) {
-    const { kpis, timeseries, platforms, videos } = data;
+    const { kpis, timeseries, platforms, videos, payouts } = data;
     const cur = campaign.currency;
     const [editing, setEditing] = useState<VideoRow | null>(null);
 
@@ -193,6 +225,73 @@ export default function CampaignShow({ campaign, data, creators, days }: Props) 
                     <BarList items={creatorBars} color={campaign.color} />
                 </div>
 
+                <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+                    <h2 className="text-sm font-semibold text-gray-900">Pagamentos por criadora</h2>
+                    <p className="mt-1 mb-4 text-xs text-gray-400">
+                        Cada vídeo fecha 30 dias após o post e entra no pagamento quinzenal seguinte. Antes disso o valor é estimativa e se atualiza com as views.
+                    </p>
+                    {payouts.length === 0 ? (
+                        <p className="py-6 text-center text-sm text-gray-400">Nenhum pagamento previsto.</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-100 text-xs text-gray-500">
+                                        <th className="px-3 py-2 text-left font-medium">Criadora</th>
+                                        <th className="px-3 py-2 text-right font-medium">Vídeos</th>
+                                        <th className="px-3 py-2 text-left font-medium">Próximo pagamento</th>
+                                        <th className="px-3 py-2 text-right font-medium">Valor</th>
+                                        <th className="px-3 py-2 text-right font-medium">A pagar agora</th>
+                                        <th className="px-3 py-2 text-right font-medium">Em aberto</th>
+                                        <th className="px-3 py-2 text-right font-medium">Já pago</th>
+                                        <th className="px-3 py-2" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {payouts.map((row) => (
+                                        <tr key={row.creator_id ?? 'none'} className="border-t border-gray-50">
+                                            <td className="px-3 py-2.5">
+                                                <div className="font-medium text-gray-900">{row.name}</div>
+                                                {row.handle && <div className="text-xs text-gray-400">@{row.handle.replace(/^@/, '')}</div>}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right text-gray-600">{row.videos}</td>
+                                            <td className="px-3 py-2.5 whitespace-nowrap text-gray-900">
+                                                {formatDate(row.next_payout_on)}
+                                                {row.next_payout_on && !row.next_payout_final && (
+                                                    <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">estimativa</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right text-gray-900">{formatMoney(row.next_payout_cents, cur)}</td>
+                                            <td className={`px-3 py-2.5 text-right ${row.due_cents > 0 ? 'font-semibold text-red-600' : 'text-gray-400'}`}>
+                                                {formatMoney(row.due_cents, cur)}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right text-gray-600">{formatMoney(row.open_cents, cur)}</td>
+                                            <td className="px-3 py-2.5 text-right text-gray-600" title={row.last_paid_at ? `Último: ${formatDate(row.last_paid_at)}` : undefined}>
+                                                {formatMoney(row.paid_cents, cur)}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right">
+                                                {row.due_cents > 0 && row.due_payout_on && (
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-[#1A1A1A] text-white hover:bg-black"
+                                                        onClick={() => router.post(
+                                                            `/ugc/${campaign.id}/payouts`,
+                                                            { ugc_creator_id: row.creator_id, payout_on: row.due_payout_on },
+                                                            { preserveScroll: true },
+                                                        )}
+                                                    >
+                                                        Marcar pago
+                                                    </Button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
                 {/* Videos */}
                 <div className="rounded-xl border border-gray-200 bg-white">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
@@ -253,6 +352,9 @@ export default function CampaignShow({ campaign, data, creators, days }: Props) 
                                             <td className="px-3 py-3 text-right text-gray-900">
                                                 {formatMoney(v.payout_cents, cur)}
                                                 {v.payout_override_cents !== null && <span className="ml-1 text-xs text-gray-400">(fixo)</span>}
+                                                <div className="text-xs text-gray-400" title={v.finalized ? undefined : `Fecha em ${formatDate(v.finalizes_on)}`}>
+                                                    {formatDate(v.payout_on, true)}{!v.finalized && ' · estimativa'}
+                                                </div>
                                             </td>
                                             <td className="px-3 py-3 text-center">
                                                 <button
@@ -461,6 +563,8 @@ function PayoutSettingsDialog({ campaign }: { campaign: Campaign }) {
         flat_fee: (campaign.flat_fee_cents / 100).toFixed(2),
         payout_cap: campaign.payout_cap_cents !== null ? (campaign.payout_cap_cents / 100).toFixed(2) : '',
         budget: campaign.budget_cents !== null ? (campaign.budget_cents / 100).toFixed(2) : '',
+        payout_anchor_on: campaign.payout_anchor_on ?? '',
+        payout_interval_days: String(campaign.payout_interval_days ?? 14),
     });
     const { data, setData, processing } = form;
 
@@ -478,6 +582,8 @@ function PayoutSettingsDialog({ campaign }: { campaign: Campaign }) {
             flat_fee_cents: toCents(d.flat_fee) ?? 0,
             payout_cap_cents: toCents(d.payout_cap),
             budget_cents: toCents(d.budget),
+            payout_anchor_on: d.payout_anchor_on === '' ? null : d.payout_anchor_on,
+            payout_interval_days: d.payout_interval_days === '' ? null : Number(d.payout_interval_days),
         }));
         form.put(`/ugc/${campaign.id}`, { preserveScroll: true, onSuccess: () => setOpen(false) });
     };
@@ -542,6 +648,16 @@ function PayoutSettingsDialog({ campaign }: { campaign: Campaign }) {
                         <div>
                             <Label htmlFor="s-cap">Teto/vídeo</Label>
                             <Input id="s-cap" type="number" step="0.01" min="0" value={data.payout_cap} onChange={(e) => setData('payout_cap', e.target.value)} placeholder="opcional" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label htmlFor="s-anchor">1º dia de pagamento</Label>
+                            <Input id="s-anchor" type="date" value={data.payout_anchor_on} onChange={(e) => setData('payout_anchor_on', e.target.value)} />
+                        </div>
+                        <div>
+                            <Label htmlFor="s-interval">Intervalo (dias)</Label>
+                            <Input id="s-interval" type="number" min="1" max="90" value={data.payout_interval_days} onChange={(e) => setData('payout_interval_days', e.target.value)} />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
