@@ -9,12 +9,16 @@ use App\Models\SocialAccount;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TikTokPublisher implements SocialPublisher
 {
+    /** Minutes before expiry at which a token counts as stale. */
+    private const REFRESH_MARGIN_MINUTES = 10;
+
     protected ?string $clientId;
 
     protected ?string $clientSecret;
@@ -110,9 +114,7 @@ class TikTokPublisher implements SocialPublisher
     {
         $account = $schedule->socialAccount;
 
-        if ($account->expires_at?->isPast()) {
-            $this->refreshToken($account);
-        }
+        $this->ensureFreshToken($account);
 
         if ($project->type === 'video') {
             return $this->uploadVideoDraft($project, $account);
@@ -227,9 +229,7 @@ class TikTokPublisher implements SocialPublisher
      */
     public function fetchStatus(SocialAccount $account, string $publishId): array
     {
-        if ($account->expires_at?->isPast()) {
-            $this->refreshToken($account);
-        }
+        $this->ensureFreshToken($account);
 
         $response = Http::withToken($account->access_token)
             ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
@@ -322,9 +322,7 @@ class TikTokPublisher implements SocialPublisher
 
         foreach ($accounts as $account) {
             try {
-                if ($account->expires_at?->isPast()) {
-                    $this->refreshToken($account);
-                }
+                $this->ensureFreshToken($account);
                 $ready[] = $account;
             } catch (\Throwable $e) {
                 $results[$account->id] = ['insights' => null, 'error' => $this->insightsError($e)];
@@ -453,9 +451,7 @@ class TikTokPublisher implements SocialPublisher
 
         $account = $schedule->socialAccount;
 
-        if ($account->expires_at?->isPast()) {
-            $this->refreshToken($account);
-        }
+        $this->ensureFreshToken($account);
 
         if (! $videoId = $this->publicPostId($schedule)) {
             return [];
@@ -511,9 +507,7 @@ class TikTokPublisher implements SocialPublisher
      */
     public function refreshAvatar(SocialAccount $account): void
     {
-        if ($account->expires_at?->isPast()) {
-            $this->refreshToken($account);
-        }
+        $this->ensureFreshToken($account);
 
         $user = Http::withToken($account->access_token)
             ->get('https://open.tiktokapis.com/v2/user/info/', ['fields' => 'open_id,avatar_url'])
@@ -537,34 +531,61 @@ class TikTokPublisher implements SocialPublisher
         $this->refreshToken($account);
     }
 
+    /**
+     * Refresh a little before expiry, not after: since 01/12/2026 access tokens
+     * last only 2 hours, so a token that is "still valid" when a publish starts
+     * can lapse halfway through the upload.
+     */
+    protected function ensureFreshToken(SocialAccount $account): void
+    {
+        if ($account->expires_at?->lte(now()->addMinutes(self::REFRESH_MARGIN_MINUTES))) {
+            $this->refreshToken($account);
+        }
+    }
+
     protected function refreshToken(SocialAccount $account): void
     {
-        $response = Http::asForm()->post('https://open.tiktokapis.com/v2/oauth/token/', [
-            'client_key' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $account->refresh_token,
-        ]);
+        $usedRefreshToken = $account->refresh_token;
 
-        $tokenData = $response->json();
+        // TikTok invalidates a refresh token the moment it is used. Two refreshes
+        // racing (the hourly cron and a publish, or two publishes) would send the
+        // same token twice, and the loser would flag a healthy account. So only
+        // one process refreshes an account at a time, and whoever waited reloads
+        // the row and skips if the token was already rotated meanwhile.
+        Cache::lock("tiktok-token-refresh:{$account->id}", 30)->block(25, function () use ($account, $usedRefreshToken) {
+            $account->refresh();
 
-        // A failed refresh must never overwrite a working token with null: that
-        // bricks the account for good (every post then shows "reconnect" and it
-        // never heals on its own). Flag it for a manual reconnect, keep the old
-        // token untouched, and surface the reason to the caller.
-        if ($response->failed() || empty($tokenData['access_token'])) {
-            $account->forceFill(['needs_reconnect' => true])->save();
+            if ($account->refresh_token !== $usedRefreshToken) {
+                return;
+            }
 
-            throw new TikTokApiException('A conexão com o TikTok expirou ou perdeu permissão. Reconecte a conta.');
-        }
+            $response = Http::asForm()->post('https://open.tiktokapis.com/v2/oauth/token/', [
+                'client_key' => $this->clientId,
+                'client_secret' => $this->clientSecret,
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $account->refresh_token,
+            ]);
 
-        $account->update([
-            'access_token' => $tokenData['access_token'],
-            // TikTok rotates the refresh token on each use; keep the old one only
-            // if a (valid) response somehow omitted the new one.
-            'refresh_token' => $tokenData['refresh_token'] ?? $account->refresh_token,
-            'expires_at' => now()->addSeconds((int) $tokenData['expires_in']),
-            'needs_reconnect' => false,
-        ]);
+            $tokenData = $response->json();
+
+            // A failed refresh must never overwrite a working token with null: that
+            // bricks the account for good (every post then shows "reconnect" and it
+            // never heals on its own). Flag it for a manual reconnect, keep the old
+            // token untouched, and surface the reason to the caller.
+            if ($response->failed() || empty($tokenData['access_token'])) {
+                $account->forceFill(['needs_reconnect' => true])->save();
+
+                throw new TikTokApiException('A conexão com o TikTok expirou ou perdeu permissão. Reconecte a conta.');
+            }
+
+            $account->update([
+                'access_token' => $tokenData['access_token'],
+                // TikTok rotates the refresh token on each use; keep the old one only
+                // if a (valid) response somehow omitted the new one.
+                'refresh_token' => $tokenData['refresh_token'] ?? $account->refresh_token,
+                'expires_at' => now()->addSeconds((int) $tokenData['expires_in']),
+                'needs_reconnect' => false,
+            ]);
+        });
     }
 }

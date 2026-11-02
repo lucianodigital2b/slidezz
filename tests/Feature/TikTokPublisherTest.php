@@ -6,6 +6,7 @@ use App\Models\ContentProject;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Models\Workspace;
+use App\Services\Social\TikTokApiException;
 use App\Services\Social\TikTokPublisher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -232,7 +233,7 @@ class TikTokPublisherTest extends TestCase
         try {
             (new TikTokPublisher)->keepAlive($account);
             $this->fail('A failed refresh should throw a reconnect error.');
-        } catch (\App\Services\Social\TikTokApiException $e) {
+        } catch (TikTokApiException $e) {
             $this->assertStringContainsString('Reconecte a conta', $e->getMessage());
         }
 
@@ -268,6 +269,60 @@ class TikTokPublisherTest extends TestCase
         $this->assertSame('rotated-refresh', $account->refresh_token);
         $this->assertFalse($account->needs_reconnect);
         $this->assertTrue($account->expires_at->isFuture());
+    }
+
+    public function test_a_refresh_skips_when_another_process_already_rotated_the_token(): void
+    {
+        Http::fake(['*oauth/token/' => Http::response(['error' => 'invalid_grant'], 400)]);
+
+        $account = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'refresh_token' => 'old-refresh',
+            'expires_at' => now()->subMinute(),
+            'needs_reconnect' => false,
+        ]);
+
+        // The cron rotated the token while this copy of the model sat in memory.
+        SocialAccount::whereKey($account->id)->first()->update([
+            'access_token' => 'rotated-access',
+            'refresh_token' => 'rotated-refresh',
+            'expires_at' => now()->addHours(2),
+        ]);
+
+        (new TikTokPublisher)->keepAlive($account);
+
+        // Reusing old-refresh would be rejected and flag the account; it is never sent.
+        Http::assertNothingSent();
+        $this->assertSame('rotated-access', $account->access_token);
+        $this->assertFalse($account->fresh()->needs_reconnect);
+    }
+
+    public function test_a_token_about_to_expire_is_refreshed_before_use(): void
+    {
+        Http::fake([
+            '*oauth/token/' => Http::response([
+                'access_token' => 'fresh-token',
+                'refresh_token' => 'rotated-refresh',
+                'expires_in' => 7200,
+            ]),
+            '*' => Http::response(['data' => ['user' => ['follower_count' => 1]], 'error' => ['code' => 'ok']]),
+        ]);
+
+        $account = SocialAccount::factory()->create([
+            'provider' => 'tiktok',
+            'access_token' => 'expiring-token',
+            'expires_at' => now()->addMinutes(3),
+            'needs_reconnect' => false,
+        ]);
+
+        try {
+            (new TikTokPublisher)->accountInsights($account);
+        } catch (\Throwable) {
+            // Only the refresh matters here, not how the faked insights parse.
+        }
+
+        $this->assertSame('rotated-refresh', $account->fresh()->refresh_token);
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'oauth/token/'));
     }
 
     public function test_the_refresh_command_only_touches_tokens_near_expiry(): void
