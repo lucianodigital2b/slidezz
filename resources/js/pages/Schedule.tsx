@@ -640,6 +640,11 @@ export default function Schedule({
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [busy, setBusy] = useState(false);
     const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+    // Dropped posts show at their new time right away (group_id → ISO time);
+    // the entry goes away once the server answers, and a failure puts it back.
+    const [optimisticTimes, setOptimisticTimes] = useState<
+        Record<string, string>
+    >({});
     const [accountFilter, setAccountFilter] = useState<number | 'all'>('all');
     // Bulk actions: lead ids of the selected posts.
     const [selectMode, setSelectMode] = useState(false);
@@ -729,7 +734,13 @@ export default function Schedule({
     const groupsByDay = useMemo(() => {
         const days: Record<string, ScheduleItem[]> = {};
 
-        for (const item of schedules) {
+        for (const original of schedules) {
+            // Only members the server will move (not published ones) jump ahead.
+            const movedTo =
+                isMemberMovable(original) && optimisticTimes[original.group_id];
+            const item = movedTo
+                ? { ...original, publish_at: movedTo }
+                : original;
             const key = dateKey(new Date(item.publish_at));
             (days[key] ??= []).push(item);
         }
@@ -740,7 +751,7 @@ export default function Schedule({
                 groupByPost(items),
             ]),
         ) as Record<string, PostGroup[]>;
-    }, [schedules]);
+    }, [schedules, optimisticTimes]);
 
     // Queue runs from the next post on, Sent from the latest back: both come
     // ordered from the server, and grouping keeps that order.
@@ -817,11 +828,56 @@ export default function Schedule({
     };
 
     // publish_at goes to the server as UTC ISO, so the local time picked is the time it posts.
-    const moveTo = (group: PostGroup, when: Date, onSuccess?: () => void) => {
+    // Optimistic: the post jumps to its new slot at once and the save runs in
+    // the background (async, so moving several in a row never cancels one).
+    // Only a failure speaks up, and puts the post back where it was.
+    const moveTo = (group: PostGroup, when: Date) => {
+        const groupId = group.key;
+        const iso = when.toISOString();
+        // A second drop of the same post overrides this one; only the latest clears it.
+        const settle = () =>
+            setOptimisticTimes((current) => {
+                if (current[groupId] !== iso) {
+                    return current;
+                }
+
+                const next = { ...current };
+                delete next[groupId];
+
+                return next;
+            });
+        const fail = (message?: string) => {
+            settle();
+            toast.error(
+                message ??
+                    "Couldn't move the post. It's back at its original time.",
+            );
+        };
+
+        setOptimisticTimes((current) => ({ ...current, [groupId]: iso }));
+
         router.patch(
             updateSchedule(group.lead.id).url,
-            { publish_at: when.toISOString() },
-            requestOptions(onSuccess),
+            { publish_at: iso },
+            {
+                async: true,
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: settle,
+                onError: (errs: Record<string, string>) =>
+                    fail(Object.values(errs)[0]),
+                onHttpException: () => {
+                    fail();
+
+                    return false;
+                },
+                onNetworkError: () => {
+                    fail();
+
+                    return false;
+                },
+                onCancel: settle,
+            },
         );
     };
 
