@@ -31,7 +31,8 @@ class ImportPinterestSearchToLibrary implements ShouldQueue
 
     public function handle(MediaLibrary $library): void
     {
-        $source = ImageSourceFactory::make($this->source, $this->workspace->owner?->byokGeminiKey());
+        $owner = $this->workspace->owner;
+        $source = ImageSourceFactory::make($this->source, $owner?->byokGeminiKey(), $owner);
         $images = $source->search($this->query, $this->limit);
         $imported = 0;
 

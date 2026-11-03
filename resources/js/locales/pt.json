@@ -175,7 +175,7 @@
     "integrations": {
       "title": "Integrações",
       "geminiTitle": "Chave Gemini",
-      "geminiDescription": "Conecte sua própria chave do Google Gemini para gerar as imagens dos seus carrosséis — sem limite. Leva 2 minutos e o Google oferece um nível gratuito.",
+      "geminiDescription": "Opcional: seu plano já inclui imagens com IA por créditos. Conecte sua chave do Google Gemini para gerar imagens ilimitadas sem gastar créditos.",
       "keyLabel": "Chave da API Gemini",
       "keyHint": "Crie sua chave grátis em ai.google.dev. Armazenamos a chave criptografada e nunca a exibimos de volta.",
       "guideLink": "Passo a passo: como pegar sua chave gratuita",
@@ -355,9 +355,9 @@
       }
     },
     "geminiAlert": {
-      "title": "Falta conectar sua chave Gemini",
-      "body": "Sem ela, seus carrosséis saem sem imagens de IA. Leva 2 minutos e é grátis.",
-      "cta": "Conectar agora"
+      "title": "Seus créditos de imagem acabaram",
+      "body": "Sem créditos, seus carrosséis saem sem imagens de IA. Compre mais créditos ou conecte sua chave Gemini para imagens ilimitadas.",
+      "cta": "Ver créditos"
     },
     "geminiModal": {
       "title": "Conecte sua chave Gemini",
@@ -1243,5 +1243,14 @@
       "confirmFailed": "Não deu pra confirmar o pedido.",
       "cancelFailed": "Não deu pra cancelar o pedido."
     }
+  },
+  "postingSoon": {
+    "tiktokButton": "Postar no TikTok · em breve",
+    "tiktokTooltip": "Por enquanto, baixe e poste pelo app do TikTok.",
+    "connectNote": "Conectar contas e postar direto do Slidezz chega em breve. Por enquanto, baixe seus carrosséis e poste pelo app."
+  },
+  "imageCredits": {
+    "noCredits": "Seus créditos de imagem acabaram. Compre mais créditos ou conecte sua chave Gemini para imagens ilimitadas.",
+    "count": "{{count}} créditos de imagem"
   }
 }

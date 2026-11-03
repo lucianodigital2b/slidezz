@@ -825,9 +825,9 @@
       }
     },
     "geminiAlert": {
-      "title": "You still need to connect your Gemini key",
-      "body": "Without it, your carousels come out without AI images. It takes 2 minutes and it's free.",
-      "cta": "Connect now"
+      "title": "You're out of image credits",
+      "body": "Without credits, your carousels come out without AI images. Buy more credits or connect your Gemini key for unlimited images.",
+      "cta": "See credits"
     },
     "geminiModal": {
       "title": "Connect your Gemini key",
@@ -950,7 +950,7 @@
     "integrations": {
       "title": "Integrations",
       "geminiTitle": "Gemini key",
-      "geminiDescription": "Connect your own Google Gemini key to generate your carousel images — no limits. It takes 2 minutes and Google offers a free tier.",
+      "geminiDescription": "Optional: your plan already includes AI images through credits. Connect your own Google Gemini key for unlimited images without spending credits.",
       "keyLabel": "Gemini API key",
       "keyHint": "Create your free key at ai.google.dev. We store the key encrypted and never show it back.",
       "guideLink": "Step by step: how to get your free key",
@@ -1270,5 +1270,14 @@
       "confirmFailed": "Could not confirm the publish request.",
       "cancelFailed": "Could not cancel the publish request."
     }
+  },
+  "postingSoon": {
+    "tiktokButton": "Post to TikTok · coming soon",
+    "tiktokTooltip": "For now, download and post from the TikTok app.",
+    "connectNote": "Connecting accounts and posting straight from Slidezz is coming soon. For now, download your carousels and post from the app."
+  },
+  "imageCredits": {
+    "noCredits": "You're out of image credits. Buy more credits or connect your Gemini key for unlimited images.",
+    "count": "{{count}} image credits"
   }
 }

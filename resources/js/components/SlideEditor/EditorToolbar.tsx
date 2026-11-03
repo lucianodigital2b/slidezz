@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format as formatFns } from 'date-fns';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -95,6 +95,7 @@ export function EditorToolbar({
     tiktokAccounts, onSendToTikTok,
 }: EditorToolbarProps) {
     const { t } = useTranslation();
+    const { canPost } = usePage().props;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     return (
@@ -331,7 +332,7 @@ export function EditorToolbar({
             )}
 
             {/* Instagram */}
-            {igEnabled && instagramAccounts.length > 0 && (
+            {canPost && igEnabled && instagramAccounts.length > 0 && (
                 <>
                     <div className="w-px h-6 bg-gray-200 mx-1" />
                     <TooltipProvider delayDuration={200}>

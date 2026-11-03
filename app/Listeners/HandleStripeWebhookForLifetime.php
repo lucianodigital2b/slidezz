@@ -35,6 +35,7 @@ class HandleStripeWebhookForLifetime
         if ($user->lifetime_access_at === null) {
             $user->lifetime_access_at = now();
             $user->save();
+            $user->grantLifetimeCredits();
         }
 
         Log::info('LifetimeWebhook: lifetime access granted', ['user_id' => $user->id]);

@@ -128,7 +128,7 @@ class BuildSlideshowFromHook implements ShouldQueue
                 continue;
             }
 
-            $source ??= ImageSourceFactory::make($sourceName, $workspace->owner?->byokGeminiKey());
+            $source ??= ImageSourceFactory::make($sourceName, $workspace->owner?->byokGeminiKey(), $workspace->owner);
             $query = $slides[$index]['image_query'];
             $candidates = $source->search($query, 3, $this->libraryUrls($workspace->id));
 

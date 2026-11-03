@@ -106,7 +106,8 @@ class GenerateSlideshow implements ShouldQueue
      */
     private function sourceImages(array $slides, string $sourceName, MediaLibrary $library): array
     {
-        $source = ImageSourceFactory::make($sourceName, $this->contentProject->workspace->owner?->byokGeminiKey());
+        $owner = $this->contentProject->workspace->owner;
+        $source = ImageSourceFactory::make($sourceName, $owner?->byokGeminiKey(), $owner);
         $used = $this->recentlyUsedImageUrls();
         $picked = [];
 

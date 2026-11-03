@@ -24,6 +24,7 @@ use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\TikTokDraftController;
 use App\Http\Controllers\UgcCampaignController;
 use App\Http\Controllers\VideoProjectController;
+use App\Http\Middleware\EnsureCanPost;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
 use App\Models\SlideProject;
@@ -107,20 +108,25 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::delete('tiktok/{contentProject}', [SlideshowGeneratorController::class, 'destroy'])->name('tiktok.destroy');
 
     // Drafts sent to the creator's TikTok inbox (they add sound + caption and post from the app).
-    Route::middleware('throttle:20,1')->group(function () {
-        Route::post('tiktok/{contentProject}/draft', [TikTokDraftController::class, 'contentProject'])->name('tiktok.draft');
-        Route::post('slideshow-editor/{slideProject}/publish/tiktok', [TikTokDraftController::class, 'slideProject'])->name('slideshow-editor.publish.tiktok');
-        Route::post('videos/{videoProject}/publish/tiktok', [TikTokDraftController::class, 'videoProject'])->name('videos.publish.tiktok');
+    // Every posting route is gated per user (can_post) until the TikTok/Meta app reviews pass.
+    Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::middleware('throttle:20,1')->group(function () {
+            Route::post('tiktok/{contentProject}/draft', [TikTokDraftController::class, 'contentProject'])->name('tiktok.draft');
+            Route::post('slideshow-editor/{slideProject}/publish/tiktok', [TikTokDraftController::class, 'slideProject'])->name('slideshow-editor.publish.tiktok');
+            Route::post('videos/{videoProject}/publish/tiktok', [TikTokDraftController::class, 'videoProject'])->name('videos.publish.tiktok');
+        });
+        Route::get('tiktok-drafts/{schedule}', [TikTokDraftController::class, 'status'])->name('tiktok-drafts.status');
     });
-    Route::get('tiktok-drafts/{schedule}', [TikTokDraftController::class, 'status'])->name('tiktok-drafts.status');
 
-    Route::get('automations', [AutomationController::class, 'index'])->name('automations');
-    Route::post('automations', [AutomationController::class, 'store'])->name('automations.store');
-    Route::put('automations/{automation}', [AutomationController::class, 'update'])->name('automations.update');
-    Route::delete('automations/{automation}', [AutomationController::class, 'destroy'])->name('automations.destroy');
-    Route::post('automations/{automation}/run', [AutomationController::class, 'runNow'])
-        ->middleware('throttle:10,1')
-        ->name('automations.run');
+    Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::get('automations', [AutomationController::class, 'index'])->name('automations');
+        Route::post('automations', [AutomationController::class, 'store'])->name('automations.store');
+        Route::put('automations/{automation}', [AutomationController::class, 'update'])->name('automations.update');
+        Route::delete('automations/{automation}', [AutomationController::class, 'destroy'])->name('automations.destroy');
+        Route::post('automations/{automation}/run', [AutomationController::class, 'runNow'])
+            ->middleware('throttle:10,1')
+            ->name('automations.run');
+    });
     Route::get('media-library', [MediaLibraryController::class, 'index'])->name('media-library');
     Route::post('media-library', [MediaLibraryController::class, 'store'])->name('media-library.store');
     Route::post('media-library/import', [MediaLibraryController::class, 'import'])
@@ -143,7 +149,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::post('slide-templates', [SlideTemplateController::class, 'store'])->name('slide-templates.store');
     Route::post('slide-templates/{slideTemplate}/use', [SlideTemplateController::class, 'use'])->name('slide-templates.use');
     Route::delete('slide-templates/{slideTemplate}', [SlideTemplateController::class, 'destroy'])->name('slide-templates.destroy');
-    Route::post('slideshow-editor/{slideProject}/publish/instagram', [SlideProjectController::class, 'publishInstagram'])->name('slideshow-editor.publish.instagram');
+    Route::post('slideshow-editor/{slideProject}/publish/instagram', [SlideProjectController::class, 'publishInstagram'])->middleware(EnsureCanPost::class)->name('slideshow-editor.publish.instagram');
     Route::delete('slideshow-editor/{slideProject}', [SlideProjectController::class, 'destroy'])->name('slideshow-editor.destroy');
 
     // Videos: a clip timeline previewed with @remotion/player, rendered to MP4 by a queued Remotion job.
@@ -167,32 +173,38 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     // Agent: converse with Slidezz, inspect TikTok posts, rebuild them, and request publishing.
     Route::get('agent', [AgentController::class, 'index'])->name('agent.index');
     Route::post('agent', [AgentController::class, 'store'])->name('agent.store');
-    Route::post('agent/publish-requests/{agentPublishRequest}/confirm', [AgentController::class, 'confirmPublish'])->name('agent.publish.confirm');
+    Route::post('agent/publish-requests/{agentPublishRequest}/confirm', [AgentController::class, 'confirmPublish'])->middleware(EnsureCanPost::class)->name('agent.publish.confirm');
     Route::post('agent/publish-requests/{agentPublishRequest}/cancel', [AgentController::class, 'cancelPublish'])->name('agent.publish.cancel');
     Route::get('agent/{agentConversation}', [AgentController::class, 'show'])->name('agent.show');
     Route::post('agent/{agentConversation}/messages', [AgentController::class, 'sendMessage'])->name('agent.messages.store');
     Route::get('agent/{agentConversation}/state', [AgentController::class, 'state'])->name('agent.state');
 
-    Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
-    Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
-    Route::post('schedule/bulk', [ScheduleController::class, 'bulk'])->name('schedule.bulk');
-    Route::patch('schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
-    Route::post('schedule/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->name('schedule.duplicate');
-    Route::delete('schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
+    Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule');
+        Route::post('schedule', [ScheduleController::class, 'store'])->name('schedule.store');
+        Route::post('schedule/bulk', [ScheduleController::class, 'bulk'])->name('schedule.bulk');
+        Route::patch('schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
+        Route::post('schedule/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->name('schedule.duplicate');
+        Route::delete('schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
+    });
 
     Route::redirect('social-accounts', '/settings/profile');
-    Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
-    Route::get('social-accounts/{provider}/callback', [SocialAccountController::class, 'callback'])->name('social-accounts.callback');
-    // Alias matching the redirect URIs registered in the TikTok Developer Portal
-    Route::get('{provider}/callback', [SocialAccountController::class, 'callback']);
-    Route::delete('social-accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->name('social-accounts.destroy');
+    Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
+        Route::get('social-accounts/{provider}/callback', [SocialAccountController::class, 'callback'])->name('social-accounts.callback');
+        // Alias matching the redirect URIs registered in the TikTok Developer Portal
+        Route::get('{provider}/callback', [SocialAccountController::class, 'callback']);
+        Route::delete('social-accounts/{socialAccount}', [SocialAccountController::class, 'destroy'])->name('social-accounts.destroy');
+    });
 
-    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
-    Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
+    Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        Route::post('analytics/sync', [AnalyticsController::class, 'sync'])->name('analytics.sync');
 
-    // Metricool-style client reports: on-screen preview + white-label PDF.
-    Route::get('reports', [ReportController::class, 'index'])->name('reports');
-    Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
+        // Metricool-style client reports: on-screen preview + white-label PDF.
+        Route::get('reports', [ReportController::class, 'index'])->name('reports');
+        Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
+    });
 
     // UGC campaign tracker: public-link video tracking, creator payouts, charts.
     Route::get('ugc', [UgcCampaignController::class, 'index'])->name('ugc.index');

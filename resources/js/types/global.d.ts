@@ -39,6 +39,7 @@ declare module '@inertiajs/core' {
             auth: Auth & { credits: number; on_trial: boolean; trial_ends_at: string | null; onboarding_complete: boolean; premium_access: boolean; lifetime_access: boolean; has_gemini_key: boolean };
             pricing: Pricing | null;
             igEnabled: boolean;
+            canPost: boolean;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

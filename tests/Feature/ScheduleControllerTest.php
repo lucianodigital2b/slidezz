@@ -26,7 +26,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_authenticated_user_can_view_schedule_page(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $response = $this->actingAs($user)->get('/schedule');
 
@@ -46,7 +46,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_creates_a_schedule(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create([
@@ -73,7 +73,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_rejects_publish_at_in_the_past(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create([
@@ -92,7 +92,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_rejects_social_account_from_other_workspace(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $contentProject = ContentProject::factory()->create([
             'workspace_id' => $workspace->id,
@@ -112,7 +112,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_schedule_page_defaults_to_the_current_week(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $response = $this->actingAs($user)->get('/schedule');
 
@@ -126,7 +126,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_week_view_returns_only_that_weeks_posts_even_across_months(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -151,7 +151,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_month_range_returns_the_whole_month(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->actingAs($user)
             ->get('/schedule?range=month&date=2026-10-19')
@@ -164,7 +164,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_schedule_page_accepts_month_and_year_query_params(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $response = $this->actingAs($user)->get('/schedule?month=3&year=2025');
 
@@ -176,7 +176,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_schedules_for_users_workspace_are_returned(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -200,8 +200,8 @@ class ScheduleControllerTest extends TestCase
 
     public function test_schedules_from_other_users_workspaces_are_not_returned(): void
     {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
+        $user = User::factory()->canPost()->create();
+        $otherUser = User::factory()->canPost()->create();
 
         $otherWorkspace = Workspace::factory()->create(['owner_id' => $otherUser->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $otherWorkspace->id]);
@@ -224,7 +224,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_schedules_outside_the_requested_month_are_not_returned(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -244,7 +244,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_calendar_days_follow_the_viewer_timezone(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -280,7 +280,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_calendar_falls_back_to_utc_without_a_valid_timezone(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -308,7 +308,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_the_list_shows_the_queue_in_order_and_the_latest_sent_first(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'handle' => 'dailyhair.app']);
         $project = ContentProject::factory()->create([
@@ -441,7 +441,7 @@ class ScheduleControllerTest extends TestCase
     public function test_other_users_cannot_change_a_schedule(): void
     {
         [, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
-        $intruder = User::factory()->create();
+        $intruder = User::factory()->canPost()->create();
 
         $this->actingAs($intruder)->delete("/schedule/{$schedule->id}")->assertForbidden();
         $this->actingAs($intruder)->post("/schedule/{$schedule->id}/duplicate", ['publish_at' => now()->addDay()->toISOString()])->assertForbidden();
@@ -452,7 +452,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_schedules_one_post_to_several_accounts_as_one_group(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $accounts = SocialAccount::factory()->count(2)->create(['workspace_id' => $workspace->id, 'provider' => 'tiktok']);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'ready']);
@@ -473,7 +473,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_rejects_when_any_account_is_from_another_workspace(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $own = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $foreign = SocialAccount::factory()->create();
@@ -492,7 +492,7 @@ class ScheduleControllerTest extends TestCase
 
     public function test_store_requires_at_least_one_account(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id, 'status' => 'ready']);
 
@@ -751,7 +751,7 @@ class ScheduleControllerTest extends TestCase
     {
         [, $schedule] = $this->scheduleFor(ScheduleStatus::Pending);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->canPost()->create())
             ->post('/schedule/bulk', ['schedule_ids' => [$schedule->id], 'action' => 'delete'])
             ->assertForbidden();
 
@@ -777,7 +777,7 @@ class ScheduleControllerTest extends TestCase
      */
     private function groupFor(array $statuses): array
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
         $publishAt = now()->addDay()->startOfMinute();
@@ -799,7 +799,7 @@ class ScheduleControllerTest extends TestCase
      */
     private function scheduleFor(ScheduleStatus $status): array
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);

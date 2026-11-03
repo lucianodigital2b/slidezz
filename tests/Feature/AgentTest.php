@@ -38,7 +38,7 @@ class AgentTest extends TestCase
         config(['filesystems.media_disk' => 'public']);
         Storage::fake('public');
 
-        $this->user = User::factory()->create(['credits' => 10]);
+        $this->user = User::factory()->canPost()->create(['credits' => 10]);
         $this->workspace = Workspace::factory()->create(['owner_id' => $this->user->id]);
 
         $this->fakeModelClient = new class implements ModelClient
@@ -302,7 +302,7 @@ class AgentTest extends TestCase
 
     public function test_other_users_conversation_returns_403(): void
     {
-        $otherUser = User::factory()->create();
+        $otherUser = User::factory()->canPost()->create();
         $otherWorkspace = Workspace::factory()->create(['owner_id' => $otherUser->id]);
 
         $conversation = AgentConversation::create([

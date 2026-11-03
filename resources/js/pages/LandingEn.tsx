@@ -41,8 +41,9 @@ const slides = [
 
 const lifetimeFeatures = [
     'Unlimited carousels, forever',
-    'Unlimited images with your Gemini key',
+    '100 AI images included (or unlimited with your Gemini key)',
     'All templates + future updates',
+    'Auto-posting to TikTok and Instagram when it ships',
 ];
 
 const faqs = [
@@ -52,7 +53,7 @@ const faqs = [
     },
     {
         q: 'Does it post for me?',
-        a: 'Yes. Connect your accounts and schedule posts on the calendar or with an automation. Instagram posts go live on their own. TikTok posts arrive in your TikTok inbox as drafts, so you add a sound and post in one tap.',
+        a: 'Not yet. Today Slidezz writes and designs your slideshows and you download them ready to post. Auto-posting to TikTok and Instagram is coming soon, and the launch price includes it.',
     },
     {
         q: 'Does it work for any niche?',
@@ -287,8 +288,8 @@ function StepTwoVisual() {
                 </span>
             </div>
             <div className="flex items-center justify-between rounded-[20px] border border-dashed border-white/60 px-3 py-2 text-[11px] font-medium text-white">
-                <span>Next post</span>
-                <span className="font-semibold">Today, 3:00 PM</span>
+                <span>Auto-posting</span>
+                <span className="font-semibold">Coming soon</span>
             </div>
         </div>
     );
@@ -296,12 +297,12 @@ function StepTwoVisual() {
 
 function StepThreeVisual() {
     const thumbs = [
-        { src: '/landing/s2.webp', badge: 'Posted' },
-        { src: '/landing/s3.webp', badge: 'Posted' },
-        { src: '/landing/s7.webp', badge: 'Posted' },
-        { src: '/landing/s10.webp', badge: 'Scheduled' },
-        { src: '/landing/s11.webp', badge: 'Scheduled' },
-        { src: '/landing/s12.webp', badge: 'Scheduled' },
+        { src: '/landing/s2.webp', badge: 'Ready' },
+        { src: '/landing/s3.webp', badge: 'Ready' },
+        { src: '/landing/s7.webp', badge: 'Ready' },
+        { src: '/landing/s10.webp', badge: 'Downloaded' },
+        { src: '/landing/s11.webp', badge: 'Downloaded' },
+        { src: '/landing/s12.webp', badge: 'Downloaded' },
     ];
 
     return (
@@ -329,18 +330,18 @@ function StepThreeVisual() {
 
 const steps = [
     {
-        title: 'Create an automation',
-        text: 'Pick a format, your niche and your posting times. Slidezz handles the rest.',
+        title: 'Describe your content',
+        text: 'Type a topic, pick a format and a tone, or paste a viral TikTok link to recreate it for your niche.',
         Visual: StepOneVisual,
     },
     {
-        title: 'Connect TikTok and Instagram',
-        text: 'Link your accounts once. Instagram posts go live on schedule; TikTok posts land in your TikTok inbox, ready to post.',
+        title: 'Review and edit',
+        text: 'The AI writes the slides and makes the images. Tweak text, colors and photos in the editor.',
         Visual: StepTwoVisual,
     },
     {
-        title: 'Set it and forget it',
-        text: 'New slideshows are written, designed and queued every day, automatically.',
+        title: 'Download and post',
+        text: 'Export PNG at 1080px or an MP4 slideshow and post it from the app. Auto-posting to TikTok and Instagram is coming soon.',
         Visual: StepThreeVisual,
     },
 ];
@@ -608,19 +609,21 @@ const features: {
 }[] = [
     {
         title: 'Automations',
-        text: 'Set it up once. Slidezz creates and queues new slideshows every day.',
+        text: 'Set it up once and Slidezz creates new slideshows every day.',
         Visual: AutomationsMock,
-        badge: 'new',
+        badge: 'coming soon',
     },
     {
         title: 'Scheduling & publishing',
-        text: 'Plan the week on a calendar with an hour grid, or publish right away.',
+        text: 'Plan the week on a calendar and publish straight to TikTok and Instagram.',
         Visual: SchedulingMock,
+        badge: 'coming soon',
     },
     {
         title: 'Analytics',
         text: 'Views, likes, comments and shares for every post, so you know what works.',
         Visual: AnalyticsMock,
+        badge: 'coming soon',
     },
     {
         title: 'Slideshow editor',
@@ -644,7 +647,7 @@ const features: {
     },
     {
         title: 'Multiple accounts',
-        text: 'Run several TikTok and Instagram accounts from one place.',
+        text: 'Keep several brands and their content in one place.',
         Visual: MultipleAccountsMock,
     },
     {
@@ -699,7 +702,7 @@ const plans = [
             'Unlimited images with your Gemini key',
             'AI copywriting & hooks',
             'All templates',
-            'Schedule posts',
+            'Download PNG and MP4',
         ],
         buttonClass: 'bg-jt-ink text-white hover:bg-jt-ink-soft',
         badge: null,
@@ -914,8 +917,8 @@ function Footer() {
                                 </span>
                             </div>
                             <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-jt-muted">
-                                Automate TikTok and Instagram slideshows that
-                                bring traffic to your business.
+                                Create TikTok slideshows and Instagram carousels
+                                that bring traffic to your business.
                             </p>
                         </div>
                         <div>
@@ -1020,10 +1023,10 @@ export default function LandingEn({
 
     return (
         <>
-            <Head title="Slidezz: Automate TikTok & Instagram slideshows">
+            <Head title="Slidezz: a month of TikTok & Instagram slideshows in 30 minutes">
                 <meta
                     name="description"
-                    content="Slidezz writes, designs and schedules faceless TikTok and Instagram slideshows for your brand, every day."
+                    content="Slidezz writes, designs and makes the AI images for your TikTok slideshows and Instagram carousels. Download them ready to post, as PNG or MP4."
                 />
             </Head>
 
@@ -1094,18 +1097,18 @@ export default function LandingEn({
                             TikTok + Instagram
                         </span>
                         <span className="text-jt-green-deep">
-                            · Posts every day
+                            · Ready to post in minutes
                         </span>
                     </div>
 
                     <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-jt-ink sm:max-w-[14ch]">
-                        Automate TikTok slideshows 100% on autopilot
+                        A month of TikTok slideshows in 30 minutes
                     </h1>
 
                     <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-jt-muted sm:text-[20px]">
-                        Slidezz writes, designs and schedules faceless
-                        slideshows and carousels for your brand. They don't look
-                        like AI.
+                        Slidezz writes, designs and makes the images for your
+                        faceless slideshows and carousels. Download them ready
+                        to post. They don't look like AI.
                     </p>
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -1127,7 +1130,7 @@ export default function LandingEn({
                         <div className="absolute inset-x-0 top-1/2 h-px bg-jt-line" />
                         <div className="relative mx-auto flex w-fit flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-white px-4 text-[13px] text-jt-muted">
                             <span className="inline-flex items-center gap-1.5 font-semibold text-jt-ink">
-                                Publishes to
+                                Ready for
                                 <TikTokMark className="h-4 w-4" />
                                 <InstagramMark className="h-4 w-4" />
                             </span>
@@ -1146,8 +1149,8 @@ export default function LandingEn({
                 >
                     <span className={sectionTag}>How it works</span>
                     <h2 className={sectionTitle}>
-                        Automate faceless pages.{' '}
-                        <span className="text-jt-ink/25">On autopilot.</span>
+                        Faceless content in minutes.{' '}
+                        <span className="text-jt-ink/25">No design skills.</span>
                     </h2>
                     <div className="mt-12 flex flex-col gap-4 sm:gap-6">
                         {steps.map((step, i) => (

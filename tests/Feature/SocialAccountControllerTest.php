@@ -32,7 +32,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_authenticated_user_can_view_social_accounts_page(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->actingAs($user)
             ->get('/social-accounts')
@@ -41,7 +41,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_only_accounts_from_users_workspaces_are_returned(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $ownAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
 
@@ -65,7 +65,7 @@ class SocialAccountControllerTest extends TestCase
     {
         config(['services.instagram.feature_user_ids' => '']);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->actingAs($user)
             ->get('/social-accounts/instagram/connect')
@@ -74,7 +74,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_instagram_connect_is_allowed_for_listed_user(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         config(['services.instagram.feature_user_ids' => "999,{$user->id}"]);
 
         $this->actingAs($user)
@@ -84,7 +84,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_connect_creates_workspace_if_none_exists(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->assertDatabaseMissing('workspaces', ['owner_id' => $user->id]);
 
@@ -97,7 +97,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_tiktok_connect_always_shows_the_account_picker(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $response = $this->actingAs($user)->get('/social-accounts/tiktok/connect');
 
@@ -106,7 +106,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_a_workspace_can_hold_several_accounts_of_the_same_platform(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         SocialAccount::factory()->count(2)->create(['workspace_id' => $workspace->id, 'provider' => 'tiktok']);
 
@@ -117,7 +117,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_destroy_removes_own_social_account(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
 
@@ -137,7 +137,7 @@ class SocialAccountControllerTest extends TestCase
             'graph.instagram.com/*' => Http::response(['id' => '17841400000000001', 'username' => 'tester', 'name' => 'Tester']),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
 
         $nonce = 'nonce-value';
@@ -178,7 +178,7 @@ class SocialAccountControllerTest extends TestCase
             'scontent.cdninstagram.com/*' => Http::response('fake-image-bytes', 200),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
 
         $nonce = 'nonce-value';
@@ -217,7 +217,7 @@ class SocialAccountControllerTest extends TestCase
             'p16-sign-va.tiktokcdn.com/*' => Http::response('fake-image-bytes', 200),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
 
         $this->actingAs($user)
@@ -257,7 +257,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_instagram_callback_rejects_tampered_state(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
 
         $state = rtrim(strtr(base64_encode(json_encode([
@@ -277,7 +277,7 @@ class SocialAccountControllerTest extends TestCase
 
     public function test_destroy_cannot_remove_other_users_social_account(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $otherWorkspace = Workspace::factory()->create();
         $otherAccount = SocialAccount::factory()->create(['workspace_id' => $otherWorkspace->id]);
 

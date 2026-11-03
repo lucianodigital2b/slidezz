@@ -139,7 +139,7 @@ class TikTokDraftControllerTest extends TestCase
             ->assertJsonPath('status', ScheduleStatus::Failed->value)
             ->assertJsonPath('error', 'Reconecte a conta.');
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->canPost()->create())
             ->getJson("/tiktok-drafts/{$schedule->id}")
             ->assertNotFound();
     }
@@ -149,7 +149,7 @@ class TikTokDraftControllerTest extends TestCase
      */
     private function userWithTikTok(): array
     {
-        $user = User::factory()->create(['onboarding_completed_at' => now()]);
+        $user = User::factory()->canPost()->create(['onboarding_completed_at' => now()]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'provider' => 'tiktok']);
 

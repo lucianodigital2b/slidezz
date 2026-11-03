@@ -15,7 +15,7 @@ import {
     Sparkles,
     Trash2,
 } from 'lucide-react';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
 import CtaButton from '@/components/cta-button';
@@ -372,17 +372,7 @@ export default function Dashboard({
     const { auth } = usePage().props;
     const [search, setSearch] = useState(initialSearch ?? '');
     const [welcomeOpen, setWelcomeOpen] = useState(show_welcome);
-    const [geminiModalOpen, setGeminiModalOpen] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // AI carousel generation is BYOK-only: block it until a Gemini key is connected.
-    // Instead of navigating to the wizard, open a modal prompting the key setup.
-    const handleCreateAiClick = (event: MouseEvent<Element>) => {
-        if (!auth.has_gemini_key) {
-            event.preventDefault();
-            setGeminiModalOpen(true);
-        }
-    };
 
     useEffect(() => {
         if (debounceRef.current) {
@@ -425,8 +415,8 @@ export default function Dashboard({
             />
 
             <div className="flex-1 bg-[#F9F6F4] font-[Outfit,sans-serif] text-[#1A1A1A]">
-                {/* ── Gemini key nudge (images are BYOK-only) ── */}
-                {!auth.has_gemini_key && (
+                {/* ── Out of managed image credits (and no own Gemini key) ── */}
+                {!auth.has_gemini_key && auth.credits <= 0 && (
                     <FadeIn className="px-6 pt-6 sm:px-10">
                         <div className="flex flex-col gap-4 rounded-2xl border border-[#FFE156] bg-[#FFE156]/15 p-5 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
@@ -443,7 +433,7 @@ export default function Dashboard({
                                 </div>
                             </div>
                             <Link
-                                href="/settings/integrations"
+                                href="/settings/billing"
                                 className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#333]"
                             >
                                 {t('dashboard.geminiAlert.cta')}
@@ -466,7 +456,6 @@ export default function Dashboard({
                     <div className="mt-7 flex flex-wrap items-center gap-3">
                         <CtaButton
                             href="/carousel/create"
-                            onClick={handleCreateAiClick}
                             className="py-2 pr-2 pl-7 text-base"
                         >
                             {t('dashboard.actions.createAi.button')}
@@ -548,7 +537,6 @@ export default function Dashboard({
                             </p>
                             <CtaButton
                                 href="/carousel/create"
-                                onClick={handleCreateAiClick}
                                 className="mt-1 py-2 pr-2 pl-7 text-base"
                             >
                                 {t('dashboard.actions.createAi.button')}
@@ -558,38 +546,6 @@ export default function Dashboard({
                 </section>
             </div>
 
-            {/* Gemini key required — gates AI carousel generation */}
-            <Dialog open={geminiModalOpen} onOpenChange={setGeminiModalOpen}>
-                <DialogContent className="text-center sm:max-w-md">
-                    <DialogHeader className="items-center gap-3">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFE156]/10">
-                            <KeyRound className="h-8 w-8 text-[#1A1A1A]" />
-                        </div>
-                        <DialogTitle className="font-display text-2xl tracking-wide text-[#1A1A1A]">
-                            {t('dashboard.geminiModal.title')}
-                        </DialogTitle>
-                        <DialogDescription className="text-sm leading-relaxed text-[#555550]">
-                            {t('dashboard.geminiModal.body')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <DialogFooter className="flex-col gap-2 sm:flex-col sm:justify-center">
-                        <Link
-                            href="/settings/integrations"
-                            className="w-full rounded-xl bg-[#FFE156] px-6 py-3 text-sm font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
-                        >
-                            {t('dashboard.geminiModal.cta')}
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => setGeminiModalOpen(false)}
-                            className="w-full rounded-xl px-6 py-2.5 text-sm font-medium text-[#555550] transition-colors hover:bg-gray-100"
-                        >
-                            {t('dashboard.geminiModal.cancel')}
-                        </button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

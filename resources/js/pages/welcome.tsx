@@ -56,8 +56,9 @@ const slides = [
 
 const lifetimeFeatures = [
     'Carrosséis ilimitados, pra sempre',
-    'Imagens ilimitadas com sua chave Gemini',
+    '100 imagens com IA inclusas (ou ilimitadas com sua chave Gemini)',
     'Todos os templates + atualizações futuras',
+    'Postagem automática no TikTok e Instagram quando lançar',
 ];
 
 const faqs = [
@@ -358,8 +359,8 @@ function StepTwoVisual() {
                 </span>
             </div>
             <div className="flex items-center justify-between rounded-[16px] border border-dashed border-[rgba(255,255,255,0.2)] px-3 py-2 text-[11px] font-medium text-[#FAFAFA]">
-                <span>Próxima publicação</span>
-                <span className="font-semibold">Hoje, 15:00</span>
+                <span>Postagem automática</span>
+                <span className="font-semibold">Em breve</span>
             </div>
         </div>
     );
@@ -367,12 +368,12 @@ function StepTwoVisual() {
 
 function StepThreeVisual() {
     const thumbs = [
-        { src: '/landing/s2.webp', badge: 'Publicado' },
-        { src: '/landing/s3.webp', badge: 'Publicado' },
-        { src: '/landing/s7.webp', badge: 'Publicado' },
-        { src: '/landing/s10.webp', badge: 'Agendado' },
-        { src: '/landing/s11.webp', badge: 'Agendado' },
-        { src: '/landing/s12.webp', badge: 'Agendado' },
+        { src: '/landing/s2.webp', badge: 'Pronto' },
+        { src: '/landing/s3.webp', badge: 'Pronto' },
+        { src: '/landing/s7.webp', badge: 'Pronto' },
+        { src: '/landing/s10.webp', badge: 'Baixado' },
+        { src: '/landing/s11.webp', badge: 'Baixado' },
+        { src: '/landing/s12.webp', badge: 'Baixado' },
     ];
 
     return (
@@ -411,7 +412,7 @@ const steps = [
     },
     {
         title: 'Publique e viralize',
-        text: 'Exporte em Full HD ou agende direto. Pronto. Seu carrossel está no ar, ganhando seguidores.',
+        text: 'Baixe em PNG Full HD ou vídeo MP4 e poste pelo app. A postagem automática no TikTok e no Instagram chega em breve.',
         Visual: StepThreeVisual,
     },
 ];
@@ -844,8 +845,8 @@ function Footer() {
                             </span>
                         </div>
                         <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-[#A1A1AA]">
-                            Automatize slideshows do TikTok e Instagram que
-                            trazem tráfego para o seu negócio.
+                            Crie slideshows do TikTok e carrosséis do
+                            Instagram que trazem tráfego para o seu negócio.
                         </p>
                     </div>
                     <div>
@@ -957,10 +958,10 @@ export default function Welcome({
 
     return (
         <>
-            <Head title="Slidezz — Transforme o TikTok em uma Máquina de Vendas">
+            <Head title="Slidezz: um mês de carrosséis pro TikTok e Instagram em 30 minutos">
                 <meta
                     name="description"
-                    content="Slidezz escreve, desenha e agenda carrosséis para TikTok e Instagram, todos os dias, no piloto automático."
+                    content="A IA escreve, desenha e gera as imagens dos seus carrosséis e slideshows. Você baixa pronto pra postar no TikTok e no Instagram, em PNG ou MP4."
                 />
             </Head>
 
@@ -1086,20 +1087,18 @@ export default function Welcome({
 
                         <Reveal>
                             <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA] sm:max-w-[14ch]">
-                                Transforme o TikTok em uma máquina de tráfego e
-                                vendas{' '}
+                                Um mês de carrosséis pro TikTok e Instagram{' '}
                                 <span className="bg-gradient-to-r from-[#A78BFA] to-[#71717A] bg-clip-text text-transparent">
-                                    sem criar conteúdo
+                                    em 30 minutos
                                 </span>
                             </h1>
                         </Reveal>
 
                         <Reveal>
                             <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-[#A1A1AA] sm:text-[20px]">
-                                Geramos e publicamos carrosséis virais
-                                automaticamente todos os dias para você atrair
-                                leads, seguidores e clientes, enquanto você foca
-                                no seu negócio.
+                                A IA escreve, desenha e gera as imagens. Você
+                                baixa pronto pra postar no TikTok e no
+                                Instagram, em PNG ou vídeo MP4.
                             </p>
                         </Reveal>
 
@@ -1131,14 +1130,14 @@ export default function Welcome({
                             <div className="absolute inset-x-0 top-1/2 h-px bg-[rgba(255,255,255,0.08)]" />
                             <div className="relative mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[#08080A] px-4 text-[13px] text-[#A1A1AA]">
                                 <span className="inline-flex items-center gap-1.5 font-semibold text-[#FAFAFA]">
-                                    Publica no
+                                    Pronto pro
                                     <TikTokMark className="h-4 w-4" />
                                     <InstagramMark className="h-4 w-4" />
                                 </span>
                                 <span>· Economia de milhares em UGC</span>
                                 <span>
-                                    · Conteúdo publicado todos os dias, no
-                                    piloto automático
+                                    · Cole o link de um viral e a IA recria pro
+                                    seu nicho
                                 </span>
                                 <span>
                                     · Sem briefing, sem aprovação, sem atraso
@@ -1321,7 +1320,7 @@ export default function Welcome({
                                 {[
                                     'Carrossel pronto',
                                     'Legendas',
-                                    'Posts agendados',
+                                    'Vídeo MP4',
                                     'Instagram + TikTok',
                                 ].map((item) => (
                                     <div
@@ -1716,12 +1715,11 @@ export default function Welcome({
                     <div className="relative mx-auto max-w-[1320px] px-4 pt-8 pb-24 text-center sm:px-6 sm:pb-32">
                         <Reveal>
                             <h2 className="mx-auto max-w-[16ch] font-landing-display text-[clamp(2.75rem,7vw,7.5rem)] leading-[0.92] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA]">
-                                Comece a automatizar seu TikTok hoje.
+                                Seu próximo mês de conteúdo começa hoje.
                             </h2>
                             <p className="mx-auto mt-6 max-w-sm text-lg leading-relaxed font-medium text-[#A1A1AA]">
-                                Pare de depender de criadores. Tenha um sistema
-                                que gera e publica conteúdo viral todos os dias
-                                , no piloto automático.
+                                Pare de depender de criadores. A IA gera os
+                                carrosséis, você baixa e posta em minutos.
                             </p>
                             <Link
                                 href={ctaHref}

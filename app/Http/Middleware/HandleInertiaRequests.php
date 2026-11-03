@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
             // and other in-app upsells render the right currency for each user.
             'pricing' => $request->user() ? $this->pricing($request) : null,
             'igEnabled' => (bool) $request->user()?->canUseInstagram(),
+            'canPost' => (bool) $request->user()?->canPost(),
             // The MCP server + its token UI are a dev-only preview (laravel/mcp is a dev
             // dependency), so the settings nav hides the "API & MCP" entry outside dev.
             'mcpEnabled' => app()->environment('local', 'testing'),

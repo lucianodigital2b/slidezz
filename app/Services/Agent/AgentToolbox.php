@@ -72,7 +72,7 @@ class AgentToolbox
             ],
             [
                 'name' => 'generate_image',
-                'description' => 'Generate a single new 9:16 image with Gemini (BYOK).',
+                'description' => 'Generate a single new 9:16 image with Gemini (spends 1 image credit unless the user has their own key).',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -340,8 +340,8 @@ class AgentToolbox
             throw new InvalidArgumentException('prompt is required.');
         }
 
-        $ownerKey = $conversation->workspace->owner?->byokGeminiKey();
-        $source = ImageSourceFactory::make('ai', $ownerKey);
+        $owner = $conversation->workspace->owner;
+        $source = ImageSourceFactory::make('ai', $owner?->byokGeminiKey(), $owner);
         $result = $source->search($prompt, 1)[0] ?? null;
 
         if ($result === null) {

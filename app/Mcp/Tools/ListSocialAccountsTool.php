@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Http\Middleware\EnsureCanPost;
 use App\Services\Posts\PostService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -22,6 +23,10 @@ class ListSocialAccountsTool extends Tool
 
         if (! $user) {
             return Response::error('Unauthenticated. Provide a valid Slidezz personal access token as a Bearer token.');
+        }
+
+        if (! $user->canPost()) {
+            return Response::error(EnsureCanPost::MESSAGE);
         }
 
         $accounts = app(PostService::class)->accounts($user);

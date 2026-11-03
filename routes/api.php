@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BlogPostController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Middleware\EnsureCanPost;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,12 +16,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('social-accounts', [PostController::class, 'accounts']);
-    Route::get('posts', [PostController::class, 'index']);
-    Route::post('posts', [PostController::class, 'store']);
-    Route::patch('posts/{schedule}', [PostController::class, 'update']);
-    Route::post('posts/{schedule}/duplicate', [PostController::class, 'duplicate']);
-    Route::delete('posts/{schedule}', [PostController::class, 'destroy']);
+    Route::middleware(EnsureCanPost::class)->group(function (): void {
+        Route::get('social-accounts', [PostController::class, 'accounts']);
+        Route::get('posts', [PostController::class, 'index']);
+        Route::post('posts', [PostController::class, 'store']);
+        Route::patch('posts/{schedule}', [PostController::class, 'update']);
+        Route::post('posts/{schedule}/duplicate', [PostController::class, 'duplicate']);
+        Route::delete('posts/{schedule}', [PostController::class, 'destroy']);
+    });
 
     // Blog CMS for the SEO agent. Editors only; publishing needs the blog:publish ability.
     Route::prefix('blog')->group(function (): void {

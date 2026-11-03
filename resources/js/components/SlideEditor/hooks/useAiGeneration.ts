@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CarouselGenerationController from '@/actions/App/Http/Controllers/CarouselGenerationController';
@@ -176,9 +177,10 @@ export function useAiGeneration(
         }
 
         let imageResults: PromiseSettledResult<string | null>[] = [];
-        // Images are BYOK-only: a 402 from the server means the user has no Gemini
-        // key connected yet. Track it so we can point them to the settings page.
+        // A 402 means the images were skipped: out of managed credits (no_credits)
+        // or no premium access. Track it so we can tell the user why.
         let missingGeminiKey = false;
+        let noCredits = false;
 
         const aspectRatio = format === 'stories' ? '9:16' : '4:5';
 
@@ -195,7 +197,17 @@ export function useAiGeneration(
                             // overrides the template aesthetics during composition).
                             body: JSON.stringify({ prompt: s.imagePrompt, aspect_ratio: aspectRatio }),
                         });
-                        if (r.status === 402) { missingGeminiKey = true; return null; }
+                        if (r.status === 402) {
+                            const err = await r.json().catch(() => ({})) as { error?: string };
+
+                            if (err.error === 'no_credits') {
+                                noCredits = true;
+                            } else {
+                                missingGeminiKey = true;
+                            }
+
+                            return null;
+                        }
                         if (!r.ok) return null;
                         const data = await r.json() as { base64?: string };
                         return data.base64 ?? null;
@@ -243,8 +255,15 @@ export function useAiGeneration(
 
         // The deck still generated (text is free) — only the images were skipped
         // because no Gemini key is connected. Point the user to the settings page.
-        if (missingGeminiKey) {
+        if (noCredits) {
+            window.alert(t('imageCredits.noCredits'));
+        } else if (missingGeminiKey) {
             window.alert(t('slideEditor.ai.errorMissingGeminiKey'));
+        }
+
+        // Refresh the shared credits counter (sidebar) after spending credits.
+        if (shouldGenerateImages) {
+            router.reload({ only: ['auth'] });
         }
 
         return newSlides;

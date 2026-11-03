@@ -48,22 +48,7 @@ class CarouselCreditTest extends TestCase
         $this->assertEquals(3, $user->fresh()->credits);
     }
 
-    // ─── Images are BYOK-only (launch offer: no managed generation) ──────────
-
-    public function test_image_generation_requires_a_connected_gemini_key(): void
-    {
-        $this->mock(CarouselGenerationService::class, function ($mock) {
-            $mock->shouldNotReceive('generateImage');
-        });
-
-        $user = User::factory()->create(['credits' => 3, 'lifetime_access_at' => now()]);
-
-        $this->actingAs($user)->postJson('/carousel/generate-image', [
-            'prompt' => 'a cat',
-        ])->assertStatus(402)->assertJsonFragment(['error' => 'missing_byok_key']);
-
-        $this->assertEquals(3, $user->fresh()->credits);
-    }
+    // ─── BYOK images: unlimited, never metered (managed path: ManagedImageCreditsTest) ──
 
     public function test_image_generation_uses_the_users_key_and_spends_no_credits(): void
     {

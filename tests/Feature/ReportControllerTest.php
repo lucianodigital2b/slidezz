@@ -23,7 +23,7 @@ class ReportControllerTest extends TestCase
 
     public function test_reports_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->actingAs($user)
             ->get('/reports')
@@ -41,7 +41,7 @@ class ReportControllerTest extends TestCase
 
     public function test_summary_aggregates_only_posts_in_the_period(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->publishedPostWithStats($user, 'instagram', now()->subDays(5), ['views' => 1000, 'likes' => 100, 'comments' => 10, 'shares' => 5]);
         // Outside the 30-day window: must not count.
@@ -60,7 +60,7 @@ class ReportControllerTest extends TestCase
 
     public function test_delta_compares_to_the_previous_period(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->publishedPostWithStats($user, 'instagram', now()->subDays(5), ['views' => 200]);
         $this->publishedPostWithStats($user, 'instagram', now()->subDays(45), ['views' => 100]);
@@ -75,7 +75,7 @@ class ReportControllerTest extends TestCase
 
     public function test_tiktok_and_instagram_totals_are_separated_by_platform(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->publishedPostWithStats($user, 'instagram', now()->subDays(3), ['views' => 500]);
         $this->publishedPostWithStats($user, 'tiktok', now()->subDays(3), ['views' => 800]);
@@ -91,8 +91,8 @@ class ReportControllerTest extends TestCase
 
     public function test_other_users_posts_are_excluded(): void
     {
-        $user = User::factory()->create();
-        $other = User::factory()->create();
+        $user = User::factory()->canPost()->create();
+        $other = User::factory()->canPost()->create();
 
         $this->publishedPostWithStats($other, 'instagram', now()->subDays(5), ['views' => 7777]);
 
@@ -108,7 +108,7 @@ class ReportControllerTest extends TestCase
     {
         Pdf::fake();
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $this->publishedPostWithStats($user, 'instagram', now()->subDays(5), ['views' => 1000]);
 
         $this->actingAs($user)

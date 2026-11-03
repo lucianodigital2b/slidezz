@@ -20,14 +20,15 @@ import { edit as billingEdit } from '@/routes/billing';
 export function AppSidebar() {
     const { isCurrentUrl } = useCurrentUrl();
     const { t } = useTranslation();
-    const { auth, igEnabled } = usePage().props;
+    const { auth, igEnabled, canPost } = usePage().props;
 
     const navItems = [
         { title: t('sidebar.agent'), href: '/agent', icon: Bot },
         { title: t('sidebar.generate'), href: '/generate', icon: Sparkles },
         // Calendar/schedule + analytics are gated to Instagram-enabled users
-        // (canUseInstagram allowlist) — both depend on published social posts.
-        ...(igEnabled
+        // (canUseInstagram allowlist, which also requires can_post) — both
+        // depend on published social posts.
+        ...(igEnabled && canPost
             ? [
                   { title: t('sidebar.schedule'), href: '/schedule', icon: CalendarDays },
                   { title: t('sidebar.analytics'), href: '/analytics', icon: LineChart },
@@ -36,7 +37,7 @@ export function AppSidebar() {
             : []),
         { title: t('sidebar.ugc'), href: '/ugc', icon: Radar },
         { title: t('sidebar.tiktok'), href: '/tiktok/create', icon: Music2 },
-        { title: t('sidebar.automations'), href: '/automations', icon: Zap },
+        ...(canPost ? [{ title: t('sidebar.automations'), href: '/automations', icon: Zap }] : []),
         { title: t('sidebar.mediaLibrary'), href: '/media-library', icon: Images },
         { title: t('sidebar.slideshowEditor'), href: '/slideshow-editor', icon: Layers },
         { title: t('sidebar.videos'), href: '/videos', icon: Clapperboard },
@@ -96,9 +97,22 @@ export function AppSidebar() {
                             </SidebarMenuItem>
                         )}
 
-                        {/* Credits button hidden during the BYOK launch offer —
-                            balances keep accruing server-side; re-add this item
-                            (and the CreditsModal below) to bring credits back. */}
+                        {/* Managed image credits (1 credit = 1 AI image). Buying more
+                            happens on the billing page. */}
+                        {auth.user && (
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={{ children: t('imageCredits.count', { count: auth.credits ?? 0 }) }}
+                                    className="text-[#555550]"
+                                >
+                                    <Link href={billingEdit.url()} prefetch>
+                                        <Images className="w-4 h-4" />
+                                        <span>{t('imageCredits.count', { count: auth.credits ?? 0 })}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        )}
 
                         <SidebarMenuItem>
                             <SidebarMenuButton

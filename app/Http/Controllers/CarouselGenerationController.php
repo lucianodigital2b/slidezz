@@ -76,24 +76,37 @@ class CarouselGenerationController extends Controller
             ], 402);
         }
 
-        // Images are BYOK-only: they always run on the user's own Gemini key,
-        // so there is no platform COGS and nothing to meter with credits.
-        $byokKey = $request->user()->byokGeminiKey();
+        $user = $request->user();
+        $byokKey = $user->byokGeminiKey();
+        $metered = $byokKey === null;
 
-        if ($byokKey === null) {
+        // Managed images: without their own Gemini key, each image spends 1 credit
+        // on the platform key. Reserve it atomically before calling the API.
+        if ($metered && ! $user->deductCredit()) {
             return response()->json([
-                'error' => 'missing_byok_key',
-                'message' => 'Conecte sua chave Gemini em Configurações → Integrações para gerar imagens.',
+                'error' => 'no_credits',
+                'message' => 'Seus créditos de imagem acabaram. Compre mais créditos ou conecte sua chave Gemini para imagens ilimitadas.',
             ], 402);
         }
 
         try {
-            $base64 = $this->carouselGenerationService->generateImage(
-                $validated['prompt'],
-                $validated['aspect_ratio'] ?? '4:5',
-                $byokKey,
-            );
+            // The platform path calls Gemini directly: generateImage() silently falls
+            // back to an Unsplash stock photo, which would charge a credit for it.
+            $base64 = $metered
+                ? $this->carouselGenerationService->generateImageWithGemini(
+                    $validated['prompt'],
+                    $validated['aspect_ratio'] ?? '4:5',
+                )
+                : $this->carouselGenerationService->generateImage(
+                    $validated['prompt'],
+                    $validated['aspect_ratio'] ?? '4:5',
+                    $byokKey,
+                );
         } catch (\Throwable $e) {
+            if ($metered) {
+                $user->addCredits(1);
+            }
+
             \Log::error('Image generation failed', [
                 'message' => $e->getMessage(),
                 'class' => get_class($e),

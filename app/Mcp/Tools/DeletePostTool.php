@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Http\Middleware\EnsureCanPost;
 use App\Services\Posts\PostService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -24,6 +25,10 @@ class DeletePostTool extends Tool
 
         if (! $user) {
             return Response::error('Unauthenticated. Provide a valid Slidezz personal access token as a Bearer token.');
+        }
+
+        if (! $user->canPost()) {
+            return Response::error(EnsureCanPost::MESSAGE);
         }
 
         $validated = $request->validate([

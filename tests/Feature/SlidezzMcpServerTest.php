@@ -50,7 +50,7 @@ class SlidezzMcpServerTest extends TestCase
 
     private function accountFor(string $provider = 'tiktok'): array
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'provider' => $provider]);
 
@@ -61,7 +61,7 @@ class SlidezzMcpServerTest extends TestCase
 
     public function test_list_projects_tool_returns_the_authenticated_users_projects(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $this->makeProject($workspace, 'My First Carousel');
 
@@ -75,10 +75,10 @@ class SlidezzMcpServerTest extends TestCase
 
     public function test_list_projects_only_returns_projects_from_the_users_own_workspace(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         Workspace::factory()->create(['owner_id' => $user->id]);
 
-        $other = User::factory()->create();
+        $other = User::factory()->canPost()->create();
         $otherWorkspace = Workspace::factory()->create(['owner_id' => $other->id]);
         $this->makeProject($otherWorkspace, 'Someone Elses Deck', 'noir-manifesto');
 
@@ -90,7 +90,7 @@ class SlidezzMcpServerTest extends TestCase
 
     public function test_list_projects_respects_the_limit_argument(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $this->makeProject($workspace, 'Keep Me');
         $this->makeProject($workspace, 'Drop Me');

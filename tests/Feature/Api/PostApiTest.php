@@ -154,7 +154,7 @@ class PostApiTest extends TestCase
      */
     private function accountFor(string $provider): array
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'provider' => $provider]);
 

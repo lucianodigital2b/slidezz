@@ -16,7 +16,7 @@ class SlideProjectPublishGateTest extends TestCase
     {
         config(['services.instagram.feature_user_ids' => '']);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $project = SlideProject::create([
             'workspace_id' => $workspace->id,
@@ -32,7 +32,7 @@ class SlideProjectPublishGateTest extends TestCase
 
     public function test_publish_gate_passes_for_listed_user_then_validates(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         config(['services.instagram.feature_user_ids' => (string) $user->id]);
 
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);

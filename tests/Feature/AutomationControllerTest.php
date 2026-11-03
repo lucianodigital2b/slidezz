@@ -149,7 +149,7 @@ class AutomationControllerTest extends TestCase
     {
         Queue::fake();
 
-        $user = User::factory()->create(['onboarding_completed_at' => now()]);
+        $user = User::factory()->canPost()->create(['onboarding_completed_at' => now()]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $automation = Automation::factory()->create(['workspace_id' => $workspace->id]);
 
@@ -164,7 +164,7 @@ class AutomationControllerTest extends TestCase
      */
     private function premiumUser(): array
     {
-        $user = User::factory()->create([
+        $user = User::factory()->canPost()->create([
             'onboarding_completed_at' => now(),
             'lifetime_access_at' => now(),
         ]);

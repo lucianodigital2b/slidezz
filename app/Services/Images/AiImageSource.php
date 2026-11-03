@@ -4,6 +4,7 @@ namespace App\Services\Images;
 
 use App\Contracts\ImageSource;
 use App\Exceptions\ImageSourceException;
+use App\Models\User;
 use App\Services\AI\CarouselGenerationService;
 
 /**
@@ -16,11 +17,13 @@ use App\Services\AI\CarouselGenerationService;
 class AiImageSource implements ImageSource
 {
     /**
-     * @param  string|null  $byokApiKey  The user's own Gemini key; image generation is BYOK-only.
+     * @param  string|null  $byokApiKey  The user's own Gemini key; when set, no credits are spent.
+     * @param  User|null  $owner  Pays 1 managed credit per image when there is no key.
      */
     public function __construct(
         private readonly CarouselGenerationService $carousel,
         private readonly ?string $byokApiKey = null,
+        private readonly ?User $owner = null,
     ) {}
 
     public function name(): string
@@ -45,10 +48,25 @@ class AiImageSource implements ImageSource
     {
         $images = [];
 
+        // Never generate unmetered: without a key, the owner pays 1 credit per image.
+        $metered = $this->byokApiKey === null;
+
+        if ($metered && $this->owner === null) {
+            throw new ImageSourceException('AI image generation needs a Gemini key or an owner with credits.');
+        }
+
         for ($i = 0; $i < $limit; $i++) {
+            if ($metered && ! $this->owner->deductCredit()) {
+                throw new ImageSourceException('Seus créditos de imagem acabaram. Compre mais créditos ou conecte sua chave Gemini.');
+            }
+
             try {
                 $dataUri = $this->carousel->generateImageWithGemini($query, '9:16', $this->byokApiKey);
             } catch (\Throwable $e) {
+                if ($metered) {
+                    $this->owner->addCredits(1);
+                }
+
                 throw new ImageSourceException("Image generation failed: {$e->getMessage()}", previous: $e);
             }
 

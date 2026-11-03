@@ -20,6 +20,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use Billable, HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
+    /** Managed AI-image credits granted once with the lifetime launch deal. */
+    public const LIFETIME_WELCOME_CREDITS = 100;
+
     /**
      * Get the attributes that should be cast.
      *
@@ -35,6 +38,7 @@ class User extends Authenticatable
             'welcome_shown_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'lifetime_access_at' => 'datetime',
+            'can_post' => 'boolean',
             // Stored encrypted at rest; the user pastes their own Gemini key for
             // BYOK image generation. Never exposed (see Hidden above).
             'gemini_api_key' => 'encrypted',
@@ -50,6 +54,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether the user may post to social networks (connect accounts, send
+     * TikTok drafts, publish to Instagram, schedule, automations, analytics,
+     * API/MCP posts). Off by default while the TikTok and Meta app reviews are
+     * pending; set per user (`can_post`) by an admin. See EnsureCanPost.
+     */
+    public function canPost(): bool
+    {
+        return (bool) $this->can_post;
+    }
+
+    /**
      * Whether the user is allowed to see and use the Instagram integration.
      *
      * Gated behind INSTAGRAM_FEATURE_USER_IDS while the integration is in Meta
@@ -62,7 +77,7 @@ class User extends Authenticatable
             ->filter()
             ->map(fn (string $id): int => (int) $id);
 
-        return $ids->contains($this->id);
+        return $this->canPost() && $ids->contains($this->id);
     }
 
     /**
@@ -93,9 +108,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the user may bring their own Gemini key. LAUNCH OFFER: images
-     * are BYOK-only for everyone, so this always returns true. When managed
-     * credits come back, restore the plan gate via config plans.*.byok_enabled.
+     * Whether the user may bring their own Gemini key. BYOK is optional on every
+     * plan: with a key, images are unlimited and spend no credits; without one,
+     * each AI image spends 1 managed credit on the platform key.
      */
     public function byokEnabled(): bool
     {
@@ -104,7 +119,7 @@ class User extends Authenticatable
 
     /**
      * The Gemini API key to use for image generation, or null when the user
-     * has not connected one yet (image generation is unavailable then).
+     * has not connected one yet (managed credits are spent then).
      */
     public function byokGeminiKey(): ?string
     {
@@ -140,6 +155,14 @@ class User extends Authenticatable
     {
         static::where('id', $this->id)->increment('credits', $amount);
         $this->refresh();
+    }
+
+    /**
+     * One-time managed image credits for the lifetime launch deal.
+     */
+    public function grantLifetimeCredits(): void
+    {
+        $this->addCredits(self::LIFETIME_WELCOME_CREDITS);
     }
 
     public function workspaces()

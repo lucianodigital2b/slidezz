@@ -28,7 +28,7 @@ class AnalyticsControllerTest extends TestCase
 
     public function test_analytics_page_renders_with_stats(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $this->actingAs($user)
             ->get('/analytics')
@@ -46,7 +46,7 @@ class AnalyticsControllerTest extends TestCase
 
     public function test_only_published_posts_appear_in_analytics(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -72,7 +72,7 @@ class AnalyticsControllerTest extends TestCase
 
     public function test_stats_aggregate_analytics_from_post_analytics(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -100,7 +100,7 @@ class AnalyticsControllerTest extends TestCase
 
     public function test_posts_from_other_users_workspaces_are_excluded(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $otherWorkspace = Workspace::factory()->create();
         $otherAccount = SocialAccount::factory()->create(['workspace_id' => $otherWorkspace->id]);
@@ -123,7 +123,7 @@ class AnalyticsControllerTest extends TestCase
     {
         Queue::fake();
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $socialAccount = SocialAccount::factory()->create(['workspace_id' => $workspace->id]);
         $contentProject = ContentProject::factory()->create(['workspace_id' => $workspace->id]);
@@ -144,7 +144,7 @@ class AnalyticsControllerTest extends TestCase
     {
         Queue::fake();
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
 
         $otherWorkspace = Workspace::factory()->create();
         $otherAccount = SocialAccount::factory()->create(['workspace_id' => $otherWorkspace->id]);
@@ -174,7 +174,7 @@ class AnalyticsControllerTest extends TestCase
             ]),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         SocialAccount::factory()->create([
             'workspace_id' => $workspace->id,
@@ -204,7 +204,7 @@ class AnalyticsControllerTest extends TestCase
             'error' => ['code' => 'access_token_invalid', 'message' => ''],
         ], 401)]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         SocialAccount::factory()->create([
             'workspace_id' => $workspace->id,
@@ -234,7 +234,7 @@ class AnalyticsControllerTest extends TestCase
                 : Http::response(['data' => ['videos' => []], 'error' => ['code' => 'ok']]);
         });
 
-        $user = User::factory()->create();
+        $user = User::factory()->canPost()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
         $fast = SocialAccount::factory()->create([
             'workspace_id' => $workspace->id,

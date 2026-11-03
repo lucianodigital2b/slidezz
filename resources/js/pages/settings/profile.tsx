@@ -206,7 +206,7 @@ export default function Profile({
     socialAccounts: SocialAccount[];
 }) {
     const { t } = useTranslation();
-    const { auth, igEnabled } = usePage().props;
+    const { auth, igEnabled, canPost } = usePage().props;
 
     return (
         <>
@@ -319,10 +319,25 @@ export default function Profile({
                 </Form>
             </div>
 
-            {igEnabled && (
+            {canPost && igEnabled && (
                 <>
                     <Separator />
                     <ConnectedAccounts accounts={socialAccounts} />
+                </>
+            )}
+
+            {!canPost && (
+                <>
+                    <Separator />
+                    <div className="space-y-6">
+                        <Heading
+                            variant="small"
+                            title={t('settings.profile.connectedAccounts.title')}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                            {t('postingSoon.connectNote')}
+                        </p>
+                    </div>
                 </>
             )}
 

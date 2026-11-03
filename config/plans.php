@@ -7,11 +7,10 @@
  *   - STRIPE_PRICE_*_LABEL   → the price shown on the pricing UI (display only).
  *   - STRIPE_PRICE_*         → the real Stripe Price id that is actually charged.
  *
- * LAUNCH OFFER: images are BYOK on every plan (each user connects their own
- * Gemini key), so image generation carries no platform COGS right now. The
- * credit structure below stays fully wired — balances keep accruing silently —
- * so managed images can be re-enabled later by flipping `byok_enabled` back to
- * false on the lower tiers and unhiding the credits UI.
+ * Managed images: every plan includes AI images metered by credits
+ * (1 credit = 1 image, reset each billing cycle by HandleStripeWebhookForCredits)
+ * on the platform Gemini key. Connecting a BYOK Gemini key is optional and gives
+ * unlimited images without spending credits.
  */
 
 $starterCredits = (int) env('PLAN_STARTER_CREDITS', 60);
@@ -27,7 +26,8 @@ return [
         'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            'Imagens ilimitadas com sua chave Gemini',
+            "{$starterCredits} imagens com IA por mês",
+            'Ilimitado com sua chave Gemini (opcional)',
             'Todos os templates',
             'Suporte por e-mail',
         ],
@@ -50,7 +50,8 @@ return [
         'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            'Imagens ilimitadas com sua chave Gemini',
+            "{$proCredits} imagens com IA por mês",
+            'Ilimitado com sua chave Gemini (opcional)',
             'Todos os templates',
             'Suporte prioritário',
             'Acesso antecipado',
@@ -74,7 +75,8 @@ return [
         'byok_enabled' => true,
         'features' => [
             'Carrosséis ilimitados',
-            'Imagens ilimitadas com sua chave Gemini',
+            "{$agencyCredits} imagens com IA por mês",
+            'Ilimitado com sua chave Gemini (opcional)',
             'Todos os templates',
             'Múltiplos projetos',
             'Suporte prioritário',

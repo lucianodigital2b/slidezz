@@ -48,6 +48,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * Allow the user to post to social networks (the can_post flag).
+     */
+    public function canPost(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'can_post' => true,
+        ]);
+    }
+
+    /**
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static

@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { ChevronDown, Loader2, Music2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,12 +78,26 @@ async function waitForOutcome(scheduleId: number): Promise<TikTokDraftStatus> {
  */
 export function SendToTikTokButton({ accounts, send, disabled, className }: SendToTikTokButtonProps) {
     const { t } = useTranslation();
+    const { canPost } = usePage().props;
     const [sending, setSending] = useState(false);
 
     const buttonClass = cn(
         'flex items-center gap-1.5 rounded-lg bg-[#1A1A1A] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50',
         className,
     );
+
+    // Posting is gated per user (can_post) while the TikTok app review is pending.
+    if (!canPost) {
+        return (
+            <span
+                title={t('postingSoon.tiktokTooltip')}
+                aria-disabled="true"
+                className={cn(buttonClass, 'cursor-not-allowed opacity-60 hover:bg-[#1A1A1A]')}
+            >
+                <Music2 className="h-4 w-4" /> {t('postingSoon.tiktokButton')}
+            </span>
+        );
+    }
 
     if (accounts.length === 0) {
         return (
