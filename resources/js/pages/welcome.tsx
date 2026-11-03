@@ -58,7 +58,8 @@ const lifetimeFeatures = [
     'Carrosséis ilimitados, pra sempre',
     '100 imagens com IA inclusas (ou ilimitadas com sua chave Gemini)',
     'Todos os templates + atualizações futuras',
-    'Postagem automática no TikTok e Instagram quando lançar',
+    'PDF pro LinkedIn e vídeo MP4 pros Reels, TikTok e Shorts',
+    'Postagem automática no Instagram e TikTok quando lançar',
 ];
 
 const faqs = [
@@ -412,7 +413,7 @@ const steps = [
     },
     {
         title: 'Publique e viralize',
-        text: 'Baixe em PNG Full HD ou vídeo MP4 e poste pelo app. A postagem automática no TikTok e no Instagram chega em breve.',
+        text: 'Baixe em PNG Full HD, PDF pro LinkedIn ou vídeo MP4 pros Reels, TikTok e Shorts. A postagem automática chega em breve.',
         Visual: StepThreeVisual,
     },
 ];
@@ -845,8 +846,8 @@ function Footer() {
                             </span>
                         </div>
                         <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-[#A1A1AA]">
-                            Crie slideshows do TikTok e carrosséis do
-                            Instagram que trazem tráfego para o seu negócio.
+                            Uma semana de posts pra todas as suas redes numa
+                            tarde: Instagram, TikTok, LinkedIn e Shorts.
                         </p>
                     </div>
                     <div>
@@ -958,10 +959,10 @@ export default function Welcome({
 
     return (
         <>
-            <Head title="Slidezz: um mês de carrosséis pro TikTok e Instagram em 30 minutos">
+            <Head title="Slidezz: uma semana de posts pra todas as suas redes numa tarde">
                 <meta
                     name="description"
-                    content="A IA escreve, desenha e gera as imagens dos seus carrosséis e slideshows. Você baixa pronto pra postar no TikTok e no Instagram, em PNG ou MP4."
+                    content="Você manda um viral, um vídeo ou uma lista de ideias. O Slidezz devolve os posts prontos pro Instagram, TikTok, LinkedIn e Shorts, com imagem e em vídeo, no seu nicho."
                 />
             </Head>
 
@@ -1080,32 +1081,33 @@ export default function Welcome({
                             <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.08)] bg-[#111114] px-4 py-1.5 text-[13px] text-[#FAFAFA] sm:text-[14px]">
                                 <span className="text-[#A78BFA]">●</span>
                                 <span className="font-semibold">
-                                    Novo · gere carrosséis em 1 minuto
+                                    Novo · cole o link de um viral e a IA recria pro seu nicho
                                 </span>
                             </div>
                         </Reveal>
 
                         <Reveal>
                             <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA] sm:max-w-[14ch]">
-                                Um mês de carrosséis pro TikTok e Instagram{' '}
+                                Uma semana de posts pra todas as suas redes{' '}
                                 <span className="bg-gradient-to-r from-[#A78BFA] to-[#71717A] bg-clip-text text-transparent">
-                                    em 30 minutos
+                                    numa tarde
                                 </span>
                             </h1>
                         </Reveal>
 
                         <Reveal>
                             <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-[#A1A1AA] sm:text-[20px]">
-                                A IA escreve, desenha e gera as imagens. Você
-                                baixa pronto pra postar no TikTok e no
-                                Instagram, em PNG ou vídeo MP4.
+                                Você manda um viral, um vídeo ou uma lista de
+                                ideias. O Slidezz devolve os posts prontos pro
+                                Instagram, TikTok, LinkedIn e Shorts, com imagem
+                                e em vídeo, no seu nicho.
                             </p>
                         </Reveal>
 
                         <Reveal>
                             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                                 <Link href={ctaHref} className={primaryButton}>
-                                    Criar minha máquina de conteúdo
+                                    Quero minha semana pronta
                                 </Link>
                                 <a
                                     href="#exemplos"
@@ -1134,14 +1136,15 @@ export default function Welcome({
                                     <TikTokMark className="h-4 w-4" />
                                     <InstagramMark className="h-4 w-4" />
                                 </span>
-                                <span>· Economia de milhares em UGC</span>
                                 <span>
-                                    · Cole o link de um viral e a IA recria pro
-                                    seu nicho
+                                    · Nunca mais abra o celular sem saber o que
+                                    postar
                                 </span>
                                 <span>
-                                    · Sem briefing, sem aprovação, sem atraso
+                                    · Um post vira carrossel pro feed e vídeo pros
+                                    Reels, TikTok e Shorts
                                 </span>
+                                <span>· Chega de horas no Canva</span>
                             </div>
                         </div>
                     </div>
@@ -1321,7 +1324,7 @@ export default function Welcome({
                                     'Carrossel pronto',
                                     'Legendas',
                                     'Vídeo MP4',
-                                    'Instagram + TikTok',
+                                    'Instagram, TikTok, LinkedIn e Shorts',
                                 ].map((item) => (
                                     <div
                                         key={item}
@@ -1715,17 +1718,17 @@ export default function Welcome({
                     <div className="relative mx-auto max-w-[1320px] px-4 pt-8 pb-24 text-center sm:px-6 sm:pb-32">
                         <Reveal>
                             <h2 className="mx-auto max-w-[16ch] font-landing-display text-[clamp(2.75rem,7vw,7.5rem)] leading-[0.92] font-extrabold tracking-[-0.045em] text-balance text-[#FAFAFA]">
-                                Seu próximo mês de conteúdo começa hoje.
+                                Sua semana de posts fica pronta hoje.
                             </h2>
                             <p className="mx-auto mt-6 max-w-sm text-lg leading-relaxed font-medium text-[#A1A1AA]">
-                                Pare de depender de criadores. A IA gera os
-                                carrosséis, você baixa e posta em minutos.
+                                Nunca mais abra o celular sem saber o que
+                                postar. O post já sai com imagem e design.
                             </p>
                             <Link
                                 href={ctaHref}
                                 className={cn(primaryButton, 'mt-10')}
                             >
-                                Criar minha máquina de conteúdo
+                                Quero minha semana pronta
                             </Link>
                             <p className="mt-5 font-medium text-[#A1A1AA]">
                                 Sem cartão de crédito. Cancele quando quiser.

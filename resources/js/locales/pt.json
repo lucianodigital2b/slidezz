@@ -463,6 +463,7 @@
       "export": "Exportar",
       "exportCurrentPng": "Slide atual (PNG)",
       "exportAllZip": "Todos os slides (ZIP, {{count}})",
+      "exportAllPdf": "Todos os slides (PDF pro LinkedIn)",
       "exportMetadata": "Debug: exportar metadados (JSON)",
       "undo": "Desfazer (Ctrl+Z)",
       "redo": "Refazer (Ctrl+Y)",

@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import {
     Undo2, Redo2, Save, Image as ImageIcon, Loader2, Download, LayoutTemplate, Check,
     ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, CalendarIcon, Bug,
-    Globe, Smartphone, Film,
+    Globe, Smartphone, Film, FileText,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format as formatFns } from 'date-fns';
@@ -55,6 +55,8 @@ interface EditorToolbarProps {
     onFormatChange: (format: Format) => void;
     onExportPNG: () => void;
     onExportAllZip: () => void;
+    /** All slides as one PDF (LinkedIn document carousel). */
+    onExportAllPdf: () => void;
     onExportMetadata: () => void;
     exportingZip: boolean;
     /** True when the canvas is an App Store / Play Store screenshot format. */
@@ -89,7 +91,7 @@ export function EditorToolbar({
     saveStatus, onSave,
     templateStatus, onSaveAsTemplate,
     format, onFormatChange,
-    onExportPNG, onExportAllZip, onExportMetadata, exportingZip,
+    onExportPNG, onExportAllZip, onExportAllPdf, onExportMetadata, exportingZip,
     isStoreFormat, localeCount, activeLocale, onOpenLocalization, onExportStore, onCreateVideo, creatingVideo, onDownloadMp4, mp4Progress,
     instagramAccounts, igEnabled, igPosting, slidesCount, publishAt, onPublishAtChange, onPublishToInstagram,
     tiktokAccounts, onSendToTikTok,
@@ -280,6 +282,15 @@ export function EditorToolbar({
                         {exportingZip ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Download className="w-4 h-4 shrink-0" />}
                         {t('slideEditor.toolbar.exportAllZip', { count: slidesCount })}
                     </button>
+                    {!isStoreFormat && (
+                        <button
+                            onClick={onExportAllPdf}
+                            disabled={exportingZip || slidesCount === 0}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                            {exportingZip ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <FileText className="w-4 h-4 shrink-0" />}
+                            {t('slideEditor.toolbar.exportAllPdf')}
+                        </button>
+                    )}
                     {!isStoreFormat && (
                         <button
                             onClick={onCreateVideo}

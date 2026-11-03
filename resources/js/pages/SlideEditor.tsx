@@ -28,6 +28,7 @@ import { useLocalization } from '@/components/SlideEditor/hooks/useLocalization'
 import { SCREENSHOT_UPLOADS_KEY, ScreenshotConfig, readUploadedScreenshots, useScreenshotGeneration } from '@/components/SlideEditor/hooks/useScreenshotGeneration';
 
 import { ShapeDef } from '@/components/SlideEditor/shapes';
+import { createPdf } from '@/components/SlideEditor/pdf';
 import { createZip } from '@/components/SlideEditor/zip';
 import { SLIDE_TEMPLATES, TemplateContent, TemplatePreview, resolveTemplateForBrand } from '@/components/SlideEditor/templates';
 
@@ -1031,6 +1032,33 @@ export default function SlideEditor() {
         }
     }
 
+    // LinkedIn document carousels only accept PDF: one page per slide.
+    async function exportAllSlidesPdf() {
+        if (!stageRef.current || exportingZip) return;
+        setExportingZip(true);
+        try {
+            const blobs = await exportAllSlidesJpeg();
+            if (blobs.length === 0) throw new Error(t('slideEditor.alerts.exportFailed'));
+            const pages = await Promise.all(blobs.map(async (blob) => {
+                const bitmap = await createImageBitmap(blob);
+                const page = { jpeg: new Uint8Array(await blob.arrayBuffer()), width: bitmap.width, height: bitmap.height };
+                bitmap.close();
+                return page;
+            }));
+            const pdfName = (title.trim().replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'carousel') + '.pdf';
+            const url = URL.createObjectURL(createPdf(pages));
+            const link = document.createElement('a');
+            link.download = pdfName;
+            link.href = url;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (e) {
+            window.alert(e instanceof Error ? e.message : t('slideEditor.alerts.exportFailed'));
+        } finally {
+            setExportingZip(false);
+        }
+    }
+
     async function publishCarouselToInstagram() {
         if (!igAccountId) return;
         if (slides.length < 2 || slides.length > 10) return;
@@ -1381,6 +1409,7 @@ export default function SlideEditor() {
                     onFormatChange={setFormat}
                     onExportPNG={exportPNG}
                     onExportAllZip={exportAllSlidesZip}
+                    onExportAllPdf={exportAllSlidesPdf}
                     onExportMetadata={exportMetadata}
                     exportingZip={exportingZip}
                     isStoreFormat={isStore}

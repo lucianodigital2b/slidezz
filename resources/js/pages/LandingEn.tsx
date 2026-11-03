@@ -43,7 +43,8 @@ const lifetimeFeatures = [
     'Unlimited carousels, forever',
     '100 AI images included (or unlimited with your Gemini key)',
     'All templates + future updates',
-    'Auto-posting to TikTok and Instagram when it ships',
+    'PDF for LinkedIn and MP4 for Reels, TikTok and Shorts',
+    'Auto-posting to Instagram and TikTok when it ships',
 ];
 
 const faqs = [
@@ -341,7 +342,7 @@ const steps = [
     },
     {
         title: 'Download and post',
-        text: 'Export PNG at 1080px or an MP4 slideshow and post it from the app. Auto-posting to TikTok and Instagram is coming soon.',
+        text: 'Export PNG at 1080px, a PDF for LinkedIn or an MP4 for Reels, TikTok and Shorts. Auto-posting is coming soon.',
         Visual: StepThreeVisual,
     },
 ];
@@ -917,8 +918,8 @@ function Footer() {
                                 </span>
                             </div>
                             <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-jt-muted">
-                                Create TikTok slideshows and Instagram carousels
-                                that bring traffic to your business.
+                                A week of posts for every network in one
+                                afternoon: Instagram, TikTok, LinkedIn and Shorts.
                             </p>
                         </div>
                         <div>
@@ -1023,10 +1024,10 @@ export default function LandingEn({
 
     return (
         <>
-            <Head title="Slidezz: a month of TikTok & Instagram slideshows in 30 minutes">
+            <Head title="Slidezz: a week of posts for every social network in one afternoon">
                 <meta
                     name="description"
-                    content="Slidezz writes, designs and makes the AI images for your TikTok slideshows and Instagram carousels. Download them ready to post, as PNG or MP4."
+                    content="Send a viral post, a video or a list of ideas. Slidezz hands back finished posts for Instagram, TikTok, LinkedIn and Shorts, with images and as video, in your niche."
                 />
             </Head>
 
@@ -1093,27 +1094,26 @@ export default function LandingEn({
                 {/* ── HERO ── */}
                 <section className="mx-auto max-w-[1320px] px-4 pt-16 pb-8 text-center sm:px-6 sm:pt-28">
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-jt-surface px-4 py-1.5 text-[13px] text-jt-ink sm:text-[14px]">
-                        <span className="font-semibold">
-                            TikTok + Instagram
-                        </span>
+                        <span className="font-semibold">New</span>
                         <span className="text-jt-green-deep">
-                            · Ready to post in minutes
+                            · Paste a viral link and AI remakes it for your niche
                         </span>
                     </div>
 
                     <h1 className="mx-auto mt-8 font-landing-display text-[clamp(2.75rem,9vw,8.75rem)] leading-[0.9] font-extrabold tracking-[-0.045em] text-balance text-jt-ink sm:max-w-[14ch]">
-                        A month of TikTok slideshows in 30 minutes
+                        A week of posts for every network in one afternoon
                     </h1>
 
                     <p className="mx-auto mt-8 max-w-xl text-[18px] leading-relaxed tracking-[-0.02em] text-jt-muted sm:text-[20px]">
-                        Slidezz writes, designs and makes the images for your
-                        faceless slideshows and carousels. Download them ready
-                        to post. They don't look like AI.
+                        Send a viral post, a video or a list of ideas.
+                        Slidezz hands back finished posts for Instagram,
+                        TikTok, LinkedIn and Shorts, with images and as video,
+                        in your niche.
                     </p>
 
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Link href={ctaHref} className={greenButton}>
-                            Make your first slideshow, free
+                            Get my week of posts
                         </Link>
                         <a
                             href="#how-it-works"
@@ -1135,8 +1135,12 @@ export default function LandingEn({
                                 <InstagramMark className="h-4 w-4" />
                             </span>
                             <span>
-                                Works for apps, e-commerce, coaches, agencies
-                                and creators.
+                                · Never open your phone without knowing what to
+                                post
+                            </span>
+                            <span>
+                                · One post becomes a feed carousel and a video
+                                for Reels, TikTok and Shorts
                             </span>
                         </div>
                     </div>
@@ -1346,10 +1350,10 @@ export default function LandingEn({
                 {/* ── FINAL CTA ── */}
                 <section className="mx-auto max-w-[1320px] px-4 pt-8 pb-24 text-center sm:px-6 sm:pb-32">
                     <h2 className="mx-auto max-w-[16ch] font-landing-display text-[clamp(2.75rem,7vw,7.5rem)] leading-[0.92] font-extrabold tracking-[-0.045em] text-balance text-jt-ink">
-                        Your next 30 days of posts, done this afternoon.
+                        Your next week of posts, done this afternoon.
                     </h2>
                     <Link href={ctaHref} className={cn(greenButton, 'mt-10')}>
-                        Make your first slideshow, free
+                        Get my week of posts
                     </Link>
                 </section>
 
