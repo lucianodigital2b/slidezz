@@ -12,6 +12,7 @@ use App\Models\Schedule;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Agent\AgentImageDescriber;
 use App\Services\Agent\AgentToolbox;
 use App\Services\Agent\ModelClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,9 +48,12 @@ class AgentTest extends TestCase
 
             public array $calls = [];
 
+            public array $messages = [];
+
             public function send(array $params, string $apiKey, ?string $baseUrl = null): array
             {
                 $this->calls[] = ['model' => $params['model'], 'apiKey' => $apiKey, 'baseUrl' => $baseUrl];
+                $this->messages[] = $params['messages'];
 
                 return array_shift($this->responses);
             }
@@ -229,6 +233,62 @@ class AgentTest extends TestCase
             'apiKey' => 'sk-deepseek-test',
             'baseUrl' => 'https://api.deepseek.com/anthropic',
         ]], $this->fakeModelClient->calls);
+    }
+
+    public function test_deepseek_gets_image_descriptions_instead_of_images(): void
+    {
+        config(['services.anthropic.key' => null, 'services.deepseek.api_key' => 'sk-deepseek-test']);
+
+        $this->app->instance(AgentImageDescriber::class, new class extends AgentImageDescriber
+        {
+            public function describe(string $base64, string $mediaType = 'image/jpeg'): string
+            {
+                return "TEXTO: slide {$base64}";
+            }
+        });
+
+        $conversation = AgentConversation::create([
+            'user_id' => $this->user->id,
+            'workspace_id' => $this->workspace->id,
+            'title' => 'New conversation',
+            'status' => 'running',
+        ]);
+
+        $image = ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => 'image/jpeg', 'data' => 'abc']];
+
+        AgentMessage::create([
+            'agent_conversation_id' => $conversation->id,
+            'role' => 'user',
+            'content' => [['type' => 'text', 'text' => 'Look'], $image],
+        ]);
+        AgentMessage::create([
+            'agent_conversation_id' => $conversation->id,
+            'role' => 'assistant',
+            'content' => [['type' => 'tool_use', 'id' => 'tool-1', 'name' => 'view_assets', 'input' => ['asset_ids' => [1]]]],
+        ]);
+        AgentMessage::create([
+            'agent_conversation_id' => $conversation->id,
+            'role' => 'user',
+            'content' => [['type' => 'tool_result', 'tool_use_id' => 'tool-1', 'content' => [['type' => 'text', 'text' => 'asset 1'], $image]]],
+        ]);
+
+        $this->fakeModelClient->responses = [[
+            'id' => 'msg-1',
+            'content' => [['type' => 'text', 'text' => 'Ok']],
+            'stop_reason' => 'end_turn',
+            'usage' => null,
+        ]];
+
+        RunAgentTurn::dispatchSync($conversation, true);
+
+        $sent = $this->fakeModelClient->messages[0];
+        $described = ['type' => 'text', 'text' => '[Imagem] TEXTO: slide abc'];
+        $this->assertSame($described, $sent[0]['content'][1]);
+        $this->assertSame($described, $sent[2]['content'][0]['content'][1]);
+
+        // The stored history keeps the real image.
+        $first = AgentMessage::where('agent_conversation_id', $conversation->id)->orderBy('id')->first();
+        $this->assertSame('image', $first->content[1]['type']);
     }
 
     public function test_turn_without_any_api_key_ends_in_error_and_refunds_the_credit(): void

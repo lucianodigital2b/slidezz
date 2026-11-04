@@ -1216,8 +1216,8 @@
     "composer": {
       "placeholder": "Cole um link do TikTok ou descreva o carrossel que você quer…",
       "send": "Enviar",
-      "creditsLeftPrefix": "{{credits}} créditos · 1 crédito por mensagem · use sua chave da Anthropic em",
-      "settingsLink": "Configurações",
+      "creditsLeftPrefix": "{{credits}} créditos · 1 crédito por mensagem ·",
+      "settingsLink": "usar chave própria",
       "outOfCreditsTitle": "Seus créditos acabaram",
       "outOfCreditsBody": "Coloque sua chave da Anthropic em Configurações > Integrações ou compre mais créditos.",
       "outOfCreditsSettingsCta": "Adicionar chave da Anthropic"

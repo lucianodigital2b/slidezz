@@ -15,6 +15,8 @@ final readonly class AgentConnection
         public string $apiKey,
         public string $model,
         public ?string $baseUrl = null,
+        // DeepSeek's endpoint rejects image blocks; the runner swaps them for text.
+        public bool $supportsImages = true,
     ) {}
 
     public static function for(User $user): ?self
@@ -34,6 +36,7 @@ final readonly class AgentConnection
                 $key,
                 config('services.deepseek.agent_model', 'deepseek-v4-pro'),
                 config('services.deepseek.anthropic_base_url', 'https://api.deepseek.com/anthropic'),
+                supportsImages: false,
             );
         }
 

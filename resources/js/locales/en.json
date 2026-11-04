@@ -1243,8 +1243,8 @@
     "composer": {
       "placeholder": "Paste a TikTok link or describe the carousel you want…",
       "send": "Send",
-      "creditsLeftPrefix": "{{credits}} credits left · 1 credit per message · use your own Anthropic key in",
-      "settingsLink": "Settings",
+      "creditsLeftPrefix": "{{credits}} credits left · 1 credit per message ·",
+      "settingsLink": "use your own key",
       "outOfCreditsTitle": "You're out of credits",
       "outOfCreditsBody": "Add your own Anthropic key in Settings > Integrations, or buy more credits.",
       "outOfCreditsSettingsCta": "Add Anthropic key"

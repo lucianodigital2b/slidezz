@@ -266,6 +266,8 @@ function PreviewPanel({
 
 export default function Agent({ conversations, conversation: initialConversation, hasAnthropicKey, credits }: Props) {
     const { t } = useTranslation();
+    // The server names a conversation "New conversation" until its first reply.
+    const conversationTitle = (title?: string | null) => (!title || title === 'New conversation' ? t('agent.newConversation') : title);
     const [conversation, setConversation] = useState<AgentConversation | null>(initialConversation);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
@@ -478,7 +480,7 @@ export default function Agent({ conversations, conversation: initialConversation
                                             conversation?.id === item.id ? 'bg-[#FFE156]/15 ring-1 ring-[#FFE156]' : 'hover:bg-[#F3F0EC]'
                                         }`}
                                     >
-                                        <span className="block truncate text-sm font-semibold text-[#1A1A1A]">{item.title}</span>
+                                        <span className="block truncate text-sm font-semibold text-[#1A1A1A]">{conversationTitle(item.title)}</span>
                                         <span className="mt-0.5 block text-[10px] font-medium text-[#888880]">
                                             {formatDate(item.updated_at)}
                                         </span>
@@ -503,7 +505,7 @@ export default function Agent({ conversations, conversation: initialConversation
                         <div className="min-w-0 flex-1">
                             <p className="text-[10px] font-bold tracking-[0.18em] text-[#888880] uppercase">{t('agent.pageTitle')}</p>
                             <h1 className="truncate text-sm font-bold text-[#1A1A1A]">
-                                {conversation?.title || t('agent.newConversation')}
+                                {conversationTitle(conversation?.title)}
                             </h1>
                         </div>
 

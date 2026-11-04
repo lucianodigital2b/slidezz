@@ -7,7 +7,10 @@ use App\Models\AgentMessage;
 
 class AgentRunner
 {
-    public function __construct(private readonly ModelClient $client) {}
+    public function __construct(
+        private readonly ModelClient $client,
+        private readonly ?AgentImageDescriber $describer = null,
+    ) {}
 
     /**
      * Run a single agent turn: append-only conversation, manual tool loop.
@@ -35,7 +38,7 @@ class AgentRunner
         $toolbox = app(AgentToolbox::class);
 
         for ($i = 0; $i < 25; $i++) {
-            $response = $this->client->send($params, $connection->apiKey, $connection->baseUrl);
+            $response = $this->client->send($this->forConnection($params, $connection), $connection->apiKey, $connection->baseUrl);
 
             $assistantContent = $response['content'] ?? [];
             $stopReason = $response['stop_reason'] ?? null;
@@ -97,5 +100,57 @@ class AgentRunner
 
             break;
         }
+    }
+
+    /**
+     * Models without image input get each image block replaced by a text
+     * description. The stored history keeps the real images.
+     *
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    private function forConnection(array $params, AgentConnection $connection): array
+    {
+        if ($connection->supportsImages) {
+            return $params;
+        }
+
+        $params['messages'] = array_map(function (array $message): array {
+            if (is_array($message['content'] ?? null)) {
+                $message['content'] = $this->describeImages($message['content']);
+            }
+
+            return $message;
+        }, $params['messages']);
+
+        return $params;
+    }
+
+    /**
+     * @param  array<int, mixed>  $blocks
+     * @return array<int, mixed>
+     */
+    private function describeImages(array $blocks): array
+    {
+        return array_map(function ($block) {
+            if (! is_array($block)) {
+                return $block;
+            }
+
+            if (($block['type'] ?? null) === 'image' && isset($block['source']['data'])) {
+                $describer = $this->describer ?? app(AgentImageDescriber::class);
+
+                return [
+                    'type' => 'text',
+                    'text' => '[Imagem] '.$describer->describe($block['source']['data'], $block['source']['media_type'] ?? 'image/jpeg'),
+                ];
+            }
+
+            if (($block['type'] ?? null) === 'tool_result' && is_array($block['content'] ?? null)) {
+                $block['content'] = $this->describeImages($block['content']);
+            }
+
+            return $block;
+        }, $blocks);
     }
 }
