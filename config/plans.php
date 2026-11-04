@@ -1,95 +1,86 @@
 <?php
 
 /*
- * Pricing lever — every pricing value here is env-overridable (see .env.example),
- * with the current published prices as defaults:
- *   - PLAN_*_CREDITS         → managed AI-image allowance per billing cycle.
+ * The 3 cycle plans (structure copied from MyPostFlow):
+ *   - weekly:  one-time payment (Checkout mode=payment) → 7 days of access + 20 AI images.
+ *   - monthly: recurring monthly subscription → 50 AI images per month.
+ *   - annual:  recurring yearly subscription → 150 AI images per month
+ *              (topped up monthly by `credits:refresh-annual`).
+ *
+ * Every price value is env-overridable (see .env.example):
+ *   - PLAN_*_CREDITS         → managed AI-image allowance per cycle (1 credit = 1 image).
  *   - STRIPE_PRICE_*_LABEL   → the price shown on the pricing UI (display only).
  *   - STRIPE_PRICE_*         → the real Stripe Price id that is actually charged.
  *
- * Managed images: every plan includes AI images metered by credits
- * (1 credit = 1 image, reset each billing cycle by HandleStripeWebhookForCredits)
- * on the platform Gemini key. Connecting a BYOK Gemini key is optional and gives
- * unlimited images without spending credits.
+ * Display text is keyed by locale (pt/en) and per_day by currency (brl/usd);
+ * BillingCatalog picks the strings from the customer's currency (brl → pt).
+ * Connecting a BYOK Gemini key stays optional and gives unlimited images.
  */
 
-$starterCredits = (int) env('PLAN_STARTER_CREDITS', 60);
-$proCredits = (int) env('PLAN_PRO_CREDITS', 150);
-$agencyCredits = (int) env('PLAN_AGENCY_CREDITS', 400);
+$features = [
+    'pt' => [
+        'Carrosséis ilimitados',
+        'Imagens com IA no seu estilo',
+        'IA pra textos e legendas',
+        'Editor slide a slide',
+        'PNG, PDF pro LinkedIn e vídeo MP4',
+        'Imagens ilimitadas com sua chave Gemini (opcional)',
+    ],
+    'en' => [
+        'Unlimited carousels',
+        'AI images in your style',
+        'AI for copy and captions',
+        'Slide-by-slide editor',
+        'PNG, LinkedIn PDF and MP4 video',
+        'Unlimited images with your own Gemini key (optional)',
+    ],
+];
 
 return [
 
-    'starter' => [
-        'name' => 'Starter',
-        'description' => 'Para criadores individuais',
-        'credits_per_cycle' => $starterCredits,
-        'byok_enabled' => true,
-        'features' => [
-            'Carrosséis ilimitados',
-            "{$starterCredits} imagens com IA por mês",
-            'Ilimitado com sua chave Gemini (opcional)',
-            'Todos os templates',
-            'Suporte por e-mail',
-        ],
+    'weekly' => [
+        'mode' => 'pass',
+        'pass_days' => 7,
+        'credits_per_cycle' => (int) env('PLAN_WEEKLY_CREDITS', 20),
+        'highlighted' => false,
+        'name' => ['pt' => 'Semanal', 'en' => 'Weekly'],
+        'billing_note' => ['pt' => 'Pagamento único · Acesso por 7 dias', 'en' => 'One-time payment · 7 days of access'],
+        'per_day' => ['brl' => '~R$6,84/dia', 'usd' => '~$1.41/day'],
+        'credits_note' => ['pt' => '20 imagens com IA nos 7 dias', 'en' => '20 AI images for 7 days'],
+        'features' => $features,
         'prices' => [
-            'usd' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_STARTER_MONTHLY_LABEL', '$29/mo'), 'price_id' => env('STRIPE_PRICE_STARTER_MONTHLY')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_STARTER_ANNUAL_LABEL', '$19/mo'), 'price_id' => env('STRIPE_PRICE_STARTER_ANNUAL')],
-            ],
-            'brl' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_STARTER_MONTHLY_BRL_LABEL', 'R$67/mês'), 'price_id' => env('STRIPE_PRICE_STARTER_MONTHLY_BRL')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_STARTER_ANNUAL_BRL_LABEL', 'R$47/mês'), 'price_id' => env('STRIPE_PRICE_STARTER_ANNUAL_BRL')],
-            ],
+            'brl' => ['price_label' => env('STRIPE_PRICE_WEEKLY_BRL_LABEL', 'R$47,90'), 'price_id' => env('STRIPE_PRICE_WEEKLY_BRL')],
+            'usd' => ['price_label' => env('STRIPE_PRICE_WEEKLY_LABEL', '$9.90'), 'price_id' => env('STRIPE_PRICE_WEEKLY')],
         ],
     ],
 
-    'pro' => [
-        'name' => 'Pro',
-        'description' => 'Para criadores em volume',
-        'credits_per_cycle' => $proCredits,
-        'byok_enabled' => true,
-        'features' => [
-            'Carrosséis ilimitados',
-            "{$proCredits} imagens com IA por mês",
-            'Ilimitado com sua chave Gemini (opcional)',
-            'Todos os templates',
-            'Suporte prioritário',
-            'Acesso antecipado',
-        ],
+    'monthly' => [
+        'mode' => 'subscription',
+        'credits_per_cycle' => (int) env('PLAN_MONTHLY_CREDITS', 50),
+        'highlighted' => false,
+        'name' => ['pt' => 'Mensal', 'en' => 'Monthly'],
+        'billing_note' => ['pt' => 'Cobrado mensalmente · Sem fidelidade', 'en' => 'Billed monthly · Cancel anytime'],
+        'per_day' => ['brl' => '~R$3,26/dia', 'usd' => '~$0.66/day'],
+        'credits_note' => ['pt' => '50 imagens com IA por mês', 'en' => '50 AI images per month'],
+        'features' => $features,
         'prices' => [
-            'usd' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_PRO_MONTHLY_LABEL', '$59/mo'), 'price_id' => env('STRIPE_PRICE_PRO_MONTHLY')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_PRO_ANNUAL_LABEL', '$39/mo'), 'price_id' => env('STRIPE_PRICE_PRO_ANNUAL')],
-            ],
-            'brl' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_PRO_MONTHLY_BRL_LABEL', 'R$127/mês'), 'price_id' => env('STRIPE_PRICE_PRO_MONTHLY_BRL')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_PRO_ANNUAL_BRL_LABEL', 'R$87/mês'), 'price_id' => env('STRIPE_PRICE_PRO_ANNUAL_BRL')],
-            ],
+            'brl' => ['price_label' => env('STRIPE_PRICE_MONTHLY_BRL_LABEL', 'R$97,90'), 'price_id' => env('STRIPE_PRICE_MONTHLY_BRL')],
+            'usd' => ['price_label' => env('STRIPE_PRICE_MONTHLY_LABEL', '$19.90'), 'price_id' => env('STRIPE_PRICE_MONTHLY')],
         ],
     ],
 
-    'agency' => [
-        'name' => 'Agency',
-        'description' => 'Para times e agências',
-        'credits_per_cycle' => $agencyCredits,
-        'byok_enabled' => true,
-        'features' => [
-            'Carrosséis ilimitados',
-            "{$agencyCredits} imagens com IA por mês",
-            'Ilimitado com sua chave Gemini (opcional)',
-            'Todos os templates',
-            'Múltiplos projetos',
-            'Suporte prioritário',
-        ],
+    'annual' => [
+        'mode' => 'subscription',
+        'credits_per_cycle' => (int) env('PLAN_ANNUAL_CREDITS', 150),
+        'highlighted' => true,
+        'name' => ['pt' => 'Anual', 'en' => 'Annual'],
+        'billing_note' => ['pt' => 'Cobrado anualmente · Sem fidelidade', 'en' => 'Billed yearly · Cancel anytime'],
+        'per_day' => ['brl' => '~R$0,82/dia', 'usd' => '~$0.16/day'],
+        'credits_note' => ['pt' => '150 imagens com IA por mês', 'en' => '150 AI images per month'],
+        'features' => $features,
         'prices' => [
-            'usd' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_AGENCY_MONTHLY_LABEL', '$129/mo'), 'price_id' => env('STRIPE_PRICE_AGENCY_MONTHLY')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_AGENCY_ANNUAL_LABEL', '$99/mo'), 'price_id' => env('STRIPE_PRICE_AGENCY_ANNUAL')],
-            ],
-            'brl' => [
-                'monthly' => ['price_label' => env('STRIPE_PRICE_AGENCY_MONTHLY_BRL_LABEL', 'R$247/mês'), 'price_id' => env('STRIPE_PRICE_AGENCY_MONTHLY_BRL')],
-                'annual' => ['price_label' => env('STRIPE_PRICE_AGENCY_ANNUAL_BRL_LABEL', 'R$177/mês'), 'price_id' => env('STRIPE_PRICE_AGENCY_ANNUAL_BRL')],
-            ],
+            'brl' => ['price_label' => env('STRIPE_PRICE_ANNUAL_BRL_LABEL', 'R$297,90'), 'price_id' => env('STRIPE_PRICE_ANNUAL_BRL'), 'compare_at' => 'R$1.174,80', 'save' => '75%'],
+            'usd' => ['price_label' => env('STRIPE_PRICE_ANNUAL_LABEL', '$59.90'), 'price_id' => env('STRIPE_PRICE_ANNUAL'), 'compare_at' => '$238.80', 'save' => '75%'],
         ],
     ],
 

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\AI\CarouselGenerationService;
 use App\Services\Billing\BillingCatalog;
+use App\Services\Billing\PlanCheckout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,8 +49,6 @@ class OnboardingController extends Controller
             'preview_images_enabled' => $user->byokGeminiKey() !== null
                 || (bool) config('services.carousel_image.onboarding_preview'),
             'plans' => $catalog->plans($catalog->currencyFor($request)),
-            // Launch offer: the lifetime deal is shown as an extra card in the plans grid.
-            'lifetime' => $catalog->lifetime($catalog->currencyFor($request)),
         ]);
     }
 
@@ -307,65 +306,25 @@ class OnboardingController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function subscribe(Request $request, BillingCatalog $catalog): Response
+    public function subscribe(Request $request, BillingCatalog $catalog, PlanCheckout $planCheckout): Response
     {
         $validated = $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
-            'cycle' => ['nullable', 'string', 'in:monthly,annual'],
         ]);
 
-        $cycle = $validated['cycle'] ?? 'monthly';
-        $currency = $catalog->currencyFor($request);
-        $priceId = $catalog->subscriptionPriceId($validated['plan'], $cycle, $currency);
-
-        abort_if(! $priceId, 404, 'Plan price not configured for this currency.');
-
         try {
-            $checkout = $request->user()
-                ->newSubscription($validated['plan'], $priceId)
-                ->allowPromotionCodes()
-                ->checkout([
-                    'success_url' => route('onboarding.complete').'?session_id={CHECKOUT_SESSION_ID}',
-                    'cancel_url' => route('onboarding'),
-                ]);
-
             // External redirect: use Inertia::location so the client does a full-page
             // navigation to Stripe instead of following the 302 via XHR (which CORS-blocks).
-            return Inertia::location($checkout->url);
+            return Inertia::location($planCheckout->url(
+                $request->user(),
+                $validated['plan'],
+                $catalog->currencyFor($request),
+                route('onboarding.complete').'?session_id={CHECKOUT_SESSION_ID}',
+                route('onboarding'),
+            ));
         } catch (IncompletePayment $e) {
             return Inertia::location(route('cashier.payment', [$e->payment->id, 'redirect' => route('onboarding')]));
         }
-    }
-
-    /**
-     * Send the user to Stripe Checkout for the lifetime launch offer from the plans
-     * step. Unlike LifetimeController@purchase (which returns to the dashboard), the
-     * success URL completes onboarding so a mid-onboarding buyer isn't bounced back.
-     * Fulfillment (lifetime_access_at) still happens in the Stripe webhook.
-     */
-    public function subscribeLifetime(Request $request, BillingCatalog $catalog): Response
-    {
-        $user = $request->user();
-
-        if ($user->hasLifetimeAccess()) {
-            return $this->completeOnboarding($user);
-        }
-
-        $priceId = $catalog->lifetime($catalog->currencyFor($request))['price_id'];
-
-        abort_if(! $priceId, 404, 'Lifetime price not configured for this currency.');
-
-        $checkout = $user->checkout($priceId, [
-            'success_url' => route('onboarding.complete').'?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('onboarding'),
-            'allow_promotion_codes' => true,
-            'metadata' => [
-                'type' => 'lifetime',
-                'user_id' => (string) $user->id,
-            ],
-        ]);
-
-        return Inertia::location($checkout->url);
     }
 
     public function complete(Request $request): RedirectResponse

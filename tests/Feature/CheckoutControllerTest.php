@@ -24,29 +24,30 @@ class CheckoutControllerTest extends TestCase
             ->assertSessionHasErrors('plan');
     }
 
-    public function test_checkout_rejects_invalid_cycle(): void
+    public function test_guest_checkout_rejects_the_weekly_pass(): void
     {
-        $this->post(route('checkout.create'), ['plan' => 'starter', 'cycle' => 'weekly'])
-            ->assertSessionHasErrors('cycle');
+        // The guest flow provisions the account from a subscription.
+        $this->post(route('checkout.create'), ['plan' => 'weekly'])
+            ->assertSessionHasErrors('plan');
     }
 
     public function test_checkout_aborts_when_price_not_configured(): void
     {
         // No Stripe price ids are configured in the test environment, so a valid
         // plan should 404 instead of attempting a Stripe session.
-        config(['plans.starter.prices.usd.monthly.price_id' => null]);
+        config(['plans.monthly.prices.usd.price_id' => null]);
 
-        $this->post(route('checkout.create'), ['plan' => 'starter'])
+        $this->post(route('checkout.create'), ['plan' => 'monthly'])
             ->assertNotFound();
     }
 
     public function test_authenticated_subscribed_user_is_sent_to_billing(): void
     {
-        config(['plans.starter.prices.usd.monthly.price_id' => 'price_test_123']);
+        config(['plans.monthly.prices.usd.price_id' => 'price_test_123']);
 
         $user = User::factory()->create();
         $user->subscriptions()->create([
-            'type' => 'starter',
+            'type' => 'monthly',
             'stripe_id' => 'sub_existing',
             'stripe_status' => 'active',
             'stripe_price' => 'price_test_123',
@@ -56,7 +57,7 @@ class CheckoutControllerTest extends TestCase
         // A non-Inertia request makes Inertia::location fall back to a 302 away
         // redirect; either way the target is the billing page.
         $this->actingAs($user)
-            ->post(route('checkout.create'), ['plan' => 'starter'])
+            ->post(route('checkout.create'), ['plan' => 'monthly'])
             ->assertRedirect(route('billing.edit'));
     }
 

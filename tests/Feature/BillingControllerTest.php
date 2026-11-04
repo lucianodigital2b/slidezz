@@ -44,7 +44,7 @@ class BillingControllerTest extends TestCase
 
     public function test_subscribe_requires_authentication(): void
     {
-        $this->post(route('billing.subscribe'), ['plan' => 'pro'])
+        $this->post(route('billing.subscribe'), ['plan' => 'monthly'])
             ->assertRedirect(route('login'));
     }
 
@@ -79,14 +79,14 @@ class BillingControllerTest extends TestCase
         $this->actingAs($user)
             ->get(route('billing.edit'))
             ->assertInertia(fn ($page) => $page
-                ->has('plans.starter')
-                ->has('plans.pro')
-                ->where('plans.pro.name', 'Pro')
-                ->where('plans.starter.name', 'Starter')
+                ->has('plans.weekly')
+                ->has('plans.monthly')
+                ->has('plans.annual')
                 // Plans are flattened per currency by BillingCatalog.
-                ->where('plans.pro.currency', 'usd')
-                ->has('plans.pro.price_label')
-                ->has('plans.pro.monthly.price_id')
+                ->where('plans.monthly.name', 'Monthly')
+                ->where('plans.monthly.currency', 'usd')
+                ->where('plans.annual.price_label', '$59.90')
+                ->where('pass_expires_at', null)
             );
     }
 

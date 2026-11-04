@@ -78,7 +78,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
     Route::post('onboarding/profile', [OnboardingController::class, 'saveProfile'])->name('onboarding.profile');
     Route::post('onboarding/subscribe', [OnboardingController::class, 'subscribe'])->name('onboarding.subscribe');
-    Route::post('onboarding/lifetime', [OnboardingController::class, 'subscribeLifetime'])->name('onboarding.lifetime');
     Route::post('onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
     Route::get('onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
 

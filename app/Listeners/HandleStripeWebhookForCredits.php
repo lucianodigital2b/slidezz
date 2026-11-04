@@ -90,6 +90,7 @@ class HandleStripeWebhookForCredits
         }
 
         $user->credits = $credits;
+        $user->credits_refreshed_at = now();
         $user->save();
 
         Log::info('CreditWebhook: credits reset for subscription renewal', [

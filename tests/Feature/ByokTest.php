@@ -32,7 +32,7 @@ class ByokTest extends TestCase
 
     public function test_byok_is_enabled_on_every_plan(): void
     {
-        foreach (['starter', 'pro', 'agency'] as $plan) {
+        foreach (['monthly', 'annual'] as $plan) {
             $user = User::factory()->create();
             $this->subscribe($user, $plan);
 

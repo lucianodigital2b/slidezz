@@ -1,21 +1,30 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, CreditCard, Crown, Download, ExternalLink, Zap } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { CreditCard, Crown, Download, ExternalLink, Zap } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
+import PricingCards from '@/components/pricing/PricingCards';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cancel, edit, portal, resume, subscribe } from '@/routes/billing';
 
-interface Plan {
+interface PricingPlan {
+    key: 'weekly' | 'monthly' | 'annual';
     name: string;
-    description: string;
-    price_label: string;
-    price_id: string | null;
+    billing_note: string | null;
+    per_day: string | null;
+    credits_note: string | null;
     features: string[];
+    price_label: string | null;
+    price_id: string | null;
+    compare_at: string | null;
+    save: string | null;
+    highlighted: boolean;
 }
 
 interface Subscription {
     name: string;
+    type?: string;
     stripe_status: string;
     ends_at: string | null;
     on_grace_period: boolean;
@@ -32,11 +41,16 @@ interface Invoice {
 }
 
 interface Props {
-    plans: Record<string, Plan>;
+    plans: Record<string, PricingPlan>;
     subscription: Subscription | null;
     on_trial: boolean;
     invoices: Invoice[];
+    pass_expires_at: string | null;
+    lifetime_access: boolean;
 }
+
+const SUFFIX: Record<string, string> = { weekly: '/7 dias', monthly: '/mês', annual: '/ano' };
+const CTA: Record<string, string> = { weekly: 'Quero o Semanal', monthly: 'Assinar Mensal', annual: 'Assinar Anual' };
 
 function statusBadge(subscription: Subscription) {
     if (subscription.on_grace_period) {
@@ -48,15 +62,12 @@ function statusBadge(subscription: Subscription) {
     return <Badge variant="destructive">Inativo</Badge>;
 }
 
-export default function Billing({ plans, subscription, on_trial, invoices }: Props) {
-    const { auth, pricing } = usePage().props as any;
+export default function Billing({ plans, subscription, invoices, pass_expires_at, lifetime_access }: Props) {
+    const [subscribingTo, setSubscribingTo] = useState<string | null>(null);
 
     const subscribeToPlan = (planKey: string) => {
-        router.post(subscribe.url(), { plan: planKey });
-    };
-
-    const buyLifetime = () => {
-        router.post('/lifetime/purchase');
+        setSubscribingTo(planKey);
+        router.post(subscribe.url(), { plan: planKey }, { onError: () => setSubscribingTo(null) });
     };
 
     const cancelSubscription = () => {
@@ -68,7 +79,11 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
         router.post(resume.url());
     };
 
-    const currentPlanKey = subscription?.name ?? null;
+    const currentPlanKey = subscription?.type ?? subscription?.name ?? null;
+    const passUntil = pass_expires_at && new Date(pass_expires_at) > new Date()
+        ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(pass_expires_at))
+        : null;
+    const planCards = Object.values(plans).map((plan) => ({ ...plan, suffix: SUFFIX[plan.key], cta: CTA[plan.key] }));
 
     return (
         <>
@@ -137,55 +152,30 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                             </div>
                         </div>
                     </div>
-                ) : (
-                    <div className="rounded-xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
-                        Você ainda não possui uma assinatura ativa. Escolha um plano abaixo para começar.
-                    </div>
-                )}
-
-                {/* Launch offer: lifetime access, one-time payment */}
-                {auth.lifetime_access ? (
+                ) : lifetime_access ? (
                     <div className="flex items-center gap-3 rounded-xl border border-[#1A2023] bg-[#1A2023]/5 p-5">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A2023]">
                             <Crown className="h-4 w-4 text-white" />
                         </div>
                         <div>
                             <p className="font-semibold">Acesso vitalício ativo</p>
-                            <p className="text-sm text-muted-foreground">Você garantiu a oferta de lançamento. Carrosséis e imagens ilimitados, pra sempre.</p>
+                            <p className="text-sm text-muted-foreground">Você garantiu a oferta de lançamento. Seu acesso continua pra sempre.</p>
+                        </div>
+                    </div>
+                ) : passUntil ? (
+                    <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A2023]/5">
+                            <Zap className="h-4 w-4 text-[#1A1A1A]" />
+                        </div>
+                        <div>
+                            <p className="font-semibold">Plano Semanal ativo</p>
+                            <p className="text-sm text-muted-foreground">Seu acesso vai até {passUntil}. O Semanal não renova sozinho.</p>
                         </div>
                     </div>
                 ) : (
-                    pricing?.lifetime?.price_id && (
-                        <div className="rounded-xl border-2 border-[#1A2023] bg-card p-5 space-y-4">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A2023]">
-                                        <Crown className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold">Oferta de lançamento — Acesso vitalício</p>
-                                        <p className="text-sm text-muted-foreground">Pague uma vez, use pra sempre. Sem mensalidade.</p>
-                                    </div>
-                                </div>
-                                <Badge className="bg-[#1A2023] hover:bg-[#1A2023] hover:text-white text-white">Por tempo limitado</Badge>
-                            </div>
-                            <p className="text-3xl font-bold tracking-tight">
-                                {pricing.lifetime.price_label}
-                                <span className="ml-2 text-sm font-medium text-muted-foreground">pagamento único</span>
-                            </p>
-                            <ul className="space-y-1.5">
-                                {['Carrosséis ilimitados', 'Imagens ilimitadas com sua chave Gemini', 'Todos os templates e atualizações futuras'].map((feature) => (
-                                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Button className="w-full bg-[#1A2023] hover:bg-[#2A3438] text-white rounded-full" onClick={buyLifetime}>
-                                Garantir acesso vitalício
-                            </Button>
-                        </div>
-                    )
+                    <div className="rounded-xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
+                        Você ainda não tem um plano ativo. Escolha um plano abaixo para começar.
+                    </div>
                 )}
 
                 {/* Plan cards */}
@@ -196,46 +186,15 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                         description="Escolha o plano ideal para o seu negócio"
                     />
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {Object.entries(plans).map(([key, plan]) => {
-                            const isCurrent = currentPlanKey === key && subscription?.active;
-
-                            return (
-                                <div
-                                    key={key}
-                                    className={`rounded-xl border bg-card p-5 space-y-4 flex flex-col ${isCurrent ? 'border-[#1A2023] ring-1 ring-[#1A2023]/15' : 'border-border'}`}
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <p className="font-semibold text-base">{plan.name}</p>
-                                            {isCurrent && (
-                                                <Badge className="bg-[#1A2023] hover:bg-[#1A2023] hover:text-white text-xs">Plano atual</Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">{plan.description}</p>
-                                        <p className="mt-2 text-2xl font-bold tracking-tight">{plan.price_label}</p>
-                                    </div>
-
-                                    <ul className="space-y-1.5 flex-1">
-                                        {plan.features.map((feature) => (
-                                            <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                                                {feature}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <Button
-                                        className={`w-full mt-2 ${isCurrent ? 'bg-muted text-muted-foreground hover:bg-muted cursor-default' : 'bg-[#1A2023] hover:bg-[#2A3438] text-white'} rounded-full`}
-                                        disabled={isCurrent || !plan.price_id}
-                                        onClick={() => !isCurrent && subscribeToPlan(key)}
-                                    >
-                                        {isCurrent ? 'Plano ativo' : `Assinar ${plan.name}`}
-                                    </Button>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <PricingCards
+                        plans={planCards}
+                        featuresTitle="O que está incluso:"
+                        highlightBadge="Mais escolhido"
+                        saveLabel={(save) => `Poupe ${save}`}
+                        onSelect={subscribeToPlan}
+                        loadingKey={subscribingTo}
+                        currentKey={subscription?.active ? currentPlanKey : null}
+                    />
                 </div>
 
                 {/* Invoices */}

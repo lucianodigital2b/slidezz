@@ -46,30 +46,43 @@ class BillingCatalog
     }
 
     /**
-     * Plans flattened for one currency, in the shape the frontends expect:
-     * a top-level monthly price (used by onboarding) plus monthly/annual
-     * sub-objects (used by the billing settings cycle toggle).
+     * The display language for a currency: BRL → pt, USD → en.
+     */
+    public function locale(string $currency): string
+    {
+        return $this->normalize($currency) === 'brl' ? 'pt' : 'en';
+    }
+
+    /**
+     * Plans flattened for one currency, keyed by plan key (weekly, monthly,
+     * annual), with the localized display text and the currency's price.
      *
      * @return array<string, array<string, mixed>>
      */
     public function plans(string $currency): array
     {
         $currency = $this->normalize($currency);
+        $locale = $this->locale($currency);
 
         return collect(config('plans'))
-            ->map(function (array $plan) use ($currency): array {
-                $prices = $plan['prices'][$currency] ?? [];
+            ->map(function (array $plan, string $key) use ($currency, $locale): array {
+                $price = $plan['prices'][$currency] ?? [];
 
                 return [
-                    'name' => $plan['name'],
-                    'description' => $plan['description'],
-                    'credits_per_cycle' => $plan['credits_per_cycle'],
-                    'features' => $plan['features'],
+                    'key' => $key,
+                    'name' => $plan['name'][$locale] ?? $key,
+                    'mode' => $plan['mode'] ?? 'subscription',
+                    'billing_note' => $plan['billing_note'][$locale] ?? null,
+                    'per_day' => $plan['per_day'][$currency] ?? null,
+                    'credits_note' => $plan['credits_note'][$locale] ?? null,
+                    'credits_per_cycle' => (int) ($plan['credits_per_cycle'] ?? 0),
+                    'features' => $plan['features'][$locale] ?? [],
                     'currency' => $currency,
-                    'price_label' => $prices['monthly']['price_label'] ?? null,
-                    'price_id' => $prices['monthly']['price_id'] ?? null,
-                    'monthly' => $prices['monthly'] ?? null,
-                    'annual' => $prices['annual'] ?? null,
+                    'price_label' => $price['price_label'] ?? null,
+                    'price_id' => $price['price_id'] ?? null,
+                    'compare_at' => $price['compare_at'] ?? null,
+                    'save' => $price['save'] ?? null,
+                    'highlighted' => (bool) ($plan['highlighted'] ?? false),
                 ];
             })
             ->toArray();
@@ -111,9 +124,9 @@ class BillingCatalog
         ];
     }
 
-    public function subscriptionPriceId(string $plan, string $cycle, string $currency): ?string
+    public function priceId(string $plan, string $currency): ?string
     {
-        return config("plans.{$plan}.prices.{$this->normalize($currency)}.{$cycle}.price_id");
+        return config("plans.{$plan}.prices.{$this->normalize($currency)}.price_id");
     }
 
     public function creditPackPriceId(string $packKey, string $currency): ?string

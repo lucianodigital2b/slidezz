@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Services\Billing\BillingCatalog;
+use App\Services\Billing\PlanCheckout;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,6 +33,7 @@ class BillingController extends Controller
             'plans' => $catalog->plans($catalog->currencyFor($request)),
             'subscription' => $subscription ? [
                 'name' => $subscription->name,
+                'type' => $subscription->type,
                 'stripe_status' => $subscription->stripe_status,
                 'ends_at' => $subscription->ends_at?->toDateString(),
                 'on_grace_period' => $subscription->onGracePeriod(),
@@ -40,34 +42,28 @@ class BillingController extends Controller
             ] : null,
             'on_trial' => $user->onTrial(),
             'invoices' => $invoices,
+            'pass_expires_at' => $user->pass_expires_at?->toIso8601String(),
+            'lifetime_access' => $user->hasLifetimeAccess(),
             'stripe_key' => config('cashier.key'),
         ]);
     }
 
-    public function subscribe(Request $request, BillingCatalog $catalog): \Symfony\Component\HttpFoundation\Response
+    public function subscribe(Request $request, BillingCatalog $catalog, PlanCheckout $planCheckout): \Symfony\Component\HttpFoundation\Response
     {
         $request->validate([
             'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
-            'cycle' => ['nullable', 'string', 'in:monthly,annual'],
         ]);
 
-        $cycle = $request->input('cycle', 'monthly');
-        $priceId = $catalog->subscriptionPriceId($request->plan, $cycle, $catalog->currencyFor($request));
-
-        abort_if(! $priceId, 404, 'Plan price not configured for this currency.');
-
         try {
-            $checkout = $request->user()
-                ->newSubscription($request->plan, $priceId)
-                ->allowPromotionCodes()
-                ->checkout([
-                    'success_url' => route('billing.edit').'?subscribed=1',
-                    'cancel_url' => route('billing.edit'),
-                ]);
-
             // External redirect: full-page navigation via Inertia so the XHR doesn't
             // try to follow the 302 to Stripe cross-origin (CORS-blocked).
-            return Inertia::location($checkout->url);
+            return Inertia::location($planCheckout->url(
+                $request->user(),
+                $request->string('plan')->toString(),
+                $catalog->currencyFor($request),
+                route('billing.edit').'?subscribed=1',
+                route('billing.edit'),
+            ));
         } catch (IncompletePayment $e) {
             return Inertia::location(route('cashier.payment', [$e->payment->id, 'redirect' => route('billing.edit')]));
         }

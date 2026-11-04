@@ -24,12 +24,13 @@ class CheckoutController extends Controller
     public function create(Request $request, BillingCatalog $catalog): Response
     {
         $validated = $request->validate([
-            'plan' => ['required', 'string', 'in:'.implode(',', array_keys(config('plans')))],
-            'cycle' => ['nullable', 'string', 'in:monthly,annual'],
+            'plan' => ['required', 'string', 'in:monthly,annual'],
         ]);
 
-        $cycle = $validated['cycle'] ?? 'monthly';
-        $priceId = $catalog->subscriptionPriceId($validated['plan'], $cycle, BillingCatalog::DEFAULT_CURRENCY);
+        // The guest flow provisions the account from a subscription, so the
+        // one-time weekly pass is not offered here.
+        $cycle = $validated['plan'];
+        $priceId = $catalog->priceId($validated['plan'], BillingCatalog::DEFAULT_CURRENCY);
 
         abort_if(! $priceId, 404, 'Plan price not configured.');
 
@@ -92,7 +93,7 @@ class CheckoutController extends Controller
             'email' => $session->customer_details->email,
             'name' => $session->customer_details->name ?? null,
             'stripe_customer_id' => is_string($session->customer) ? $session->customer : $session->customer->id,
-            'plan' => $session->metadata->plan ?? 'starter',
+            'plan' => $session->metadata->plan ?? 'monthly',
             'subscription' => [
                 'id' => $subscription->id,
                 'status' => $subscription->status,

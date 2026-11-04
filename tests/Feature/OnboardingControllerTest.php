@@ -32,8 +32,8 @@ class OnboardingControllerTest extends TestCase
                 ->component('Onboarding')
                 ->where('has_profile', false)
                 ->where('preview_images_enabled', false)
-                ->has('plans')
-                ->has('lifetime')
+                ->has('plans', 3)
+                ->missing('lifetime')
             );
     }
 
@@ -214,7 +214,7 @@ class OnboardingControllerTest extends TestCase
 
     public function test_subscribe_requires_authentication(): void
     {
-        $this->post(route('onboarding.subscribe'), ['plan' => 'pro'])->assertRedirect(route('login'));
+        $this->post(route('onboarding.subscribe'), ['plan' => 'monthly'])->assertRedirect(route('login'));
     }
 
     public function test_subscribe_validates_plan(): void
@@ -224,40 +224,6 @@ class OnboardingControllerTest extends TestCase
         $this->actingAs($user)
             ->post(route('onboarding.subscribe'), ['plan' => 'plano_invalido'])
             ->assertSessionHasErrors('plan');
-    }
-
-    // ─── lifetime (launch offer) ─────────────────────────────────────────────
-
-    public function test_onboarding_lifetime_requires_authentication(): void
-    {
-        $this->post(route('onboarding.lifetime'))->assertRedirect(route('login'));
-    }
-
-    public function test_onboarding_lifetime_404_when_price_not_configured(): void
-    {
-        config(['lifetime.prices' => []]);
-        $user = User::factory()->create(['onboarding_completed_at' => null, 'lifetime_access_at' => null]);
-
-        $this->actingAs($user)
-            ->post(route('onboarding.lifetime'))
-            ->assertNotFound();
-    }
-
-    public function test_onboarding_lifetime_completes_when_already_owned(): void
-    {
-        $user = User::factory()->create([
-            'onboarding_completed_at' => null,
-            'lifetime_access_at' => now(),
-            'credits' => 0,
-        ]);
-
-        $this->actingAs($user)
-            ->post(route('onboarding.lifetime'))
-            ->assertRedirect(route('dashboard'));
-
-        $fresh = $user->fresh();
-        $this->assertNotNull($fresh->onboarding_completed_at);
-        $this->assertSame(15, $fresh->credits);
     }
 
     // ─── complete ────────────────────────────────────────────────────────────

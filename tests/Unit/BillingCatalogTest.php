@@ -36,18 +36,29 @@ class BillingCatalogTest extends TestCase
 
     public function test_plans_are_flattened_for_the_given_currency(): void
     {
-        config([
-            'plans.pro.prices.brl.monthly' => ['price_label' => 'R$649/mês', 'price_id' => 'price_pro_brl_m'],
-            'plans.pro.prices.brl.annual' => ['price_label' => 'R$389/mês', 'price_id' => 'price_pro_brl_a'],
-        ]);
+        config(['plans.annual.prices.brl.price_id' => 'price_annual_brl']);
 
         $plans = $this->catalog->plans('brl');
 
-        $this->assertSame('R$649/mês', $plans['pro']['price_label']);
-        $this->assertSame('price_pro_brl_m', $plans['pro']['price_id']);
-        $this->assertSame('brl', $plans['pro']['currency']);
-        $this->assertSame('price_pro_brl_a', $plans['pro']['annual']['price_id']);
-        $this->assertArrayHasKey('features', $plans['pro']);
+        $this->assertSame(['weekly', 'monthly', 'annual'], array_keys($plans));
+        $this->assertSame('R$297,90', $plans['annual']['price_label']);
+        $this->assertSame('price_annual_brl', $plans['annual']['price_id']);
+        $this->assertSame('R$1.174,80', $plans['annual']['compare_at']);
+        $this->assertTrue($plans['annual']['highlighted']);
+        $this->assertSame('brl', $plans['annual']['currency']);
+        $this->assertSame('Anual', $plans['annual']['name']);
+        $this->assertSame('pass', $plans['weekly']['mode']);
+        $this->assertNull($plans['weekly']['compare_at']);
+        $this->assertNotEmpty($plans['monthly']['features']);
+    }
+
+    public function test_plans_text_follows_the_currency_language(): void
+    {
+        $plans = $this->catalog->plans('usd');
+
+        $this->assertSame('Weekly', $plans['weekly']['name']);
+        $this->assertSame('$9.90', $plans['weekly']['price_label']);
+        $this->assertSame('50 AI images per month', $plans['monthly']['credits_note']);
     }
 
     public function test_packs_are_flattened_for_the_given_currency(): void
@@ -66,11 +77,11 @@ class BillingCatalogTest extends TestCase
         $this->assertNull($packs[1]['badge']);
     }
 
-    public function test_subscription_price_id_resolves_by_plan_cycle_and_currency(): void
+    public function test_price_id_resolves_by_plan_and_currency(): void
     {
-        config(['plans.starter.prices.usd.annual.price_id' => 'price_starter_usd_a']);
+        config(['plans.annual.prices.usd.price_id' => 'price_annual_usd']);
 
-        $this->assertSame('price_starter_usd_a', $this->catalog->subscriptionPriceId('starter', 'annual', 'usd'));
+        $this->assertSame('price_annual_usd', $this->catalog->priceId('annual', 'usd'));
     }
 
     public function test_credit_pack_price_id_resolves_by_currency(): void
@@ -86,8 +97,8 @@ class BillingCatalogTest extends TestCase
 
     public function test_unknown_currency_falls_back_to_usd(): void
     {
-        config(['plans.pro.prices.usd.monthly.price_id' => 'price_pro_usd_m']);
+        config(['plans.monthly.prices.usd.price_id' => 'price_monthly_usd']);
 
-        $this->assertSame('price_pro_usd_m', $this->catalog->subscriptionPriceId('pro', 'monthly', 'eur'));
+        $this->assertSame('price_monthly_usd', $this->catalog->priceId('monthly', 'eur'));
     }
 }

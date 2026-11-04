@@ -3,7 +3,6 @@ import {
     ArrowRight,
     Building2,
     Check,
-    CheckCircle2,
     ChevronLeft,
     Fingerprint,
     KeyRound,
@@ -23,22 +22,31 @@ import { useTranslation } from 'react-i18next';
 import AppLogoIcon from '@/components/app-logo-icon';
 import FadeIn from '@/components/fade-in';
 import OnboardingPreview from '@/components/onboarding/OnboardingPreview';
+import PricingCards from '@/components/pricing/PricingCards';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Plan {
+interface PricingPlan {
+    key: 'weekly' | 'monthly' | 'annual';
     name: string;
-    description: string;
-    price_label: string;
-    price_id: string | null;
+    mode: 'pass' | 'subscription';
+    billing_note: string | null;
+    per_day: string | null;
+    credits_note: string | null;
+    credits_per_cycle: number;
     features: string[];
+    currency: 'brl' | 'usd';
+    price_label: string | null;
+    price_id: string | null;
+    compare_at: string | null;
+    save: string | null;
+    highlighted: boolean;
 }
 
 interface Props {
     has_profile: boolean;
     preview_images_enabled: boolean;
-    plans: Record<string, Plan>;
-    lifetime: { price_label: string | null; price_id: string | null };
+    plans: Record<string, PricingPlan>;
 }
 
 interface Palette {
@@ -624,21 +632,22 @@ function Step6GeminiKey({ data, set }: { data: FormData; set: (k: keyof FormData
 
 function StepPlans({
     plans,
-    lifetime,
     onSubscribe,
-    onLifetime,
     subscribingTo,
     onSkip,
 }: {
-    plans: Record<string, Plan>;
-    lifetime: { price_label: string | null; price_id: string | null };
+    plans: Record<string, PricingPlan>;
     onSubscribe: (key: string) => void;
-    onLifetime: () => void;
     subscribingTo: string | null;
     onSkip: () => void;
 }) {
     const { t } = useTranslation();
-    const entries = Object.entries(plans);
+    const cardPlans = Object.values(plans).map((plan) => ({
+        ...plan,
+        suffix: t(`onboarding.plans.suffix.${plan.key}`),
+        cta: t(`onboarding.plans.cta.${plan.key}`),
+    }));
+
     return (
         <div className="space-y-8">
             <div className="space-y-2 text-center">
@@ -646,82 +655,14 @@ function StepPlans({
                 <p className="text-lg font-medium text-[#666660]">{t('onboarding.plans.subtitle')}</p>
             </div>
 
-            <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {entries.map(([key, plan], i) => {
-                    const featured = entries.length >= 3 ? i === 1 : false;
-                    return (
-                        <div
-                            key={key}
-                            className="relative flex flex-col rounded-[24px] border-2 bg-white p-7 shadow-sm"
-                            style={{ borderColor: featured ? ACCENT : BORDER }}
-                        >
-                            {featured && (
-                                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0F766E] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
-                                    {t('onboarding.plans.popular', 'Mais popular')}
-                                </div>
-                            )}
-                            <div>
-                                <p className="text-2xl font-extrabold text-[#1A1A1A]">{plan.name}</p>
-                                <p className="mt-1 text-sm font-medium text-[#666660]">{plan.description}</p>
-                                <p className="mt-4 font-display text-5xl leading-none tracking-normal text-[#1A1A1A]">{plan.price_label}</p>
-                            </div>
-                            <ul className="my-6 flex-1 space-y-3 border-t pt-6" style={{ borderColor: BORDER }}>
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-start gap-2.5 text-sm font-medium text-[#555550]">
-                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: ACCENT }} />
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-                            <button
-                                type="button"
-                                className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-lg font-bold text-white transition-colors disabled:opacity-60"
-                                style={{ background: featured ? ACCENT : INK }}
-                                onMouseEnter={(e) => { (e.currentTarget.style.background = featured ? ACCENT_DARK : '#333'); }}
-                                onMouseLeave={(e) => { (e.currentTarget.style.background = featured ? ACCENT : INK); }}
-                                disabled={subscribingTo !== null || !plan.price_id}
-                                onClick={() => onSubscribe(key)}
-                            >
-                                {subscribingTo === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                {t('onboarding.plans.startFree', { plan: plan.name })}
-                            </button>
-                        </div>
-                    );
-                })}
-
-                {/* Lifetime launch offer — a 4th card in the same grid. */}
-                <div className="relative flex flex-col rounded-[24px] border-2 bg-white p-7 shadow-sm" style={{ borderColor: INK }}>
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#1A1A1A] px-3 py-1 text-xs font-bold tracking-wide text-white uppercase shadow-sm">
-                        {t('onboarding.plans.lifetime.badge')}
-                    </div>
-                    <div>
-                        <p className="text-2xl font-extrabold text-[#1A1A1A]">{t('onboarding.plans.lifetime.name')}</p>
-                        <p className="mt-1 text-sm font-medium text-[#666660]">{t('onboarding.plans.lifetime.description')}</p>
-                        <p className="mt-4 font-display text-5xl leading-none tracking-normal text-[#1A1A1A]">{lifetime.price_label ?? '—'}</p>
-                        <p className="mt-1 text-xs font-medium text-[#888880]">{t('onboarding.plans.lifetime.priceNote')}</p>
-                    </div>
-                    <ul className="my-6 flex-1 space-y-3 border-t pt-6" style={{ borderColor: BORDER }}>
-                        {(t('onboarding.plans.lifetime.features', { returnObjects: true }) as string[]).map((feature) => (
-                            <li key={feature} className="flex items-start gap-2.5 text-sm font-medium text-[#555550]">
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: ACCENT }} />
-                                {feature}
-                            </li>
-                        ))}
-                    </ul>
-                    <button
-                        type="button"
-                        className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-lg font-bold text-white transition-colors disabled:opacity-60"
-                        style={{ background: INK }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#333'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = INK; }}
-                        disabled={subscribingTo !== null || !lifetime.price_id}
-                        onClick={onLifetime}
-                    >
-                        {subscribingTo === '__lifetime__' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                        {t('onboarding.plans.lifetime.cta')}
-                    </button>
-                </div>
-            </div>
+            <PricingCards
+                plans={cardPlans}
+                featuresTitle={t('onboarding.plans.featuresTitle')}
+                highlightBadge={t('onboarding.plans.highlightBadge')}
+                saveLabel={(save) => t('onboarding.plans.save', { save })}
+                onSelect={onSubscribe}
+                loadingKey={subscribingTo}
+            />
 
             <p className="text-center text-xs font-medium text-[#888880]">{t('onboarding.plans.terms')}</p>
 
@@ -754,7 +695,7 @@ function validateStep(step: number, data: FormData, t: (k: string) => string): s
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function Onboarding({ has_profile, preview_images_enabled, plans, lifetime }: Props) {
+export default function Onboarding({ has_profile, preview_images_enabled, plans }: Props) {
     const { t, i18n } = useTranslation();
     const [step, setStep] = useState(has_profile ? PLANS_STEP : 1);
     const [saving, setSaving] = useState(false);
@@ -826,11 +767,6 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
         });
     };
 
-    const subscribeLifetime = () => {
-        setSubscribingTo('__lifetime__');
-        router.post('/onboarding/lifetime', {}, { onError: () => setSubscribingTo(null) });
-    };
-
     const skipPlans = () => {
         setSubscribingTo('__skip__');
         router.post('/onboarding/skip', {}, { onError: () => setSubscribingTo(null) });
@@ -856,7 +792,7 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
                 onContinue={() => setStep(PLANS_STEP)}
             />
         ),
-        [PLANS_STEP]: <StepPlans plans={plans} lifetime={lifetime} onSubscribe={subscribeToPlan} onLifetime={subscribeLifetime} subscribingTo={subscribingTo} onSkip={skipPlans} />,
+        [PLANS_STEP]: <StepPlans plans={plans} onSubscribe={subscribeToPlan} subscribingTo={subscribingTo} onSkip={skipPlans} />,
     };
 
     return (

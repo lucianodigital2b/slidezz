@@ -18,6 +18,8 @@ import CreateWays from '@/components/landing/CreateWays';
 import type { CreateWay } from '@/components/landing/CreateWays';
 import LandingHero from '@/components/landing/LandingHero';
 import type { HeroCopy } from '@/components/landing/LandingHero';
+import PricingCards from '@/components/pricing/PricingCards';
+import type { PricingCardPlan } from '@/components/pricing/PricingCards';
 import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
 
@@ -26,14 +28,6 @@ const display = 'font-[Urbanist,Inter,sans-serif]';
 type Seg = string | { pill: string; filled?: boolean };
 type NavLink = { label: string; href: string };
 type Faq = { question: string; answer: string };
-type Plan = {
-    name: string;
-    monthly: number;
-    annual: number;
-    features: string[];
-    cta: string;
-    highlighted?: boolean;
-};
 type Format = {
     title: string;
     networks: string;
@@ -120,23 +114,11 @@ type Copy = {
     included: { heading: Seg[]; items: string[] };
     pricing: {
         heading: Seg[];
-        monthly: string;
-        annual: string;
-        save: string;
-        lifetime: {
-            tag: string;
-            title: string;
-            price: string;
-            payment: string;
-            features: string[];
-            cta: string;
-        };
-        currency: string;
-        perMonth: string;
-        billedMonthly: string;
-        billedYearly: string;
-        recommended: string;
-        plans: Plan[];
+        note: string;
+        featuresTitle: string;
+        highlightBadge: string;
+        saveLabel: (save: string) => string;
+        plans: PricingCardPlan[];
         footnote: string;
     };
     faq: { heading: Seg[]; items: Faq[] };
@@ -174,6 +156,24 @@ const SLIDES_EN: HeroCopy['app']['slides'] = [
     { src: '/landing/s10.webp', text: '4. Lunch planned the night before' },
     { src: '/landing/s11.webp', text: '5. One photo of the day to remember' },
     { src: '/landing/s8.webp', text: 'Save this to try tomorrow' },
+];
+
+const FEATURES_PT = [
+    'Carrosséis ilimitados',
+    'Imagens com IA no seu estilo',
+    'IA pra textos e legendas',
+    'Editor slide a slide',
+    'PNG, PDF pro LinkedIn e vídeo MP4',
+    'Imagens ilimitadas com sua chave Gemini (opcional)'
+];
+
+const FEATURES_EN = [
+    'Unlimited carousels',
+    'AI images in your style',
+    'AI for copy and captions',
+    'Slide-by-slide editor',
+    'PNG, LinkedIn PDF and MP4 video',
+    'Unlimited images with your own Gemini key (optional)'
 ];
 
 const copy: Record<'pt' | 'en', Copy> = {
@@ -559,69 +559,56 @@ const copy: Record<'pt' | 'en', Copy> = {
         },
         pricing: {
             heading: ['Preços ', { pill: 'simples' }],
-            monthly: 'Mensal',
-            annual: 'Anual',
-            save: 'economize',
-            lifetime: {
-                tag: 'Oferta de lançamento',
-                title: 'Acesso vitalício',
-                price: 'R$297',
-                payment: 'pagamento único',
-                features: [
-                    'Carrosséis ilimitados, pra sempre',
-                    '100 imagens com IA inclusas (ou ilimitadas com sua chave Gemini)',
-                    'Todos os templates e atualizações futuras',
-                    'PDF pro LinkedIn e vídeo MP4',
-                    'Postagem automática no Instagram e TikTok quando lançar',
-                ],
-                cta: 'Garantir o vitalício',
-            },
-            currency: 'R$',
-            perMonth: '/mês',
-            billedMonthly: 'cobrado mensalmente',
-            billedYearly: 'cobrado anualmente',
-            recommended: 'Recomendado',
+            note: 'Checkout seguro (SSL). Sem fidelidade. Cancele quando quiser.',
+            featuresTitle: 'O que está incluso:',
+            highlightBadge: 'Mais escolhido',
+            saveLabel: (save) => `Poupe ${save}`,
             plans: [
                 {
-                    name: 'Starter',
-                    monthly: 67,
-                    annual: 47,
-                    features: [
-                        '60 imagens com IA por mês',
-                        'Carrosséis ilimitados',
-                        'Todos os templates',
-                        'PNG, PDF e MP4',
-                    ],
-                    cta: 'Começar',
+                    key: 'weekly',
+                    name: 'Semanal',
+                    billing_note: 'Pagamento único · Acesso por 7 dias',
+                    per_day: '~R$6,84/dia',
+                    credits_note: '20 imagens com IA nos 7 dias',
+                    features: FEATURES_PT,
+                    price_label: 'R$47,90',
+                    compare_at: null,
+                    save: null,
+                    highlighted: false,
+                    suffix: '/7 dias',
+                    cta: 'Quero o Semanal',
                 },
                 {
-                    name: 'Pro',
-                    monthly: 127,
-                    annual: 87,
-                    features: [
-                        'Tudo do Starter',
-                        '150 imagens com IA por mês',
-                        'Salvar seus templates',
-                        'Suporte prioritário',
-                    ],
-                    cta: 'Começar',
+                    key: 'monthly',
+                    name: 'Mensal',
+                    billing_note: 'Cobrado mensalmente · Sem fidelidade',
+                    per_day: '~R$3,26/dia',
+                    credits_note: '50 imagens com IA por mês',
+                    features: FEATURES_PT,
+                    price_label: 'R$97,90',
+                    compare_at: null,
+                    save: null,
+                    highlighted: false,
+                    suffix: '/mês',
+                    cta: 'Assinar Mensal',
+                },
+                {
+                    key: 'annual',
+                    name: 'Anual',
+                    billing_note: 'Cobrado anualmente · Sem fidelidade',
+                    per_day: '~R$0,82/dia',
+                    credits_note: '150 imagens com IA por mês',
+                    features: FEATURES_PT,
+                    price_label: 'R$297,90',
+                    compare_at: 'R$1.174,80',
+                    save: '75%',
                     highlighted: true,
-                },
-                {
-                    name: 'Agency',
-                    monthly: 247,
-                    annual: 177,
-                    features: [
-                        'Tudo do Pro',
-                        '400 imagens com IA por mês',
-                        'Vários projetos',
-                        'Suporte dedicado',
-                    ],
-                    cta: 'Começar',
+                    suffix: '/ano',
+                    cta: 'Assinar Anual',
                 },
             ],
             footnote:
-                'Assinaturas: cancele quando quiser. Com sua chave Gemini, imagens ilimitadas em qualquer plano.',
+                'O Semanal não renova sozinho. Mensal e Anual: cancele quando quiser. Com sua chave Gemini, imagens ilimitadas em qualquer plano.',
         },
         faq: {
             heading: ['Perguntas ', { pill: 'frequentes' }],
@@ -656,7 +643,7 @@ const copy: Record<'pt' | 'en', Copy> = {
                 },
                 {
                     question: 'O Slidezz posta sozinho?',
-                    answer: 'Ainda não. Você baixa em PNG, PDF ou MP4 e posta pelo app da rede. A postagem automática no Instagram e no TikTok chega em breve e já vem no vitalício.',
+                    answer: 'Ainda não. Você baixa em PNG, PDF ou MP4 e posta pelo app da rede. A postagem automática no Instagram e no TikTok chega em breve.',
                 },
                 {
                     question: 'Funciona pro LinkedIn?',
@@ -1082,69 +1069,56 @@ const copy: Record<'pt' | 'en', Copy> = {
         },
         pricing: {
             heading: ['Simple ', { pill: 'pricing' }],
-            monthly: 'Monthly',
-            annual: 'Annual',
-            save: 'save',
-            lifetime: {
-                tag: 'Launch offer',
-                title: 'Lifetime access',
-                price: '$149',
-                payment: 'one-time payment',
-                features: [
-                    'Unlimited carousels, forever',
-                    '100 AI images included (or unlimited with your Gemini key)',
-                    'All templates and future updates',
-                    'LinkedIn PDF and MP4 video',
-                    'Auto-posting to Instagram and TikTok when it ships',
-                ],
-                cta: 'Claim lifetime access',
-            },
-            currency: '$',
-            perMonth: '/mo',
-            billedMonthly: 'billed monthly',
-            billedYearly: 'billed yearly',
-            recommended: 'Recommended',
+            note: 'Secure checkout (SSL). No lock-in. Cancel anytime.',
+            featuresTitle: "What's included:",
+            highlightBadge: 'Most popular',
+            saveLabel: (save) => `Save ${save}`,
             plans: [
                 {
-                    name: 'Starter',
-                    monthly: 29,
-                    annual: 19,
-                    features: [
-                        '60 AI images per month',
-                        'Unlimited carousels',
-                        'All templates',
-                        'PNG, PDF and MP4',
-                    ],
-                    cta: 'Get started',
+                    key: 'weekly',
+                    name: 'Weekly',
+                    billing_note: 'One-time payment · 7 days of access',
+                    per_day: '~$1.41/day',
+                    credits_note: '20 AI images for 7 days',
+                    features: FEATURES_EN,
+                    price_label: '$9.90',
+                    compare_at: null,
+                    save: null,
+                    highlighted: false,
+                    suffix: '/7 days',
+                    cta: 'Get Weekly',
                 },
                 {
-                    name: 'Pro',
-                    monthly: 59,
-                    annual: 39,
-                    features: [
-                        'Everything in Starter',
-                        '150 AI images per month',
-                        'Save your own templates',
-                        'Priority support',
-                    ],
-                    cta: 'Get started',
+                    key: 'monthly',
+                    name: 'Monthly',
+                    billing_note: 'Billed monthly · Cancel anytime',
+                    per_day: '~$0.66/day',
+                    credits_note: '50 AI images per month',
+                    features: FEATURES_EN,
+                    price_label: '$19.90',
+                    compare_at: null,
+                    save: null,
+                    highlighted: false,
+                    suffix: '/month',
+                    cta: 'Get Monthly',
+                },
+                {
+                    key: 'annual',
+                    name: 'Annual',
+                    billing_note: 'Billed yearly · Cancel anytime',
+                    per_day: '~$0.16/day',
+                    credits_note: '150 AI images per month',
+                    features: FEATURES_EN,
+                    price_label: '$59.90',
+                    compare_at: '$238.80',
+                    save: '75%',
                     highlighted: true,
-                },
-                {
-                    name: 'Agency',
-                    monthly: 129,
-                    annual: 99,
-                    features: [
-                        'Everything in Pro',
-                        '400 AI images per month',
-                        'Multiple projects',
-                        'Dedicated support',
-                    ],
-                    cta: 'Get started',
+                    suffix: '/year',
+                    cta: 'Get Annual',
                 },
             ],
             footnote:
-                'Subscriptions: cancel anytime. With your own Gemini key, images are unlimited on any plan.',
+                'Weekly does not auto-renew. Monthly and Annual: cancel anytime. With your own Gemini key, images are unlimited on any plan.',
         },
         faq: {
             heading: ['Frequently asked ', { pill: 'questions' }],
@@ -1179,7 +1153,7 @@ const copy: Record<'pt' | 'en', Copy> = {
                 },
                 {
                     question: 'Does Slidezz post for me?',
-                    answer: "Not yet. You download PNG, PDF or MP4 and post from the network's app. Auto-posting to Instagram and TikTok is coming soon and is included in lifetime access.",
+                    answer: "Not yet. You download PNG, PDF or MP4 and post from the network's app. Auto-posting to Instagram and TikTok is coming soon.",
                 },
                 {
                     question: 'Does it work for LinkedIn?',
@@ -1833,7 +1807,6 @@ export default function Landing({
     ).url;
     const c = copy[locale];
     const [menuOpen, setMenuOpen] = useState(false);
-    const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
     const [openFaq, setOpenFaq] = useState<number | null>(0);
     const photoGallery: { src: string; tag?: string }[] = [
         { src: photos.s7, tag: c.photos.aiTag },
@@ -2374,200 +2347,16 @@ export default function Landing({
                         id="precos"
                         className="pt-20 pb-16 sm:pt-32 sm:pb-24"
                     >
-                        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                            <SectionHeading segments={c.pricing.heading} />
-                            <div className="inline-flex items-center rounded-full border border-[#E5E7EB] bg-[#F3F5F7] p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setBilling('monthly')}
-                                    className={cn(
-                                        'rounded-full px-4 py-2 text-sm font-medium transition',
-                                        billing === 'monthly'
-                                            ? 'bg-white text-[#111] shadow'
-                                            : 'text-[#5B6470] hover:text-[#111]',
-                                    )}
-                                >
-                                    {c.pricing.monthly}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setBilling('annual')}
-                                    className={cn(
-                                        'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition',
-                                        billing === 'annual'
-                                            ? 'bg-white text-[#111] shadow'
-                                            : 'text-[#5B6470] hover:text-[#111]',
-                                    )}
-                                >
-                                    {c.pricing.annual}
-                                    {billing === 'annual' && (
-                                        <span className="rounded-full bg-[#D4F27A] px-2 py-0.5 text-[10px] font-semibold text-[#111]">
-                                            {c.pricing.save}
-                                        </span>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="mt-12 rounded-[28px] bg-[linear-gradient(160deg,#BFD9EE_0%,#E9F8C2_100%)] p-6 sm:p-10">
-                            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-                                <div className="max-w-xl">
-                                    <span className="inline-block rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#111]">
-                                        {c.pricing.lifetime.tag}
-                                    </span>
-                                    <h3 className="mt-3 text-3xl font-semibold tracking-tight text-[#111] sm:text-4xl">
-                                        {c.pricing.lifetime.title}
-                                    </h3>
-                                    <p className="mt-2 text-sm text-[#111]/70">
-                                        {c.pricing.lifetime.payment}
-                                    </p>
-                                    <ul className="mt-6 grid gap-2 text-sm text-[#111]">
-                                        {c.pricing.lifetime.features.map(
-                                            (feature) => (
-                                                <li
-                                                    key={feature}
-                                                    className="flex items-start gap-2"
-                                                >
-                                                    <Check className="mt-0.5 h-4 w-4 flex-none" />
-                                                    {feature}
-                                                </li>
-                                            ),
-                                        )}
-                                    </ul>
-                                </div>
-                                <div className="flex flex-col items-start gap-6 lg:items-end">
-                                    <span
-                                        className={cn(
-                                            display,
-                                            'text-5xl font-semibold tracking-tight text-[#111] sm:text-6xl',
-                                        )}
-                                    >
-                                        {c.pricing.lifetime.price}
-                                    </span>
-                                    <CtaPill href={ctaHref} variant="solid">
-                                        {c.pricing.lifetime.cta}
-                                    </CtaPill>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 grid gap-4 md:grid-cols-3">
-                            {c.pricing.plans.map((plan) => {
-                                const price =
-                                    billing === 'annual'
-                                        ? plan.annual
-                                        : plan.monthly;
-
-                                return (
-                                    <div
-                                        key={plan.name}
-                                        className={cn(
-                                            'rounded-[28px] p-6',
-                                            plan.highlighted
-                                                ? 'bg-[#111] text-white'
-                                                : 'bg-[#F3F5F7] text-[#111]',
-                                        )}
-                                    >
-                                        {plan.highlighted && (
-                                            <span className="inline-block rounded-full bg-[#D4F27A] px-3 py-1 text-xs font-semibold text-[#111]">
-                                                {c.pricing.recommended}
-                                            </span>
-                                        )}
-                                        <h3
-                                            className={cn(
-                                                'mt-2 text-xl font-semibold',
-                                                plan.highlighted
-                                                    ? 'text-white'
-                                                    : 'text-[#111]',
-                                            )}
-                                        >
-                                            {plan.name}
-                                        </h3>
-                                        <div className="mt-6 flex items-end gap-1">
-                                            <span
-                                                className={cn(
-                                                    'text-2xl font-medium',
-                                                    plan.highlighted
-                                                        ? 'text-white/80'
-                                                        : 'text-[#111]',
-                                                )}
-                                            >
-                                                {c.pricing.currency}
-                                            </span>
-                                            <span
-                                                className={cn(
-                                                    display,
-                                                    'text-5xl',
-                                                )}
-                                            >
-                                                {price}
-                                            </span>
-                                            <span
-                                                className={cn(
-                                                    'mb-1 text-sm',
-                                                    plan.highlighted
-                                                        ? 'text-white/60'
-                                                        : 'text-[#5B6470]',
-                                                )}
-                                            >
-                                                {c.pricing.perMonth}
-                                            </span>
-                                        </div>
-                                        <p
-                                            className={cn(
-                                                'mt-1 text-xs',
-                                                plan.highlighted
-                                                    ? 'text-white/60'
-                                                    : 'text-[#5B6470]',
-                                            )}
-                                        >
-                                            {billing === 'annual'
-                                                ? c.pricing.billedYearly
-                                                : c.pricing.billedMonthly}
-                                        </p>
-                                        <ul
-                                            className={cn(
-                                                'mt-6 space-y-3 text-sm',
-                                                plan.highlighted
-                                                    ? 'text-white/90'
-                                                    : 'text-[#111]',
-                                            )}
-                                        >
-                                            {plan.features.map((feature) => (
-                                                <li
-                                                    key={feature}
-                                                    className="flex items-start gap-2"
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            'mt-0.5 h-4 w-4 flex-none',
-                                                            plan.highlighted
-                                                                ? 'text-[#D4F27A]'
-                                                                : 'text-[#111]',
-                                                        )}
-                                                    />
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <CtaPill
-                                            href={ctaHref}
-                                            variant={
-                                                plan.highlighted
-                                                    ? 'solid'
-                                                    : 'outline'
-                                            }
-                                            className={cn(
-                                                'mt-8 w-full',
-                                                plan.highlighted &&
-                                                    'bg-white text-[#111] hover:bg-white/80',
-                                            )}
-                                        >
-                                            {plan.cta}
-                                        </CtaPill>
-                                    </div>
-                                );
-                            })}
+                        <SectionHeading segments={c.pricing.heading} />
+                        <div className="mt-12">
+                            <PricingCards
+                                plans={c.pricing.plans}
+                                featuresTitle={c.pricing.featuresTitle}
+                                highlightBadge={c.pricing.highlightBadge}
+                                saveLabel={c.pricing.saveLabel}
+                                href={ctaHref}
+                                note={c.pricing.note}
+                            />
                         </div>
                         <p className="mt-6 text-sm text-[#5B6470]">
                             {c.pricing.footnote}

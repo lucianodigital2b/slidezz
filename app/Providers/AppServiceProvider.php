@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\HandleStripeWebhookForCredits;
 use App\Listeners\HandleStripeWebhookForLifetime;
+use App\Listeners\HandleStripeWebhookForWeeklyPass;
 use App\Listeners\TrackStripePurchaseInMeta;
 use App\Models\User;
 use App\Services\Agent\AnthropicModelClient;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         Event::listen(WebhookReceived::class, HandleStripeWebhookForCredits::class);
         Event::listen(WebhookReceived::class, HandleStripeWebhookForLifetime::class);
+        Event::listen(WebhookReceived::class, HandleStripeWebhookForWeeklyPass::class);
         Event::listen(WebhookReceived::class, TrackStripePurchaseInMeta::class);
 
         Gate::define('manage-blog', fn (User $user): bool => in_array(

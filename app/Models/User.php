@@ -41,6 +41,8 @@ class User extends Authenticatable
             'welcome_shown_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'lifetime_access_at' => 'datetime',
+            'pass_expires_at' => 'datetime',
+            'credits_refreshed_at' => 'datetime',
             'can_post' => 'boolean',
             // Stored encrypted at rest; the user pastes their own Gemini key for
             // BYOK image generation. Never exposed (see Hidden above).
@@ -84,7 +86,7 @@ class User extends Authenticatable
     }
 
     /**
-     * The plan key ('starter', 'pro', 'agency') of the user's active subscription,
+     * The plan key ('monthly', 'annual') of the user's active subscription,
      * or null when there is no active/trialing subscription.
      */
     public function activePlanKey(): ?string
@@ -101,13 +103,21 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the user may run the AI generator: lifetime purchase or any
-     * active subscription. Signup is free (soft paywall) — only generation
-     * is gated.
+     * Whether the user holds an unexpired weekly pass (one-time payment).
+     */
+    public function hasActivePass(): bool
+    {
+        return $this->pass_expires_at?->isFuture() ?? false;
+    }
+
+    /**
+     * Whether the user may run the AI generator: lifetime purchase, an active
+     * subscription or an unexpired weekly pass. Signup is free (soft paywall),
+     * only generation is gated.
      */
     public function hasPremiumAccess(): bool
     {
-        return $this->hasLifetimeAccess() || $this->activePlanKey() !== null;
+        return $this->hasLifetimeAccess() || $this->activePlanKey() !== null || $this->hasActivePass();
     }
 
     /**
