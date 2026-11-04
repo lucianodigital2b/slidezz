@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AgentConversation;
 use App\Models\AgentMessage;
+use App\Services\Agent\AgentConnection;
 use App\Services\Agent\AgentRunner;
 use App\Services\Agent\ModelClient;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,9 +34,9 @@ class RunAgentTurn implements ShouldQueue
         }
 
         $user = $conversation->user;
-        $apiKey = $user->byokAnthropicKey() ?? config('services.anthropic.key');
+        $connection = AgentConnection::for($user);
 
-        if (! $apiKey) {
+        if (! $connection) {
             $this->giveUp($conversation, 'Add your Anthropic API key in Settings → Integrations to use the agent.');
 
             return;
@@ -45,7 +46,7 @@ class RunAgentTurn implements ShouldQueue
 
         try {
             $runner = new AgentRunner(app(ModelClient::class));
-            $runner->runTurn($conversation, $apiKey);
+            $runner->runTurn($conversation, $connection);
 
             $conversation->update(['status' => 'idle', 'error' => null]);
             $this->maybeSetTitle($conversation);

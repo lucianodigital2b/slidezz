@@ -11,5 +11,5 @@ interface ModelClient
      * @param  array<string, mixed>  $params
      * @return array{id: ?string, content: array<int, mixed>, stop_reason: ?string, usage: array<string, mixed>|null}
      */
-    public function send(array $params, string $apiKey): array;
+    public function send(array $params, string $apiKey, ?string $baseUrl = null): array;
 }

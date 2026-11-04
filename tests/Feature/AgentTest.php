@@ -45,8 +45,12 @@ class AgentTest extends TestCase
         {
             public array $responses = [];
 
-            public function send(array $params, string $apiKey): array
+            public array $calls = [];
+
+            public function send(array $params, string $apiKey, ?string $baseUrl = null): array
             {
+                $this->calls[] = ['model' => $params['model'], 'apiKey' => $apiKey, 'baseUrl' => $baseUrl];
+
                 return array_shift($this->responses);
             }
         };
@@ -188,9 +192,48 @@ class AgentTest extends TestCase
         $this->assertSame('idle', $conversation->fresh()->status);
     }
 
+    public function test_turn_without_anthropic_key_runs_on_deepseek(): void
+    {
+        config([
+            'services.anthropic.key' => null,
+            'services.deepseek.api_key' => 'sk-deepseek-test',
+            'services.deepseek.agent_model' => 'deepseek-v4-pro',
+            'services.deepseek.anthropic_base_url' => 'https://api.deepseek.com/anthropic',
+        ]);
+
+        $conversation = AgentConversation::create([
+            'user_id' => $this->user->id,
+            'workspace_id' => $this->workspace->id,
+            'title' => 'New conversation',
+            'status' => 'running',
+        ]);
+
+        AgentMessage::create([
+            'agent_conversation_id' => $conversation->id,
+            'role' => 'user',
+            'content' => [['type' => 'text', 'text' => 'Hi']],
+        ]);
+
+        $this->fakeModelClient->responses = [[
+            'id' => 'msg-1',
+            'content' => [['type' => 'text', 'text' => 'Hello!']],
+            'stop_reason' => 'end_turn',
+            'usage' => ['input_tokens' => 5, 'output_tokens' => 2],
+        ]];
+
+        RunAgentTurn::dispatchSync($conversation, true);
+
+        $this->assertSame('idle', $conversation->fresh()->status);
+        $this->assertSame([[
+            'model' => 'deepseek-v4-pro',
+            'apiKey' => 'sk-deepseek-test',
+            'baseUrl' => 'https://api.deepseek.com/anthropic',
+        ]], $this->fakeModelClient->calls);
+    }
+
     public function test_turn_without_any_api_key_ends_in_error_and_refunds_the_credit(): void
     {
-        config(['services.anthropic.key' => null]);
+        config(['services.anthropic.key' => null, 'services.deepseek.api_key' => null]);
 
         $conversation = AgentConversation::create([
             'user_id' => $this->user->id,

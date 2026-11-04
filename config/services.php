@@ -80,6 +80,10 @@ return [
 
     'deepseek' => [
         'api_key' => env('DEEPSEEK_API_KEY'),
+        // The agent runs on DeepSeek's Anthropic-compatible endpoint when there
+        // is no platform Anthropic key and the user has no BYOK key.
+        'anthropic_base_url' => env('DEEPSEEK_ANTHROPIC_BASE_URL', 'https://api.deepseek.com/anthropic'),
+        'agent_model' => env('DEEPSEEK_AGENT_MODEL', 'deepseek-v4-pro'),
     ],
 
     'gemini' => [

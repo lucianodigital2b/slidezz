@@ -12,7 +12,7 @@ class AgentRunner
     /**
      * Run a single agent turn: append-only conversation, manual tool loop.
      */
-    public function runTurn(AgentConversation $conversation, string $apiKey): void
+    public function runTurn(AgentConversation $conversation, AgentConnection $connection): void
     {
         $messages = AgentMessage::where('agent_conversation_id', $conversation->id)
             ->orderBy('id')
@@ -24,7 +24,7 @@ class AgentRunner
             ->all();
 
         $params = [
-            'model' => config('services.anthropic.agent_model', 'claude-opus-5-5'),
+            'model' => $connection->model,
             'maxTokens' => 16000,
             'system' => AgentPrompt::system(),
             'tools' => AgentToolbox::definitions(),
@@ -35,7 +35,7 @@ class AgentRunner
         $toolbox = app(AgentToolbox::class);
 
         for ($i = 0; $i < 25; $i++) {
-            $response = $this->client->send($params, $apiKey);
+            $response = $this->client->send($params, $connection->apiKey, $connection->baseUrl);
 
             $assistantContent = $response['content'] ?? [];
             $stopReason = $response['stop_reason'] ?? null;
