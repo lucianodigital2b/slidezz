@@ -241,9 +241,9 @@ class AgentTest extends TestCase
 
         $this->app->instance(AgentImageDescriber::class, new class extends AgentImageDescriber
         {
-            public function describe(string $base64, string $mediaType = 'image/jpeg'): string
+            public function describeMany(array $images): array
             {
-                return "TEXTO: slide {$base64}";
+                return array_map(fn (array $image): string => "TEXTO: slide {$image['data']}", $images);
             }
         });
 

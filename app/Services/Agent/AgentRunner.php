@@ -115,9 +115,18 @@ class AgentRunner
             return $params;
         }
 
-        $params['messages'] = array_map(function (array $message): array {
+        $images = [];
+        $this->collectImages($params['messages'], $images);
+
+        if ($images === []) {
+            return $params;
+        }
+
+        $descriptions = ($this->describer ?? app(AgentImageDescriber::class))->describeMany($images);
+
+        $params['messages'] = array_map(function (array $message) use ($descriptions): array {
             if (is_array($message['content'] ?? null)) {
-                $message['content'] = $this->describeImages($message['content']);
+                $message['content'] = $this->replaceImages($message['content'], $descriptions);
             }
 
             return $message;
@@ -128,26 +137,44 @@ class AgentRunner
 
     /**
      * @param  array<int, mixed>  $blocks
+     * @param  array<string, array{data: string, media_type: string}>  $images
+     */
+    private function collectImages(array $blocks, array &$images): void
+    {
+        foreach ($blocks as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            if (($block['type'] ?? null) === 'image' && isset($block['source']['data'])) {
+                $images[md5($block['source']['data'])] = [
+                    'data' => $block['source']['data'],
+                    'media_type' => $block['source']['media_type'] ?? 'image/jpeg',
+                ];
+            } elseif (is_array($block['content'] ?? null)) {
+                $this->collectImages($block['content'], $images);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, mixed>  $blocks
+     * @param  array<string, string>  $descriptions
      * @return array<int, mixed>
      */
-    private function describeImages(array $blocks): array
+    private function replaceImages(array $blocks, array $descriptions): array
     {
-        return array_map(function ($block) {
+        return array_map(function ($block) use ($descriptions) {
             if (! is_array($block)) {
                 return $block;
             }
 
             if (($block['type'] ?? null) === 'image' && isset($block['source']['data'])) {
-                $describer = $this->describer ?? app(AgentImageDescriber::class);
-
-                return [
-                    'type' => 'text',
-                    'text' => '[Imagem] '.$describer->describe($block['source']['data'], $block['source']['media_type'] ?? 'image/jpeg'),
-                ];
+                return ['type' => 'text', 'text' => '[Imagem] '.($descriptions[md5($block['source']['data'])] ?? 'sem descrição')];
             }
 
             if (($block['type'] ?? null) === 'tool_result' && is_array($block['content'] ?? null)) {
-                $block['content'] = $this->describeImages($block['content']);
+                $block['content'] = $this->replaceImages($block['content'], $descriptions);
             }
 
             return $block;
