@@ -10,8 +10,8 @@ import { generateLayoutSequenceFromContent, slotToBox, TitleFitter } from '@/com
 import { BuildContext, SlideData, buildSlideFromData } from '@/components/SlideEditor/slideBuilders';
 import { loadGoogleFont } from '@/utils/google-fonts';
 
-const ACCENT = '#FFE156';
-const ACCENT_DARK = '#E6CB4D';
+const ACCENT = '#1A2023';
+const ACCENT_DARK = '#2A3438';
 const BORDER = '#E8E7E2';
 
 interface Deck {

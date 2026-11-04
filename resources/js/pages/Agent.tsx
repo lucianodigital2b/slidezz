@@ -452,7 +452,7 @@ export default function Agent({ conversations, conversation: initialConversation
         <>
             <Head title={t('agent.pageTitle')} />
 
-            <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden bg-[#F9F6F4] text-[#1A1A1A]">
+            <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden text-[#1A1A1A]">
                 {/* Conversation list: hidden on mobile, collapsible on desktop. */}
                 {!sidebarCollapsed && (
                     <aside className="hidden w-64 shrink-0 flex-col border-r border-[#E8E7E2] bg-white lg:flex">
@@ -477,7 +477,7 @@ export default function Agent({ conversations, conversation: initialConversation
                                         key={item.id}
                                         href={`/agent/${item.id}`}
                                         className={`block rounded-xl px-3 py-2 transition-colors ${
-                                            conversation?.id === item.id ? 'bg-[#FFE156]/15 ring-1 ring-[#FFE156]' : 'hover:bg-[#F3F0EC]'
+                                            conversation?.id === item.id ? 'bg-[#1A2023]/[0.07] ring-1 ring-[#1A2023]/30' : 'hover:bg-[#F3F0EC]'
                                         }`}
                                     >
                                         <span className="block truncate text-sm font-semibold text-[#1A1A1A]">{conversationTitle(item.title)}</span>
@@ -548,7 +548,7 @@ export default function Agent({ conversations, conversation: initialConversation
                                                 setMessage(prompt);
                                                 textareaRef.current?.focus();
                                             }}
-                                            className="rounded-2xl border border-[#E8E7E2] bg-white px-5 py-3 text-left text-sm leading-relaxed font-semibold text-[#1A1A1A] transition-all hover:-translate-y-0.5 hover:border-[#FFE156] hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
+                                            className="rounded-2xl border border-[#E8E7E2] bg-white px-5 py-3 text-left text-sm leading-relaxed font-semibold text-[#1A1A1A] transition-all hover:-translate-y-0.5 hover:border-[#1A2023] hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
                                         >
                                             {prompt}
                                         </button>
@@ -567,8 +567,8 @@ export default function Agent({ conversations, conversation: initialConversation
                                         <div
                                             className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                                                 msg.role === 'user'
-                                                    ? 'bg-[#FFE156] text-[#1A1A1A]'
-                                                    : 'border border-[#E8E7E2] bg-white text-[#1A1A1A]'
+                                                    ? 'bg-[#1A2023] text-white'
+                                                    : 'border border-[#E8E7E2] bg-white text-white'
                                             }`}
                                         >
                                             {msg.role === 'assistant' && msg.tools.length > 0 && (
@@ -651,12 +651,12 @@ export default function Agent({ conversations, conversation: initialConversation
                     <div className="shrink-0 border-t border-[#E8E7E2] bg-white px-4 py-3 sm:px-6">
                         <div className="mx-auto w-full max-w-3xl">
                             {outOfCredits && (
-                                <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <div className="mb-3 rounded-2xl border border-[#E3E8EC] bg-[#F4F6F7] px-4 py-3 text-sm text-[#1A2023]">
                                     <p className="font-bold">{t('agent.composer.outOfCreditsTitle')}</p>
                                     <p className="mt-1">{t('agent.composer.outOfCreditsBody')}</p>
                                     <Link
                                         href="/settings/integrations"
-                                        className="mt-2 inline-block font-bold underline underline-offset-2 hover:text-amber-950"
+                                        className="mt-2 inline-block font-bold underline underline-offset-2 hover:text-black"
                                     >
                                         {t('agent.composer.outOfCreditsSettingsCta')}
                                     </Link>
@@ -677,14 +677,14 @@ export default function Agent({ conversations, conversation: initialConversation
                                     rows={1}
                                     maxLength={4000}
                                     placeholder={t('agent.composer.placeholder')}
-                                    className="max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-2.5 text-sm leading-relaxed text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#FFE156] focus:ring-4 focus:ring-[#FFE156]/15"
+                                    className="max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-2.5 text-sm leading-relaxed text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#1A2023] focus:ring-4 focus:ring-[#1A2023]/[0.07]"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => void sendMessage()}
                                     disabled={!message.trim() || busy}
                                     aria-label={t('agent.composer.send')}
-                                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FFE156] text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D] disabled:opacity-40"
+                                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1A2023] text-white transition-colors hover:bg-[#2A3438] disabled:opacity-40"
                                 >
                                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizonal className="h-4 w-4" />}
                                 </button>

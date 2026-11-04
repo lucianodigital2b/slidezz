@@ -649,7 +649,7 @@ export function CanvasArea({
                                 key={`dot-${idx}-${i}`}
                                 x={cx} y={cy}
                                 radius={dotR}
-                                fill={i === idx ? '#FFE156' : 'rgba(0,0,0,0.25)'}
+                                fill={i === idx ? '#1A2023' : 'rgba(0,0,0,0.25)'}
                                 listening={false}
                             />
                         );
@@ -853,7 +853,7 @@ export function CanvasArea({
                                     <Rect
                                         name="slide-frame"
                                         x={0} y={0} width={SLIDE_W} height={slideH}
-                                        stroke={isCurrent ? '#FFE156' : 'rgba(0,0,0,0.10)'}
+                                        stroke={isCurrent ? '#5A8FC2' : 'rgba(0,0,0,0.10)'}
                                         strokeWidth={isCurrent ? 4 : 2}
                                         listening={false}
                                     />
@@ -866,7 +866,7 @@ export function CanvasArea({
                             rotateEnabled={true}
                             enabledAnchors={['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']}
                             boundBoxFunc={(oldBox, newBox) => (Math.abs(newBox.width) < 2 || Math.abs(newBox.height) < 2 ? oldBox : newBox)}
-                            borderStroke="#FFE156" anchorStroke="#FFE156" anchorFill="#ffffff" anchorSize={8}
+                            borderStroke="#5A8FC2" anchorStroke="#5A8FC2" anchorFill="#ffffff" anchorSize={8}
                         />
                     </Layer>
                 </Stage>

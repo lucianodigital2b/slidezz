@@ -770,6 +770,19 @@
     "subtitle": "Pick one of today's ideas or describe your own."
   },
   "dashboard": {
+    "composer": {
+      "title": "What post are we making?",
+      "subtitle": "Describe your idea or paste a link, then pick the format below.",
+      "placeholder": "Describe the post or paste a link to use as a reference...",
+      "link": "Link",
+      "linkPlaceholder": "Paste a YouTube, Instagram or article link",
+      "removeLink": "Remove link",
+      "inspiration": "Inspiration",
+      "inspirationEmpty": "No ideas right now. Fill in your brand in settings to get daily ideas.",
+      "format": { "post": "Carousel", "stories": "Stories" },
+      "slides": "{{count}} slides",
+      "continue": "Continue"
+    },
     "title": "Home",
     "slideshowDatabase": "Slideshow Database",
     "tabSlideshows": "Slideshows ({{count}})",
@@ -878,7 +891,7 @@
       "profile": "Profile",
       "brand": "Brand",
       "security": "Security",
-      "appearance": "Appearance",
+      "appearance": "Appearance & language",
       "integrations": "Integrations",
       "apiTokens": "API & MCP",
       "billing": "Billing"
@@ -947,6 +960,10 @@
     "appearance": {
       "title": "Appearance settings",
       "description": "Update your account's appearance settings"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Dashboard language. Saved on your account, so it applies on any browser"
     },
     "integrations": {
       "title": "Integrations",

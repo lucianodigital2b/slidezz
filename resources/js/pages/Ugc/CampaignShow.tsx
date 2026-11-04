@@ -340,7 +340,7 @@ export default function CampaignShow({ campaign, data, creators, days }: Props) 
                                                             {v.caption ?? v.url}
                                                         </p>
                                                         {v.fetch_status !== 'ok' && (
-                                                            <span className="text-xs text-amber-500">
+                                                            <span className="text-xs text-[#5B6870]">
                                                                 {v.fetch_status === 'manual' ? 'métricas manuais' : 'falha ao sincronizar'}
                                                             </span>
                                                         )}

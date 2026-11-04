@@ -26,7 +26,7 @@ function TextShimmerComponent({
     className,
     duration = 2,
     spread = 2,
-    baseColor = '#FFE156',
+    baseColor = '#1A2023',
     gradientColor = '#FFD9A8',
 }: TextShimmerProps) {
     const dynamicSpread = useMemo(

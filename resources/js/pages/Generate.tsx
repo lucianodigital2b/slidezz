@@ -51,11 +51,11 @@ function IdeaCard({
             type="button"
             disabled={disabled || spinning}
             onClick={() => goToCreate({ topic: idea.title, title: idea.title })}
-            className="group flex min-h-[150px] flex-col gap-3 overflow-hidden rounded-2xl border border-[#E8E7E2] bg-white p-5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-[#FFE156] enabled:hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
+            className="group flex min-h-[150px] flex-col gap-3 overflow-hidden rounded-2xl border border-[#E8E7E2] bg-white p-5 text-left transition-all enabled:hover:-translate-y-0.5 enabled:hover:border-[#1A2023] enabled:hover:shadow-[0_16px_36px_rgba(232,68,10,0.10)]"
             style={spinning ? { borderColor: 'rgba(232,68,10,0.35)' } : undefined}
         >
             <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFE156]/10 text-[11px] font-extrabold text-[#1A1A1A]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1A2023]/5 text-[11px] font-extrabold text-[#1A1A1A]">
                     {index + 1}
                 </span>
                 <span className="text-[10px] font-bold tracking-wider text-[#888880] uppercase">{label}</span>
@@ -293,7 +293,7 @@ function IdeasOfTheDay() {
                     }}
                     rows={3}
                     placeholder={t('dashboard.ideas.describePlaceholder')}
-                    className="w-full resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#FFE156] focus:ring-4 focus:ring-[#FFE156]/15"
+                    className="w-full resize-none rounded-2xl border border-[#E8E7E2] bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder-[#AFACA4] transition-colors outline-none focus:border-[#1A2023] focus:ring-4 focus:ring-[#1A2023]/[0.07]"
                 />
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
@@ -307,7 +307,7 @@ function IdeasOfTheDay() {
                         type="button"
                         onClick={submitCustom}
                         disabled={!topic.trim()}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#FFE156] px-7 py-2.5 text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D] disabled:opacity-40"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#1A2023] px-7 py-2.5 text-base font-bold text-white transition-colors hover:bg-[#2A3438] disabled:opacity-40"
                     >
                         {t('dashboard.ideas.create')}
                         <ArrowRight className="h-4 w-4" />
@@ -330,7 +330,7 @@ export default function Generate() {
                 <link href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800" rel="stylesheet" />
             </Head>
 
-            <div className="flex-1 bg-[#F9F6F4] font-[Outfit,sans-serif] text-[#1A1A1A]">
+            <div className="flex-1 font-sans text-[#1A1A1A]">
                 <FadeIn className="px-6 pt-10 pb-16 sm:px-10">
                     <p className="mb-3 text-xs font-bold tracking-[0.18em] text-[#888880] uppercase">
                         {t('generate.eyebrow')}

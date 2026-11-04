@@ -50,6 +50,7 @@ class DashboardController extends Controller
             'projects' => $projects,
             'search' => $search,
             'show_welcome' => $showWelcome,
+            'carousel_template' => data_get($workspace?->profile, 'carousel.template'),
         ]);
     }
 }

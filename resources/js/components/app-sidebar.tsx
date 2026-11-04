@@ -61,13 +61,14 @@ export function AppSidebar() {
 
             <SidebarContent className="pt-4 flex flex-col justify-between">
                 <SidebarGroup className="px-2 py-0">
-                    <SidebarMenu>
+                    <SidebarMenu className="gap-1.5">
                         {navItems.map((item) => (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
                                     asChild
                                     isActive={isCurrentUrl(item.href)}
                                     tooltip={{ children: item.title }}
+                                    className="h-10 gap-3 px-3 text-[14px]"
                                 >
                                     <Link href={item.href} prefetch>
                                         <item.icon />
@@ -87,10 +88,10 @@ export function AppSidebar() {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip={{ children: t('sidebar.upgrade') }}
-                                    className="group !text-[#1A1A1A] bg-gradient-to-r from-[#FFE156] to-[#E6CB4D] hover:from-[#E6CB4D] hover:to-[#D4B93A] font-bold rounded-full shadow-lg shadow-[#FFE156]/30 ring-1 ring-black/10 hover:shadow-xl hover:shadow-[#FFE156]/40 transition-all justify-center"
+                                    className="group !text-white bg-[#1A2023] hover:!bg-[#2A3438] font-semibold rounded-full shadow-[0_8px_24px_-10px_rgba(26,32,35,0.6)] transition-all justify-center"
                                 >
                                     <Link href={billingEdit.url()} prefetch>
-                                        <Rocket className="w-4 h-4 fill-black/10 text-[#1A1A1A] transition-transform group-hover:-translate-y-0.5 group-hover:rotate-12" />
+                                        <Rocket className="w-4 h-4 text-white transition-transform group-hover:-translate-y-0.5 group-hover:rotate-12" />
                                         <span>{t('sidebar.upgrade')}</span>
                                     </Link>
                                 </SidebarMenuButton>

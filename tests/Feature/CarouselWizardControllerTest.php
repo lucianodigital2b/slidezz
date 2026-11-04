@@ -38,6 +38,46 @@ class CarouselWizardControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('CreateCarousel'));
     }
 
+    public function test_create_prefills_options_from_the_dashboard_composer(): void
+    {
+        $this->actingAs($this->authenticatedUser())
+            ->get(route('carousel.create', [
+                'topic' => 'Rotina de skincare',
+                'format' => 'stories',
+                'slide_count' => '7',
+                'template' => 'twitter-x',
+                'image_mode' => 'grid',
+                'language' => 'English',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('initialTopic', 'Rotina de skincare')
+                ->where('initialFormat', 'stories')
+                ->where('initialSlideCount', 7)
+                ->where('initialTemplate', 'twitter-x')
+                ->where('initialImageMode', 'grid')
+                ->where('initialLanguage', 'English'));
+    }
+
+    public function test_create_drops_unknown_composer_options(): void
+    {
+        $this->actingAs($this->authenticatedUser())
+            ->get(route('carousel.create', [
+                'format' => 'reel',
+                'slide_count' => '50',
+                'template' => '<script>',
+                'image_mode' => 'huge',
+                'language' => 'Klingon',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('initialFormat', null)
+                ->where('initialSlideCount', null)
+                ->where('initialTemplate', null)
+                ->where('initialImageMode', null)
+                ->where('initialLanguage', null));
+    }
+
     public function test_create_passes_existing_workspace_config(): void
     {
         $user = User::factory()->create(['onboarding_completed_at' => now()]);

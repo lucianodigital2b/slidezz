@@ -111,7 +111,7 @@ export default function Automations({ automations, tiktokAccounts }: Props) {
                     </div>
                     <Button
                         onClick={() => setDialogOpen(true)}
-                        className="bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                        className="bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
                     >
                         <Plus className="h-4 w-4" />
                         Nova automação
@@ -466,7 +466,7 @@ function AutomationDialog({
                         <Button
                             type="submit"
                             disabled={form.processing}
-                            className="bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                            className="bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
                         >
                             {form.processing && <Loader2 className="h-4 w-4 animate-spin" />}
                             Criar automação

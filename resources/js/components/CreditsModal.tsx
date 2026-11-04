@@ -105,7 +105,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 key={key}
                                 className={`rounded-xl border p-4 flex flex-col gap-3 ${
                                     highlighted
-                                        ? 'border-[#FFE156] bg-yellow-50/40'
+                                        ? 'border-[#1A2023] bg-[#F4F6F7]/40'
                                         : 'border-gray-200 bg-white'
                                 }`}
                             >
@@ -113,7 +113,7 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="font-semibold text-gray-900 text-sm">{plan.name}</span>
                                         {highlighted && (
-                                            <span className="text-[10px] font-bold text-[#1A1A1A] bg-yellow-100 px-1.5 py-0.5 rounded-full">
+                                            <span className="text-[10px] font-bold text-[#1A1A1A] bg-[#EEF1F3] px-1.5 py-0.5 rounded-full">
                                                 POPULAR
                                             </span>
                                         )}
@@ -137,9 +137,9 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 <button
                                     disabled={isBusy}
                                     onClick={() => handleSubscribe(key)}
-                                    className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                                    className={`w-full py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                                         highlighted
-                                            ? 'bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]'
+                                            ? 'bg-[#1A2023] text-white hover:bg-[#2A3438]'
                                             : 'bg-gray-900 text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -165,15 +165,15 @@ export function CreditsModal({ open, onOpenChange }: Props) {
                                 key={pack.key}
                                 disabled={isBusy}
                                 onClick={() => handlePack(pack.key)}
-                                className="relative border border-gray-200 rounded-xl p-4 text-left hover:border-[#FFE156] hover:bg-yellow-50/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="relative border border-gray-200 rounded-xl p-4 text-left hover:border-[#1A2023] hover:bg-[#F4F6F7]/60 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {pack.badge && (
-                                    <span className="absolute -top-2.5 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFE156] text-[#1A1A1A]">
+                                    <span className="absolute -top-2.5 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1A2023] text-white">
                                         {badgeKey ? t(`creditsModal.${badgeKey}`) : pack.badge}
                                     </span>
                                 )}
                                 <div className="flex items-center gap-1 mb-1">
-                                    <Zap className="w-3.5 h-3.5 text-[#1A1A1A] fill-[#FFE156]" />
+                                    <Zap className="w-3.5 h-3.5 text-[#1A1A1A] fill-[#1A2023]" />
                                     <span className="font-semibold text-gray-900 text-sm">{t('creditsModal.credits', { count: pack.credits })}</span>
                                 </div>
                                 <p className="text-xs text-gray-400">{pack.label}</p>

@@ -764,7 +764,7 @@ export default function SlideEditor() {
             lineHeight: String(el.lineHeight),
             letterSpacing: `${el.letterSpacing}px`,
             background: 'transparent',
-            border: '1px dashed #FFE156',
+            border: '1px dashed #5A8FC2',
             outline: 'none',
             resize: 'none',
             padding: '0',
@@ -1588,7 +1588,7 @@ export default function SlideEditor() {
                         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
                         className="fixed bottom-6 left-1/2 z-50 flex w-80 -translate-x-1/2 items-center gap-2.5 rounded-xl border border-white/10 bg-gray-900/95 px-4 py-3 shadow-xl backdrop-blur-sm"
                     >
-                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#FFE156]" />
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-white" />
                         <span className="flex-1 truncate text-sm font-medium text-gray-200">
                             {screenshotStatus === 'writing'
                                 ? t('appScreenshots.status.writing')

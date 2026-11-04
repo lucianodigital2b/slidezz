@@ -198,7 +198,7 @@ function ProviderBadge({ provider }: { provider: string }) {
 
     if (provider === 'instagram') {
         return (
-            <span className="rounded-sm bg-gradient-to-tr from-yellow-400 to-fuchsia-600 px-0.5 text-[10px] font-bold text-white">
+            <span className="rounded-sm bg-gradient-to-tr from-[#1A2023] to-fuchsia-600 px-0.5 text-[10px] font-bold text-white">
                 ig
             </span>
         );
@@ -495,7 +495,7 @@ const formatTime = (iso: string) =>
 
 const STATUS_PILL: Record<string, { label: string; className: string }> = {
     pending: { label: 'Scheduled', className: 'bg-blue-50 text-blue-700' },
-    publishing: { label: 'Sending', className: 'bg-amber-50 text-amber-700' },
+    publishing: { label: 'Sending', className: 'bg-[#F4F6F7] text-[#1A2023]' },
     failed: { label: 'Failed', className: 'bg-red-50 text-red-700' },
     published: { label: 'Sent', className: 'bg-green-50 text-green-700' },
 };
@@ -1221,7 +1221,7 @@ export default function Schedule({
                             </button>
                         </div>
                         <Button
-                            className="ml-2 bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                            className="ml-2 bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
                             onClick={() => setIsModalOpen(true)}
                         >
                             <Plus className="mr-2 h-4 w-4" /> New Post
@@ -1398,13 +1398,13 @@ export default function Schedule({
                                                             true,
                                                         )
                                                     }
-                                                    className={`min-h-[100px] p-2 ${dayDate && dragOverKey === dayKey ? 'bg-[#FFE156]/20 ring-2 ring-[#FFE156] ring-inset' : dayDate ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50'} group relative flex flex-col gap-1 transition-colors`}
+                                                    className={`min-h-[100px] p-2 ${dayDate && dragOverKey === dayKey ? 'bg-[#1A2023]/10 ring-2 ring-[#1A2023]/30 ring-inset' : dayDate ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/50'} group relative flex flex-col gap-1 transition-colors`}
                                                 >
                                                     {dayDate && (
                                                         <>
                                                             <div className="mb-1 flex items-start justify-between">
                                                                 <span
-                                                                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${isTodayCell ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-700'}`}
+                                                                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${isTodayCell ? 'bg-[#1A2023] text-white' : 'text-gray-700'}`}
                                                                 >
                                                                     {dayDate.getDate()}
                                                                 </span>
@@ -1449,7 +1449,7 @@ export default function Schedule({
                                                                         isPastDay &&
                                                                         !isTodayCell
                                                                             ? 'cursor-not-allowed opacity-0'
-                                                                            : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#FFE156]'
+                                                                            : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#1A2023]'
                                                                     }`}
                                                                 >
                                                                     <Plus className="h-4 w-4" />
@@ -1512,7 +1512,7 @@ export default function Schedule({
                                                     key={dateKey(day)}
                                                     className={`flex-1 border-r border-gray-100 px-2 py-3 text-center last:border-r-0 ${
                                                         isTodayColumn
-                                                            ? 'border-b-2 border-[#FFE156] font-semibold text-gray-900'
+                                                            ? 'border-b-2 border-[#1A2023] font-semibold text-gray-900'
                                                             : 'text-gray-500'
                                                     }`}
                                                 >
@@ -1699,7 +1699,7 @@ export default function Schedule({
                                                                     } ${
                                                                         dragOverKey ===
                                                                         cellKey
-                                                                            ? 'bg-[#FFE156]/20 ring-2 ring-[#FFE156] ring-inset'
+                                                                            ? 'bg-[#1A2023]/10 ring-2 ring-[#1A2023]/30 ring-inset'
                                                                             : ''
                                                                     }`}
                                                                 >
@@ -1753,7 +1753,7 @@ export default function Schedule({
                                                                                     true,
                                                                                 );
                                                                             }}
-                                                                            className="absolute top-1 right-1 z-10 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#FFE156]"
+                                                                            className="absolute top-1 right-1 z-10 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-[#1A2023]"
                                                                         >
                                                                             <Plus className="h-4 w-4" />
                                                                         </button>
@@ -1962,7 +1962,7 @@ export default function Schedule({
                                     </p>
 
                                     <Button
-                                        className="border border-[#FFE156]/50 bg-[#FFE156] font-semibold text-[#1A1A1A] shadow-sm hover:bg-[#E6CB4D]"
+                                        className="border border-[#1A2023]/25 bg-[#1A2023] font-semibold text-white shadow-sm hover:bg-[#2A3438] rounded-full"
                                         onClick={() => setIsModalOpen(true)}
                                     >
                                         <Plus className="mr-2 h-4 w-4" /> New
@@ -2328,7 +2328,7 @@ export default function Schedule({
                                         )}
                                         {isEditable(preview) &&
                                             previewAccounts.length === 0 && (
-                                                <p className="text-xs text-amber-700">
+                                                <p className="text-xs text-[#1A2023]">
                                                     Pick at least one account to
                                                     save. To cancel the post,
                                                     delete it.
@@ -2560,7 +2560,7 @@ export default function Schedule({
                                     processing ||
                                     data.social_account_ids.length === 0
                                 }
-                                className="bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                                className="bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
                             >
                                 {processing
                                     ? 'Scheduling...'

@@ -68,7 +68,7 @@ export default function GeminiKeyGuide() {
             </Head>
 
             <div
-                className="min-h-screen font-[Outfit,sans-serif]"
+                className="min-h-screen font-sans"
                 style={{
                     background: '#F3EEE8',
                     backgroundImage:
@@ -150,7 +150,7 @@ export default function GeminiKeyGuide() {
                                 style={{ border: '1px solid #E8E7E2' }}
                             >
                                 <div className="mb-2 flex items-center gap-3">
-                                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#FFE156]/30">
+                                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1A2023]/15">
                                         <Icon className="h-4 w-4 text-[#1A1A1A]" />
                                     </div>
                                     <h3 className="text-lg font-extrabold text-[#1A1A1A]">{q}</h3>
@@ -176,7 +176,7 @@ export default function GeminiKeyGuide() {
                         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                             <Link
                                 href="/settings/integrations"
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFE156] px-8 py-3.5 text-lg font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
+                                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-lg font-bold text-[#1A2023] transition-colors hover:bg-[#EEF1F3]"
                             >
                                 Colar minha chave <ArrowRight className="h-4 w-4" />
                             </Link>
@@ -190,7 +190,7 @@ export default function GeminiKeyGuide() {
                         <div className="mx-auto mt-6 flex max-w-md flex-col items-center gap-1.5">
                             {['Criptografada e nunca exibida de volta', 'Revogável a qualquer momento no Google'].map((item) => (
                                 <div key={item} className="flex items-center gap-2 text-sm font-semibold text-[#666660]">
-                                    <Check className="h-3.5 w-3.5 text-[#FFE156]" /> {item}
+                                    <Check className="h-3.5 w-3.5 text-white" /> {item}
                                 </div>
                             ))}
                         </div>

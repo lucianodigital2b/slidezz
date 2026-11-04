@@ -101,7 +101,7 @@
     "nav": {
       "profile": "Perfil",
       "security": "Segurança",
-      "appearance": "Aparência",
+      "appearance": "Aparência e idioma",
       "integrations": "Integrações",
       "apiTokens": "API & MCP",
       "brand": "Marca",
@@ -171,6 +171,10 @@
     "appearance": {
       "title": "Configurações de aparência",
       "description": "Atualize as configurações de aparência da sua conta"
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Idioma do painel. Fica salvo na sua conta e vale em qualquer navegador"
     },
     "integrations": {
       "title": "Integrações",
@@ -299,6 +303,19 @@
     "subtitle": "Escolha uma das ideias do dia ou descreva a sua própria."
   },
   "dashboard": {
+    "composer": {
+      "title": "Qual post vamos criar?",
+      "subtitle": "Conte sua ideia ou cole um link, e escolha o formato logo abaixo.",
+      "placeholder": "Descreva o post ou cole um link para usar como referência...",
+      "link": "Link",
+      "linkPlaceholder": "Cole um link do YouTube, Instagram ou de um artigo",
+      "removeLink": "Remover link",
+      "inspiration": "Inspiração",
+      "inspirationEmpty": "Sem ideias agora. Preencha a sua marca nas configurações para receber ideias do dia.",
+      "format": { "post": "Carrossel", "stories": "Stories" },
+      "slides": "{{count}} slides",
+      "continue": "Continuar"
+    },
     "title": "Início",
     "question": "O que você está criando hoje?",
     "slideshowDatabase": "Banco de Dados de Slideshow",

@@ -9,9 +9,7 @@ import {
     Files,
     Gift,
     KeyRound,
-    PenLine,
     Search,
-    Smartphone,
     Sparkles,
     Trash2,
 } from 'lucide-react';
@@ -19,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SlideProjectController from '@/actions/App/Http/Controllers/SlideProjectController';
 import CtaButton from '@/components/cta-button';
+import PostComposer from '@/components/dashboard/PostComposer';
 import FadeIn from '@/components/fade-in';
 import { SlideThumbnail } from '@/components/SlideEditor/SlideThumbnail';
 import type { Format } from '@/components/SlideEditor/types';
@@ -322,7 +321,7 @@ function WelcomeModal({
         >
             <DialogContent className="text-center sm:max-w-md">
                 <DialogHeader className="items-center gap-3">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1A2023]/5">
                         <Gift className="h-8 w-8 text-[#1A1A1A]" />
                     </div>
                     <DialogTitle className="font-display text-2xl tracking-wide text-[#1A1A1A]">
@@ -333,7 +332,7 @@ function WelcomeModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="my-2 flex items-center justify-center gap-2 rounded-xl border border-[#FFE156]/15 bg-[#FFE156]/5 px-4 py-3">
+                <div className="my-2 flex items-center justify-center gap-2 rounded-xl border border-[#1A2023]/[0.07] bg-[#1A2023]/[0.04] px-4 py-3">
                     <Sparkles className="h-4 w-4 shrink-0 text-[#1A1A1A]" />
                     <span className="text-sm font-bold text-[#1A1A1A]">
                         {t('dashboard.welcome.credits')}
@@ -347,7 +346,7 @@ function WelcomeModal({
                             onClose();
                             router.visit('/carousel/create');
                         }}
-                        className="w-full rounded-xl bg-[#FFE156] px-6 py-3 text-sm font-bold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D]"
+                        className="w-full rounded-full bg-[#1A2023] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#2A3438]"
                     >
                         {t('dashboard.welcome.cta')}
                     </button>
@@ -363,10 +362,12 @@ export default function Dashboard({
     projects,
     search: initialSearch,
     show_welcome,
+    carousel_template: carouselTemplate,
 }: {
     projects: PaginatedProjects;
     search: string;
     show_welcome: boolean;
+    carousel_template?: string | null;
 }) {
     const { t } = useTranslation();
     const { auth } = usePage().props;
@@ -402,26 +403,20 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title={t('dashboard.pageTitle')}>
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link
-                    href="https://fonts.bunny.net/css?family=outfit:400,500,600,700,800"
-                    rel="stylesheet"
-                />
-            </Head>
+            <Head title={t('dashboard.pageTitle')} />
             <WelcomeModal
                 open={welcomeOpen}
                 onClose={() => setWelcomeOpen(false)}
             />
 
-            <div className="flex-1 bg-[#F9F6F4] font-[Outfit,sans-serif] text-[#1A1A1A]">
+            <div className="flex-1 bg-white font-sans text-[#1A1A1A]">
                 {/* ── Out of managed image credits (and no own Gemini key) ── */}
                 {!auth.has_gemini_key && auth.credits <= 0 && (
                     <FadeIn className="px-6 pt-6 sm:px-10">
-                        <div className="flex flex-col gap-4 rounded-2xl border border-[#FFE156] bg-[#FFE156]/15 p-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-4 rounded-2xl border border-[#1A2023] bg-[#1A2023]/[0.07] p-5 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
-                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
-                                    <KeyRound className="h-4 w-4 text-[#1A1A1A]" />
+                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#1A2023]">
+                                    <KeyRound className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-[#1A1A1A]">
@@ -442,40 +437,7 @@ export default function Dashboard({
                     </FadeIn>
                 )}
 
-                {/* ── Hero ── */}
-                <FadeIn className="border-b border-[#1A1A1A]/10 px-6 pt-10 pb-9 sm:px-10">
-                    <p className="mb-3 text-xs font-bold tracking-[0.18em] text-[#888880] uppercase">
-                        {t('dashboard.heroEyebrow')}
-                    </p>
-                    <h1 className="max-w-2xl font-display text-[clamp(2rem,4vw,3rem)] leading-[0.98] tracking-tight">
-                        {t('dashboard.question')}
-                    </h1>
-                    <p className="mt-4 max-w-lg text-lg leading-relaxed font-medium text-[#555550]">
-                        {t('dashboard.heroSubtitle')}
-                    </p>
-                    <div className="mt-7 flex flex-wrap items-center gap-3">
-                        <CtaButton
-                            href="/carousel/create"
-                            className="py-2 pr-2 pl-7 text-base"
-                        >
-                            {t('dashboard.actions.createAi.button')}
-                        </CtaButton>
-                        <Link
-                            href="/slideshow-editor/create"
-                            className="inline-flex items-center gap-2 rounded-full border border-[#1A1A1A] px-6 py-2.5 text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                        >
-                            <PenLine className="h-4 w-4" />
-                            {t('dashboard.actions.scratch.button')}
-                        </Link>
-                        <Link
-                            href="/app-screenshots/create"
-                            className="inline-flex items-center gap-2 rounded-full border border-[#1A1A1A] px-6 py-2.5 text-base font-bold text-[#1A1A1A] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                        >
-                            <Smartphone className="h-4 w-4" />
-                            {t('dashboard.actions.appScreenshots.button')}
-                        </Link>
-                    </div>
-                </FadeIn>
+                <PostComposer defaultTemplate={carouselTemplate} />
 
                 {/* ── Recent projects ── */}
                 <section className="px-6 py-9 sm:px-10">
@@ -490,7 +452,7 @@ export default function Dashboard({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder={t('dashboard.searchPlaceholder')}
-                                className="w-full rounded-full border border-[#E8E7E2] bg-white py-2 pr-3 pl-8 text-sm text-[#1A1A1A] placeholder-[#888880] transition-colors outline-none focus:border-[#FFE156]"
+                                className="w-full rounded-full border border-[#E8E7E2] bg-white py-2 pr-3 pl-8 text-sm text-[#1A1A1A] placeholder-[#888880] transition-colors outline-none focus:border-[#1A2023]"
                             />
                         </div>
                     </div>
@@ -513,7 +475,7 @@ export default function Dashboard({
                         </>
                     ) : search.trim() ? (
                         <div className="flex flex-col items-center justify-center gap-3 py-28">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1A2023]/5">
                                 <Search className="h-6 w-6 text-[#1A1A1A]" />
                             </div>
                             <p className="text-sm text-[#555550]">
@@ -529,7 +491,7 @@ export default function Dashboard({
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center gap-4 py-24">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFE156]/10">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1A2023]/5">
                                 <Sparkles className="h-6 w-6 text-[#1A1A1A]" />
                             </div>
                             <p className="max-w-sm text-center text-sm leading-relaxed text-[#555550]">

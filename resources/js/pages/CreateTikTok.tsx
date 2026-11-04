@@ -252,7 +252,7 @@ export default function CreateTikTok({ recent, tiktokAccounts }: Props) {
                         <Button
                             onClick={generate}
                             disabled={submitting || topic.trim() === ''}
-                            className="bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                            className="bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
                         >
                             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                             Gerar carrossel

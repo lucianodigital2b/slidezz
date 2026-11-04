@@ -20,7 +20,7 @@ export default function AuthBrandSplit({
     children,
 }: AuthBrandSplitProps) {
     return (
-        <div className="relative flex min-h-svh flex-col bg-white font-[Outfit,sans-serif] lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="relative flex min-h-svh flex-col bg-white font-sans lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Head>
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link

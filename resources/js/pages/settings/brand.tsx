@@ -15,7 +15,7 @@ import { edit, update } from '@/routes/brand';
 const GOALS = [
     { key: 'sell_products', icon: TrendingUp, bg: 'bg-emerald-500', color: 'text-white' },
     { key: 'build_authority', icon: Sparkles, bg: 'bg-[#7C3AED]', color: 'text-white' },
-    { key: 'increase_engagement', icon: Zap, bg: 'bg-[#FFE156]', color: 'text-[#1A1A1A]' },
+    { key: 'increase_engagement', icon: Zap, bg: 'bg-[#1A2023]', color: 'text-white' },
     { key: 'generate_leads', icon: Users, bg: 'bg-[#2563EB]', color: 'text-white' },
 ] as const;
 
@@ -135,7 +135,7 @@ export default function Brand({ profile, logoUrl }: { profile: BrandProfile; log
                                     onClick={() => form.setData('goal', key)}
                                     className={cn(
                                         'flex items-center gap-3 rounded-xl border p-3 text-left transition-colors',
-                                        selected ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-border hover:border-muted-foreground/40',
+                                        selected ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-border hover:border-muted-foreground/40',
                                     )}
                                 >
                                     <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', bg, color)}>
@@ -200,7 +200,7 @@ export default function Brand({ profile, logoUrl }: { profile: BrandProfile; log
                                     onClick={() => toggleTone(key)}
                                     className={cn(
                                         'rounded-full border px-3 py-1.5 text-sm transition-colors',
-                                        selected ? 'border-[#FFE156] bg-[#FFE156]/10 font-medium text-foreground' : 'border-border text-muted-foreground hover:border-muted-foreground/40',
+                                        selected ? 'border-[#1A2023] bg-[#1A2023]/5 font-medium text-foreground' : 'border-border text-muted-foreground hover:border-muted-foreground/40',
                                     )}
                                 >
                                     {t(`onboarding.step4.tones.${key}`)}
@@ -260,7 +260,7 @@ export default function Brand({ profile, logoUrl }: { profile: BrandProfile; log
                                         onClick={() => form.setData('palette', p)}
                                         className={cn(
                                             'flex flex-col gap-2 rounded-xl border p-2.5 transition-colors',
-                                            selected ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-border hover:border-muted-foreground/40',
+                                            selected ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-border hover:border-muted-foreground/40',
                                         )}
                                     >
                                         <div className="flex gap-1">

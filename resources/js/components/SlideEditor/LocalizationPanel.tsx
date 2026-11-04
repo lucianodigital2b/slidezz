@@ -96,7 +96,7 @@ export function LocalizationPanel({
                         type="button"
                         onClick={() => onActivateLocale(null)}
                         className={`flex w-full items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-colors ${
-                            activeLocale === null ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
+                            activeLocale === null ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                         <div>
@@ -116,7 +116,7 @@ export function LocalizationPanel({
                             const isOpen = expanded === code;
 
                             return (
-                                <div key={code} className={`rounded-xl border-2 transition-colors ${isActive ? 'border-[#FFE156]' : 'border-gray-200'}`}>
+                                <div key={code} className={`rounded-xl border-2 transition-colors ${isActive ? 'border-[#1A2023]' : 'border-gray-200'}`}>
                                     <div className="flex items-center gap-2 px-4 py-3">
                                         <button
                                             type="button"
@@ -136,7 +136,7 @@ export function LocalizationPanel({
                                             type="button"
                                             title={t('appScreenshots.localization.preview')}
                                             onClick={() => onActivateLocale(isActive ? null : code)}
-                                            className={`rounded-lg p-2 transition-colors ${isActive ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-500 hover:bg-gray-100'}`}
+                                            className={`rounded-lg p-2 transition-colors ${isActive ? 'bg-[#1A2023] text-white' : 'text-gray-500 hover:bg-gray-100'}`}
                                         >
                                             <Eye className="h-4 w-4" />
                                         </button>
@@ -173,7 +173,7 @@ export function LocalizationPanel({
                                                         value={entries[item.id]?.text ?? ''}
                                                         placeholder={item.text}
                                                         onChange={(e) => onEditText(code, item.id, e.target.value)}
-                                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FFE156] focus:ring-2 focus:ring-[#FFE156]/20 focus:outline-none"
+                                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1A2023] focus:ring-2 focus:ring-[#1A2023]/10 focus:outline-none"
                                                     />
                                                 </div>
                                             ))}
@@ -229,12 +229,12 @@ export function LocalizationPanel({
                                     onClick={() => toggleTarget(target)}
                                     className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-xs font-semibold transition-colors ${
                                         selectedTargets.includes(target.id)
-                                            ? 'border-[#FFE156] bg-[#FFE156]/5 text-[#1A1A1A]'
+                                            ? 'border-[#1A2023] bg-[#1A2023]/[0.04] text-[#1A1A1A]'
                                             : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                     }`}
                                 >
                                     <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
-                                        selectedTargets.includes(target.id) ? 'border-[#FFE156] bg-[#FFE156]' : 'border-gray-300'
+                                        selectedTargets.includes(target.id) ? 'border-[#1A2023] bg-[#1A2023]' : 'border-gray-300'
                                     }`}>
                                         {selectedTargets.includes(target.id) && <Check className="h-2.5 w-2.5 text-white" />}
                                     </span>
@@ -267,7 +267,7 @@ export function LocalizationPanel({
                         type="button"
                         onClick={() => onExport(exportLocales, selectedTargets)}
                         disabled={exporting || selectedTargets.length === 0}
-                        className="flex items-center gap-2 rounded-lg bg-[#FFE156] px-5 py-2.5 text-sm font-semibold text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D] disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-full bg-[#1A2023] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#2A3438] disabled:opacity-50"
                     >
                         {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                         {exporting && exportProgress !== ''

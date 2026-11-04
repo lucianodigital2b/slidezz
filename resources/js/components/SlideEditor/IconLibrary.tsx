@@ -53,7 +53,7 @@ export function IconLibrary({ onPick }: { onPick: (shape: ShapeDef) => void }) {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t('slideEditor.shapes.searchIcons')}
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-xs text-gray-700 outline-none transition-colors focus:border-[#FFE156] focus:bg-white"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-2 text-xs text-gray-700 outline-none transition-colors focus:border-[#1A2023] focus:bg-white"
                 />
             </div>
 

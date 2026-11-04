@@ -227,7 +227,7 @@ function UploadCard() {
             <Button
                 onClick={() => input.current?.click()}
                 disabled={busy}
-                className="w-full bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D]"
+                className="w-full bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
             >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                 Escolher arquivos

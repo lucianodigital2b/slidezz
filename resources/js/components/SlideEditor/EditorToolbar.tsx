@@ -105,7 +105,7 @@ export function EditorToolbar({
 
             {/* Logo / home link */}
             <Link href={DashboardController.index().url} className="flex items-center gap-1.5 mr-1 shrink-0 group">
-                <div className="flex size-7 items-center justify-center rounded-md bg-[#FFE156] text-[#1A1A1A] group-hover:bg-[#E6CB4D] transition-colors">
+                <div className="flex size-7 items-center justify-center rounded-full bg-[#1A2023] text-white group-hover:bg-[#2A3438] transition-colors">
                     <AppLogoIcon className="size-4 fill-current" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800 leading-tight">Slidezz</span>
@@ -168,7 +168,7 @@ export function EditorToolbar({
             <input
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className="text-sm font-medium text-gray-700 border-b border-transparent hover:border-gray-300 focus:border-[#FFE156] focus:outline-none bg-transparent px-1 w-44 truncate"
+                className="text-sm font-medium text-gray-700 border-b border-transparent hover:border-gray-300 focus:border-[#1A2023] focus:outline-none bg-transparent px-1 w-44 truncate"
             />
 
             <div className="flex-1" />
@@ -246,7 +246,7 @@ export function EditorToolbar({
                     onClick={onOpenLocalization}
                     title={t('appScreenshots.localization.title')}
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                        activeLocale ? 'border-[#FFE156] bg-[#FFE156]/10 text-[#1A1A1A]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        activeLocale ? 'border-[#1A2023] bg-[#1A2023]/5 text-[#1A1A1A]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                     <Globe className="h-4 w-4" />
@@ -263,7 +263,7 @@ export function EditorToolbar({
             <Popover>
                 <PopoverTrigger asChild>
                     <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-[#FFE156] text-[#1A1A1A] hover:bg-[#E6CB4D] transition-colors disabled:opacity-60"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-[#1A2023] text-white hover:bg-[#2A3438] transition-colors disabled:opacity-60"
                         disabled={exportingZip}>
                         {exportingZip || mp4Progress !== null ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         {t('slideEditor.toolbar.export')}
@@ -324,7 +324,7 @@ export function EditorToolbar({
                             <div className="my-1 h-px bg-gray-100" />
                             <button
                                 onClick={onExportMetadata}
-                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-[#1A2023] hover:bg-[#F4F6F7] transition-colors">
                                 <Bug className="w-4 h-4 shrink-0" /> {t('slideEditor.toolbar.exportMetadata')}
                             </button>
                         </>
@@ -400,7 +400,7 @@ export function EditorToolbar({
                                     <button
                                         onClick={onPublishToInstagram}
                                         disabled={igPosting || slidesCount < 2 || slidesCount > 10}
-                                        className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium text-[#1A1A1A] bg-[#FFE156] hover:bg-[#E6CB4D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-white bg-[#1A2023] hover:bg-[#2A3438] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {igPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                         {publishAt ? 'Schedule IG' : 'Post to IG'}

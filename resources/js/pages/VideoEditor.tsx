@@ -283,7 +283,7 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
                 <button
                     onClick={exportVideo}
                     disabled={render.status === 'rendering' || timeline.clips.length === 0}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#FFE156] px-3 py-1.5 text-sm text-[#1A1A1A] transition-colors hover:bg-[#E6CB4D] disabled:opacity-60"
+                    className="flex items-center gap-1.5 rounded-full bg-[#1A2023] px-3 py-1.5 text-sm text-white transition-colors hover:bg-[#2A3438] disabled:opacity-60"
                 >
                     {render.status === 'rendering' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
                     {render.status === 'rendering'
@@ -332,7 +332,7 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
                                 <button
                                     key={clip.id}
                                     onClick={() => setSelectedId(clip.id)}
-                                    className={`group relative h-24 shrink-0 overflow-hidden rounded-lg border-2 bg-black ${clip.id === selectedId ? 'border-[#FFE156]' : 'border-transparent ring-1 ring-black/10'}`}
+                                    className={`group relative h-24 shrink-0 overflow-hidden rounded-lg border-2 bg-black ${clip.id === selectedId ? 'border-[#1A2023]' : 'border-transparent ring-1 ring-black/10'}`}
                                     style={{ width: Math.max(56, Math.min(160, clip.duration * 22)) }}
                                 >
                                     {clip.type === 'image' ? (

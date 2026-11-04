@@ -17,7 +17,7 @@ interface VideoSummary {
 
 const STATUS_CLASS: Record<VideoSummary['status'], string> = {
     draft: 'bg-gray-100 text-gray-600',
-    rendering: 'bg-amber-100 text-amber-700',
+    rendering: 'bg-[#EEF1F3] text-[#1A2023]',
     ready: 'bg-emerald-100 text-emerald-700',
     failed: 'bg-red-100 text-red-700',
 };
@@ -67,7 +67,7 @@ export default function VideosIndex({ videos }: { videos: VideoSummary[] }) {
                 <button
                     onClick={createVideo}
                     disabled={creating}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#FFE156] px-4 py-2 text-sm font-medium text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-60"
+                    className="flex items-center gap-1.5 rounded-full bg-[#1A2023] px-4 py-2 text-sm font-medium text-white hover:bg-[#2A3438] disabled:opacity-60"
                 >
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     {t('videos.new')}

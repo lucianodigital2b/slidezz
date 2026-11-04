@@ -78,7 +78,7 @@ export default function Login({
                                 <div className="mt-2">
                                     <TextLink
                                         href={request()}
-                                        className="text-sm font-medium text-[#1A1A1A] no-underline hover:text-[#E6CB4D] hover:underline"
+                                        className="text-sm font-medium text-[#1A1A1A] no-underline hover:text-[#2A3438] hover:underline"
                                         tabIndex={5}
                                     >
                                         {t('auth.login.forgotPassword')}
@@ -98,7 +98,7 @@ export default function Login({
                                 id="remember"
                                 name="remember"
                                 tabIndex={3}
-                                className="data-[state=checked]:border-[#FFE156] data-[state=checked]:bg-[#FFE156]"
+                                className="data-[state=checked]:border-[#1A2023] data-[state=checked]:bg-[#1A2023]"
                             />
                         </div>
 
@@ -115,7 +115,7 @@ export default function Login({
                                 {t('auth.login.noAccount')}{' '}
                                 <TextLink
                                     href={register()}
-                                    className="font-medium text-[#1A1A1A] no-underline hover:text-[#E6CB4D] hover:underline"
+                                    className="font-medium text-[#1A1A1A] no-underline hover:text-[#2A3438] hover:underline"
                                     tabIndex={6}
                                 >
                                     {t('auth.login.signUp')}

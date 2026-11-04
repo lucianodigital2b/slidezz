@@ -18,25 +18,15 @@ import {
 } from 'lucide-react';
 import type { ImageMode } from '@/components/SlideEditor/hooks/useAiGeneration';
 import { FORMATS } from '@/components/SlideEditor/types';
+import { DEFAULT_TEMPLATE_ID, TEMPLATE_IDS, isTemplateId } from '@/lib/carousel-templates';
+import type { TemplateId } from '@/lib/carousel-templates';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 // ─── Templates & Archetypes ───────────────────────────────────────────────────
 
-const TEMPLATE_IDS = [
-    'editorial-press',
-    'noir-manifesto',
-    'dark-cards',
-    'pop-magazine',
-    'twitter-x',
-    'acid-brutalist',
-    'documentary',
-    'ticket',
-] as const;
 
-/** Template pre-selected in the wizard when the workspace has no saved choice. */
-const DEFAULT_TEMPLATE_ID: TemplateId = 'editorial-press';
 
 /**
  * Read an image file and return a downscaled PNG data URL (max 1080px wide, the
@@ -80,7 +70,6 @@ const ARCHETYPE_IDS = [
     'autoridade-cientifica',
 ] as const;
 
-type TemplateId  = typeof TEMPLATE_IDS[number];
 type ArchetypeId = typeof ARCHETYPE_IDS[number];
 type UrlType     = 'youtube' | 'instagram' | 'blog';
 
@@ -102,6 +91,11 @@ interface PageProps extends Record<string, unknown> {
     auth: { credits: number };
     initialTopic: string | null;
     initialTitle: string | null;
+    initialFormat: 'post' | 'stories' | null;
+    initialSlideCount: number | null;
+    initialTemplate: string | null;
+    initialImageMode: ImageMode | null;
+    initialLanguage: string | null;
 }
 
 // ─── SelectionCard ────────────────────────────────────────────────────────────
@@ -115,12 +109,12 @@ function SelectionCard({
             onClick={onClick}
             className={`relative w-full text-left rounded-xl border-2 p-4 transition-all ${
                 selected
-                    ? 'border-[#FFE156] bg-[#FFE156]/5'
+                    ? 'border-[#1A2023] bg-[#1A2023]/[0.04]'
                     : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
         >
             {selected && (
-                <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE156]">
+                <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#1A2023]">
                     <Check className="h-3 w-3 text-white" />
                 </span>
             )}
@@ -197,7 +191,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                                 type="button"
                                 onClick={() => { setUrlType(type); setError(''); }}
                                 className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
-                                    urlType === type ? 'bg-[#FFE156] text-[#1A1A1A]' : 'text-gray-500 hover:text-gray-700'
+                                    urlType === type ? 'bg-[#1A2023] text-white' : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
                                 {type === 'blog' ? 'Blog / Artigo' : type === 'instagram' ? 'Instagram' : 'YouTube'}
@@ -206,7 +200,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                     </div>
 
                     {/* URL input */}
-                    <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-[#FFE156] focus-within:ring-1 focus-within:ring-[#FFE156]">
+                    <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 focus-within:border-[#1A2023] focus-within:ring-1 focus-within:ring-[#1A2023]/25">
                         <ExternalLink className="h-4 w-4 text-gray-400 shrink-0" />
                         <input
                             type="url"
@@ -223,7 +217,7 @@ function ImportModal({ onClose, onImport }: ImportModalProps) {
                         type="button"
                         onClick={handleExtract}
                         disabled={!url.trim() || loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FFE156] py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-50 transition-colors"
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1A2023] py-2.5 text-sm font-semibold text-white hover:bg-[#2A3438] disabled:opacity-50 transition-colors"
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {t('createCarousel.import.extractBtn')}
@@ -247,8 +241,8 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
                     <div key={label} className="flex items-center">
                         <div className="flex flex-col items-center gap-1">
                             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                                done    ? 'bg-[#FFE156] text-[#1A1A1A]' :
-                                current ? 'bg-[#FFE156] text-[#1A1A1A] ring-4 ring-[#FFE156]/20' :
+                                done    ? 'bg-[#1A2023] text-white' :
+                                current ? 'bg-[#1A2023] text-white ring-4 ring-[#1A2023]/10' :
                                           'bg-gray-100 text-gray-400'
                             }`}>
                                 {done ? <Check className="h-3.5 w-3.5" /> : idx}
@@ -258,7 +252,7 @@ function Stepper({ step, labels }: { step: number; labels: string[] }) {
                             </span>
                         </div>
                         {i < labels.length - 1 && (
-                            <div className={`h-0.5 w-16 mx-2 mb-4 rounded transition-colors ${done ? 'bg-[#FFE156]' : 'bg-gray-200'}`} />
+                            <div className={`h-0.5 w-16 mx-2 mb-4 rounded transition-colors ${done ? 'bg-[#1A2023]' : 'bg-gray-200'}`} />
                         )}
                     </div>
                 );
@@ -275,26 +269,32 @@ const TOPIC_MAX = 2000;
 
 export default function CreateCarousel() {
     const { t } = useTranslation();
-    const { workspaceConfig, savedTemplates, auth, initialTopic, initialTitle } = usePage<PageProps>().props;
+    const {
+        workspaceConfig, savedTemplates, auth, initialTopic, initialTitle,
+        initialFormat, initialSlideCount, initialTemplate, initialImageMode, initialLanguage,
+    } = usePage<PageProps>().props;
+    const startTemplate: TemplateId = isTemplateId(initialTemplate)
+        ? initialTemplate
+        : (workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID);
 
     const [step, setStep]                   = useState(1);
     const [title, setTitle]                 = useState(initialTitle ?? '');
     const [topic, setTopic]                 = useState(initialTopic ?? '');
     const [customPrompt, setCustomPrompt]   = useState('');
-    const [template, setTemplate]           = useState<TemplateId | ''>(workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID);
+    const [template, setTemplate]           = useState<TemplateId | ''>(startTemplate);
     const [archetype, setArchetype]         = useState<ArchetypeId | ''>(workspaceConfig?.archetype ?? '');
-    const [slideCount, setSlideCount]       = useState(3);
+    const [slideCount, setSlideCount]       = useState(initialSlideCount ?? 3);
     // Twitter/X defaults to grid (its tweet copy can't sit over a full-bleed photo);
     // every other template starts on the varied hero+layouts mode.
     const [imageMode, setImageMode] = useState<ImageMode>(
-        (workspaceConfig?.template ?? DEFAULT_TEMPLATE_ID) === 'twitter-x' ? 'grid' : 'mixed',
+        initialImageMode ?? (startTemplate === 'twitter-x' ? 'grid' : 'mixed'),
     );
     const [imageStyle, setImageStyle]       = useState('');
     const [ctaImage, setCtaImage]           = useState<string | null>(null);
     const [saveConfig, setSaveConfig]       = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-    const [format, setFormat]               = useState<'post' | 'stories'>('post');
-    const [language, setLanguage]           = useState('Portuguese (Brazil)');
+    const [format, setFormat]               = useState<'post' | 'stories'>(initialFormat ?? 'post');
+    const [language, setLanguage]           = useState(initialLanguage ?? 'Portuguese (Brazil)');
     const [importOpen, setImportOpen]       = useState(false);
     const [submitting, setSubmitting]       = useState(false);
 
@@ -441,7 +441,7 @@ export default function CreateCarousel() {
                                                 onClick={() => applySavedTemplate(tpl.id)}
                                                 disabled={submitting}
                                                 title={`${tpl.title} — ${t('createCarousel.step3.useTemplate')}`}
-                                                className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 p-1.5 text-left hover:border-[#FFE156] disabled:opacity-60 transition-colors"
+                                                className="group flex flex-col gap-1.5 rounded-xl border border-gray-200 p-1.5 text-left hover:border-[#1A2023] disabled:opacity-60 transition-colors"
                                             >
                                                 <div
                                                     className="relative w-full overflow-hidden rounded-lg bg-gray-100"
@@ -474,7 +474,7 @@ export default function CreateCarousel() {
                                         onChange={(e) => setTitle(e.target.value)}
                                         maxLength={TITLE_MAX}
                                         placeholder={t('createCarousel.step1.titlePlaceholder')}
-                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
+                                        className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A2023]/25 focus:border-transparent"
                                     />
                                 </div>
 
@@ -489,7 +489,7 @@ export default function CreateCarousel() {
                                         rows={5}
                                         maxLength={TOPIC_MAX}
                                         placeholder={t('createCarousel.step1.topicPlaceholder')}
-                                        className={`rounded-lg border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent ${topic.length > TOPIC_MAX ? 'border-red-400' : 'border-gray-200'}`}
+                                        className={`rounded-lg border px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A2023]/25 focus:border-transparent ${topic.length > TOPIC_MAX ? 'border-red-400' : 'border-gray-200'}`}
                                     />
                                     <span className={`self-end text-xs ${topic.length > TOPIC_MAX ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
                                         {topic.length}/{TOPIC_MAX}
@@ -508,7 +508,7 @@ export default function CreateCarousel() {
                                 {/* <button
                                     type="button"
                                     onClick={() => setImportOpen(true)}
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 hover:border-[#FFE156] hover:text-[#1A1A1A] transition-colors"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 hover:border-[#1A2023] hover:text-[#1A1A1A] transition-colors"
                                 >
                                     <ExternalLink className="h-4 w-4" />
                                     {t('createCarousel.step1.importBtn')}
@@ -525,10 +525,10 @@ export default function CreateCarousel() {
                                             type="button"
                                             onClick={() => setFormat(f)}
                                             className={`flex-1 flex items-center gap-3 rounded-xl border-2 p-4 transition-all ${
-                                                format === f ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
+                                                format === f ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                         >
-                                            <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === f ? 'border-[#FFE156]' : 'border-gray-400'}`}
+                                            <span className={`inline-flex items-center justify-center border-2 rounded-sm shrink-0 ${format === f ? 'border-[#1A2023]' : 'border-gray-400'}`}
                                                 style={{ width: f === 'post' ? 20 : 14, height: f === 'post' ? 20 : 24 }} />
                                             <div className="text-left">
                                                 <p className={`text-sm font-semibold ${format === f ? 'text-[#1A1A1A]' : 'text-gray-700'}`}>
@@ -656,7 +656,7 @@ export default function CreateCarousel() {
                                         max={10}
                                         value={slideCount}
                                         onChange={(e) => setSlideCount(Number(e.target.value))}
-                                        className="w-full accent-[#FFE156]"
+                                        className="w-full accent-[#1A2023]"
                                     />
                                     <div className="flex justify-between text-[10px] text-gray-300 mt-0.5">
                                         <span>2</span>
@@ -676,7 +676,7 @@ export default function CreateCarousel() {
                                     onChange={(e) => setCustomPrompt(e.target.value)}
                                     rows={3}
                                     placeholder={t('createCarousel.step3.customPromptPlaceholder')}
-                                    className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFE156] focus:border-transparent"
+                                    className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A2023]/25 focus:border-transparent"
                                 />
                             </div>
 
@@ -697,7 +697,7 @@ export default function CreateCarousel() {
                                             onClick={() => setImageMode(id)}
                                             className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
                                                 imageMode === id
-                                                    ? 'border-[#FFE156] bg-[#FFE156]/5 text-[#1A1A1A]'
+                                                    ? 'border-[#1A2023] bg-[#1A2023]/[0.04] text-[#1A1A1A]'
                                                     : 'border-gray-200 text-gray-600 hover:border-gray-300'
                                             }`}
                                         >
@@ -717,7 +717,7 @@ export default function CreateCarousel() {
                                         onChange={(e) => setImageStyle(e.target.value)}
                                         placeholder={t('createCarousel.step3.imageStylePlaceholder')}
                                         rows={2}
-                                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
+                                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2.5 text-sm text-gray-700 transition-colors focus:border-[#1A2023] focus:outline-none focus:ring-2 focus:ring-[#1A2023]/10"
                                     />
                                 </div>
                             )}
@@ -768,7 +768,7 @@ export default function CreateCarousel() {
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value)}
-                                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
+                                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition-colors focus:border-[#1A2023] focus:outline-none focus:ring-2 focus:ring-[#1A2023]/10"
                                 >
                                     {([
                                         { id: 'Portuguese (Brazil)', label: 'Português (BR)' },
@@ -788,11 +788,11 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={() => setSaveConfig((v) => !v)}
                                 className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                                    saveConfig ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
+                                    saveConfig ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                    saveConfig ? 'border-[#FFE156] bg-[#FFE156]' : 'border-gray-300'
+                                    saveConfig ? 'border-[#1A2023] bg-[#1A2023]' : 'border-gray-300'
                                 }`}>
                                     {saveConfig && <Check className="h-3 w-3 text-white" />}
                                 </div>
@@ -807,11 +807,11 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={() => setSaveAsTemplate((v) => !v)}
                                 className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                                    saveAsTemplate ? 'border-[#FFE156] bg-[#FFE156]/5' : 'border-gray-200 hover:border-gray-300'
+                                    saveAsTemplate ? 'border-[#1A2023] bg-[#1A2023]/[0.04]' : 'border-gray-200 hover:border-gray-300'
                                 }`}
                             >
                                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                    saveAsTemplate ? 'border-[#FFE156] bg-[#FFE156]' : 'border-gray-300'
+                                    saveAsTemplate ? 'border-[#1A2023] bg-[#1A2023]' : 'border-gray-300'
                                 }`}>
                                     {saveAsTemplate && <Check className="h-3 w-3 text-white" />}
                                 </div>
@@ -839,7 +839,7 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={handleNext}
                                 disabled={!canAdvance()}
-                                className="flex items-center gap-2 rounded-lg bg-[#FFE156] px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-40 transition-colors"
+                                className="flex items-center gap-2 rounded-full bg-[#1A2023] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#2A3438] disabled:opacity-40 transition-colors"
                             >
                                 {t('createCarousel.next')}
                                 <ArrowRight className="h-4 w-4" />
@@ -849,7 +849,7 @@ export default function CreateCarousel() {
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="flex items-center gap-2 rounded-lg bg-[#FFE156] px-6 py-2.5 text-sm font-semibold text-[#1A1A1A] hover:bg-[#E6CB4D] disabled:opacity-50 transition-colors"
+                                className="flex items-center gap-2 rounded-full bg-[#1A2023] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#2A3438] disabled:opacity-50 transition-colors"
                             >
                                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                                 {t('createCarousel.step3.generateBtn')}

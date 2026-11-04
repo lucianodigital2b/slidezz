@@ -5,7 +5,7 @@ import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 const COLORS = {
-    orange: '#FFE156',
+    orange: '#1A2023',
     dark: '#1A1A1A',
 } as const;
 
@@ -43,7 +43,7 @@ export default function CtaButton({
             onClick={onClick}
             style={{ '--cta': COLORS[variant] } as CSSProperties}
             className={cn(
-                'group relative inline-flex items-center gap-3 rounded-full border border-[var(--cta)] bg-[var(--cta)] py-1.5 pr-1.5 pl-6 text-lg font-bold text-[#1A1A1A]',
+                'group relative inline-flex items-center gap-3 rounded-full border border-[var(--cta)] bg-[var(--cta)] py-1.5 pr-1.5 pl-6 text-lg font-bold text-white',
                 className,
             )}
         >
@@ -52,7 +52,7 @@ export default function CtaButton({
                 aria-hidden
                 className="absolute top-1/2 right-1.5 h-9 w-9 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-out group-hover:top-0 group-hover:right-0 group-hover:h-full group-hover:w-full group-hover:translate-y-0 motion-reduce:transition-none"
             />
-            <span className="relative z-10 text-[#1A1A1A]">
+            <span className="relative z-10 text-white transition-colors duration-300 group-hover:text-[#1A2023]">
                 {children}
             </span>
             <span className="relative z-10 flex h-9 w-9 flex-shrink-0 items-center justify-center text-[#1A1A1A]">

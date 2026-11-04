@@ -38,7 +38,7 @@ export function SlideRightPanel({
                         <div
                             key={s.id}
                             onClick={() => onSelectSlide(idx)}
-                            className={`relative group cursor-pointer rounded-lg overflow-hidden shrink-0 transition-all border-2 ${idx === currentIdx ? 'border-[#FFE156]' : 'border-transparent ring-1 ring-black/10'}`}
+                            className={`relative group cursor-pointer rounded-lg overflow-hidden shrink-0 transition-all border-2 ${idx === currentIdx ? 'border-[#1A2023]' : 'border-transparent ring-1 ring-black/10'}`}
                             style={{ width: thumbW, height: thumbH }}
                         >
                             <SlideThumbnail slide={s} format={format} />

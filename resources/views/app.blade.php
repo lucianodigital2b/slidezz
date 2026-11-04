@@ -47,7 +47,7 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|inter:400,500,600,700|inter-tight:600,700,800" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=lexend:300,400,500,600,700|instrument-sans:400,500,600|inter:400,500,600,700|inter-tight:600,700,800|urbanist:500,600,700" rel="stylesheet" />
 
         @if (config('services.meta.pixel_id'))
             {{-- Meta Pixel base code. SPA PageViews on Inertia navigation are fired in app.tsx. --}}

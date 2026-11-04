@@ -63,13 +63,13 @@ interface FormData {
 
 // ─── Brand tokens (mirrors LandingEn.tsx) ─────────────────────────────────────
 
-const ACCENT = '#FFE156';
-const ACCENT_DARK = '#E6CB4D';
+const ACCENT = '#1A2023';
+const ACCENT_DARK = '#2A3438';
 const INK = '#1A1A1A';
 const BORDER = '#E8E7E2';
 
 const fieldClass =
-    'w-full rounded-xl border bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder:text-[#AFACA4] transition-colors focus:border-[#FFE156] focus:outline-none focus:ring-4 focus:ring-[#FFE156]/15';
+    'w-full rounded-xl border bg-white px-4 py-3 text-base text-[#1A1A1A] placeholder:text-[#AFACA4] transition-colors focus:border-[#1A2023] focus:outline-none focus:ring-4 focus:ring-[#1A2023]/[0.07]';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ const PLANS_STEP = 8;
 const GOAL_ICONS: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
     sell_products:        { color: 'text-white', bg: 'bg-emerald-500', icon: TrendingUp },
     build_authority:      { color: 'text-white', bg: 'bg-[#7C3AED]', icon: Sparkles },
-    increase_engagement:  { color: 'text-[#1A1A1A]', bg: 'bg-[#FFE156]', icon: Zap },
+    increase_engagement:  { color: 'text-white', bg: 'bg-[#1A2023]', icon: Zap },
     generate_leads:       { color: 'text-white', bg: 'bg-[#2563EB]', icon: Users },
 };
 
@@ -490,7 +490,7 @@ function Step5({ data, set }: { data: FormData; set: (k: keyof FormData, v: any)
                                         className="h-9 w-9 cursor-pointer rounded-lg border p-0.5" style={{ borderColor: BORDER }} />
                                     <input type="text" value={value} maxLength={7}
                                         onChange={(e) => { setter(e.target.value); }}
-                                        className="w-28 rounded-lg border px-2 py-1.5 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#FFE156]/20"
+                                        className="w-28 rounded-lg border px-2 py-1.5 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#1A2023]/10"
                                         style={{ borderColor: BORDER }} />
                                     <span className="text-xs font-medium capitalize text-[#666660]">{t(`onboarding.step5.palette${key.charAt(0).toUpperCase() + key.slice(1)}`)}</span>
                                 </div>
@@ -866,7 +866,7 @@ export default function Onboarding({ has_profile, preview_images_enabled, plans,
                 <link href="https://fonts.bunny.net/css?family=bebas-neue:400|outfit:400,500,600,700,800" rel="stylesheet" />
             </Head>
 
-            <div className="flex min-h-screen flex-col font-[Outfit,sans-serif]" style={{ background: '#F9F6F4', color: INK }}>
+            <div className="flex min-h-screen flex-col font-sans" style={{ background: '#F9F6F4', color: INK }}>
                 {/* Header */}
                 <header className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-2.5">

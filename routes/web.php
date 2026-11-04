@@ -31,12 +31,14 @@ use App\Models\SlideProject;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::inertia('/', 'LandingEn', [
+Route::inertia('/', 'Landing', [
     'canRegister' => Features::enabled(Features::registration()),
+    'locale' => 'en',
 ])->middleware(RedirectBasedOnCountry::class)->name('home');
 
-Route::inertia('/br', 'welcome', [
+Route::inertia('/br', 'Landing', [
     'canRegister' => Features::enabled(Features::registration()),
+    'locale' => 'pt',
 ])->name('home.br');
 
 Route::inertia('/privacy-policy', 'Policy')->name('privacy-policy');

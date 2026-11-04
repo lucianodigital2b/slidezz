@@ -40,7 +40,7 @@ interface Props {
 
 function statusBadge(subscription: Subscription) {
     if (subscription.on_grace_period) {
-        return <Badge variant="outline" className="border-yellow-400 text-yellow-600">Cancelado — acesso até {subscription.ends_at}</Badge>;
+        return <Badge variant="outline" className="border-[#1A2023] text-[#5B6870]">Cancelado — acesso até {subscription.ends_at}</Badge>;
     }
     if (subscription.active) {
         return <Badge className="bg-green-500 hover:bg-green-500">Ativo</Badge>;
@@ -89,7 +89,7 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                         <div className="rounded-xl border border-border bg-card p-5 space-y-4">
                             <div className="flex items-center justify-between gap-4 flex-wrap">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFE156]/10">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1A2023]/5">
                                         <Zap className="h-4 w-4 text-[#1A1A1A]" />
                                     </div>
                                     <div>
@@ -145,9 +145,9 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
 
                 {/* Launch offer: lifetime access, one-time payment */}
                 {auth.lifetime_access ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-[#FFE156] bg-[#FFE156]/10 p-5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
-                            <Crown className="h-4 w-4 text-[#1A1A1A]" />
+                    <div className="flex items-center gap-3 rounded-xl border border-[#1A2023] bg-[#1A2023]/5 p-5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A2023]">
+                            <Crown className="h-4 w-4 text-white" />
                         </div>
                         <div>
                             <p className="font-semibold">Acesso vitalício ativo</p>
@@ -156,18 +156,18 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                     </div>
                 ) : (
                     pricing?.lifetime?.price_id && (
-                        <div className="rounded-xl border-2 border-[#FFE156] bg-card p-5 space-y-4">
+                        <div className="rounded-xl border-2 border-[#1A2023] bg-card p-5 space-y-4">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFE156]">
-                                        <Crown className="h-4 w-4 text-[#1A1A1A]" />
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A2023]">
+                                        <Crown className="h-4 w-4 text-white" />
                                     </div>
                                     <div>
                                         <p className="font-semibold">Oferta de lançamento — Acesso vitalício</p>
                                         <p className="text-sm text-muted-foreground">Pague uma vez, use pra sempre. Sem mensalidade.</p>
                                     </div>
                                 </div>
-                                <Badge className="bg-[#FFE156] hover:bg-[#FFE156] text-[#1A1A1A]">Por tempo limitado</Badge>
+                                <Badge className="bg-[#1A2023] hover:bg-[#1A2023] hover:text-white text-white">Por tempo limitado</Badge>
                             </div>
                             <p className="text-3xl font-bold tracking-tight">
                                 {pricing.lifetime.price_label}
@@ -181,7 +181,7 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                                     </li>
                                 ))}
                             </ul>
-                            <Button className="w-full bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A]" onClick={buyLifetime}>
+                            <Button className="w-full bg-[#1A2023] hover:bg-[#2A3438] text-white rounded-full" onClick={buyLifetime}>
                                 Garantir acesso vitalício
                             </Button>
                         </div>
@@ -203,13 +203,13 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                             return (
                                 <div
                                     key={key}
-                                    className={`rounded-xl border bg-card p-5 space-y-4 flex flex-col ${isCurrent ? 'border-[#FFE156] ring-1 ring-[#FFE156]/30' : 'border-border'}`}
+                                    className={`rounded-xl border bg-card p-5 space-y-4 flex flex-col ${isCurrent ? 'border-[#1A2023] ring-1 ring-[#1A2023]/15' : 'border-border'}`}
                                 >
                                     <div>
                                         <div className="flex items-center justify-between mb-1">
                                             <p className="font-semibold text-base">{plan.name}</p>
                                             {isCurrent && (
-                                                <Badge className="bg-[#FFE156] hover:bg-[#FFE156] text-xs">Plano atual</Badge>
+                                                <Badge className="bg-[#1A2023] hover:bg-[#1A2023] hover:text-white text-xs">Plano atual</Badge>
                                             )}
                                         </div>
                                         <p className="text-sm text-muted-foreground">{plan.description}</p>
@@ -226,7 +226,7 @@ export default function Billing({ plans, subscription, on_trial, invoices }: Pro
                                     </ul>
 
                                     <Button
-                                        className={`w-full mt-2 ${isCurrent ? 'bg-muted text-muted-foreground hover:bg-muted cursor-default' : 'bg-[#FFE156] hover:bg-[#E6CB4D] text-[#1A1A1A]'}`}
+                                        className={`w-full mt-2 ${isCurrent ? 'bg-muted text-muted-foreground hover:bg-muted cursor-default' : 'bg-[#1A2023] hover:bg-[#2A3438] text-white'} rounded-full`}
                                         disabled={isCurrent || !plan.price_id}
                                         onClick={() => !isCurrent && subscribeToPlan(key)}
                                     >

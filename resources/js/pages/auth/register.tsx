@@ -121,7 +121,7 @@ export default function Register() {
                             {t('auth.register.haveAccount')}{' '}
                             <TextLink
                                 href={login()}
-                                className="font-medium text-[#1A1A1A] no-underline hover:text-[#E6CB4D] hover:underline"
+                                className="font-medium text-[#1A1A1A] no-underline hover:text-[#2A3438] hover:underline"
                                 tabIndex={6}
                             >
                                 {t('auth.register.logIn')}

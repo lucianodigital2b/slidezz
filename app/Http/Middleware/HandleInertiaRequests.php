@@ -2,9 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use App\Services\Billing\BillingCatalog;
+use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -25,6 +28,19 @@ class HandleInertiaRequests extends Middleware
     public function version(Request $request): ?string
     {
         return parent::version($request);
+    }
+
+    /**
+     * Run the request in the account's language, so validation messages and the
+     * <html lang> of the root view match the dashboard language the user picked.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (in_array($request->user()?->locale, User::LOCALES, true)) {
+            app()->setLocale($request->user()->locale);
+        }
+
+        return parent::handle($request, $next);
     }
 
     /**

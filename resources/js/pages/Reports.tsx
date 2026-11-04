@@ -200,7 +200,7 @@ export default function Reports({ report, config, preset, range, connectedPlatfo
                             <select
                                 value={period === 'custom' ? 'custom' : period}
                                 onChange={(e) => handlePeriod(Number(e.target.value))}
-                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FFE156] cursor-pointer"
+                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25 cursor-pointer"
                             >
                                 {PERIODS.map((p) => (
                                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -247,7 +247,7 @@ export default function Reports({ report, config, preset, range, connectedPlatfo
                                             <select
                                                 value={cfg[platform].sort}
                                                 onChange={(e) => changeSort(platform, e.target.value)}
-                                                className="mt-1 w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                                className="mt-1 w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25"
                                             >
                                                 {sortOptions.map((s) => (
                                                     <option key={s} value={s}>{SORT_LABELS[s] ?? s}</option>
@@ -259,7 +259,7 @@ export default function Reports({ report, config, preset, range, connectedPlatfo
                                             <select
                                                 value={cfg[platform].max_rows}
                                                 onChange={(e) => changeMaxRows(platform, Number(e.target.value))}
-                                                className="mt-1 w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                                className="mt-1 w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25"
                                             >
                                                 {[5, 10, 20, 50, 100].map((n) => (
                                                     <option key={n} value={n}>{n}</option>
@@ -374,7 +374,7 @@ function SectionToggle({ label, enabled, note, onToggle }: { label: string; enab
         <div className="flex items-center justify-between">
             <div>
                 <span className="text-sm font-medium text-gray-900">{label}</span>
-                {note && <span className="block text-xs text-amber-500">{note}</span>}
+                {note && <span className="block text-xs text-[#5B6870]">{note}</span>}
             </div>
             <button
                 type="button"

@@ -13,7 +13,7 @@ use Laravel\Cashier\Billable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'locale'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'gemini_api_key', 'anthropic_api_key'])]
 class User extends Authenticatable
 {
@@ -22,6 +22,9 @@ class User extends Authenticatable
 
     /** Managed AI-image credits granted once with the lifetime launch deal. */
     public const LIFETIME_WELCOME_CREDITS = 100;
+
+    /** Dashboard languages a user can pick in settings (same codes as resources/js/i18n.ts). */
+    public const LOCALES = ['pt', 'en'];
 
     /**
      * Get the attributes that should be cast.

@@ -69,7 +69,7 @@ const PLATFORM_META: Record<string, { label: string; color: string }> = {
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
     active: { label: 'Ativa', className: 'bg-green-100 text-green-700' },
-    paused: { label: 'Pausada', className: 'bg-amber-100 text-amber-700' },
+    paused: { label: 'Pausada', className: 'bg-[#EEF1F3] text-[#1A2023]' },
     ended: { label: 'Encerrada', className: 'bg-gray-100 text-gray-500' },
 };
 

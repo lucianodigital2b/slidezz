@@ -38,6 +38,12 @@ class CarouselWizardController extends Controller
             // Prefill when arriving from the dashboard "Ideias do dia" picker.
             'initialTopic' => $request->string('topic')->toString() ?: null,
             'initialTitle' => $request->string('title')->toString() ?: null,
+            // Options picked in the dashboard composer chips (anything unknown is dropped).
+            'initialFormat' => in_array($request->query('format'), ['post', 'stories'], true) ? $request->query('format') : null,
+            'initialSlideCount' => filter_var($request->query('slide_count'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 2, 'max_range' => 10]]) ?: null,
+            'initialTemplate' => is_string($request->query('template')) && preg_match('/^[a-z0-9-]{1,40}$/', $request->query('template')) ? $request->query('template') : null,
+            'initialImageMode' => in_array($request->query('image_mode'), ['none', 'background', 'grid', 'alternate', 'mixed'], true) ? $request->query('image_mode') : null,
+            'initialLanguage' => in_array($request->query('language'), ['Portuguese (Brazil)', 'English'], true) ? $request->query('language') : null,
         ]);
     }
 

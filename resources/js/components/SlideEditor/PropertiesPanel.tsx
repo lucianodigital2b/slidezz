@@ -227,13 +227,13 @@ function WordHighlightSection({ el, onChange }: { el: TextEl; onChange: (p: Part
                         setHexInput(v);
                         if (/^#[0-9a-fA-F]{6}$/.test(v)) setHlColor(v);
                     }}
-                    className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156] font-mono uppercase" />
+                    className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25 font-mono uppercase" />
             </div>
 
             <label className="flex items-center justify-between gap-2 text-xs font-medium text-gray-500">
                 <span>{t('slideEditor.fields.weight')}</span>
                 <select value={hlWeight} onChange={(e) => setHlWeight(parseInt(e.target.value, 10))}
-                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]">
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25">
                     {FONT_WEIGHTS.map((w) => (
                         <option key={w.value} value={w.value}>{w.value} · {w.label}</option>
                     ))}
@@ -405,7 +405,7 @@ export function PropertiesPanel({
                             <Field key={k} label={t(`slideEditor.fields.${k}`)}>
                                 <input type="number" value={Math.round(el[k])}
                                     onChange={(e) => onChange({ [k]: parseFloat(e.target.value) || 0 } as Partial<SlideEl>)}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]" />
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25" />
                             </Field>
                         ))}
                     </div>
@@ -430,7 +430,7 @@ export function PropertiesPanel({
 
                                         ch<TextEl>({ text: nextText, richText: nextRichText });
                                     }}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#FFE156]" />
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25" />
                             </Field>
                             <Field label={t('slideEditor.fields.textColor')}><ColorField value={el.fill} onChange={(v) => ch<TextEl>({ fill: v })} /></Field>
                         </Section>
@@ -444,7 +444,7 @@ export function PropertiesPanel({
                                 <select
                                     value={parseFontWeight(el.fontStyle)}
                                     onChange={(e) => ch<TextEl>({ fontStyle: applyFontWeight(el.fontStyle, parseInt(e.target.value, 10)) })}
-                                    className="w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                    className="w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25"
                                 >
                                     {FONT_WEIGHTS.map((w) => (
                                         <option key={w.value} value={w.value}>{w.value} · {w.label}</option>
@@ -481,7 +481,7 @@ export function PropertiesPanel({
                             </Field>
                             <Field label={t('slideEditor.fields.lineBreak')}>
                                 <select value={el.wrap} onChange={(e) => ch<TextEl>({ wrap: e.target.value as Wrap })}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]">
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25">
                                     <option value="word">{t('slideEditor.fields.lineBreakWord')}</option>
                                     <option value="char">{t('slideEditor.fields.lineBreakChar')}</option>
                                     <option value="none">{t('slideEditor.fields.lineBreakNone')}</option>
@@ -712,7 +712,7 @@ export function PropertiesPanel({
                                     type="text"
                                     value={el.text}
                                     onChange={(e) => ch<ButtonEl>({ text: e.target.value })}
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25"
                                 />
                             </Field>
                             <Field label={t('slideEditor.fields.stylePreset')}>
@@ -803,7 +803,7 @@ export function PropertiesPanel({
                                             type="text"
                                             value={el.icon}
                                             onChange={(e) => ch<ButtonEl>({ icon: e.target.value })}
-                                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FFE156]"
+                                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#1A2023]/25"
                                         />
                                     </Field>
                                     <Field label={t('slideEditor.fields.iconPosition')}>
