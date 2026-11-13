@@ -4,6 +4,7 @@ namespace App\Services\Video;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Process;
 use RuntimeException;
 
 /**
@@ -44,7 +45,6 @@ class GroqTranscriber
                 'model' => config('services.groq.transcription_model', 'whisper-large-v3-turbo'),
                 'response_format' => 'verbose_json',
                 'timestamp_granularities[]' => 'word',
-                'timestamp_granularities[]' => 'segment',
                 'temperature' => 0,
             ];
 
@@ -101,7 +101,7 @@ class GroqTranscriber
     {
         $ffprobe = str_replace('ffmpeg', 'ffprobe', config('services.ffmpeg.binary', 'ffmpeg'));
 
-        $result = \Illuminate\Support\Facades\Process::path(base_path())
+        $result = Process::path(base_path())
             ->timeout(30)
             ->run([$ffprobe, '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', $path]);
 

@@ -53,6 +53,9 @@ class GroqTranscriberTest extends TestCase
         $this->assertCount(2, $result['words']);
         $this->assertSame(0.0, $result['words'][0]['start']);
         $this->assertSame(1.6, $result['words'][1]['end']);
+
+        Http::assertSent(fn ($request): bool => str_contains($request->body(), 'name="timestamp_granularities[]"')
+            && preg_match('/name="timestamp_granularities\[\]"\r?\n(?:[^\r\n]*\r?\n)*?\r?\nword\r?\n/', $request->body()) === 1);
     }
 
     public function test_transcribe_fails_clear_when_not_configured(): void
