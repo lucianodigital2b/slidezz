@@ -15,6 +15,7 @@ use App\Http\Controllers\LifetimeController;
 use App\Http\Controllers\MediaLibraryController;
 use App\Http\Controllers\MetaEventController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ProfileAnalysisController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SlideProjectController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\TikTokDraftController;
 use App\Http\Controllers\UgcCampaignController;
 use App\Http\Controllers\VideoProjectController;
+use App\Http\Controllers\VideoScriptController;
 use App\Http\Middleware\EnsureCanPost;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
@@ -157,6 +159,11 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::get('videos', [VideoProjectController::class, 'index'])->name('videos.index');
     Route::post('videos', [VideoProjectController::class, 'store'])->name('videos.store');
     Route::post('slideshow-editor/{slideProject}/video', [VideoProjectController::class, 'storeFromSlides'])->name('slideshow-editor.video');
+    Route::post('videos/auto-edit', [VideoProjectController::class, 'autoEdit'])
+        ->middleware('throttle:10,1')
+        ->name('videos.auto-edit');
+    Route::get('videos/{videoProject}/auto-edit/status', [VideoProjectController::class, 'autoEditStatus'])->name('videos.auto-edit.status');
+    Route::post('videos/{videoProject}/auto-edit/retry', [VideoProjectController::class, 'reAutoEdit'])->name('videos.auto-edit.retry');
     Route::get('videos/{videoProject}', [VideoProjectController::class, 'edit'])->name('videos.edit');
     Route::put('videos/{videoProject}', [VideoProjectController::class, 'update'])->name('videos.update');
     Route::post('videos/{videoProject}/media', [VideoProjectController::class, 'media'])
@@ -168,6 +175,23 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
     Route::get('videos/{videoProject}/status', [VideoProjectController::class, 'status'])->name('videos.status');
     Route::get('videos/{videoProject}/download', [VideoProjectController::class, 'download'])->name('videos.download');
     Route::delete('videos/{videoProject}', [VideoProjectController::class, 'destroy'])->name('videos.destroy');
+
+    // Video scripts: talking-head scripts from a topic, a viral reference video or an article.
+    Route::get('video-scripts', [VideoScriptController::class, 'index'])->name('video-scripts.index');
+    Route::post('video-scripts', [VideoScriptController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('video-scripts.store');
+    Route::get('video-scripts/{videoScript}', [VideoScriptController::class, 'show'])->name('video-scripts.show');
+    Route::delete('video-scripts/{videoScript}', [VideoScriptController::class, 'destroy'])->name('video-scripts.destroy');
+
+    // Profile analysis: reads the creator's published posts and says what works and what is missing.
+    Route::get('profile-analysis', [ProfileAnalysisController::class, 'index'])->name('profile-analysis.index');
+    Route::post('profile-analysis', [ProfileAnalysisController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('profile-analysis.store');
+    Route::get('profile-analysis/{profileAnalysis}', [ProfileAnalysisController::class, 'show'])->name('profile-analysis.show');
+    Route::delete('profile-analysis/{profileAnalysis}', [ProfileAnalysisController::class, 'destroy'])->name('profile-analysis.destroy');
+
     Route::inertia('image-collections', 'ImageCollections')->name('image-collections');
     Route::inertia('database', 'Database')->name('database');
 

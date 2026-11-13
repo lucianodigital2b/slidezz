@@ -35,6 +35,13 @@ class VideoProject extends Model
         'video_path',
         'render_error',
         'rendered_at',
+        'source_recording_path',
+        'auto_edit_status',
+        'auto_edit_error',
+        'transcript',
+        'auto_edit_plan',
+        'auto_edit_language',
+        'auto_edit_caption_style',
     ];
 
     protected $attributes = [
@@ -45,6 +52,8 @@ class VideoProject extends Model
         'timeline' => 'array',
         'render_progress' => 'integer',
         'rendered_at' => 'datetime',
+        'transcript' => 'array',
+        'auto_edit_plan' => 'array',
     ];
 
     public function workspace()
@@ -67,6 +76,28 @@ class VideoProject extends Model
         return $this->video_path
             ? url(Storage::disk(config('filesystems.media_disk'))->url($this->video_path))
             : null;
+    }
+
+    public function sourceRecordingUrl(): ?string
+    {
+        return $this->source_recording_path
+            ? url(Storage::disk(config('filesystems.media_disk'))->url($this->source_recording_path))
+            : null;
+    }
+
+    public function isAutoEditing(): bool
+    {
+        return in_array($this->auto_edit_status, ['pending', 'transcribing', 'planning'], true);
+    }
+
+    public function autoEditLanguage(): ?string
+    {
+        return $this->auto_edit_language ?? null;
+    }
+
+    public function autoEditCaptionStyle(): string
+    {
+        return $this->auto_edit_caption_style ?? 'bold';
     }
 
     /**

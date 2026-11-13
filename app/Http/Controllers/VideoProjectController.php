@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AutoEditRecording;
 use App\Jobs\RenderVideo;
 use App\Models\SlideProject;
 use App\Models\SocialAccount;
@@ -113,6 +114,74 @@ class VideoProjectController extends Controller
         return response()->json(['id' => $video->id], 201);
     }
 
+    /**
+     * Uploads a raw talking-head recording and queues the automatic edit pipeline.
+     */
+    public function autoEdit(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'max:512000', 'mimetypes:video/mp4,video/quicktime,video/webm'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'format' => ['nullable', Rule::in(VideoProject::FORMATS)],
+            'language' => ['nullable', Rule::in(['pt', 'en'])],
+            'caption_style' => ['nullable', Rule::in(['bold', 'clean'])],
+        ]);
+
+        $workspace = $this->workspace($request);
+        $video = VideoProject::create([
+            'workspace_id' => $workspace->id,
+            'title' => (string) ($validated['title'] ?? ''),
+            'format' => $validated['format'] ?? 'stories',
+            'timeline' => ['clips' => [], 'audio' => null],
+            'status' => 'draft',
+            'auto_edit_status' => 'pending',
+            'auto_edit_language' => $validated['language'] ?? null,
+            'auto_edit_caption_style' => $validated['caption_style'] ?? 'bold',
+        ]);
+
+        $recording = $this->storeRecording($video, $validated['file']);
+        $video->update([
+            'source_recording_path' => $recording['path'],
+            'auto_edit_status' => 'pending',
+        ]);
+
+        AutoEditRecording::dispatch($video);
+
+        return response()->json([
+            'id' => $video->id,
+            'edit_url' => "/videos/{$video->id}",
+        ], 201);
+    }
+
+    public function autoEditStatus(Request $request, VideoProject $videoProject): JsonResponse
+    {
+        $this->authorizeWorkspace($request, $videoProject->workspace_id);
+
+        return response()->json([
+            'status' => $videoProject->auto_edit_status,
+            'error' => $videoProject->auto_edit_error,
+            'timeline' => $videoProject->auto_edit_status === 'done' ? $videoProject->timeline : null,
+        ]);
+    }
+
+    public function reAutoEdit(Request $request, VideoProject $videoProject): JsonResponse
+    {
+        $this->authorizeWorkspace($request, $videoProject->workspace_id);
+
+        if ($videoProject->source_recording_path === null) {
+            return response()->json(['message' => 'Nenhuma gravação de origem para reprocessar.'], 422);
+        }
+
+        $videoProject->update([
+            'auto_edit_status' => 'pending',
+            'auto_edit_error' => null,
+        ]);
+
+        AutoEditRecording::dispatch($videoProject);
+
+        return response()->json(['status' => 'pending'], 202);
+    }
+
     public function edit(Request $request, VideoProject $videoProject): Response
     {
         $this->authorizeWorkspace($request, $videoProject->workspace_id);
@@ -145,10 +214,24 @@ class VideoProjectController extends Controller
             'timeline.clips.*.text' => ['nullable', 'string', 'max:300'],
             'timeline.clips.*.textPosition' => ['required', Rule::in(VideoProject::TEXT_POSITIONS)],
             'timeline.clips.*.zoom' => ['boolean'],
+            'timeline.clips.*.punchIn' => ['sometimes', 'boolean'],
             'timeline.clips.*.muted' => ['boolean'],
             'timeline.audio' => ['nullable', 'array'],
             'timeline.audio.src' => ['required_with:timeline.audio', 'string', 'max:2048', $hostedMedia],
             'timeline.audio.volume' => ['required_with:timeline.audio', 'numeric', 'between:0,1'],
+            'timeline.captions' => ['nullable', 'array'],
+            'timeline.captions.enabled' => ['required_with:timeline.captions', 'boolean'],
+            'timeline.captions.style' => ['required_with:timeline.captions', Rule::in(['bold', 'clean'])],
+            'timeline.captions.position' => ['required_with:timeline.captions', Rule::in(VideoProject::TEXT_POSITIONS)],
+            'timeline.captions.items' => ['required_with:timeline.captions', 'array'],
+            'timeline.captions.items.*.text' => ['required', 'string', 'max:300'],
+            'timeline.captions.items.*.start' => ['required', 'numeric', 'min:0'],
+            'timeline.captions.items.*.end' => ['required', 'numeric', 'gt:timeline.captions.items.*.start'],
+            'timeline.captions.items.*.words' => ['present', 'array'],
+            'timeline.captions.items.*.words.*.text' => ['required', 'string', 'max:100'],
+            'timeline.captions.items.*.words.*.start' => ['required', 'numeric', 'min:0'],
+            'timeline.captions.items.*.words.*.end' => ['required', 'numeric', 'gt:timeline.captions.items.*.words.*.start'],
+            'timeline.captions.items.*.words.*.highlight' => ['boolean'],
         ]);
 
         $videoProject->update([
@@ -240,16 +323,38 @@ class VideoProjectController extends Controller
         return [
             ...$video->only('id', 'title', 'format', 'timeline', 'status', 'render_progress', 'render_error'),
             'video_url' => $video->videoUrl(),
+            'auto_edit_status' => $video->auto_edit_status,
+            'auto_edit_error' => $video->auto_edit_error,
         ];
     }
 
     /**
      * @param  array<string, mixed>  $timeline
-     * @return array{clips: list<array<string, mixed>>, audio: array{src: string, volume: float}|null}
+     * @return array{clips: list<array<string, mixed>>, audio: array{src: string, volume: float}|null, captions: array{enabled: bool, style: string, position: string, items: list<array<string, mixed>>}|null}
      */
     private function normalizeTimeline(array $timeline): array
     {
         $audio = $timeline['audio'] ?? null;
+        $captions = $timeline['captions'] ?? null;
+
+        if ($captions !== null) {
+            $captions = [
+                'enabled' => (bool) ($captions['enabled'] ?? false),
+                'style' => (string) ($captions['style'] ?? 'bold'),
+                'position' => (string) ($captions['position'] ?? 'center'),
+                'items' => array_values(array_map(fn (array $item): array => [
+                    'text' => (string) ($item['text'] ?? ''),
+                    'start' => (float) ($item['start'] ?? 0),
+                    'end' => (float) ($item['end'] ?? 0),
+                    'words' => array_values(array_map(fn (array $word): array => [
+                        'text' => (string) ($word['text'] ?? ''),
+                        'start' => (float) ($word['start'] ?? 0),
+                        'end' => (float) ($word['end'] ?? 0),
+                        'highlight' => (bool) ($word['highlight'] ?? false),
+                    ], $item['words'] ?? [])),
+                ], $captions['items'] ?? [])),
+            ];
+        }
 
         return [
             'clips' => array_map(
@@ -257,6 +362,7 @@ class VideoProjectController extends Controller
                 array_values($timeline['clips'] ?? []),
             ),
             'audio' => $audio ? ['src' => $audio['src'], 'volume' => (float) $audio['volume']] : null,
+            'captions' => $captions,
         ];
     }
 
@@ -269,7 +375,7 @@ class VideoProjectController extends Controller
      */
     private function clip(string $type, string $src, array $attributes = []): array
     {
-        return [
+        $clip = [
             'id' => (string) ($attributes['id'] ?? Str::uuid()),
             'type' => $type,
             'src' => $src,
@@ -281,6 +387,13 @@ class VideoProjectController extends Controller
             'zoom' => (bool) ($attributes['zoom'] ?? false),
             'muted' => (bool) ($attributes['muted'] ?? false),
         ];
+
+        // Punch-in only exists on auto-edited video clips; leave older timelines untouched.
+        if ($type === 'video' && (bool) ($attributes['punchIn'] ?? false)) {
+            $clip['punchIn'] = true;
+        }
+
+        return $clip;
     }
 
     /**
@@ -310,6 +423,27 @@ class VideoProjectController extends Controller
         }
 
         return url($this->disk()->url($path));
+    }
+
+    /**
+     * @return array{path: string, url: string}
+     */
+    private function storeRecording(VideoProject $video, UploadedFile $file): array
+    {
+        $extension = $file->guessExtension() ?: $file->getClientOriginalExtension();
+        $name = (string) Str::uuid();
+        $path = $file->storePubliclyAs($video->storageDirectory(), "recording-{$name}.{$extension}", [
+            'disk' => config('filesystems.media_disk'),
+        ]);
+
+        if ($path === false) {
+            throw new \RuntimeException('Could not store the recording on the media disk.');
+        }
+
+        return [
+            'path' => $path,
+            'url' => url($this->disk()->url($path)),
+        ];
     }
 
     private function disk(): Filesystem

@@ -274,6 +274,8 @@
     }
   },
   "sidebar": {
+    "profileAnalysis": "Análise de perfil",
+    "videoScripts": "Roteiro de vídeo",
     "generate": "Gerar Ideias",
     "newAutomation": "Nova Automação",
     "home": "Início",
@@ -1267,5 +1269,135 @@
   "imageCredits": {
     "noCredits": "Seus créditos de imagem acabaram. Compre mais créditos ou conecte sua chave Gemini para imagens ilimitadas.",
     "count": "{{count}} créditos de imagem"
+  },
+  "profileAnalysis": {
+    "title": "Análise de perfil",
+    "subtitle": "Descubra o que funciona no seu conteúdo e o que postar em seguida.",
+    "linksLabel": "Links de posts públicos (um por linha, máx 10)",
+    "linksPlaceholder": "https://www.tiktok.com/@seuperfil/video/...",
+    "connectedAccounts": "Vamos ler também:",
+    "analyzeButton": "Analisar meu perfil",
+    "analyzing": "Analisando...",
+    "failed": "Algo deu errado. Tente novamente.",
+    "noAnalysis": "Cole links ou conecte uma conta para começar.",
+    "history": "Análises anteriores",
+    "historyEmpty": "Nenhuma análise ainda.",
+    "summary": "Resumo",
+    "whatWorks": "O que funciona",
+    "whatIsMissing": "O que falta",
+    "topPosts": "Melhores posts",
+    "hooksThatWork": "Ganchos que funcionam",
+    "nextPosts": "Próximos posts",
+    "postingFrequency": "Frequência de postagem",
+    "viewPost": "Ver post",
+    "copyIdea": "Copiar ideia",
+    "copiedIdea": "Ideia copiada!",
+    "copied": "Copiado!",
+    "copyFailed": "Não foi possível copiar.",
+    "openVideoScript": "Abrir roteiro",
+    "error": "Erro: {{error}}",
+    "status": {
+      "pending": "Pendente",
+      "running": "Analisando",
+      "done": "Concluída",
+      "failed": "Falhou"
+    },
+    "format": {
+      "carousel": "Carrossel",
+      "slideshow": "Slideshow",
+      "talking_video": "Vídeo falado"
+    }
+  },
+  "videoScripts": {
+    "title": "Roteiro de vídeo",
+    "subtitle": "Escreva um roteiro para vídeo falado: hook, corpo e CTA.",
+    "sidebarTitle": "Roteiro de vídeo",
+    "form": {
+      "topicLabel": "Tema",
+      "topicPlaceholder": "ex.: 3 erros que acabam com sua produtividade",
+      "referenceLabel": "Link de referência",
+      "referenceHint": "Cole um viral do TikTok pra copiar a estrutura",
+      "sourceLabel": "Link do artigo fonte",
+      "sourceHint": "Opcional: os fatos do artigo são usados no roteiro",
+      "durationLabel": "Duração",
+      "submit": "Gerar roteiro",
+      "submitting": "Gerando..."
+    },
+    "history": {
+      "title": "Histórico",
+      "empty": "Nenhum roteiro ainda."
+    },
+    "status": {
+      "pending": "pendente",
+      "running": "gerando",
+      "done": "pronto",
+      "failed": "falhou"
+    },
+    "empty": "Crie seu primeiro roteiro falado.",
+    "untitled": "Roteiro sem título",
+    "justNow": "agora",
+    "error": "Não foi possível gerar o roteiro.",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "copyScript": "Copiar roteiro",
+    "hooks": {
+      "title": "Ganchos",
+      "selectHint": "Clique em um gancho para mudar o roteiro."
+    },
+    "beats": {
+      "title": "Estrutura",
+      "beat": "Parte",
+      "line": "Fala",
+      "onScreenText": "Texto na tela",
+      "bRoll": "B-roll"
+    },
+    "cta": "CTA",
+    "caption": "Legenda",
+    "hashtags": "Hashtags",
+    "sources": "Fontes",
+    "teleprompter": {
+      "toggle": "Modo teleprompter",
+      "speed": "Velocidade",
+      "close": "Fechar"
+    },
+    "delete": "Excluir",
+    "confirmDelete": "Excluir este roteiro?"
+  },
+  "autoEdit": {
+    "button": "Editar gravação automaticamente",
+    "dialogTitle": "Editar gravação automaticamente",
+    "uploadHint": "Arraste ou selecione um vídeo (MP4, MOV ou WEBM, até 500 MB e 10 min)",
+    "captionStyle": "Estilo",
+    "styleBold": "Impacto",
+    "styleClean": "Limpo",
+    "language": "Idioma",
+    "format": "Formato",
+    "formats": {
+      "stories": "Stories",
+      "post": "Post"
+    },
+    "upload": "Criar edição automática",
+    "uploading": "Enviando... {progress}%",
+    "uploadFailed": "Falha ao enviar o vídeo.",
+    "status": {
+      "pending": "Na fila",
+      "transcribing": "Transcrevendo...",
+      "planning": "Planejando cortes...",
+      "done": "Edição automática concluída",
+      "failed": "Falhou"
+    },
+    "failed": "Erro na edição automática: {error}",
+    "retry": "Tentar novamente",
+    "retryFailed": "Falha ao tentar novamente.",
+    "done": "Edição automática concluída",
+    "captions": "Legendas",
+    "addCaptions": "Adicionar legendas",
+    "captionsEnabled": "Ativar legendas",
+    "captionPosition": "Posição",
+    "captionItem": "Legenda {index}",
+    "noCaptions": "Nenhuma legenda ainda",
+    "zoom": "Zoom",
+    "zoomNone": "Nenhum",
+    "zoomPunch": "Punch-in"
   }
 }

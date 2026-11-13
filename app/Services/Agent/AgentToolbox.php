@@ -7,9 +7,15 @@ use App\Models\AgentAsset;
 use App\Models\AgentConversation;
 use App\Models\AgentPublishRequest;
 use App\Models\ContentProject;
+use App\Models\ProfileAnalysis;
 use App\Models\SocialAccount;
+use App\Models\VideoScript;
+use App\Services\AI\ProfileAnalysisService;
+use App\Services\AI\ReferenceVideoReader;
+use App\Services\AI\VideoScriptService;
 use App\Services\Images\ImageSourceFactory;
 use App\Services\Images\PinterestImageSource;
+use App\Services\Profile\ProfilePostCollector;
 use App\Services\Rendering\SlideshowRenderer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -134,6 +140,36 @@ class AgentToolbox
                     'additionalProperties' => false,
                 ],
             ],
+            [
+                'name' => 'analyze_profile',
+                'description' => 'Analyze the creator profile from their published posts (pasted public links plus connected TikTok/Instagram accounts and posts made in Slidezz). Use when the user asks to analyze their profile, their posts, or what is working.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'links' => [
+                            'type' => 'array',
+                            'items' => ['type' => 'string'],
+                            'maxItems' => 10,
+                            'description' => 'Optional public TikTok or Instagram post URLs to include.',
+                        ],
+                    ],
+                    'additionalProperties' => false,
+                ],
+            ],
+            [
+                'name' => 'write_video_script',
+                'description' => 'Write a script for a talking, face-to-camera short video (hook variations, body beats, CTA). Use when the user wants a video script or to adapt a viral TikTok into a script.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'topic' => ['type' => 'string', 'description' => 'Script topic.'],
+                        'reference_url' => ['type' => 'string', 'description' => 'Optional TikTok URL whose structure to adapt.'],
+                        'target_seconds' => ['type' => 'integer', 'minimum' => 15, 'maximum' => 180],
+                    ],
+                    'required' => ['topic'],
+                    'additionalProperties' => false,
+                ],
+            ],
         ];
     }
 
@@ -152,6 +188,8 @@ class AgentToolbox
             'build_slideshow' => $this->buildSlideshow($conversation, $input),
             'list_social_accounts' => $this->listSocialAccounts($conversation),
             'request_publish' => $this->requestPublish($conversation, $input),
+            'analyze_profile' => $this->analyzeProfile($conversation, $input),
+            'write_video_script' => $this->writeVideoScript($conversation, $input),
             default => throw new InvalidArgumentException("Unknown agent tool: {$name}"),
         };
     }
@@ -574,6 +612,89 @@ class AgentToolbox
         ]);
 
         return [['type' => 'text', 'text' => 'Waiting for the user to press Confirm.']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return list<array<string, mixed>>
+     */
+    private function analyzeProfile(AgentConversation $conversation, array $input): array
+    {
+        $workspace = $conversation->workspace;
+        $locale = $conversation->user?->locale === 'en' ? 'en' : 'pt';
+
+        $links = array_values(array_filter(array_map(
+            fn (mixed $link): string => trim((string) $link),
+            (array) ($input['links'] ?? []),
+        ), fn (string $link): bool => $link !== ''));
+
+        $posts = app(ProfilePostCollector::class)->collect($workspace, array_slice($links, 0, 10));
+
+        if ($posts === []) {
+            throw new RuntimeException('Não encontrei nenhum post. Cole links de posts públicos ou conecte uma conta.');
+        }
+
+        $report = app(ProfileAnalysisService::class)->analyze($posts, $workspace, $locale === 'en' ? 'English' : 'Portuguese (Brazil)');
+
+        ProfileAnalysis::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $conversation->user_id,
+            'status' => 'done',
+            'language' => $locale,
+            'links' => $links,
+            'posts' => $posts,
+            'report' => $report,
+            'completed_at' => now(),
+        ]);
+
+        return [['type' => 'text', 'text' => json_encode($report, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return list<array<string, mixed>>
+     */
+    private function writeVideoScript(AgentConversation $conversation, array $input): array
+    {
+        $topic = trim((string) ($input['topic'] ?? ''));
+
+        if ($topic === '') {
+            throw new InvalidArgumentException('topic is required.');
+        }
+
+        $referenceUrl = trim((string) ($input['reference_url'] ?? ''));
+        $targetSeconds = min(180, max(15, (int) ($input['target_seconds'] ?? 45)));
+        $locale = $conversation->user?->locale === 'en' ? 'en' : 'pt';
+
+        $reference = $referenceUrl !== '' ? app(ReferenceVideoReader::class)->read($referenceUrl) : null;
+
+        $result = app(VideoScriptService::class)->generate([
+            'topic' => $topic,
+            'language' => $locale === 'en' ? 'English' : 'Portuguese (Brazil)',
+            'target_seconds' => $targetSeconds,
+            'reference' => $reference,
+            'source' => null,
+        ], $conversation->workspace);
+
+        VideoScript::create([
+            'workspace_id' => $conversation->workspace_id,
+            'user_id' => $conversation->user_id,
+            'status' => 'done',
+            'topic' => $topic,
+            'reference_url' => $referenceUrl !== '' ? $referenceUrl : null,
+            'language' => $locale === 'en' ? 'English' : 'Portuguese (Brazil)',
+            'target_seconds' => $targetSeconds,
+            'reference' => $reference,
+            'result' => $result,
+            'completed_at' => now(),
+        ]);
+
+        return [['type' => 'text', 'text' => json_encode([
+            'title' => $result['title'] ?? null,
+            'hooks' => $result['hooks'] ?? [],
+            'full_script' => $result['full_script'] ?? '',
+            'caption' => $result['caption'] ?? '',
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]];
     }
 
     private function isTikTokUrl(string $url): bool

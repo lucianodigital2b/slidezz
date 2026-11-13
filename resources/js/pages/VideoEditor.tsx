@@ -3,7 +3,7 @@ import { Player } from '@remotion/player';
 import {
     ArrowLeft, ChevronLeft, ChevronRight, Download, Film, Image as ImageIcon, Loader2, Music, Plus, Trash2, X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { requestTikTokDraft, SendToTikTokButton } from '@/components/send-to-tiktok-button';
@@ -13,7 +13,7 @@ import { SlidezzVideo } from '@/remotion/SlidezzVideo';
 import {
     CLIP_TRANSITIONS, makeClip, MAX_CLIP_SECONDS, MIN_CLIP_SECONDS, timelineFrames, VIDEO_FORMATS, VIDEO_FPS,
 } from '@/remotion/timeline';
-import type { TextPosition, VideoClip, VideoFormat, VideoTimeline } from '@/remotion/timeline';
+import type { CaptionItem, CaptionsTrack, TextPosition, VideoClip, VideoFormat, VideoTimeline } from '@/remotion/timeline';
 
 type RenderStatus = 'draft' | 'rendering' | 'ready' | 'failed';
 
@@ -26,12 +26,19 @@ interface VideoProjectProps {
     render_progress: number;
     video_url: string | null;
     render_error: string | null;
+    auto_edit_status: string | null;
+    auto_edit_error: string | null;
 }
 
 interface RenderState {
     status: RenderStatus;
     progress: number;
     videoUrl: string | null;
+    error: string | null;
+}
+
+interface AutoEditState {
+    status: string | null;
     error: string | null;
 }
 
@@ -87,6 +94,10 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
         videoUrl: videoProject.video_url,
         error: videoProject.render_error,
     });
+    const [autoEdit, setAutoEdit] = useState<AutoEditState>({
+        status: videoProject.auto_edit_status,
+        error: videoProject.auto_edit_error,
+    });
     const mediaInputRef = useRef<HTMLInputElement>(null);
     const musicInputRef = useRef<HTMLInputElement>(null);
     const isFirstRender = useRef(true);
@@ -97,6 +108,14 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
     const durationInFrames = timelineFrames(timeline);
     const selectedIndex = timeline.clips.findIndex((clip) => clip.id === selectedId);
     const selectedClip = selectedIndex >= 0 ? timeline.clips[selectedIndex] : null;
+
+    const captions: CaptionsTrack | null = useMemo(() => {
+        if (!timeline.captions) {
+            return null;
+        }
+
+        return timeline.captions;
+    }, [timeline.captions]);
 
     function save(): Promise<void> {
         setSaveStatus('saving');
@@ -155,6 +174,34 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
 
         return () => clearInterval(timer);
     }, [render.status, projectUrl, t]);
+
+    // Poll the auto-edit status while it is running.
+    useEffect(() => {
+        if (!autoEdit.status || ['pending', 'transcribing', 'planning'].includes(autoEdit.status) === false) {
+            return;
+        }
+
+        const timer = setInterval(async () => {
+            try {
+                const data = await requestJson<{
+                    status: string; error: string | null; timeline: VideoTimeline | null;
+                }>(`${projectUrl}/auto-edit/status`, { method: 'GET' });
+                setAutoEdit({ status: data.status, error: data.error });
+
+                if (data.status === 'done' && data.timeline) {
+                    setTimeline(data.timeline);
+                    setSelectedId(data.timeline.clips[0]?.id ?? null);
+                    toast.success(t('autoEdit.done'));
+                } else if (data.status === 'failed') {
+                    toast.error(t('autoEdit.failed', { error: data.error ?? '' }));
+                }
+            } catch {
+                // retry next tick
+            }
+        }, 3000);
+
+        return () => clearInterval(timer);
+    }, [autoEdit.status, projectUrl, t]);
 
     function updateClips(update: (clips: VideoClip[]) => VideoClip[]) {
         setTimeline((current) => ({ ...current, clips: update(current.clips) }));
@@ -241,6 +288,54 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
         }
     }
 
+    async function retryAutoEdit() {
+        try {
+            const data = await requestJson<{ status: string }>(`${projectUrl}/auto-edit/retry`, { method: 'POST' });
+            setAutoEdit({ status: data.status, error: null });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : t('autoEdit.retryFailed'));
+        }
+    }
+
+    function updateCaptionItem(index: number, patch: Partial<CaptionItem>) {
+        setTimeline((current) => {
+            const captions = current.captions;
+
+            if (!captions) {
+                return current;
+            }
+
+            const items = captions.items.map((item, i) => (i === index ? { ...item, ...patch } : item));
+
+            return { ...current, captions: { ...captions, items } };
+        });
+    }
+
+    function updateCaptionText(index: number, text: string) {
+        const item = timeline.captions?.items[index];
+
+        if (!item) {
+            return;
+        }
+
+        const words = text.trim().split(/\s+/).filter(Boolean);
+        const duration = item.end - item.start;
+        const wordDuration = words.length > 0 ? duration / words.length : 0;
+        const now = item.start;
+
+        const newWords = words.map((word, wordIndex) => ({
+            text: word,
+            start: now + wordIndex * wordDuration,
+            end: now + (wordIndex + 1) * wordDuration,
+            highlight: false,
+        }));
+
+        updateCaptionItem(index, {
+            text,
+            words: newWords,
+        });
+    }
+
     const fieldClass = 'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none';
     const labelClass = 'mb-1 block text-xs font-medium text-gray-500';
 
@@ -291,6 +386,23 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
                         : t('videoEditor.export')}
                 </button>
             </header>
+
+            {/* Auto-edit progress */}
+            {autoEdit.status && ['pending', 'transcribing', 'planning'].includes(autoEdit.status) && (
+                <div className="flex items-center justify-center gap-2 border-b border-gray-200 bg-[#EEF1F3] px-4 py-2 text-sm text-[#1A2023]">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t(`autoEdit.status.${autoEdit.status}`, { defaultValue: autoEdit.status })}
+                </div>
+            )}
+
+            {autoEdit.status === 'failed' && (
+                <div className="flex items-center justify-between gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    <span>{t('autoEdit.failed', { error: autoEdit.error ?? '' })}</span>
+                    <button onClick={retryAutoEdit} className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium">
+                        {t('autoEdit.retry')}
+                    </button>
+                </div>
+            )}
 
             <div className="flex min-h-0 flex-1">
                 {/* Preview */}
@@ -473,18 +585,109 @@ export default function VideoEditor({ videoProject, tiktokAccounts }: { videoPro
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-2 text-sm text-gray-700">
-                                {selectedClip.type === 'image' ? (
+                            {selectedClip.type === 'image' ? (
+                                <label className="flex items-center gap-2 text-sm text-gray-700">
                                     <input type="checkbox" checked={selectedClip.zoom} onChange={(event) => patchSelected({ zoom: event.target.checked })} />
-                                ) : (
-                                    <input type="checkbox" checked={selectedClip.muted} onChange={(event) => patchSelected({ muted: event.target.checked })} />
-                                )}
-                                {t(selectedClip.type === 'image' ? 'videoEditor.zoom' : 'videoEditor.muted')}
-                            </label>
+                                    {t('videoEditor.zoom')}
+                                </label>
+                            ) : (
+                                <div>
+                                    <label className={labelClass}>{t('autoEdit.zoom')}</label>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button
+                                            onClick={() => patchSelected({ punchIn: false })}
+                                            className={`rounded-lg border px-2 py-1 text-xs ${!selectedClip.punchIn ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            {t('autoEdit.zoomNone')}
+                                        </button>
+                                        <button
+                                            onClick={() => patchSelected({ punchIn: true })}
+                                            className={`rounded-lg border px-2 py-1 text-xs ${selectedClip.punchIn ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            {t('autoEdit.zoomPunch')}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <p className="text-xs text-gray-400">{t('videoEditor.selectClip')}</p>
                     )}
+
+                    <div className="h-px bg-gray-100" />
+
+                    {/* Captions panel */}
+                    <div className="flex flex-col gap-2">
+                        <p className="text-sm font-semibold">{t('autoEdit.captions')}</p>
+                        {!captions ? (
+                            <button
+                                onClick={() => setTimeline((current) => ({
+                                    ...current,
+                                    captions: {
+                                        enabled: true,
+                                        style: 'bold',
+                                        position: 'center',
+                                        items: [],
+                                    },
+                                }))}
+                                className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-500 hover:border-gray-400"
+                            >
+                                <Plus className="h-3.5 w-3.5" /> {t('autoEdit.addCaptions')}
+                            </button>
+                        ) : (
+                            <>
+                                <label className="flex items-center gap-2 text-sm text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={captions.enabled}
+                                        onChange={(event) => setTimeline((current) => current.captions ? { ...current, captions: { ...current.captions, enabled: event.target.checked } } : current)}
+                                    />
+                                    {t('autoEdit.captionsEnabled')}
+                                </label>
+                                <div>
+                                    <label className={labelClass}>{t('autoEdit.captionStyle')}</label>
+                                    <select
+                                        value={captions.style}
+                                        onChange={(event) => setTimeline((current) => current.captions ? { ...current, captions: { ...current.captions, style: event.target.value as CaptionsTrack['style'] } } : current)}
+                                        className={fieldClass}
+                                    >
+                                        <option value="bold">{t('autoEdit.styleBold')}</option>
+                                        <option value="clean">{t('autoEdit.styleClean')}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>{t('autoEdit.captionPosition')}</label>
+                                    <div className="grid grid-cols-3 gap-1">
+                                        {TEXT_POSITIONS.map((position) => (
+                                            <button
+                                                key={position}
+                                                onClick={() => setTimeline((current) => current.captions ? { ...current, captions: { ...current.captions, position } } : current)}
+                                                className={`rounded-lg border px-2 py-1 text-xs ${captions.position === position ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                            >
+                                                {t(`videoEditor.positions.${position}`)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    {captions.items.map((item, index) => (
+                                        <div key={index} className="rounded-lg border border-gray-100 p-2">
+                                            <p className="mb-1 text-xs text-gray-400">{t('autoEdit.captionItem', { index: index + 1 })}</p>
+                                            <textarea
+                                                value={item.text}
+                                                onChange={(event) => updateCaptionText(index, event.target.value)}
+                                                rows={2}
+                                                className={fieldClass}
+                                            />
+                                        </div>
+                                    ))}
+                                    {captions.items.length === 0 && (
+                                        <p className="text-xs text-gray-400">{t('autoEdit.noCaptions')}</p>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     <div className="h-px bg-gray-100" />
 

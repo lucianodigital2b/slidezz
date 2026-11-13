@@ -43,8 +43,31 @@ export interface VideoClip {
     textPosition: TextPosition;
     /** Slow Ken Burns push-in. Images only. */
     zoom: boolean;
+    /** Quick punch-in zoom on an emphasis moment (auto-edit). Videos only. */
+    punchIn?: boolean;
     /** Drops the clip's own sound. Videos only. */
     muted: boolean;
+}
+
+export interface CaptionWord {
+    text: string;
+    start: number;
+    end: number;
+    highlight: boolean;
+}
+
+export interface CaptionItem {
+    text: string;
+    start: number;
+    end: number;
+    words: CaptionWord[];
+}
+
+export interface CaptionsTrack {
+    enabled: boolean;
+    style: 'bold' | 'clean';
+    position: TextPosition;
+    items: CaptionItem[];
 }
 
 export interface AudioTrack {
@@ -56,6 +79,7 @@ export interface AudioTrack {
 export interface VideoTimeline {
     clips: VideoClip[];
     audio: AudioTrack | null;
+    captions?: CaptionsTrack;
 }
 
 export interface VideoCompositionProps {

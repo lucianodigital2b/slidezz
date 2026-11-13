@@ -110,6 +110,25 @@ class InstagramSdk
         ]);
     }
 
+    /**
+     * Fetch the most recent media for an IG User. The API returns
+     * id, caption, media_type, permalink, timestamp, like_count, comments_count.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listMedia(string $accessToken, string $igUserId, int $limit = 25): array
+    {
+        $response = $this->get($accessToken, "/{$igUserId}/media", [
+            'fields' => 'id,caption,media_type,permalink,timestamp,like_count,comments_count',
+            'limit' => $limit,
+        ]);
+
+        return array_values(array_filter(
+            (array) ($response['data'] ?? []),
+            fn ($media): bool => is_array($media),
+        ));
+    }
+
     private function get(string $accessToken, string $path, array $query = []): array
     {
         $url = $this->url($path);

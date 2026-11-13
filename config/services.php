@@ -100,6 +100,11 @@ return [
         'voice_id' => env('ELEVENLABS_VOICE_ID'),
     ],
 
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+        'transcription_model' => env('GROQ_TRANSCRIPTION_MODEL', 'whisper-large-v3-turbo'),
+    ],
+
     'ffmpeg' => [
         // Renders still-image slideshows (App\Services\Rendering\SlideVideoRenderer).
         'binary' => env('FFMPEG_BINARY', 'ffmpeg'),

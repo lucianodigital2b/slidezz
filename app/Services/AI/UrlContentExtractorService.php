@@ -23,6 +23,34 @@ class UrlContentExtractorService
         };
     }
 
+    /**
+     * @return array{title: string, text: string, url: string}
+     *
+     * @throws \RuntimeException
+     */
+    public function extractArticle(string $url): array
+    {
+        try {
+            $html = Http::timeout(10)->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (compatible; SlidezzBot/1.0)',
+            ])->get($url)->body();
+        } catch (\Exception) {
+            throw new \RuntimeException('Não foi possível acessar a URL informada.');
+        }
+
+        preg_match('/<title[^>]*>(.*?)<\/title>/si', $html, $titleMatch);
+
+        $title = html_entity_decode(trim($titleMatch[1] ?? ''), ENT_QUOTES, 'UTF-8');
+        $plain = trim(preg_replace('/\s+/', ' ', strip_tags($html)) ?? '');
+        $truncated = mb_substr($plain, 0, 6000);
+
+        return [
+            'title' => $title !== '' ? $title : $url,
+            'text' => $truncated,
+            'url' => $url,
+        ];
+    }
+
     /** @return array{title: string, description: string, topic: string} */
     private function extractYoutube(string $url): array
     {

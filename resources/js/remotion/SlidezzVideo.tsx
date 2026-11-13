@@ -6,7 +6,7 @@ import { wipe } from '@remotion/transitions/wipe';
 import { Fragment } from 'react';
 import { AbsoluteFill, Audio, Img, interpolate, OffthreadVideo, useCurrentFrame, useVideoConfig } from 'remotion';
 import { clipFrames, transitionFramesAt, VIDEO_FPS } from './timeline';
-import type { ClipTransition, TextPosition, VideoClip, VideoCompositionProps } from './timeline';
+import type { CaptionsTrack, ClipTransition, TextPosition, VideoClip, VideoCompositionProps } from './timeline';
 
 /*
  * The one composition behind both the editor preview (@remotion/player) and the
@@ -56,12 +56,40 @@ function ClipText({ text, position }: { text: string; position: TextPosition }) 
     );
 }
 
+function easeOutCubic(t: number): number {
+    return 1 - Math.pow(1 - t, 3);
+}
+
 function ClipView({ clip }: { clip: VideoClip }) {
     const frame = useCurrentFrame();
     const cover = { width: '100%', height: '100%', objectFit: 'cover' as const };
-    const scale = clip.type === 'image' && clip.zoom
-        ? interpolate(frame, [0, clipFrames(clip)], [1, 1.12], { extrapolateRight: 'clamp' })
-        : 1;
+
+    let scale = 1;
+
+    if (clip.type === 'image' && clip.zoom) {
+        scale = interpolate(frame, [0, clipFrames(clip)], [1, 1.12], {
+            extrapolateRight: 'clamp',
+            easing: (t) => t,
+        });
+    }
+
+    if (clip.type === 'video' && clip.punchIn) {
+        const total = clipFrames(clip);
+        const zoomInFrames = 6;
+        const zoomOutFrames = 6;
+
+        if (frame < zoomInFrames) {
+            scale = interpolate(frame, [0, zoomInFrames - 1], [1, 1.12], {
+                extrapolateRight: 'clamp',
+                easing: (t) => t,
+            });
+        } else if (frame >= total - zoomOutFrames) {
+            const t = (frame - (total - zoomOutFrames)) / (zoomOutFrames - 1);
+            scale = interpolate(easeOutCubic(t), [0, 1], [1.12, 1]);
+        } else {
+            scale = 1.12;
+        }
+    }
 
     return (
         <AbsoluteFill style={{ backgroundColor: '#000', overflow: 'hidden' }}>
@@ -70,9 +98,9 @@ function ClipView({ clip }: { clip: VideoClip }) {
             ) : (
                 <OffthreadVideo
                     src={clip.src}
-                    muted={clip.muted}
+                    muted={clip.muted ?? false}
                     trimBefore={Math.round(clip.trimStart * VIDEO_FPS) || undefined}
-                    style={cover}
+                    style={{ ...cover, transform: `scale(${scale})` }}
                 />
             )}
             {clip.text.trim() !== '' && <ClipText text={clip.text} position={clip.textPosition} />}
@@ -80,8 +108,73 @@ function ClipView({ clip }: { clip: VideoClip }) {
     );
 }
 
+function CaptionsOverlay({ captions }: { captions: CaptionsTrack }) {
+    const frame = useCurrentFrame();
+    const { fps, width } = useVideoConfig();
+
+    if (!captions.enabled || captions.items.length === 0) {
+        return null;
+    }
+
+    const time = frame / fps;
+    const item = captions.items.find((caption) => time >= caption.start && time < caption.end);
+
+    if (!item) {
+        return null;
+    }
+
+    const wordElements = item.words.map((word, index) => {
+        const isActive = time >= word.start && time < word.end;
+        const isHighlight = word.highlight || isActive;
+        const fontFamily = captions.style === 'bold'
+            ? '"TikTok Sans", "Helvetica Neue", Arial, sans-serif'
+            : '"Helvetica Neue", Arial, sans-serif';
+        const fontWeight = captions.style === 'bold' ? 800 : 700;
+        const textShadow = captions.style === 'bold'
+            ? '0 0 12px rgba(0,0,0,0.8), 0 3px 6px rgba(0,0,0,0.8), 0 0 2px #000, 0 0 2px #000'
+            : '0 2px 4px rgba(0,0,0,0.5)';
+        const color = isHighlight ? '#FFE14D' : '#fff';
+        const transform = isActive ? 'scale(1.08)' : 'none';
+
+        return (
+            <span
+                key={`${word.text}-${index}`}
+                style={{
+                    display: 'inline-block',
+                    color,
+                    fontFamily,
+                    fontWeight,
+                    fontSize: width * 0.055,
+                    lineHeight: 1.25,
+                    textShadow,
+                    textTransform: captions.style === 'bold' ? 'uppercase' : 'none',
+                    marginRight: '0.3em',
+                    transform,
+                    transformOrigin: 'center bottom',
+                }}
+            >
+                {word.text}
+            </span>
+        );
+    });
+
+    return (
+        <AbsoluteFill
+            style={{
+                justifyContent: TEXT_JUSTIFY[captions.position],
+                alignItems: 'center',
+                padding: `${width * 0.18}px ${width * 0.085}px`,
+                pointerEvents: 'none',
+                zIndex: 10,
+            }}
+        >
+            <div style={{ textAlign: 'center', maxWidth: '100%' }}>{wordElements}</div>
+        </AbsoluteFill>
+    );
+}
+
 export function SlidezzVideo({ timeline }: VideoCompositionProps) {
-    const { clips, audio } = timeline;
+    const { clips, audio, captions } = timeline;
 
     return (
         <AbsoluteFill style={{ backgroundColor: '#000' }}>
@@ -105,6 +198,7 @@ export function SlidezzVideo({ timeline }: VideoCompositionProps) {
                 })}
             </TransitionSeries>
             {audio && <Audio src={audio.src} volume={audio.volume} loop />}
+            {captions && <CaptionsOverlay captions={captions} />}
         </AbsoluteFill>
     );
 }

@@ -38,6 +38,11 @@ class Workspace extends Model
         return $this->hasMany(SocialAccount::class);
     }
 
+    public function profileAnalyses()
+    {
+        return $this->hasMany(ProfileAnalysis::class);
+    }
+
     public function contentProjects()
     {
         return $this->hasMany(ContentProject::class);

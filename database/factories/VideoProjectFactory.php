@@ -54,6 +54,51 @@ class VideoProjectFactory extends Factory
         ]);
     }
 
+    public function autoEditPending(): static
+    {
+        return $this->state(fn (): array => [
+            'source_recording_path' => 'videos/recording.mp4',
+            'auto_edit_status' => 'pending',
+            'auto_edit_error' => null,
+        ]);
+    }
+
+    public function autoEditFailed(): static
+    {
+        return $this->state(fn (): array => [
+            'source_recording_path' => 'videos/recording.mp4',
+            'auto_edit_status' => 'failed',
+            'auto_edit_error' => 'Falha na transcrição.',
+        ]);
+    }
+
+    public function autoEditDone(): static
+    {
+        return $this->state(fn (): array => [
+            'source_recording_path' => 'videos/recording.mp4',
+            'auto_edit_status' => 'done',
+            'auto_edit_error' => null,
+            'timeline' => [
+                'clips' => [$this->clip('video', 'none')],
+                'audio' => null,
+                'captions' => [
+                    'enabled' => true,
+                    'style' => 'bold',
+                    'position' => 'bottom',
+                    'items' => [[
+                        'text' => 'Olá mundo',
+                        'start' => 0,
+                        'end' => 1,
+                        'words' => [
+                            ['text' => 'Olá', 'start' => 0, 'end' => 0.4, 'highlight' => false],
+                            ['text' => 'mundo', 'start' => 0.5, 'end' => 1, 'highlight' => true],
+                        ],
+                    ]],
+                ],
+            ],
+        ]);
+    }
+
     /**
      * @param  'image'|'video'  $type
      * @return array<string, mixed>

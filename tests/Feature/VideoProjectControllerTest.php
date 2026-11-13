@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\AutoEditRecording;
 use App\Jobs\RenderVideo;
 use App\Models\SlideProject;
 use App\Models\User;
@@ -389,6 +390,155 @@ class VideoProjectControllerTest extends TestCase
 
         $this->assertModelMissing($video);
         Storage::disk('public')->assertMissing($video->storageDirectory().'/render.mp4');
+    }
+
+    // AutoEdit feature tests
+
+    public function test_auto_edit_upload_dispatches_the_job(): void
+    {
+        Queue::fake();
+        [$user, $workspace] = $this->premiumUser();
+
+        $file = UploadedFile::fake()->create('gravação.mp4', 1000, 'video/mp4');
+
+        $response = $this->actingAs($user)
+            ->postJson('/videos/auto-edit', [
+                'file' => $file,
+                'title' => 'Gravação bruta',
+                'format' => 'post',
+                'language' => 'pt',
+                'caption_style' => 'clean',
+            ])
+            ->assertCreated();
+
+        $video = VideoProject::findOrFail($response->json('id'));
+
+        $this->assertSame($workspace->id, $video->workspace_id);
+        $this->assertSame('Gravação bruta', $video->title);
+        $this->assertSame('post', $video->format);
+        $this->assertSame('pending', $video->auto_edit_status);
+        $this->assertNotNull($video->source_recording_path);
+        Storage::disk('public')->assertExists($video->source_recording_path);
+        Queue::assertPushed(AutoEditRecording::class, fn (AutoEditRecording $job): bool => $job->videoProject->is($video));
+    }
+
+    public function test_auto_edit_rejects_unsupported_files(): void
+    {
+        [$user] = $this->premiumUser();
+
+        $this->actingAs($user)
+            ->postJson('/videos/auto-edit', [
+                'file' => UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+    }
+
+    public function test_auto_edit_status_reports_progress_and_timeline_when_done(): void
+    {
+        [$user, $workspace] = $this->premiumUser();
+        $video = VideoProject::factory()->autoEditDone()->create(['workspace_id' => $workspace->id]);
+
+        $this->actingAs($user)
+            ->getJson("/videos/{$video->id}/auto-edit/status")
+            ->assertOk()
+            ->assertJsonPath('status', 'done')
+            ->assertJsonStructure([
+                'status',
+                'error',
+                'timeline' => ['clips', 'audio', 'captions'],
+            ]);
+    }
+
+    public function test_other_workspaces_cannot_access_auto_edit_status(): void
+    {
+        [$user] = $this->premiumUser();
+        $video = VideoProject::factory()->autoEditPending()->create();
+
+        $this->actingAs($user)
+            ->getJson("/videos/{$video->id}/auto-edit/status")
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->postJson("/videos/{$video->id}/auto-edit/retry")
+            ->assertForbidden();
+    }
+
+    public function test_retry_auto_edit_dispatches_job_again(): void
+    {
+        Queue::fake();
+        [$user, $workspace] = $this->premiumUser();
+        $video = VideoProject::factory()->autoEditFailed()->create([
+            'workspace_id' => $workspace->id,
+            'source_recording_path' => 'videos/recording.mp4',
+        ]);
+        Storage::disk('public')->put('videos/recording.mp4', 'fake');
+
+        $this->actingAs($user)
+            ->postJson("/videos/{$video->id}/auto-edit/retry")
+            ->assertAccepted()
+            ->assertJsonPath('status', 'pending');
+
+        $video->refresh();
+        $this->assertSame('pending', $video->auto_edit_status);
+        $this->assertNull($video->auto_edit_error);
+        Queue::assertPushed(AutoEditRecording::class, fn (AutoEditRecording $job): bool => $job->videoProject->is($video));
+    }
+
+    public function test_update_accepts_captions(): void
+    {
+        [$user, $workspace] = $this->premiumUser();
+        $video = VideoProject::factory()->empty()->create(['workspace_id' => $workspace->id]);
+        $imageUrl = $this->mediaUrl('videos/a.jpg');
+
+        $this->actingAs($user)
+            ->putJson("/videos/{$video->id}", [
+                'title' => 'Com legendas',
+                'format' => 'stories',
+                'timeline' => [
+                    'clips' => [[
+                        'id' => 'clip-1',
+                        'type' => 'image',
+                        'src' => $imageUrl,
+                        'duration' => 3,
+                        'trimStart' => 0,
+                        'transition' => 'fade',
+                        'text' => '',
+                        'textPosition' => 'center',
+                        'zoom' => true,
+                        'muted' => false,
+                    ]],
+                    'audio' => null,
+                    'captions' => [
+                        'enabled' => true,
+                        'style' => 'bold',
+                        'position' => 'center',
+                        'items' => [[
+                            'text' => 'Olá mundo',
+                            'start' => 0,
+                            'end' => 1,
+                            'words' => [[
+                                'text' => 'Olá',
+                                'start' => 0,
+                                'end' => 0.5,
+                                'highlight' => false,
+                            ], [
+                                'text' => 'mundo',
+                                'start' => 0.5,
+                                'end' => 1,
+                                'highlight' => true,
+                            ]],
+                        ]],
+                    ],
+                ],
+            ])
+            ->assertOk();
+
+        $video->refresh();
+        $this->assertNotNull($video->timeline['captions']);
+        $this->assertTrue($video->timeline['captions']['enabled']);
+        $this->assertSame('bold', $video->timeline['captions']['style']);
+        $this->assertCount(1, $video->timeline['captions']['items']);
     }
 
     /**

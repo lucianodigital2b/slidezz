@@ -738,6 +738,8 @@
     }
   },
   "sidebar": {
+    "profileAnalysis": "Profile analysis",
+    "videoScripts": "Video script",
     "generate": "Generate Ideas",
     "newAutomation": "New Automation",
     "home": "Home",
@@ -1294,5 +1296,135 @@
   "imageCredits": {
     "noCredits": "You're out of image credits. Buy more credits or connect your Gemini key for unlimited images.",
     "count": "{{count}} image credits"
+  },
+  "profileAnalysis": {
+    "title": "Profile analysis",
+    "subtitle": "Find out what works in your content and what to post next.",
+    "linksLabel": "Public post links (one per line, max 10)",
+    "linksPlaceholder": "https://www.tiktok.com/@yourprofile/video/...",
+    "connectedAccounts": "We will also read:",
+    "analyzeButton": "Analyze my profile",
+    "analyzing": "Analyzing...",
+    "failed": "Something went wrong. Try again.",
+    "noAnalysis": "Paste links or connect an account to begin.",
+    "history": "Previous analyses",
+    "historyEmpty": "No analyses yet.",
+    "summary": "Summary",
+    "whatWorks": "What works",
+    "whatIsMissing": "What is missing",
+    "topPosts": "Top posts",
+    "hooksThatWork": "Hooks that work",
+    "nextPosts": "Next posts",
+    "postingFrequency": "Posting frequency",
+    "viewPost": "View post",
+    "copyIdea": "Copy idea",
+    "copiedIdea": "Idea copied!",
+    "copied": "Copied!",
+    "copyFailed": "Could not copy.",
+    "openVideoScript": "Open video script",
+    "error": "Error: {{error}}",
+    "status": {
+      "pending": "Pending",
+      "running": "Analyzing",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "format": {
+      "carousel": "Carousel",
+      "slideshow": "Slideshow",
+      "talking_video": "Talking video"
+    }
+  },
+  "videoScripts": {
+    "title": "Video script",
+    "subtitle": "Write a talking-head script: hook, body and CTA.",
+    "sidebarTitle": "Video script",
+    "form": {
+      "topicLabel": "Topic",
+      "topicPlaceholder": "e.g. 3 mistakes that kill your productivity",
+      "referenceLabel": "Reference link",
+      "referenceHint": "Paste a viral TikTok to copy its structure",
+      "sourceLabel": "Source article link",
+      "sourceHint": "Optional: facts from the article are used in the script",
+      "durationLabel": "Duration",
+      "submit": "Generate script",
+      "submitting": "Generating..."
+    },
+    "history": {
+      "title": "History",
+      "empty": "No scripts yet."
+    },
+    "status": {
+      "pending": "pending",
+      "running": "generating",
+      "done": "ready",
+      "failed": "failed"
+    },
+    "empty": "Create your first talking-head script.",
+    "untitled": "Untitled script",
+    "justNow": "now",
+    "error": "Could not generate the script.",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "copyScript": "Copy script",
+    "hooks": {
+      "title": "Hooks",
+      "selectHint": "Click a hook to change the script."
+    },
+    "beats": {
+      "title": "Structure",
+      "beat": "Beat",
+      "line": "Line",
+      "onScreenText": "On-screen text",
+      "bRoll": "B-roll"
+    },
+    "cta": "CTA",
+    "caption": "Caption",
+    "hashtags": "Hashtags",
+    "sources": "Sources",
+    "teleprompter": {
+      "toggle": "Teleprompter mode",
+      "speed": "Speed",
+      "close": "Close"
+    },
+    "delete": "Delete",
+    "confirmDelete": "Delete this script?"
+  },
+  "autoEdit": {
+    "button": "Auto-edit recording",
+    "dialogTitle": "Auto-edit recording",
+    "uploadHint": "Drag or select a video (MP4, MOV or WEBM, up to 500 MB and 10 min)",
+    "captionStyle": "Style",
+    "styleBold": "Bold",
+    "styleClean": "Clean",
+    "language": "Language",
+    "format": "Format",
+    "formats": {
+      "stories": "Stories",
+      "post": "Post"
+    },
+    "upload": "Create auto edit",
+    "uploading": "Uploading... {progress}%",
+    "uploadFailed": "Failed to upload the video.",
+    "status": {
+      "pending": "Queued",
+      "transcribing": "Transcribing...",
+      "planning": "Planning cuts...",
+      "done": "Auto edit complete",
+      "failed": "Failed"
+    },
+    "failed": "Auto edit failed: {error}",
+    "retry": "Try again",
+    "retryFailed": "Failed to retry.",
+    "done": "Auto edit complete",
+    "captions": "Captions",
+    "addCaptions": "Add captions",
+    "captionsEnabled": "Enable captions",
+    "captionPosition": "Position",
+    "captionItem": "Caption {index}",
+    "noCaptions": "No captions yet",
+    "zoom": "Zoom",
+    "zoomNone": "None",
+    "zoomPunch": "Punch-in"
   }
 }

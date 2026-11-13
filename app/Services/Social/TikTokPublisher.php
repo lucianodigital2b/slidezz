@@ -369,6 +369,37 @@ class TikTokPublisher implements SocialPublisher
     }
 
     /**
+     * Latest public videos for one account, normalized for profile analysis.
+     *
+     * @return list<array{id: string, title: string, cover: ?string, url: ?string, posted_at: ?string, views: int, likes: int, comments: int, shares: int}>
+     */
+    public function recentVideos(SocialAccount $account, int $limit = 20): array
+    {
+        $this->ensureFreshToken($account);
+
+        $response = Http::withToken($account->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(15)
+            ->post('https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,cover_image_url,share_url,create_time,view_count,like_count,comment_count,share_count', [
+                'max_count' => min(20, max(1, $limit)),
+            ]);
+
+        $this->failUnlessOk($response);
+
+        return collect($response->json('data.videos', []))->map(fn (array $v) => [
+            'id' => (string) $v['id'],
+            'title' => (string) ($v['title'] ?? '') ?: (string) ($v['video_description'] ?? ''),
+            'cover' => $v['cover_image_url'] ?? null,
+            'url' => $v['share_url'] ?? null,
+            'posted_at' => isset($v['create_time']) ? now()->setTimestamp((int) $v['create_time'])->toISOString() : null,
+            'views' => (int) ($v['view_count'] ?? 0),
+            'likes' => (int) ($v['like_count'] ?? 0),
+            'comments' => (int) ($v['comment_count'] ?? 0),
+            'shares' => (int) ($v['share_count'] ?? 0),
+        ])->values()->all();
+    }
+
+    /**
      * @return array{followers: int, following: int, likes: int, videos: int, recent: list<array<string, mixed>>}
      */
     private function readInsights(Response|\Throwable $user, Response|\Throwable $videos): array
