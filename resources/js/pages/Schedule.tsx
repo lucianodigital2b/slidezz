@@ -51,6 +51,8 @@ interface ScheduleItem {
     status: string;
     publish_at: string;
     error_log: string | null;
+    /** Id of the public TikTok post, set once the creator posts the inbox draft. */
+    public_post_id: string | null;
     content_project: {
         id: number;
         title: string;
@@ -127,13 +129,20 @@ const isMovable = (g: PostGroup) => g.members.some(isMemberMovable);
 // Accounts can only change while no account has published the post yet.
 const isEditable = (g: PostGroup) => g.members.every(isMemberMovable);
 
+// TikTok only takes drafts (MEDIA_UPLOAD): "published" there means the draft
+// reached the creator's inbox. It is live only once public_post_id is linked.
+const isInTikTokInbox = (s: ScheduleItem) =>
+    s.status === 'published' &&
+    s.social_account.provider === 'tiktok' &&
+    !s.public_post_id;
+
 const groupStatus = (g: PostGroup) => {
     if (g.members.some((m) => m.status === 'failed')) {
         return 'failed';
     }
 
     if (g.members.every((m) => m.status === 'published')) {
-        return 'published';
+        return g.members.some(isInTikTokInbox) ? 'inbox' : 'published';
     }
 
     if (g.members.some((m) => m.status === 'publishing')) {
@@ -262,9 +271,11 @@ function PostChip({
             className={`relative flex items-start gap-1.5 truncate rounded border p-1.5 text-xs shadow-sm hover:brightness-95 ${selectMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${
                 status === 'published'
                     ? 'border-green-200 bg-green-50 text-green-800'
-                    : status === 'failed'
-                      ? 'border-red-300 bg-red-50 text-red-800'
-                      : 'border-blue-200 bg-blue-50 text-blue-800'
+                    : status === 'inbox'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : status === 'failed'
+                        ? 'border-red-300 bg-red-50 text-red-800'
+                        : 'border-blue-200 bg-blue-50 text-blue-800'
             } ${selected ? 'ring-2 ring-gray-900 ring-inset' : ''}`}
         >
             {failed.length > 0 && (
@@ -497,7 +508,11 @@ const STATUS_PILL: Record<string, { label: string; className: string }> = {
     pending: { label: 'Scheduled', className: 'bg-blue-50 text-blue-700' },
     publishing: { label: 'Sending', className: 'bg-[#F4F6F7] text-[#1A2023]' },
     failed: { label: 'Failed', className: 'bg-red-50 text-red-700' },
-    published: { label: 'Sent', className: 'bg-green-50 text-green-700' },
+    inbox: {
+        label: 'In TikTok inbox',
+        className: 'bg-amber-50 text-amber-700',
+    },
+    published: { label: 'Posted', className: 'bg-green-50 text-green-700' },
 };
 
 function Thumb({ src }: { src?: string }) {
@@ -1221,7 +1236,7 @@ export default function Schedule({
                             </button>
                         </div>
                         <Button
-                            className="ml-2 bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
+                            className="ml-2 rounded-full bg-[#1A2023] text-white hover:bg-[#2A3438]"
                             onClick={() => setIsModalOpen(true)}
                         >
                             <Plus className="mr-2 h-4 w-4" /> New Post
@@ -1962,7 +1977,7 @@ export default function Schedule({
                                     </p>
 
                                     <Button
-                                        className="border border-[#1A2023]/25 bg-[#1A2023] font-semibold text-white shadow-sm hover:bg-[#2A3438] rounded-full"
+                                        className="rounded-full border border-[#1A2023]/25 bg-[#1A2023] font-semibold text-white shadow-sm hover:bg-[#2A3438]"
                                         onClick={() => setIsModalOpen(true)}
                                     >
                                         <Plus className="mr-2 h-4 w-4" /> New
@@ -2312,11 +2327,32 @@ export default function Schedule({
                                                                 }
                                                             />
                                                             <span
-                                                                className={`ml-auto rounded-full px-2 py-0.5 text-xs ${m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
+                                                                className={`ml-auto rounded-full px-2 py-0.5 text-xs ${isInTikTokInbox(m) ? 'bg-amber-50 text-amber-700' : m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
                                                             >
-                                                                {m.status}
+                                                                {isInTikTokInbox(
+                                                                    m,
+                                                                )
+                                                                    ? 'in TikTok inbox'
+                                                                    : m.status}
                                                             </span>
                                                         </div>
+                                                        {isInTikTokInbox(m) && (
+                                                            <p className="text-xs text-amber-700">
+                                                                Not live yet.
+                                                                Open TikTok as @
+                                                                {
+                                                                    m
+                                                                        .social_account
+                                                                        .handle
+                                                                }
+                                                                : the draft is
+                                                                in your inbox
+                                                                notifications.
+                                                                Add a sound and
+                                                                the caption,
+                                                                then post.
+                                                            </p>
+                                                        )}
                                                         {m.error_log && (
                                                             <p className="text-xs text-red-600">
                                                                 {m.error_log}
@@ -2364,7 +2400,7 @@ export default function Schedule({
                                             ? 'Drag a post to another day to move it. Hold Alt or Ctrl while dropping to duplicate.'
                                             : isMovable(preview)
                                               ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
-                                              : `This post is ${groupStatus(preview)}, so it can only be duplicated.`}
+                                              : `This post is ${groupStatus(preview) === 'inbox' ? 'already in the TikTok inbox' : groupStatus(preview)}, so it can only be duplicated.`}
                                     </p>
                                 </div>
                             </div>
@@ -2560,7 +2596,7 @@ export default function Schedule({
                                     processing ||
                                     data.social_account_ids.length === 0
                                 }
-                                className="bg-[#1A2023] text-white hover:bg-[#2A3438] rounded-full"
+                                className="rounded-full bg-[#1A2023] text-white hover:bg-[#2A3438]"
                             >
                                 {processing
                                     ? 'Scheduling...'

@@ -331,6 +331,7 @@ class ScheduleController extends Controller
             'status', s.status,
             'publish_at', ".$this->iso('s.publish_at').",
             'error_log', s.error_log,
+            'public_post_id', s.public_post_id,
             'content_project', JSON_OBJECT(
                 'id', cp.id,
                 'title', ".self::TITLE.",
