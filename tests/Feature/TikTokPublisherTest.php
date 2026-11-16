@@ -162,6 +162,60 @@ class TikTokPublisherTest extends TestCase
         $this->assertSame('7696526215116508424', $status['post_id']);
     }
 
+    public function test_a_draft_posted_from_the_app_is_found_in_the_account_by_its_caption(): void
+    {
+        $sentAt = now()->subHours(3);
+
+        Http::fake([
+            '*status/fetch/' => Http::response(['data' => ['status' => 'SEND_TO_USER_INBOX']]),
+            'open.tiktokapis.com/v2/video/list/*' => Http::response(['data' => ['videos' => [
+                // Posted after the draft, caption pasted with the line breaks flattened.
+                ['id' => '7708820859359694093', 'create_time' => $sentAt->copy()->addMinutes(80)->getTimestamp(),
+                    'video_description' => "vocês já lavaram assim? conta aqui kkk comenta 'dailyhair' #fyp"],
+                // Same caption but posted before the draft existed.
+                ['id' => '7700000000000000001', 'create_time' => $sentAt->copy()->subDay()->getTimestamp(),
+                    'video_description' => "vocês já lavaram assim? conta aqui kkk comenta 'dailyhair' #fyp"],
+                // Posted after, other caption.
+                ['id' => '7700000000000000002', 'create_time' => $sentAt->copy()->addMinutes(10)->getTimestamp(),
+                    'video_description' => 'outro vídeo qualquer'],
+            ]]]),
+        ]);
+
+        $account = SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+        $project = ContentProject::factory()->create([
+            'script_data' => ['caption' => "vocês já lavaram assim? conta aqui kkk\n\ncomenta 'dailyhair' que eu te mando o link do app\n\n#fyp"],
+        ]);
+        $schedule = Schedule::factory()->published()->create([
+            'content_project_id' => $project->id,
+            'social_account_id' => $account->id,
+            'publish_at' => $sentAt,
+        ]);
+
+        $this->assertSame('7708820859359694093', (new TikTokPublisher)->publicPostId($schedule));
+        $this->assertSame('7708820859359694093', $schedule->fresh()->public_post_id);
+    }
+
+    public function test_a_draft_still_in_the_inbox_stays_unlinked(): void
+    {
+        Http::fake([
+            '*status/fetch/' => Http::response(['data' => ['status' => 'SEND_TO_USER_INBOX']]),
+            'open.tiktokapis.com/v2/video/list/*' => Http::response(['data' => ['videos' => [
+                ['id' => '7700000000000000002', 'create_time' => now()->getTimestamp(), 'video_description' => 'outro vídeo qualquer'],
+            ]]]),
+        ]);
+
+        $account = SocialAccount::factory()->create(['provider' => 'tiktok', 'expires_at' => now()->addDay()]);
+        $project = ContentProject::factory()->create(['script_data' => ['caption' => 'vocês já lavaram assim? conta aqui kkk']]);
+        $schedule = Schedule::factory()->published()->create([
+            'content_project_id' => $project->id,
+            'social_account_id' => $account->id,
+            'publish_at' => now()->subHour(),
+        ]);
+
+        $this->assertNull((new TikTokPublisher)->publicPostId($schedule));
+        $this->assertNull($schedule->fresh()->public_post_id);
+    }
+
     public function test_it_reads_the_account_totals_and_recent_videos(): void
     {
         Http::fake([

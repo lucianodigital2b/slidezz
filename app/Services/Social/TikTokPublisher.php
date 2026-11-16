@@ -523,13 +523,70 @@ class TikTokPublisher implements SocialPublisher
             return $schedule->public_post_id;
         }
 
-        $postId = $this->fetchStatus($schedule->socialAccount, $schedule->platform_post_id)['post_id'];
+        $postId = $this->fetchStatus($schedule->socialAccount, $schedule->platform_post_id)['post_id']
+            ?? $this->findPostedDraft($schedule);
 
         if ($postId) {
             $schedule->update(['public_post_id' => $postId]);
         }
 
         return $postId;
+    }
+
+    /**
+     * The status check stays at SEND_TO_USER_INBOX after the creator posts the
+     * draft from the app, so look for the video in the account instead: posted
+     * after the draft was sent, with the post's caption, and not already linked
+     * to another schedule. Without a caption there is nothing safe to match on.
+     */
+    private function findPostedDraft(Schedule $schedule): ?string
+    {
+        $caption = $this->captionKey((string) ($schedule->contentProject?->script_data['caption'] ?? ''));
+
+        if (mb_strlen($caption) < 10) {
+            return null;
+        }
+
+        $response = Http::withToken($schedule->socialAccount->access_token)
+            ->withHeaders(['Content-Type' => 'application/json; charset=UTF-8'])
+            ->timeout(15)
+            ->post('https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,create_time', [
+                'max_count' => 20,
+            ]);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $sentAt = ($schedule->publish_at ?? $schedule->created_at)->getTimestamp() - 600;
+        $prefix = mb_substr($caption, 0, 40);
+
+        $linked = Schedule::where('social_account_id', $schedule->social_account_id)
+            ->whereNotNull('public_post_id')
+            ->pluck('public_post_id')
+            ->all();
+
+        $match = collect($response->json('data.videos', []))
+            ->filter(fn (array $v) => (int) ($v['create_time'] ?? 0) >= $sentAt)
+            ->reject(fn (array $v) => in_array((string) $v['id'], $linked, true))
+            ->filter(function (array $v) use ($prefix) {
+                $text = $this->captionKey((string) (($v['video_description'] ?? '') ?: ($v['title'] ?? '')));
+
+                return str_starts_with($text, $prefix);
+            })
+            ->sortBy('create_time')
+            ->first();
+
+        return $match ? (string) $match['id'] : null;
+    }
+
+    /**
+     * A caption reduced to lowercase letters and digits, since TikTok returns
+     * it with the line breaks flattened.
+     */
+    private function captionKey(string $caption): string
+    {
+        return (string) preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($caption));
     }
 
     /**

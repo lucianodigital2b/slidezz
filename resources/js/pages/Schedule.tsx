@@ -2147,7 +2147,7 @@ export default function Schedule({
             >
                 <DialogContent
                     side="bottom"
-                    className="flex flex-col"
+                    className="flex flex-col overflow-hidden pb-0"
                     onOpenAutoFocus={(e) => e.preventDefault()}
                 >
                     {preview && (
@@ -2169,243 +2169,270 @@ export default function Schedule({
                                         : `${preview.members.length} accounts`}
                                 </DialogDescription>
                             </DialogHeader>
-                            {preview.lead.content_project.images.length > 0 && (
-                                <div className="flex justify-center gap-3">
-                                    {preview.lead.content_project.images.map(
-                                        (src, i) => (
-                                            <a
-                                                key={i}
-                                                href={src}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="min-w-0 flex-1"
-                                                style={{
-                                                    maxWidth:
-                                                        'calc(58vh * 9 / 16)',
-                                                }}
-                                            >
-                                                <img
-                                                    src={src}
-                                                    alt={`Slide ${i + 1}`}
-                                                    className="h-auto w-full rounded-lg border border-gray-200"
-                                                />
-                                            </a>
-                                        ),
-                                    )}
-                                </div>
-                            )}
-                            <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-                                <section className="flex flex-col gap-2">
-                                    <div className="flex h-8 items-center justify-between">
-                                        <label
-                                            htmlFor="preview_caption"
-                                            className="text-sm font-medium"
-                                        >
-                                            Caption
-                                        </label>
-                                        {previewCaption && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 text-gray-600"
-                                                onClick={() =>
-                                                    copyCaption(previewCaption)
-                                                }
-                                            >
-                                                {copied ? (
-                                                    <Check className="mr-1.5 h-3.5 w-3.5" />
-                                                ) : (
-                                                    <Copy className="mr-1.5 h-3.5 w-3.5" />
-                                                )}
-                                                {copied ? 'Copied' : 'Copy'}
-                                            </Button>
+                            <div className="-mx-6 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-6 sm:-mx-10 sm:px-10">
+                                {preview.lead.content_project.images.length >
+                                    0 && (
+                                    <div className="flex justify-center gap-3">
+                                        {preview.lead.content_project.images.map(
+                                            (src, i) => (
+                                                <a
+                                                    key={i}
+                                                    href={src}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="min-w-0 flex-1"
+                                                    style={{
+                                                        maxWidth:
+                                                            'calc(58vh * 9 / 16)',
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={src}
+                                                        alt={`Slide ${i + 1}`}
+                                                        className="h-auto w-full rounded-lg border border-gray-200"
+                                                    />
+                                                </a>
+                                            ),
                                         )}
                                     </div>
-                                    {isMovable(preview) ? (
-                                        <>
-                                            <Textarea
-                                                id="preview_caption"
-                                                value={previewCaption}
-                                                maxLength={CAPTION_MAX}
-                                                rows={6}
-                                                disabled={busy}
-                                                onChange={(e) =>
-                                                    setPreviewCaption(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="No caption."
-                                                className="min-h-36 resize-y text-sm leading-relaxed"
-                                            />
-                                            <p className="text-right text-xs text-gray-400 tabular-nums">
-                                                {previewCaption.length}/
-                                                {CAPTION_MAX}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <pre className="min-h-36 overflow-y-auto rounded-md border border-input bg-gray-50 px-3 py-2 font-sans text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
-                                            {preview.lead.content_project
-                                                .caption || 'No caption.'}
-                                        </pre>
-                                    )}
-                                </section>
-
-                                <div className="flex flex-col gap-3">
+                                )}
+                                <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                                     <section className="flex flex-col gap-2">
                                         <div className="flex h-8 items-center justify-between">
-                                            <span className="text-sm font-medium">
-                                                Accounts
-                                            </span>
-                                            {isEditable(preview) &&
-                                                previewAccountOptions.length >
-                                                    1 && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 text-gray-600"
-                                                        disabled={busy}
-                                                        onClick={() =>
-                                                            setPreviewAccounts(
-                                                                allPreviewAccounts
-                                                                    ? []
-                                                                    : previewAccountOptions.map(
-                                                                          (a) =>
-                                                                              a.id,
-                                                                      ),
-                                                            )
-                                                        }
-                                                    >
-                                                        {allPreviewAccounts
-                                                            ? 'Clear'
-                                                            : 'Select all'}
-                                                    </Button>
-                                                )}
-                                        </div>
-                                        {isEditable(preview) ? (
-                                            <AccountPicker
-                                                accounts={previewAccountOptions}
-                                                selected={previewAccounts}
-                                                onChange={setPreviewAccounts}
-                                                disabled={busy}
-                                                showSelectAll={false}
-                                            />
-                                        ) : (
-                                            <ul className="flex flex-col gap-0.5 rounded-md border border-input p-1">
-                                                {preview.members.map((m) => (
-                                                    <li
-                                                        key={m.id}
-                                                        className="flex flex-col gap-0.5 px-2 py-1.5 text-sm"
-                                                    >
-                                                        <div className="flex items-center gap-2.5">
-                                                            <AccountAvatar
-                                                                src={
-                                                                    m
-                                                                        .social_account
-                                                                        .avatar
-                                                                }
-                                                                handle={
-                                                                    m
-                                                                        .social_account
-                                                                        .handle
-                                                                }
-                                                            />
-                                                            <span className="truncate">
-                                                                @
-                                                                {
-                                                                    m
-                                                                        .social_account
-                                                                        .handle
-                                                                }
-                                                            </span>
-                                                            <ProviderBadge
-                                                                provider={
-                                                                    m
-                                                                        .social_account
-                                                                        .provider
-                                                                }
-                                                            />
-                                                            <span
-                                                                className={`ml-auto rounded-full px-2 py-0.5 text-xs ${isInTikTokInbox(m) ? 'bg-amber-50 text-amber-700' : m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
-                                                            >
-                                                                {isInTikTokInbox(
-                                                                    m,
-                                                                )
-                                                                    ? 'in TikTok inbox'
-                                                                    : m.status}
-                                                            </span>
-                                                        </div>
-                                                        {isInTikTokInbox(m) && (
-                                                            <p className="text-xs text-amber-700">
-                                                                Not live yet.
-                                                                Open TikTok as @
-                                                                {
-                                                                    m
-                                                                        .social_account
-                                                                        .handle
-                                                                }
-                                                                : the draft is
-                                                                in your inbox
-                                                                notifications.
-                                                                Add a sound and
-                                                                the caption,
-                                                                then post.
-                                                            </p>
-                                                        )}
-                                                        {m.error_log && (
-                                                            <p className="text-xs text-red-600">
-                                                                {m.error_log}
-                                                            </p>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                        {isEditable(preview) &&
-                                            previewAccounts.length === 0 && (
-                                                <p className="text-xs text-[#1A2023]">
-                                                    Pick at least one account to
-                                                    save. To cancel the post,
-                                                    delete it.
-                                                </p>
+                                            <label
+                                                htmlFor="preview_caption"
+                                                className="text-sm font-medium"
+                                            >
+                                                Caption
+                                            </label>
+                                            {previewCaption && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 text-gray-600"
+                                                    onClick={() =>
+                                                        copyCaption(
+                                                            previewCaption,
+                                                        )
+                                                    }
+                                                >
+                                                    {copied ? (
+                                                        <Check className="mr-1.5 h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                                                    )}
+                                                    {copied ? 'Copied' : 'Copy'}
+                                                </Button>
                                             )}
-                                        {isEditable(preview) &&
-                                            preview.members
-                                                .filter((m) => m.error_log)
-                                                .map((m) => (
-                                                    <p
-                                                        key={m.id}
-                                                        className="text-xs text-red-600"
-                                                    >
-                                                        {preview.members
-                                                            .length > 1 && (
-                                                            <span className="font-medium">
-                                                                @
-                                                                {
-                                                                    m
-                                                                        .social_account
-                                                                        .handle
-                                                                }
-                                                                :{' '}
-                                                            </span>
-                                                        )}
-                                                        {m.error_log}
-                                                    </p>
-                                                ))}
+                                        </div>
+                                        {isMovable(preview) ? (
+                                            <>
+                                                <Textarea
+                                                    id="preview_caption"
+                                                    value={previewCaption}
+                                                    maxLength={CAPTION_MAX}
+                                                    rows={6}
+                                                    disabled={busy}
+                                                    onChange={(e) =>
+                                                        setPreviewCaption(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="No caption."
+                                                    className="min-h-36 resize-y text-sm leading-relaxed"
+                                                />
+                                                <p className="text-right text-xs text-gray-400 tabular-nums">
+                                                    {previewCaption.length}/
+                                                    {CAPTION_MAX}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <pre className="min-h-36 overflow-y-auto rounded-md border border-input bg-gray-50 px-3 py-2 font-sans text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+                                                {preview.lead.content_project
+                                                    .caption || 'No caption.'}
+                                            </pre>
+                                        )}
                                     </section>
 
-                                    <p className="text-xs leading-relaxed text-gray-500">
-                                        {isEditable(preview)
-                                            ? 'Drag a post to another day to move it. Hold Alt or Ctrl while dropping to duplicate.'
-                                            : isMovable(preview)
-                                              ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
-                                              : `This post is ${groupStatus(preview) === 'inbox' ? 'already in the TikTok inbox' : groupStatus(preview)}, so it can only be duplicated.`}
-                                    </p>
+                                    <div className="flex flex-col gap-3">
+                                        <section className="flex flex-col gap-2">
+                                            <div className="flex h-8 items-center justify-between">
+                                                <span className="text-sm font-medium">
+                                                    Accounts
+                                                </span>
+                                                {isEditable(preview) &&
+                                                    previewAccountOptions.length >
+                                                        1 && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-gray-600"
+                                                            disabled={busy}
+                                                            onClick={() =>
+                                                                setPreviewAccounts(
+                                                                    allPreviewAccounts
+                                                                        ? []
+                                                                        : previewAccountOptions.map(
+                                                                              (
+                                                                                  a,
+                                                                              ) =>
+                                                                                  a.id,
+                                                                          ),
+                                                                )
+                                                            }
+                                                        >
+                                                            {allPreviewAccounts
+                                                                ? 'Clear'
+                                                                : 'Select all'}
+                                                        </Button>
+                                                    )}
+                                            </div>
+                                            {isEditable(preview) ? (
+                                                <AccountPicker
+                                                    accounts={
+                                                        previewAccountOptions
+                                                    }
+                                                    selected={previewAccounts}
+                                                    onChange={
+                                                        setPreviewAccounts
+                                                    }
+                                                    disabled={busy}
+                                                    showSelectAll={false}
+                                                />
+                                            ) : (
+                                                <ul className="flex flex-col gap-0.5 rounded-md border border-input p-1">
+                                                    {preview.members.map(
+                                                        (m) => (
+                                                            <li
+                                                                key={m.id}
+                                                                className="flex flex-col gap-0.5 px-2 py-1.5 text-sm"
+                                                            >
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <AccountAvatar
+                                                                        src={
+                                                                            m
+                                                                                .social_account
+                                                                                .avatar
+                                                                        }
+                                                                        handle={
+                                                                            m
+                                                                                .social_account
+                                                                                .handle
+                                                                        }
+                                                                    />
+                                                                    <span className="truncate">
+                                                                        @
+                                                                        {
+                                                                            m
+                                                                                .social_account
+                                                                                .handle
+                                                                        }
+                                                                    </span>
+                                                                    <ProviderBadge
+                                                                        provider={
+                                                                            m
+                                                                                .social_account
+                                                                                .provider
+                                                                        }
+                                                                    />
+                                                                    <span
+                                                                        className={`ml-auto rounded-full px-2 py-0.5 text-xs ${isInTikTokInbox(m) ? 'bg-amber-50 text-amber-700' : m.status === 'published' ? 'bg-green-50 text-green-700' : m.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
+                                                                    >
+                                                                        {isInTikTokInbox(
+                                                                            m,
+                                                                        )
+                                                                            ? 'in TikTok inbox'
+                                                                            : m.status}
+                                                                    </span>
+                                                                </div>
+                                                                {isInTikTokInbox(
+                                                                    m,
+                                                                ) && (
+                                                                    <p className="text-xs text-amber-700">
+                                                                        Not live
+                                                                        yet.
+                                                                        Open
+                                                                        TikTok
+                                                                        as @
+                                                                        {
+                                                                            m
+                                                                                .social_account
+                                                                                .handle
+                                                                        }
+                                                                        : the
+                                                                        draft is
+                                                                        in your
+                                                                        inbox
+                                                                        notifications.
+                                                                        Add a
+                                                                        sound
+                                                                        and the
+                                                                        caption,
+                                                                        then
+                                                                        post.
+                                                                    </p>
+                                                                )}
+                                                                {m.error_log && (
+                                                                    <p className="text-xs text-red-600">
+                                                                        {
+                                                                            m.error_log
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                            {isEditable(preview) &&
+                                                previewAccounts.length ===
+                                                    0 && (
+                                                    <p className="text-xs text-[#1A2023]">
+                                                        Pick at least one
+                                                        account to save. To
+                                                        cancel the post, delete
+                                                        it.
+                                                    </p>
+                                                )}
+                                            {isEditable(preview) &&
+                                                preview.members
+                                                    .filter((m) => m.error_log)
+                                                    .map((m) => (
+                                                        <p
+                                                            key={m.id}
+                                                            className="text-xs text-red-600"
+                                                        >
+                                                            {preview.members
+                                                                .length > 1 && (
+                                                                <span className="font-medium">
+                                                                    @
+                                                                    {
+                                                                        m
+                                                                            .social_account
+                                                                            .handle
+                                                                    }
+                                                                    :{' '}
+                                                                </span>
+                                                            )}
+                                                            {m.error_log}
+                                                        </p>
+                                                    ))}
+                                        </section>
+
+                                        <p className="text-xs leading-relaxed text-gray-500">
+                                            {isEditable(preview)
+                                                ? 'Drag a post to another day to move it. Hold Alt or Ctrl while dropping to duplicate.'
+                                                : isMovable(preview)
+                                                  ? 'Some accounts already published this post: moving it only moves the pending or failed ones. Duplicate it to pick other accounts.'
+                                                  : `This post is ${groupStatus(preview) === 'inbox' ? 'already in the TikTok inbox' : groupStatus(preview)}, so it can only be duplicated.`}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="sticky bottom-0 -mx-6 mt-auto -mb-6 flex items-center gap-2 border-t bg-background px-6 py-4 sm:-mx-10 sm:px-10">
+                            <div className="-mx-6 flex shrink-0 items-center gap-2 border-t bg-background px-6 py-4 sm:-mx-10 sm:px-10">
                                 {preview.members.some(
                                     (m) => m.status !== 'publishing',
                                 ) && (
