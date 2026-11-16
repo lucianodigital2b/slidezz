@@ -42,6 +42,20 @@ FacadeSchedule::call(function () {
         ->each(fn (Schedule $s) => SyncPostAnalytics::dispatch($s));
 })->hourly();
 
+// Every five minutes, look for TikTok drafts from the last 3 days that the
+// creator may have posted from the inbox, so the calendar stops saying
+// "in TikTok inbox" soon after it goes live instead of up to an hour later
+FacadeSchedule::call(function () {
+    Schedule::where('status', ScheduleStatus::Published)
+        ->whereNotNull('platform_post_id')
+        ->whereNull('public_post_id')
+        ->where('publish_at', '>=', now()->subDays(3))
+        ->whereHas('socialAccount', fn ($q) => $q->where('provider', 'tiktok'))
+        ->with('socialAccount')
+        ->get()
+        ->each(fn (Schedule $s) => SyncPostAnalytics::dispatch($s));
+})->everyFiveMinutes();
+
 // Every 6 hours, refresh public metrics for TikTok videos in active UGC campaigns
 FacadeSchedule::call(function () {
     TrackedVideo::where('platform', 'tiktok')
