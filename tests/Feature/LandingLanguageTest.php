@@ -15,9 +15,15 @@ class LandingLanguageTest extends TestCase
             ->assertRedirect(route('home.br'));
     }
 
-    public function test_english_browser_stays_on_the_english_landing(): void
+    public function test_english_first_browser_with_portuguese_is_sent_to_the_pt_landing(): void
     {
-        $this->get(route('home'), ['Accept-Language' => 'en-US,en;q=0.9,pt;q=0.5'])
+        $this->get(route('home'), ['Accept-Language' => 'en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7,es;q=0.6'])
+            ->assertRedirect(route('home.br'));
+    }
+
+    public function test_english_only_browser_stays_on_the_english_landing(): void
+    {
+        $this->get(route('home'), ['Accept-Language' => 'en-US,en;q=0.9,es;q=0.5'])
             ->assertOk();
     }
 

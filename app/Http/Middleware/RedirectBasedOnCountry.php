@@ -13,13 +13,26 @@ class RedirectBasedOnCountry
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // The landing follows the browser language: a Portuguese-first browser
-        // (Accept-Language) gets the pt-BR landing at /br. Anything else, and
-        // crawlers that send no language, stay on the English landing at /.
-        if ($request->path() === '/' && $request->getPreferredLanguage(['en', 'pt']) === 'pt') {
+        // Any Portuguese in Accept-Language sends the visitor to the pt-BR
+        // landing at /br, even when English comes first (a Brazilian with an
+        // English Chrome sends "en-US, en, pt-BR, pt"). Crawlers send no
+        // language and stay on the English landing at /. Visitors without pt
+        // but on a Brazilian timezone are redirected by the landing itself.
+        if ($request->path() === '/' && $this->acceptsPortuguese($request)) {
             return redirect()->route('home.br');
         }
 
         return $next($request);
+    }
+
+    private function acceptsPortuguese(Request $request): bool
+    {
+        foreach ($request->getLanguages() as $language) {
+            if (str_starts_with(strtolower($language), 'pt')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

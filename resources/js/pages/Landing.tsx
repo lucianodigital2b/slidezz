@@ -164,7 +164,7 @@ const FEATURES_PT = [
     'IA pra textos e legendas',
     'Editor slide a slide',
     'PNG, PDF pro LinkedIn e vídeo MP4',
-    'Imagens ilimitadas com sua chave Gemini (opcional)'
+    'Imagens ilimitadas com sua chave Gemini (opcional)',
 ];
 
 const FEATURES_EN = [
@@ -173,7 +173,7 @@ const FEATURES_EN = [
     'AI for copy and captions',
     'Slide-by-slide editor',
     'PNG, LinkedIn PDF and MP4 video',
-    'Unlimited images with your own Gemini key (optional)'
+    'Unlimited images with your own Gemini key (optional)',
 ];
 
 const copy: Record<'pt' | 'en', Copy> = {
@@ -1794,6 +1794,31 @@ function FaqItem({
     );
 }
 
+// Brazilian IANA timezones. A visitor on the English landing whose browser
+// has no Portuguese but whose clock is set to Brazil goes to /br.
+const BRAZIL_TIMEZONES = new Set([
+    'America/Sao_Paulo',
+    'America/Araguaina',
+    'America/Bahia',
+    'America/Belem',
+    'America/Boa_Vista',
+    'America/Campo_Grande',
+    'America/Cuiaba',
+    'America/Eirunepe',
+    'America/Fortaleza',
+    'America/Maceio',
+    'America/Manaus',
+    'America/Noronha',
+    'America/Porto_Velho',
+    'America/Recife',
+    'America/Rio_Branco',
+    'America/Santarem',
+    'Brazil/East',
+    'Brazil/West',
+    'Brazil/Acre',
+    'Brazil/DeNoronha',
+]);
+
 export default function Landing({
     canRegister = true,
     locale = 'pt',
@@ -1807,6 +1832,22 @@ export default function Landing({
     ).url;
     const c = copy[locale];
     const [menuOpen, setMenuOpen] = useState(false);
+
+    useEffect(() => {
+        if (locale !== 'en') {
+            return;
+        }
+
+        try {
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            if (BRAZIL_TIMEZONES.has(timeZone)) {
+                window.location.replace('/br' + window.location.search);
+            }
+        } catch {
+            // No Intl timezone: stay on the English landing.
+        }
+    }, [locale]);
     const [openFaq, setOpenFaq] = useState<number | null>(0);
     const photoGallery: { src: string; tag?: string }[] = [
         { src: photos.s7, tag: c.photos.aiTag },
@@ -1851,7 +1892,7 @@ export default function Landing({
             >
                 <nav className="mx-auto flex max-w-[880px] items-center justify-between gap-4 rounded-full border border-white/60 bg-white/45 py-2 pr-2 pl-4 shadow-[0_8px_32px_rgba(23,52,84,0.12)] backdrop-blur-xl backdrop-saturate-150 sm:pl-5">
                     <a
-                        href="/"
+                        href={locale === 'pt' ? '/br' : '/'}
                         aria-label="Slidezz"
                         className="flex shrink-0 items-center gap-2"
                     >
