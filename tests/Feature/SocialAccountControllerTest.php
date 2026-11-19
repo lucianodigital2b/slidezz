@@ -82,6 +82,19 @@ class SocialAccountControllerTest extends TestCase
             ->assertRedirect();
     }
 
+    public function test_instagram_connect_url_skips_force_reauth_and_encodes_scope_once(): void
+    {
+        $user = User::factory()->canPost()->create();
+        config(['services.instagram.feature_user_ids' => (string) $user->id]);
+
+        $location = $this->actingAs($user)
+            ->get('/social-accounts/instagram/connect')
+            ->headers->get('Location');
+
+        $this->assertStringNotContainsString('force_reauth', $location);
+        $this->assertStringContainsString('scope=instagram_business_basic%2Cinstagram_business_content_publish', $location);
+    }
+
     public function test_connect_creates_workspace_if_none_exists(): void
     {
         $user = User::factory()->canPost()->create();

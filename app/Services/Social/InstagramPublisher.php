@@ -59,8 +59,11 @@ class InstagramPublisher implements SocialPublisher
             'instagram_business_content_publish',
         ];
 
+        // No force_reauth: it sends the user through Instagram's login/account
+        // picker, which re-encodes the URL and turns the scope comma into a
+        // literal "%2c" ("Invalid scope: instagram_business_basic%2c...").
+        // To connect a different account, log into it on instagram.com first.
         $query = http_build_query([
-            'force_reauth' => 'true',
             'client_id' => $this->appId,
             'redirect_uri' => url($this->redirectUri),
             'scope' => implode(',', $scopes),
