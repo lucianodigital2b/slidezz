@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { InstagramIcon, TikTokIcon } from '@/components/social-icons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -199,16 +200,22 @@ const filterGroups = (
 function ProviderBadge({ provider }: { provider: string }) {
     if (provider === 'tiktok') {
         return (
-            <span className="rounded-sm bg-white px-0.5 text-[10px] font-bold text-black">
-                ♪
+            <span
+                className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-black text-white"
+                title="TikTok"
+            >
+                <TikTokIcon className="size-2.5" />
             </span>
         );
     }
 
     if (provider === 'instagram') {
         return (
-            <span className="rounded-sm bg-gradient-to-tr from-[#1A2023] to-fuchsia-600 px-0.5 text-[10px] font-bold text-white">
-                ig
+            <span
+                className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-gradient-to-tr from-[#F77737] via-[#FD1D1D] to-[#833AB4] text-white"
+                title="Instagram"
+            >
+                <InstagramIcon className="size-2.5" />
             </span>
         );
     }
