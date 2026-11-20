@@ -230,14 +230,6 @@ class InstagramPublisher implements SocialPublisher
 
     public function getAnalytics(string $platformPostId): array
     {
-        $empty = [
-            'views' => 0,
-            'likes' => 0,
-            'comments' => 0,
-            'shares' => 0,
-            'bookmarks' => 0,
-        ];
-
         // Resolve the access token via the published schedule for this post.
         $schedule = Schedule::where('platform_post_id', $platformPostId)
             ->where('status', 'published')
@@ -247,34 +239,48 @@ class InstagramPublisher implements SocialPublisher
 
         $account = $schedule->socialAccount;
 
-        // Insights require the `instagram_business_manage_insights` scope, which is
-        // not currently requested during OAuth. Until it is granted, the insights
-        // call fails — degrade gracefully to zeroed metrics instead of throwing.
+        // Likes and comments come with instagram_business_basic. If even these
+        // fail, return nothing so the job keeps no row of zeros.
         try {
-            $response = $this->sdk->getMediaInsights($account->access_token, $platformPostId, 'impressions,reach,engagement,saved');
-
-            $metrics = collect($response['data'] ?? [])
-                ->keyBy('name')
-                ->map(fn ($m) => $m['values'][0]['value'] ?? 0);
-
-            $mediaData = $this->sdk->getMedia($account->access_token, $platformPostId, 'like_count,comments_count');
-
-            return [
-                'views' => $metrics->get('impressions', 0),
-                'likes' => $mediaData['like_count'] ?? 0,
-                'comments' => $mediaData['comments_count'] ?? 0,
-                'shares' => 0,
-                'bookmarks' => $metrics->get('saved', 0),
-            ];
+            $media = $this->sdk->getMedia($account->access_token, $platformPostId, 'like_count,comments_count');
         } catch (\Throwable $e) {
-            Log::warning('[Instagram] Failed to fetch analytics, returning empty metrics', [
+            Log::warning('[Instagram] Failed to fetch post stats', [
                 'platform_post_id' => $platformPostId,
                 'social_account_id' => $account->id,
                 'message' => $e->getMessage(),
             ]);
 
-            return $empty;
+            return [];
         }
+
+        $stats = [
+            'likes' => (int) ($media['like_count'] ?? 0),
+            'comments' => (int) ($media['comments_count'] ?? 0),
+        ];
+
+        // Views, shares and saves are insights, which need the
+        // instagram_business_manage_insights scope (not requested during OAuth
+        // yet). Without it this call fails and the post keeps likes/comments.
+        // `impressions` and `engagement` are gone from the API: `views` replaced them.
+        try {
+            $insights = collect($this->sdk->getMediaInsights($account->access_token, $platformPostId, 'views,shares,saved')['data'] ?? [])
+                ->keyBy('name')
+                ->map(fn ($m) => (int) ($m['values'][0]['value'] ?? $m['total_value']['value'] ?? 0));
+
+            foreach (['views' => 'views', 'shares' => 'shares', 'bookmarks' => 'saved'] as $key => $metric) {
+                if ($insights->has($metric)) {
+                    $stats[$key] = $insights->get($metric);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::info('[Instagram] Insights unavailable, keeping likes/comments only', [
+                'platform_post_id' => $platformPostId,
+                'social_account_id' => $account->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return $stats;
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────

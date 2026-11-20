@@ -229,12 +229,6 @@ class FacebookPublisher implements SocialPublisher
 
     public function getAnalytics(string $platformPostId): array
     {
-        $empty = [
-            'likes' => 0,
-            'comments' => 0,
-            'shares' => 0,
-        ];
-
         $schedule = Schedule::where('platform_post_id', $platformPostId)
             ->where('status', 'published')
             ->with('socialAccount')
@@ -243,11 +237,19 @@ class FacebookPublisher implements SocialPublisher
 
         $account = $schedule->socialAccount;
 
+        // Photo and carousel posts are saved as "{pageId}_{postId}"; videos and
+        // Reels as the bare video id. A Video node has no `shares` field, and
+        // asking for it fails the whole call, so only posts ask for it.
+        $fields = 'likes.summary(true).limit(0),comments.summary(true).limit(0)';
+        if (str_contains($platformPostId, '_')) {
+            $fields .= ',shares';
+        }
+
         try {
             $response = Http::withToken($account->access_token)
                 ->acceptJson()
                 ->get($this->baseUrl.'/'.$platformPostId, [
-                    'fields' => 'likes.summary(true).limit(0),comments.summary(true).limit(0),shares',
+                    'fields' => $fields,
                 ])
                 ->throw()
                 ->json();
@@ -267,13 +269,14 @@ class FacebookPublisher implements SocialPublisher
                 'shares' => $shares,
             ];
         } catch (\Throwable $e) {
-            Log::warning('[Facebook] Failed to fetch analytics, returning empty metrics', [
+            Log::warning('[Facebook] Failed to fetch analytics', [
                 'platform_post_id' => $platformPostId,
                 'social_account_id' => $account->id,
                 'message' => $e->getMessage(),
             ]);
 
-            return $empty;
+            // Nothing read: the job keeps no row rather than a row of zeros.
+            return [];
         }
     }
 
