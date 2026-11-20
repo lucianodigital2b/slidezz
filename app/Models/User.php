@@ -85,6 +85,16 @@ class User extends Authenticatable
         return $this->canPost() && $ids->contains($this->id);
     }
 
+    public function canUseFacebook(): bool
+    {
+        $ids = collect(explode(',', (string) config('services.facebook.feature_user_ids')))
+            ->map(fn (string $id): string => trim($id))
+            ->filter()
+            ->map(fn (string $id): int => (int) $id);
+
+        return $this->canPost() && $ids->contains($this->id);
+    }
+
     /**
      * The plan key ('monthly', 'annual') of the user's active subscription,
      * or null when there is no active/trialing subscription.

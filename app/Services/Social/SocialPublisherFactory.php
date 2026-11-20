@@ -12,6 +12,7 @@ class SocialPublisherFactory
         return match ($provider) {
             'tiktok' => new TikTokPublisher,
             'instagram' => new InstagramPublisher,
+            'facebook' => new FacebookPublisher,
             default => throw new InvalidArgumentException("Unsupported social provider: {$provider}"),
         };
     }

@@ -47,6 +47,20 @@ return [
         'webhook_verify_token' => env('INSTAGRAM_WEBHOOK_VERIFY_TOKEN'),
     ],
 
+    // Facebook Login for Business (Pages). Uses the Meta app id/secret, not the
+    // Instagram app id above.
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', '/social-accounts/facebook/callback'),
+        // Facebook Login for Business configuration (pages_show_list,
+        // pages_read_engagement, pages_manage_posts with a user access token).
+        'config_id' => env('FACEBOOK_CONFIG_ID'),
+        // Comma-separated user IDs allowed to use Facebook Pages while
+        // pages_manage_posts is pending Meta App Review (empty = nobody).
+        'feature_user_ids' => env('FACEBOOK_FEATURE_USER_IDS', ''),
+    ],
+
     'tiktok' => [
         'client_id' => env('TIKTOK_CLIENT_ID'),
         'client_secret' => env('TIKTOK_CLIENT_SECRET'),

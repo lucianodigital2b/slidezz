@@ -19,7 +19,11 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { InstagramIcon, TikTokIcon } from '@/components/social-icons';
+import {
+    FacebookIcon,
+    InstagramIcon,
+    TikTokIcon,
+} from '@/components/social-icons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -216,6 +220,17 @@ function ProviderBadge({ provider }: { provider: string }) {
                 title="Instagram"
             >
                 <InstagramIcon className="size-2.5" />
+            </span>
+        );
+    }
+
+    if (provider === 'facebook') {
+        return (
+            <span
+                className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-[#0866FF] text-white"
+                title="Facebook"
+            >
+                <FacebookIcon className="size-2.5" />
             </span>
         );
     }

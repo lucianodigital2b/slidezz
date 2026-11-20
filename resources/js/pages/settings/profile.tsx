@@ -5,7 +5,11 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { InstagramIcon, TikTokIcon } from '@/components/social-icons';
+import {
+    FacebookIcon,
+    InstagramIcon,
+    TikTokIcon,
+} from '@/components/social-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +39,12 @@ const PLATFORM_CONFIG = {
         iconBg: 'bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737]',
         connectBg:
             'bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90',
+    },
+    facebook: {
+        label: 'Facebook',
+        icon: FacebookIcon,
+        iconBg: 'bg-[#0866FF]',
+        connectBg: 'bg-[#0866FF] hover:bg-[#0756d6]',
     },
 } as const;
 
@@ -152,6 +162,7 @@ function PlatformRow({
 
 function ConnectedAccounts({ accounts }: { accounts: SocialAccount[] }) {
     const { t } = useTranslation();
+    const { fbEnabled } = usePage().props;
 
     return (
         <div className="space-y-6">
@@ -166,6 +177,9 @@ function ConnectedAccounts({ accounts }: { accounts: SocialAccount[] }) {
             <div className="divide-y divide-border rounded-xl border border-border bg-card">
                 <PlatformRow provider="tiktok" accounts={accounts} />
                 <PlatformRow provider="instagram" accounts={accounts} />
+                {fbEnabled && (
+                    <PlatformRow provider="facebook" accounts={accounts} />
+                )}
             </div>
         </div>
     );
