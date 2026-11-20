@@ -92,7 +92,7 @@ class SocialAccountControllerTest extends TestCase
             ->headers->get('Location');
 
         $this->assertStringNotContainsString('force_reauth', $location);
-        $this->assertStringContainsString('scope=instagram_business_basic%2Cinstagram_business_content_publish', $location);
+        $this->assertStringContainsString('scope=instagram_business_basic%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights', $location);
     }
 
     public function test_connect_creates_workspace_if_none_exists(): void

@@ -50,6 +50,8 @@ class FacebookPublisher implements SocialPublisher
             'pages_show_list',
             'pages_read_engagement',
             'pages_manage_posts',
+            // Views of each post (getAnalytics).
+            'read_insights',
         ];
 
         // Facebook Login for Business (the only login a Business-type app gets)
@@ -263,7 +265,7 @@ class FacebookPublisher implements SocialPublisher
                 }
             }
 
-            return [
+            $stats = [
                 'likes' => (int) ($response['likes']['summary']['total_count'] ?? 0),
                 'comments' => (int) ($response['comments']['summary']['total_count'] ?? 0),
                 'shares' => $shares,
@@ -278,6 +280,34 @@ class FacebookPublisher implements SocialPublisher
             // Nothing read: the job keeps no row rather than a row of zeros.
             return [];
         }
+
+        // Views need read_insights. `post_impressions` is deprecated in favour
+        // of `post_media_view`; videos and Reels report through video_insights.
+        // Without the permission the post keeps likes/comments/shares.
+        try {
+            [$edge, $metric] = str_contains($platformPostId, '_')
+                ? ['insights', 'post_media_view']
+                : ['video_insights', 'total_video_views'];
+
+            $insights = Http::withToken($account->access_token)
+                ->acceptJson()
+                ->get("{$this->baseUrl}/{$platformPostId}/{$edge}", ['metric' => $metric])
+                ->throw()
+                ->json();
+
+            $views = collect($insights['data'] ?? [])->first()['values'][0]['value'] ?? null;
+            if (is_numeric($views)) {
+                $stats['views'] = (int) $views;
+            }
+        } catch (\Throwable $e) {
+            Log::info('[Facebook] Insights unavailable, keeping likes/comments/shares only', [
+                'platform_post_id' => $platformPostId,
+                'social_account_id' => $account->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return $stats;
     }
 
     private function publishSingleImage(string $accessToken, string $pageId, string $imageUrl, string $caption): string

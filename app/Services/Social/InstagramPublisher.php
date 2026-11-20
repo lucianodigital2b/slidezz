@@ -57,6 +57,8 @@ class InstagramPublisher implements SocialPublisher
         $scopes = [
             'instagram_business_basic',
             'instagram_business_content_publish',
+            // Views, shares and saves of each post (getAnalytics).
+            'instagram_business_manage_insights',
         ];
 
         // No force_reauth: it sends the user through Instagram's login/account

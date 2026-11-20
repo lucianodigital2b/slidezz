@@ -84,25 +84,32 @@ class PostAnalyticsFetchTest extends TestCase
     {
         $this->publishedPost('facebook', '123456789_555');
 
-        Http::fake(['*/123456789_555*' => Http::response([
-            'likes' => ['summary' => ['total_count' => 12]],
-            'comments' => ['summary' => ['total_count' => 3]],
-            'shares' => ['count' => 2],
-        ])]);
+        Http::fake([
+            '*/123456789_555/insights*' => Http::response(['data' => [['name' => 'post_media_view', 'values' => [['value' => 340]]]]]),
+            '*/123456789_555*' => Http::response([
+                'likes' => ['summary' => ['total_count' => 12]],
+                'comments' => ['summary' => ['total_count' => 3]],
+                'shares' => ['count' => 2],
+            ]),
+        ]);
 
-        $this->assertSame(['likes' => 12, 'comments' => 3, 'shares' => 2], app(FacebookPublisher::class)->getAnalytics('123456789_555'));
+        $this->assertSame(['likes' => 12, 'comments' => 3, 'shares' => 2, 'views' => 340], app(FacebookPublisher::class)->getAnalytics('123456789_555'));
 
         Http::assertSent(fn ($request) => str_contains($request->data()['fields'] ?? '', 'shares'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/insights') && $request->data()['metric'] === 'post_media_view');
     }
 
     public function test_facebook_video_does_not_ask_for_shares(): void
     {
         $this->publishedPost('facebook', '999');
 
-        Http::fake(['*/999*' => Http::response([
-            'likes' => ['summary' => ['total_count' => 4]],
-            'comments' => ['summary' => ['total_count' => 1]],
-        ])]);
+        Http::fake([
+            '*/999/video_insights*' => Http::response(['error' => ['message' => 'missing read_insights', 'code' => 10]], 403),
+            '*/999*' => Http::response([
+                'likes' => ['summary' => ['total_count' => 4]],
+                'comments' => ['summary' => ['total_count' => 1]],
+            ]),
+        ]);
 
         $this->assertSame(['likes' => 4, 'comments' => 1, 'shares' => 0], app(FacebookPublisher::class)->getAnalytics('999'));
 

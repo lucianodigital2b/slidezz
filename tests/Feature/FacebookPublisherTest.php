@@ -47,7 +47,7 @@ class FacebookPublisherTest extends TestCase
         $this->assertSame('123', $query['client_id']);
         $this->assertSame(url('/social-accounts/facebook/callback'), $query['redirect_uri']);
         $this->assertSame('code', $query['response_type']);
-        $this->assertSame('pages_show_list,pages_read_engagement,pages_manage_posts', $query['scope']);
+        $this->assertSame('pages_show_list,pages_read_engagement,pages_manage_posts,read_insights', $query['scope']);
         $this->assertArrayHasKey('state', $query);
     }
 
