@@ -81,6 +81,20 @@ class FacebookPublisher implements SocialPublisher
 
     public function handleCallback(array $data): SocialAccount
     {
+        ['workspace_id' => $workspaceId, 'pages' => $pages] = $this->authorizedPages($data);
+
+        return $this->savePages($workspaceId, $pages);
+    }
+
+    /**
+     * Validate the OAuth state, exchange the code and list every Page the
+     * person granted in Meta's dialog, with a non-expiring Page token each.
+     * Nothing is saved: the caller decides which Pages become accounts.
+     *
+     * @return array{workspace_id: int, pages: list<array{id: string, name: ?string, avatar: ?string, access_token: string}>}
+     */
+    public function authorizedPages(array $data): array
+    {
         Log::info('[Facebook] handleCallback received', [
             'keys' => array_keys($data),
             'has_code' => isset($data['code']),
@@ -107,7 +121,7 @@ class FacebookPublisher implements SocialPublisher
             throw new \Exception('Invalid OAuth state.');
         }
 
-        $workspaceId = $decoded['workspace_id'];
+        $workspaceId = (int) $decoded['workspace_id'];
 
         // 1. Exchange code → short-lived user access token.
         Log::info('[Facebook] Exchanging code for short-lived token');
@@ -143,15 +157,27 @@ class FacebookPublisher implements SocialPublisher
         // 3. List Pages available to the authenticated user.
         Log::info('[Facebook] Fetching Pages');
 
-        $pagesResponse = Http::withToken($userToken)
-            ->acceptJson()
-            ->get($this->baseUrl.'/me/accounts', [
-                'fields' => 'id,name,access_token,picture{url}',
-                'limit' => 100,
-            ])
-            ->throw();
+        // Agencies can manage more than one page of results; follow the cursor.
+        $pages = [];
+        $next = $this->baseUrl.'/me/accounts?'.http_build_query([
+            'fields' => 'id,name,access_token,picture{url}',
+            'limit' => 100,
+        ]);
 
-        $pages = $pagesResponse->json()['data'] ?? [];
+        while ($next && count($pages) < 1000) {
+            $response = Http::withToken($userToken)->acceptJson()->get($next)->throw();
+
+            foreach ($response->json('data') ?? [] as $page) {
+                $pages[] = [
+                    'id' => (string) $page['id'],
+                    'name' => $page['name'] ?? null,
+                    'avatar' => $page['picture']['url'] ?? ($page['picture']['data']['url'] ?? null),
+                    'access_token' => (string) $page['access_token'],
+                ];
+            }
+
+            $next = $response->json('paging.next');
+        }
 
         Log::info('[Facebook] Fetched Pages', ['page_count' => count($pages)]);
 
@@ -160,21 +186,28 @@ class FacebookPublisher implements SocialPublisher
             throw new \Exception('No Facebook Page found. Create a Page or grant access to one, then try again.');
         }
 
+        return ['workspace_id' => $workspaceId, 'pages' => $pages];
+    }
+
+    /**
+     * Create or refresh one account per Page and return the first.
+     *
+     * @param  list<array{id: string, name: ?string, avatar: ?string, access_token: string}>  $pages
+     */
+    public function savePages(int $workspaceId, array $pages): SocialAccount
+    {
         $firstAccount = null;
 
         foreach ($pages as $page) {
-            $providerId = (string) $page['id'];
-            $avatar = $page['picture']['url'] ?? ($page['picture']['data']['url'] ?? null);
-
             $account = SocialAccount::updateOrCreate(
                 [
                     'workspace_id' => $workspaceId,
                     'provider' => 'facebook',
-                    'provider_id' => $providerId,
+                    'provider_id' => $page['id'],
                 ],
                 [
-                    'handle' => $page['name'] ?? null,
-                    'avatar' => $avatar,
+                    'handle' => $page['name'],
+                    'avatar' => $page['avatar'],
                     'access_token' => $page['access_token'],
                     'refresh_token' => null,
                     'expires_at' => null,
@@ -188,9 +221,7 @@ class FacebookPublisher implements SocialPublisher
                 'workspace_id' => $workspaceId,
             ]);
 
-            if (! $firstAccount) {
-                $firstAccount = $account;
-            }
+            $firstAccount ??= $account;
         }
 
         return $firstAccount;

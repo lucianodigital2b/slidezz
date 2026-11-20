@@ -236,6 +236,15 @@
       "connectHint": "Rode isto no terminal e depois peça pro Claude criar um carrossel ou agendar um post no Slidezz.",
       "connectOtherHint": "Cursor, Windsurf e outros clientes MCP: coloque isto na configuração de MCP."
     },
+    "facebookPages": {
+      "title": "Escolha suas Páginas do Facebook",
+      "description": "Sua conta do Facebook administra mais de uma Página. Marque as que o Slidezz deve conectar. As desmarcadas ficam desconectadas.",
+      "selectAll": "Marcar todas",
+      "none": "Desmarcar todas",
+      "connected": "conectada",
+      "submit": "Conectar Páginas marcadas",
+      "pickOne": "Marque pelo menos uma Página."
+    },
     "deleteAccount": {
       "title": "Excluir conta",
       "description": "Exclua sua conta e todos os seus recursos",

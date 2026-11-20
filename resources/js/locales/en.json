@@ -1025,6 +1025,15 @@
       "connectHint": "Run this in your terminal, then ask Claude to create a carousel or schedule a post on Slidezz.",
       "connectOtherHint": "Cursor, Windsurf and other MCP clients: add this to your MCP config."
     },
+    "facebookPages": {
+      "title": "Choose your Facebook Pages",
+      "description": "Your Facebook account manages more than one Page. Pick the ones Slidezz should connect. Pages you leave unchecked are disconnected.",
+      "selectAll": "Select all",
+      "none": "Select none",
+      "connected": "connected",
+      "submit": "Connect selected Pages",
+      "pickOne": "Select at least one Page."
+    },
     "deleteAccount": {
       "title": "Delete account",
       "description": "Delete your account and all of its resources",

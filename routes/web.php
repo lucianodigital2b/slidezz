@@ -225,6 +225,8 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
 
     Route::redirect('social-accounts', '/settings/profile');
     Route::middleware(EnsureCanPost::class)->group(function () {
+        Route::get('social-accounts/facebook/pages', [SocialAccountController::class, 'facebookPages'])->name('social-accounts.facebook.pages');
+        Route::post('social-accounts/facebook/pages', [SocialAccountController::class, 'saveFacebookPages'])->name('social-accounts.facebook.pages.save');
         Route::get('social-accounts/{provider}/connect', [SocialAccountController::class, 'connect'])->name('social-accounts.connect');
         Route::get('social-accounts/{provider}/callback', [SocialAccountController::class, 'callback'])->name('social-accounts.callback');
         // Alias matching the redirect URIs registered in the TikTok Developer Portal
