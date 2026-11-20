@@ -738,6 +738,7 @@
     }
   },
   "sidebar": {
+    "breakdowns": "Viral breakdown",
     "profileAnalysis": "Profile analysis",
     "videoScripts": "Video script",
     "generate": "Generate Ideas",
@@ -1426,5 +1427,56 @@
     "zoom": "Zoom",
     "zoomNone": "None",
     "zoomPunch": "Punch-in"
+  },
+  "breakdowns": {
+    "title": "Viral breakdown",
+    "subtitle": "Paste a TikTok viral link and get a video carousel explaining why it went viral.",
+    "form": {
+      "urlLabel": "TikTok link",
+      "urlPlaceholder": "https://vm.tiktok.com/...",
+      "urlHint": "Paste a public TikTok video link.",
+      "languageLabel": "Analysis language",
+      "submit": "Create breakdown",
+      "submitting": "Creating..."
+    },
+    "error": "Could not create breakdown. Please try again.",
+    "untitled": "Untitled",
+    "justNow": "just now",
+    "confirmDelete": "Are you sure you want to delete this breakdown?",
+    "delete": "Delete",
+    "status": {
+      "pending": "Pending",
+      "fetching": "Fetching video",
+      "transcribing": "Transcribing",
+      "analyzing": "Analyzing",
+      "rendering": "Rendering",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "steps": {
+      "fetching": "Fetching video",
+      "transcribing": "Transcribing",
+      "analyzing": "Analyzing",
+      "rendering": "Rendering",
+      "renderingHint": "Rendering 4:5 carousel clips. This may take a few minutes."
+    },
+    "retry": "Try again",
+    "downloadAll": "Download all",
+    "copyCaption": "Copy caption",
+    "copied": "Caption copied!",
+    "slidesTitle": "Slides",
+    "captionLabel": "Caption",
+    "stagesTitle": "Stages",
+    "postHint": "Instagram accepts these MP4s as a carousel. Post them in order.",
+    "empty": "Paste a TikTok link to get started.",
+    "how": {
+      "1": "AI downloads the video and transcribes every word.",
+      "2": "We identify script stages and retention triggers.",
+      "3": "We render a video carousel ready to post."
+    },
+    "history": {
+      "title": "History",
+      "empty": "No breakdowns yet."
+    }
   }
 }

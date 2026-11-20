@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bot, CalendarDays, Clapperboard, FileText, Images, Layers, LineChart, MessageCircle, Music2, Radar, Rocket, ScanSearch, ScrollText, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
+import { Bot, CalendarDays, Clapperboard, FileText, Images, Layers, LineChart, MessageCircle, Microscope, Music2, Radar, Rocket, ScanSearch, ScrollText, Settings, Smartphone, Sparkles, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
 import { NavUser } from '@/components/nav-user';
@@ -42,6 +42,7 @@ export function AppSidebar() {
         { title: t('sidebar.slideshowEditor'), href: '/slideshow-editor', icon: Layers },
         { title: t('sidebar.videos'), href: '/videos', icon: Clapperboard },
         { title: t('sidebar.videoScripts'), href: '/video-scripts', icon: ScrollText },
+        { title: t('sidebar.breakdowns'), href: '/breakdowns', icon: Microscope },
         { title: t('sidebar.profileAnalysis'), href: '/profile-analysis', icon: ScanSearch },
         { title: t('sidebar.appScreenshots'), href: '/app-screenshots/create', icon: Smartphone },
         { title: t('sidebar.settings'), href: '/settings/profile', icon: Settings },

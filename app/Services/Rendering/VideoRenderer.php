@@ -16,10 +16,16 @@ class VideoRenderer
     /**
      * @param  array{format: string, timeline: array<string, mixed>}  $props
      * @param  (callable(int): void)|null  $onProgress  Receives 0-100 as frames are rendered.
+     * @param  string  $compositionId  Remotion composition id (e.g. SlidezzVideo, BreakdownCover, BreakdownSlide).
+     * @param  ?string  $bundlePath  Prebuilt bundle directory; falls back to config when null.
      * @return string Absolute path of a temporary MP4 the caller must move or delete.
      */
-    public function render(array $props, ?callable $onProgress = null): string
-    {
+    public function render(
+        array $props,
+        ?callable $onProgress = null,
+        string $compositionId = 'SlidezzVideo',
+        ?string $bundlePath = null,
+    ): string {
         $directory = storage_path('app/private/video-renders');
         File::ensureDirectoryExists($directory);
 
@@ -34,13 +40,16 @@ class VideoRenderer
             resource_path('js/remotion/render.mjs'),
             $propsPath,
             $outputPath,
-            config('services.remotion.bundle_path'),
+            $bundlePath ?? config('services.remotion.bundle_path'),
         ]));
 
         try {
             $result = Process::path(base_path())
                 ->timeout((int) config('services.remotion.timeout'))
-                ->env(array_filter(['REMOTION_CONCURRENCY' => config('services.remotion.concurrency')]))
+                ->env(array_filter([
+                    'REMOTION_CONCURRENCY' => config('services.remotion.concurrency'),
+                    'REMOTION_COMPOSITION' => $compositionId,
+                ]))
                 ->run($command, function (string $type, string $output) use ($onProgress): void {
                     $progress = $type === 'out' ? self::progressFrom($output) : null;
 
@@ -59,6 +68,29 @@ class VideoRenderer
             return $outputPath;
         } finally {
             File::delete($propsPath);
+        }
+    }
+
+    /**
+     * Prebuild a Remotion bundle into a directory that can be reused by render().
+     */
+    public function bundle(string $outDir): void
+    {
+        $command = [
+            config('services.remotion.node_binary'),
+            resource_path('js/remotion/render.mjs'),
+            '--bundle',
+            $outDir,
+        ];
+
+        $result = Process::path(base_path())
+            ->timeout((int) config('services.remotion.timeout'))
+            ->run($command);
+
+        if ($result->failed()) {
+            $details = trim($result->errorOutput()) ?: trim($result->output());
+
+            throw new RuntimeException('Remotion bundle failed: '.Str::limit($details, 1000));
         }
     }
 

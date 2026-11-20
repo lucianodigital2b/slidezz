@@ -103,6 +103,8 @@ return [
     'groq' => [
         'api_key' => env('GROQ_API_KEY'),
         'transcription_model' => env('GROQ_TRANSCRIPTION_MODEL', 'whisper-large-v3-turbo'),
+        // Describes contact sheets for the viral breakdown (App\Services\Video\FrameDescriber).
+        'vision_model' => env('GROQ_VISION_MODEL', 'qwen/qwen3.8-27b'),
     ],
 
     'ffmpeg' => [

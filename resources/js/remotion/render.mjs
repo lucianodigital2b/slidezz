@@ -1,5 +1,6 @@
 /**
  * Server-side MP4 render for a Slidezz video, driven by App\Services\Rendering\VideoRenderer.
+ * Supports multiple compositions through the REMOTION_COMPOSITION env var.
  *
  *   node render.mjs --bundle <outDir>                      Prebuild the composition bundle (deploys).
  *   node render.mjs <props.json> <output.mp4> [bundleDir]  Render. Bundles on the fly without a bundleDir.
@@ -13,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
 
-const COMPOSITION_ID = 'SlidezzVideo';
+const COMPOSITION_ID = process.env.REMOTION_COMPOSITION || 'SlidezzVideo';
 const entryPoint = join(dirname(fileURLToPath(import.meta.url)), 'index.ts');
 const args = process.argv.slice(2);
 

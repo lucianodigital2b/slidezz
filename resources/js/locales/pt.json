@@ -274,6 +274,7 @@
     }
   },
   "sidebar": {
+    "breakdowns": "Breakdown de viral",
     "profileAnalysis": "Análise de perfil",
     "videoScripts": "Roteiro de vídeo",
     "generate": "Gerar Ideias",
@@ -1399,5 +1400,56 @@
     "zoom": "Zoom",
     "zoomNone": "Nenhum",
     "zoomPunch": "Punch-in"
+  },
+  "breakdowns": {
+    "title": "Breakdown de viral",
+    "subtitle": "Cole o link de um viral do TikTok e receba um carrossel em vídeo explicando por que ele viralizou.",
+    "form": {
+      "urlLabel": "Link do TikTok",
+      "urlPlaceholder": "https://vm.tiktok.com/...",
+      "urlHint": "Cole o link de um vídeo público do TikTok.",
+      "languageLabel": "Idioma da análise",
+      "submit": "Criar breakdown",
+      "submitting": "Criando..."
+    },
+    "error": "Não foi possível criar o breakdown. Tente novamente.",
+    "untitled": "Sem título",
+    "justNow": "agora mesmo",
+    "confirmDelete": "Tem certeza que deseja excluir este breakdown?",
+    "delete": "Excluir",
+    "status": {
+      "pending": "Pendente",
+      "fetching": "Baixando vídeo",
+      "transcribing": "Transcrevendo",
+      "analyzing": "Analisando",
+      "rendering": "Renderizando",
+      "done": "Concluído",
+      "failed": "Falhou"
+    },
+    "steps": {
+      "fetching": "Baixando vídeo",
+      "transcribing": "Transcrevendo",
+      "analyzing": "Analisando",
+      "rendering": "Renderizando",
+      "renderingHint": "Gerando clipes em 4:5 para o carrossel. Isso pode levar alguns minutos."
+    },
+    "retry": "Tentar novamente",
+    "downloadAll": "Baixar tudo",
+    "copyCaption": "Copiar legenda",
+    "copied": "Legenda copiada!",
+    "slidesTitle": "Slides",
+    "captionLabel": "Legenda",
+    "stagesTitle": "Etapas",
+    "postHint": "O Instagram aceita esses MP4s como um carrossel. Publique na ordem gerada.",
+    "empty": "Cole um link de TikTok para começar.",
+    "how": {
+      "1": "A IA baixa o vídeo e transcreve cada palavra.",
+      "2": "Identificamos as etapas do roteiro e os gatilhos de retenção.",
+      "3": "Renderizamos um carrossel em vídeo pronto para postar."
+    },
+    "history": {
+      "title": "Histórico",
+      "empty": "Nenhum breakdown ainda."
+    }
   }
 }

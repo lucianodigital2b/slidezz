@@ -26,6 +26,7 @@ use App\Http\Controllers\TikTokDraftController;
 use App\Http\Controllers\UgcCampaignController;
 use App\Http\Controllers\VideoProjectController;
 use App\Http\Controllers\VideoScriptController;
+use App\Http\Controllers\ViralBreakdownController;
 use App\Http\Middleware\EnsureCanPost;
 use App\Http\Middleware\EnsureOnboardingComplete;
 use App\Http\Middleware\RedirectBasedOnCountry;
@@ -183,6 +184,15 @@ Route::middleware(['auth', 'verified', EnsureOnboardingComplete::class])->group(
         ->name('video-scripts.store');
     Route::get('video-scripts/{videoScript}', [VideoScriptController::class, 'show'])->name('video-scripts.show');
     Route::delete('video-scripts/{videoScript}', [VideoScriptController::class, 'destroy'])->name('video-scripts.destroy');
+
+    // Viral breakdowns: a TikTok video dissected into a carousel of 4:5 MP4 slides (Remotion).
+    Route::get('breakdowns', [ViralBreakdownController::class, 'index'])->name('breakdowns.index');
+    Route::post('breakdowns', [ViralBreakdownController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('breakdowns.store');
+    Route::get('breakdowns/{viralBreakdown}', [ViralBreakdownController::class, 'show'])->name('breakdowns.show');
+    Route::get('breakdowns/{viralBreakdown}/download', [ViralBreakdownController::class, 'download'])->name('breakdowns.download');
+    Route::delete('breakdowns/{viralBreakdown}', [ViralBreakdownController::class, 'destroy'])->name('breakdowns.destroy');
 
     // Profile analysis: reads the creator's published posts and says what works and what is missing.
     Route::get('profile-analysis', [ProfileAnalysisController::class, 'index'])->name('profile-analysis.index');
