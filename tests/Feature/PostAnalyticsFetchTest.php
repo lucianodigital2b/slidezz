@@ -19,6 +19,15 @@ class PostAnalyticsFetchTest extends TestCase
     {
         parent::setUp();
 
+        // CI has no .env: the publishers need these to construct.
+        config([
+            'services.instagram.client_id' => 'ig-app',
+            'services.instagram.client_secret' => 'ig-secret',
+            'services.instagram.redirect' => '/social-accounts/instagram/callback',
+            'services.facebook.client_id' => 'fb-app',
+            'services.facebook.client_secret' => 'fb-secret',
+        ]);
+
         Http::preventStrayRequests();
     }
 

@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ScheduleStatus;
+use App\Jobs\SyncAccountStats;
 use App\Jobs\SyncPostAnalytics;
+use App\Models\AccountPost;
+use App\Models\AccountSnapshot;
 use App\Models\Schedule;
 use App\Models\SocialAccount;
+use App\Models\User;
 use App\Services\Social\TikTokPublisher;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder;
@@ -82,11 +86,27 @@ class AnalyticsController extends Controller
                 'last_synced_at' => $row->last_synced_at ? Carbon::parse($row->last_synced_at)->toISOString() : null,
             ]);
 
+        // Phase 1 account analytics for every connected account of the user.
+        $accountIds = SocialAccount::query()
+            ->whereIn('workspace_id', $this->ownedWorkspaceIds($userId))
+            ->whereIn('provider', ['instagram', 'tiktok', 'facebook'])
+            ->pluck('id')
+            ->all();
+
+        $growth = $this->growth($accountIds, $since);
+        $accountPosts = $this->accountPosts($accountIds, $since);
+        $contentTypes = $this->contentTypes($accountIds, $since);
+        $bestTimes = $this->bestTimes($accountIds, $request->user());
+
         return Inertia::render('Analytics', [
             'stats' => $stats,
             'posts' => $posts,
             'period' => $period,
             'tiktokAccounts' => Inertia::defer(fn () => $this->tiktokAccounts($userId)),
+            'growth' => $growth,
+            'accountPosts' => $accountPosts,
+            'contentTypes' => $contentTypes,
+            'bestTimes' => $bestTimes,
         ]);
     }
 
@@ -111,6 +131,12 @@ class AnalyticsController extends Controller
             ->get()
             ->each(fn (Schedule $s) => SyncPostAnalytics::dispatch($s))
             ->count();
+
+        // Also dispatch the account-level sync for each connected account.
+        SocialAccount::whereIn('workspace_id', $this->ownedWorkspaceIds($userId))
+            ->whereIn('provider', ['instagram', 'tiktok', 'facebook'])
+            ->get()
+            ->each(fn (SocialAccount $account) => SyncAccountStats::dispatch($account));
 
         return redirect()->route('analytics')
             ->with('success', "Sincronizando analytics de {$count} publicações.");
@@ -182,5 +208,155 @@ class AnalyticsController extends Controller
     private static function insightsKey(int $accountId): string
     {
         return "tiktok-insights:{$accountId}";
+    }
+
+    /**
+     * Follower growth per account, read from the account snapshots saved by the
+     * daily SyncAccountStats job. Only snapshots inside the requested period are
+     * included; gained is null until there are at least two data points.
+     *
+     * @param  list<int>  $accountIds
+     * @return list<array<string, mixed>>
+     */
+    private function growth(array $accountIds, CarbonInterface $since): array
+    {
+        $accounts = SocialAccount::query()
+            ->whereIn('id', $accountIds)
+            ->with(['snapshots' => fn ($q) => $q->where('snapshot_date', '>=', $since->toDateString())->orderBy('snapshot_date')])
+            ->get(['id', 'provider', 'handle', 'avatar']);
+
+        return $accounts->map(function (SocialAccount $account): array {
+            $snapshots = $account->snapshots;
+            $first = $snapshots->first();
+            $last = $snapshots->last();
+
+            return [
+                'account_id' => $account->id,
+                'provider' => $account->provider,
+                'handle' => $account->handle,
+                'avatar' => $account->avatar,
+                'current_followers' => $last?->followers,
+                'gained' => $snapshots->count() >= 2 ? $last->followers - $first->followers : null,
+                'series' => $snapshots->map(fn (AccountSnapshot $s) => [
+                    'date' => $s->snapshot_date->toDateString(),
+                    'followers' => $s->followers,
+                ])->values()->all(),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * All account posts (not just Slidezz-published) with posted_at inside the
+     * period, newest first and capped at 100 for the UI.
+     *
+     * @param  list<int>  $accountIds
+     * @return list<array<string, mixed>>
+     */
+    private function accountPosts(array $accountIds, CarbonInterface $since): array
+    {
+        return AccountPost::query()
+            ->whereIn('social_account_id', $accountIds)
+            ->whereBetween('posted_at', [$since, now()])
+            ->with('socialAccount:id,provider,handle')
+            ->orderByDesc('posted_at')
+            ->limit(100)
+            ->get()
+            ->map(function (AccountPost $post): array {
+                return [
+                    'id' => $post->id,
+                    'provider' => $post->socialAccount->provider,
+                    'handle' => $post->socialAccount->handle,
+                    'media_type' => $post->media_type,
+                    'caption' => $post->caption ? mb_strimwidth($post->caption, 0, 120, '…') : null,
+                    'permalink' => $post->permalink,
+                    'thumbnail_url' => $post->thumbnail_url,
+                    'posted_at' => $post->posted_at?->toISOString(),
+                    'views' => $post->views,
+                    'likes' => $post->likes,
+                    'comments' => $post->comments,
+                    'shares' => $post->shares,
+                    'saves' => $post->saves,
+                    'engagement' => (int) $post->likes + (int) $post->comments + (int) $post->shares + (int) $post->saves,
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * Average metrics per media type for all posts in the period (no page cap).
+     *
+     * @param  list<int>  $accountIds
+     * @return list<array<string, mixed>>
+     */
+    private function contentTypes(array $accountIds, CarbonInterface $since): array
+    {
+        $posts = AccountPost::query()
+            ->whereIn('social_account_id', $accountIds)
+            ->whereBetween('posted_at', [$since, now()])
+            ->get(['media_type', 'likes', 'comments', 'shares', 'saves']);
+
+        return $posts->groupBy('media_type')
+            ->map(function ($group, $mediaType): array {
+                $count = $group->count();
+                $avg = fn (callable $field) => $group->avg(fn ($p) => (int) $field($p) ?: 0);
+
+                return [
+                    'media_type' => $mediaType,
+                    'posts' => $count,
+                    'avg_likes' => (float) $avg(fn ($p) => $p->likes),
+                    'avg_comments' => (float) $avg(fn ($p) => $p->comments),
+                    'avg_engagement' => (float) $avg(fn ($p) => (int) $p->likes + (int) $p->comments + (int) $p->shares + (int) $p->saves),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Best posting hours based on the last 90 days, always bucketed in the
+     * user's timezone (America/Sao_Paulo fallback) so it matches their wall
+     * clock, independently of the database timezone.
+     *
+     * @param  list<int>  $accountIds
+     * @return list<array<string, mixed>>
+     */
+    private function bestTimes(array $accountIds, User $user): array
+    {
+        $since = now()->subDays(90);
+        $timezone = $user->timezone ?? 'America/Sao_Paulo';
+
+        $posts = AccountPost::query()
+            ->whereIn('social_account_id', $accountIds)
+            ->whereBetween('posted_at', [$since, now()])
+            ->get(['posted_at', 'likes', 'comments', 'shares', 'saves']);
+
+        $buckets = [];
+
+        foreach ($posts as $post) {
+            $dt = $post->posted_at->timezone($timezone);
+            $weekday = (int) $dt->dayOfWeek; // 0 = Sunday
+            $hour = (int) $dt->hour;
+
+            if (! isset($buckets[$weekday][$hour])) {
+                $buckets[$weekday][$hour] = ['posts' => 0, 'total_engagement' => 0];
+            }
+
+            $buckets[$weekday][$hour]['posts']++;
+            $buckets[$weekday][$hour]['total_engagement'] += (int) $post->likes + (int) $post->comments + (int) $post->shares + (int) $post->saves;
+        }
+
+        $result = [];
+        foreach ($buckets as $weekday => $hours) {
+            foreach ($hours as $hour => $data) {
+                $result[] = [
+                    'weekday' => $weekday,
+                    'hour' => $hour,
+                    'posts' => $data['posts'],
+                    'avg_engagement' => $data['posts'] > 0 ? $data['total_engagement'] / $data['posts'] : 0,
+                ];
+            }
+        }
+
+        return $result;
     }
 }

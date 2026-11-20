@@ -3,9 +3,11 @@
 use App\Enums\CampaignStatus;
 use App\Enums\ScheduleStatus;
 use App\Jobs\PublishScheduledContent;
+use App\Jobs\SyncAccountStats;
 use App\Jobs\SyncPostAnalytics;
 use App\Jobs\SyncTrackedVideo;
 use App\Models\Schedule;
+use App\Models\SocialAccount;
 use App\Models\TrackedVideo;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -63,3 +65,11 @@ FacadeSchedule::call(function () {
         ->get()
         ->each(fn (TrackedVideo $v) => SyncTrackedVideo::dispatch($v));
 })->everySixHours();
+
+// Daily, snapshot every connected Instagram/TikTok/Facebook account and collect
+// all its posts for the account analytics phase
+FacadeSchedule::call(function () {
+    SocialAccount::whereIn('provider', ['instagram', 'tiktok', 'facebook'])
+        ->get()
+        ->each(fn (SocialAccount $account) => SyncAccountStats::dispatch($account));
+})->dailyAt('03:30');

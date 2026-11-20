@@ -53,4 +53,14 @@ class SocialAccount extends Model
     {
         return $this->hasMany(Schedule::class);
     }
+
+    public function snapshots()
+    {
+        return $this->hasMany(AccountSnapshot::class);
+    }
+
+    public function accountPosts()
+    {
+        return $this->hasMany(AccountPost::class);
+    }
 }
