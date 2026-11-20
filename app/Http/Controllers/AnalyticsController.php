@@ -94,8 +94,9 @@ class AnalyticsController extends Controller
             ->all();
 
         $growth = $this->growth($accountIds, $since);
-        $accountPosts = $this->accountPosts($accountIds, $since);
-        $contentTypes = $this->contentTypes($accountIds, $since);
+        $followers = $this->latestFollowers($accountIds);
+        $accountPosts = $this->accountPosts($accountIds, $since, $followers);
+        $contentTypes = $this->contentTypes($accountIds, $since, $followers);
         $bestTimes = $this->bestTimes($accountIds, $request->user());
 
         return Inertia::render('Analytics', [
@@ -252,7 +253,7 @@ class AnalyticsController extends Controller
      * @param  list<int>  $accountIds
      * @return list<array<string, mixed>>
      */
-    private function accountPosts(array $accountIds, CarbonInterface $since): array
+    private function accountPosts(array $accountIds, CarbonInterface $since, array $followers): array
     {
         return AccountPost::query()
             ->whereIn('social_account_id', $accountIds)
@@ -261,7 +262,7 @@ class AnalyticsController extends Controller
             ->orderByDesc('posted_at')
             ->limit(100)
             ->get()
-            ->map(function (AccountPost $post): array {
+            ->map(function (AccountPost $post) use ($followers): array {
                 return [
                     'id' => $post->id,
                     'provider' => $post->socialAccount->provider,
@@ -276,7 +277,8 @@ class AnalyticsController extends Controller
                     'comments' => $post->comments,
                     'shares' => $post->shares,
                     'saves' => $post->saves,
-                    'engagement' => (int) $post->likes + (int) $post->comments + (int) $post->shares + (int) $post->saves,
+                    'engagement' => self::engagement($post),
+                    ...self::engagementRate($post, $followers),
                 ];
             })
             ->all();
@@ -288,15 +290,17 @@ class AnalyticsController extends Controller
      * @param  list<int>  $accountIds
      * @return list<array<string, mixed>>
      */
-    private function contentTypes(array $accountIds, CarbonInterface $since): array
+    private function contentTypes(array $accountIds, CarbonInterface $since, array $followers): array
     {
         $posts = AccountPost::query()
             ->whereIn('social_account_id', $accountIds)
             ->whereBetween('posted_at', [$since, now()])
-            ->get(['media_type', 'likes', 'comments', 'shares', 'saves']);
+            ->get(['social_account_id', 'media_type', 'views', 'likes', 'comments', 'shares', 'saves']);
 
         return $posts->groupBy('media_type')
-            ->map(function ($group, $mediaType): array {
+            ->map(function ($group, $mediaType) use ($followers): array {
+                $rates = $group->map(fn (AccountPost $p) => self::engagementRate($p, $followers)['engagement_rate'])->filter(fn ($r) => $r !== null);
+
                 $count = $group->count();
                 $avg = fn (callable $field) => $group->avg(fn ($p) => (int) $field($p) ?: 0);
 
@@ -305,10 +309,56 @@ class AnalyticsController extends Controller
                     'posts' => $count,
                     'avg_likes' => (float) $avg(fn ($p) => $p->likes),
                     'avg_comments' => (float) $avg(fn ($p) => $p->comments),
-                    'avg_engagement' => (float) $avg(fn ($p) => (int) $p->likes + (int) $p->comments + (int) $p->shares + (int) $p->saves),
+                    'avg_engagement' => (float) $avg(fn ($p) => self::engagement($p)),
+                    'avg_engagement_rate' => $rates->isEmpty() ? null : round((float) $rates->avg(), 2),
                 ];
             })
             ->values()
+            ->all();
+    }
+
+    private static function engagement(AccountPost $post): int
+    {
+        return (int) $post->likes + (int) $post->comments + (int) $post->shares + (int) $post->saves;
+    }
+
+    /**
+     * Engagement as a percentage: over views when the network gives them
+     * (TikTok, or IG/FB once insights are granted), otherwise over the
+     * account's followers, like Metricool does without reach.
+     *
+     * @param  array<int, int>  $followers  latest followers per account id
+     * @return array{engagement_rate: ?float, engagement_rate_basis: ?string}
+     */
+    private static function engagementRate(AccountPost $post, array $followers): array
+    {
+        $engagement = self::engagement($post);
+
+        if ((int) $post->views > 0) {
+            return ['engagement_rate' => round($engagement * 100 / (int) $post->views, 2), 'engagement_rate_basis' => 'views'];
+        }
+
+        $base = $followers[$post->social_account_id] ?? 0;
+
+        return $base > 0
+            ? ['engagement_rate' => round($engagement * 100 / $base, 2), 'engagement_rate_basis' => 'followers']
+            : ['engagement_rate' => null, 'engagement_rate_basis' => null];
+    }
+
+    /**
+     * Followers from each account's most recent snapshot.
+     *
+     * @param  list<int>  $accountIds
+     * @return array<int, int>
+     */
+    private function latestFollowers(array $accountIds): array
+    {
+        return AccountSnapshot::query()
+            ->whereIn('social_account_id', $accountIds)
+            ->whereNotNull('followers')
+            ->orderBy('snapshot_date')
+            ->get(['social_account_id', 'followers'])
+            ->mapWithKeys(fn (AccountSnapshot $s) => [$s->social_account_id => (int) $s->followers])
             ->all();
     }
 

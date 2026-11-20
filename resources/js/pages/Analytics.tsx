@@ -96,6 +96,8 @@ interface AccountPost {
     shares: number | null;
     saves: number | null;
     engagement: number;
+    engagement_rate: number | null;
+    engagement_rate_basis: 'views' | 'followers' | null;
 }
 
 interface ContentTypeStat {
@@ -104,6 +106,7 @@ interface ContentTypeStat {
     avg_likes: number;
     avg_comments: number;
     avg_engagement: number;
+    avg_engagement_rate: number | null;
 }
 
 interface BestTimeCell {
@@ -141,7 +144,8 @@ type AccountPostSortKey =
     | 'shares'
     | 'saves'
     | 'views'
-    | 'engagement';
+    | 'engagement'
+    | 'engagement_rate';
 
 function formatNumber(n: number): string {
     if (n >= 1_000_000) {
@@ -210,6 +214,7 @@ const ACCOUNT_POST_COLUMNS: { key: AccountPostSortKey; label: string }[] = [
     { key: 'saves', label: 'Salvos' },
     { key: 'views', label: 'Views' },
     { key: 'engagement', label: 'Engajamento' },
+    { key: 'engagement_rate', label: 'Taxa' },
 ];
 
 function SortIcon({
@@ -863,6 +868,9 @@ export default function Analytics({
                                             <span>
                                                 Média engajamento:{' '}
                                                 {ct.avg_engagement.toFixed(1)}
+                                                {ct.avg_engagement_rate !==
+                                                    null &&
+                                                    ` (${ct.avg_engagement_rate.toFixed(2)}%)`}
                                             </span>
                                         </div>
                                     </div>
@@ -1102,6 +1110,20 @@ export default function Analytics({
                                                     {formatNumber(
                                                         post.engagement,
                                                     )}
+                                                </td>
+                                                <td
+                                                    className="px-4 py-3 text-gray-700"
+                                                    title={
+                                                        post.engagement_rate_basis ===
+                                                        'followers'
+                                                            ? 'Engajamento ÷ seguidores (a rede não deu as views)'
+                                                            : 'Engajamento ÷ views'
+                                                    }
+                                                >
+                                                    {post.engagement_rate !==
+                                                    null
+                                                        ? `${post.engagement_rate.toFixed(2)}%`
+                                                        : '—'}
                                                 </td>
                                                 <td className="px-5 py-3">
                                                     {post.permalink ? (

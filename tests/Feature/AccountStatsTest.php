@@ -308,6 +308,9 @@ class AccountStatsTest extends TestCase
             ->has('growth.0.series', 2)
             ->has('accountPosts', 4)
             ->has('contentTypes', 4)
+            // 10 likes + 2 comments + 1 share over 1000 views.
+            ->where('accountPosts.0.engagement_rate', 1.3)
+            ->where('accountPosts.0.engagement_rate_basis', 'views')
         );
     }
 }
