@@ -306,11 +306,53 @@ class AccountStatsTest extends TestCase
             ->where('growth.0.gained', 50)
             ->where('growth.0.current_followers', 150)
             ->has('growth.0.series', 2)
-            ->has('accountPosts', 4)
+            ->has('accountPosts.data', 4)
+            ->where('accountPosts.total', 4)
             ->has('contentTypes', 4)
             // 10 likes + 2 comments + 1 share over 1000 views.
-            ->where('accountPosts.0.engagement_rate', 1.3)
-            ->where('accountPosts.0.engagement_rate_basis', 'views')
+            ->where('accountPosts.data.0.engagement_rate', 1.3)
+            ->where('accountPosts.data.0.engagement_rate_basis', 'views')
         );
+    }
+
+    public function test_account_posts_are_sorted_and_paginated_on_the_server(): void
+    {
+        $user = User::factory()->canPost()->create();
+        $workspace = Workspace::factory()->create(['owner_id' => $user->id]);
+        $account = SocialAccount::factory()->create([
+            'workspace_id' => $workspace->id,
+            // Not TikTok: the page would call TikTok's API for its panel.
+            'provider' => 'facebook',
+            'provider_id' => 'fb-1',
+        ]);
+
+        foreach (range(1, 30) as $i) {
+            AccountPost::create([
+                'social_account_id' => $account->id,
+                'platform_post_id' => "p{$i}",
+                'media_type' => 'video',
+                'posted_at' => now()->subDays(1)->subMinutes($i),
+                // Post 7 has no views: it must sort last even descending.
+                'views' => $i === 7 ? null : $i * 100,
+                'likes' => $i,
+            ]);
+        }
+
+        $this->actingAs($user)->get('/analytics?period=30&ap_sort=views&ap_dir=desc')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('accountPosts.data', 25)
+                ->where('accountPosts.total', 30)
+                ->where('accountPosts.last_page', 2)
+                ->where('accountPosts.sort', 'views')
+                ->where('accountPosts.data.0.views', 3000));
+
+        $this->get('/analytics?period=30&ap_sort=views&ap_dir=desc&ap_page=2')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('accountPosts.data', 5)
+                ->where('accountPosts.data.4.views', null));
+
+        // Unknown columns fall back to the newest first.
+        $this->get('/analytics?period=30&ap_sort=password&ap_dir=asc')
+            ->assertInertia(fn (Assert $page) => $page->where('accountPosts.sort', 'posted_at'));
     }
 }

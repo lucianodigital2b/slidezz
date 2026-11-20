@@ -95,7 +95,7 @@ class AnalyticsController extends Controller
 
         $growth = $this->growth($accountIds, $since);
         $followers = $this->latestFollowers($accountIds);
-        $accountPosts = $this->accountPosts($accountIds, $since, $followers);
+        $accountPosts = $this->accountPosts($request, $accountIds, $since, $followers);
         $contentTypes = $this->contentTypes($accountIds, $since, $followers);
         $bestTimes = $this->bestTimes($accountIds, $request->user());
 
@@ -248,40 +248,80 @@ class AnalyticsController extends Controller
 
     /**
      * All account posts (not just Slidezz-published) with posted_at inside the
-     * period, newest first and capped at 100 for the UI.
+     * period, sorted and paginated on the server (ap_sort, ap_dir, ap_page) so
+     * accounts with thousands of posts don't ship them all to the page.
      *
      * @param  list<int>  $accountIds
-     * @return list<array<string, mixed>>
+     * @param  array<int, int>  $followers
+     * @return array{data: list<array<string, mixed>>, current_page: int, last_page: int, total: int, sort: string, dir: string}
      */
-    private function accountPosts(array $accountIds, CarbonInterface $since, array $followers): array
+    private function accountPosts(Request $request, array $accountIds, CarbonInterface $since, array $followers): array
     {
-        return AccountPost::query()
-            ->whereIn('social_account_id', $accountIds)
-            ->whereBetween('posted_at', [$since, now()])
-            ->with('socialAccount:id,provider,handle')
-            ->orderByDesc('posted_at')
-            ->limit(100)
-            ->get()
-            ->map(function (AccountPost $post) use ($followers): array {
-                return [
-                    'id' => $post->id,
-                    'provider' => $post->socialAccount->provider,
-                    'handle' => $post->socialAccount->handle,
-                    'media_type' => $post->media_type,
-                    'caption' => $post->caption ? mb_strimwidth($post->caption, 0, 120, '…') : null,
-                    'permalink' => $post->permalink,
-                    'thumbnail_url' => $post->thumbnail_url,
-                    'posted_at' => $post->posted_at?->toISOString(),
-                    'views' => $post->views,
-                    'likes' => $post->likes,
-                    'comments' => $post->comments,
-                    'shares' => $post->shares,
-                    'saves' => $post->saves,
-                    'engagement' => self::engagement($post),
-                    ...self::engagementRate($post, $followers),
-                ];
+        $engagement = '(COALESCE(ap.likes, 0) + COALESCE(ap.comments, 0) + COALESCE(ap.shares, 0) + COALESCE(ap.saves, 0))';
+
+        // Same rule as engagementRate(): over views, else over the latest followers.
+        $columns = [
+            'posted_at' => 'ap.posted_at',
+            'likes' => 'ap.likes',
+            'comments' => 'ap.comments',
+            'shares' => 'ap.shares',
+            'saves' => 'ap.saves',
+            'views' => 'ap.views',
+            'engagement' => $engagement,
+            'engagement_rate' => "CASE WHEN ap.views > 0 THEN {$engagement} * 100.0 / ap.views WHEN fs.followers > 0 THEN {$engagement} * 100.0 / fs.followers END",
+        ];
+
+        $sort = array_key_exists((string) $request->query('ap_sort'), $columns) ? (string) $request->query('ap_sort') : 'posted_at';
+        $dir = $request->query('ap_dir') === 'asc' ? 'asc' : 'desc';
+        $column = $columns[$sort];
+
+        $latestSnapshot = AccountSnapshot::query()
+            ->selectRaw('social_account_id, MAX(snapshot_date) AS latest_date')
+            ->whereNotNull('followers')
+            ->groupBy('social_account_id');
+
+        $page = AccountPost::query()
+            ->from('account_posts as ap')
+            ->leftJoinSub($latestSnapshot, 'ls', 'ls.social_account_id', '=', 'ap.social_account_id')
+            ->leftJoin('account_snapshots as fs', function ($join) {
+                $join->on('fs.social_account_id', '=', 'ap.social_account_id')
+                    ->on('fs.snapshot_date', '=', 'ls.latest_date');
             })
-            ->all();
+            ->whereIn('ap.social_account_id', $accountIds)
+            ->whereBetween('ap.posted_at', [$since, now()])
+            ->select('ap.*')
+            ->with('socialAccount:id,provider,handle')
+            // Posts without the metric (e.g. no views yet) go last either way.
+            ->orderByRaw("({$column}) IS NULL")
+            ->orderByRaw("{$column} {$dir}")
+            ->orderByDesc('ap.id')
+            ->paginate(25, ['*'], 'ap_page')
+            ->withQueryString();
+
+        return [
+            'data' => collect($page->items())->map(fn (AccountPost $post): array => [
+                'id' => $post->id,
+                'provider' => $post->socialAccount->provider,
+                'handle' => $post->socialAccount->handle,
+                'media_type' => $post->media_type,
+                'caption' => $post->caption ? mb_strimwidth($post->caption, 0, 120, '…') : null,
+                'permalink' => $post->permalink,
+                'thumbnail_url' => $post->thumbnail_url,
+                'posted_at' => $post->posted_at?->toISOString(),
+                'views' => $post->views,
+                'likes' => $post->likes,
+                'comments' => $post->comments,
+                'shares' => $post->shares,
+                'saves' => $post->saves,
+                'engagement' => self::engagement($post),
+                ...self::engagementRate($post, $followers),
+            ])->all(),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'total' => $page->total(),
+            'sort' => $sort,
+            'dir' => $dir,
+        ];
     }
 
     /**

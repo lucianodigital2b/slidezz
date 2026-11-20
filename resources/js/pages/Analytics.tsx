@@ -100,6 +100,77 @@ interface AccountPost {
     engagement_rate_basis: 'views' | 'followers' | null;
 }
 
+interface AccountPostPage {
+    data: AccountPost[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    sort: AccountPostSortKey;
+    dir: SortDir;
+}
+
+const PER_PAGE = 25;
+
+function TablePagination({
+    current,
+    last,
+    total,
+    onChange,
+}: {
+    current: number;
+    last: number;
+    total: number;
+    onChange: (page: number) => void;
+}) {
+    if (last <= 1) {
+        return null;
+    }
+
+    // First, last, and the neighbours of the current page.
+    const pages = Array.from({ length: last }, (_, i) => i + 1).filter(
+        (p) => p === 1 || p === last || Math.abs(p - current) <= 1,
+    );
+
+    return (
+        <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-3 text-sm text-gray-500">
+            <span>
+                {(current - 1) * PER_PAGE + 1}–
+                {Math.min(current * PER_PAGE, total)} de {total}
+            </span>
+            <div className="flex items-center gap-1">
+                <button
+                    type="button"
+                    disabled={current === 1}
+                    onClick={() => onChange(current - 1)}
+                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40"
+                >
+                    Anterior
+                </button>
+                {pages.map((p, i) => (
+                    <span key={p} className="flex items-center gap-1">
+                        {i > 0 && p - pages[i - 1] > 1 && <span>…</span>}
+                        <button
+                            type="button"
+                            onClick={() => onChange(p)}
+                            className={`min-w-8 rounded-md px-2 py-1 ${p === current ? 'bg-gray-900 font-medium text-white' : 'hover:bg-gray-100'}`}
+                        >
+                            {p}
+                        </button>
+                    </span>
+                ))}
+                <button
+                    type="button"
+                    disabled={current === last}
+                    onClick={() => onChange(current + 1)}
+                    className="rounded-md px-2 py-1 hover:bg-gray-100 disabled:opacity-40"
+                >
+                    Próxima
+                </button>
+            </div>
+        </div>
+    );
+}
+
 interface ContentTypeStat {
     media_type: 'image' | 'carousel' | 'video' | 'reel';
     posts: number;
@@ -122,7 +193,7 @@ interface Props {
     period: number;
     tiktokAccounts?: TikTokAccount[];
     growth?: GrowthAccount[];
-    accountPosts?: AccountPost[];
+    accountPosts?: AccountPostPage;
     contentTypes?: ContentTypeStat[];
     bestTimes?: BestTimeCell[];
 }
@@ -308,7 +379,14 @@ export default function Analytics({
     period,
     tiktokAccounts,
     growth = [],
-    accountPosts = [],
+    accountPosts = {
+        data: [],
+        current_page: 1,
+        last_page: 1,
+        total: 0,
+        sort: 'posted_at',
+        dir: 'desc',
+    },
     contentTypes = [],
     bestTimes = [],
 }: Props) {
@@ -319,11 +397,10 @@ export default function Analytics({
     const [sort, setSort] = useState<SortKey>('views');
     const [dir, setDir] = useState<SortDir>('desc');
     const [syncing, setSyncing] = useState(false);
-    const [accountSort, setAccountSort] =
-        useState<AccountPostSortKey>('posted_at');
-    const [accountDir, setAccountDir] = useState<SortDir>('desc');
+    const [page, setPage] = useState(1);
 
     const handlePeriod = (p: number) => {
+        setPage(1);
         router.get(
             analyticsRoute.url(),
             { period: p },
@@ -344,6 +421,8 @@ export default function Analytics({
     };
 
     const toggleSort = (key: SortKey) => {
+        setPage(1);
+
         if (sort === key) {
             setDir(dir === 'desc' ? 'asc' : 'desc');
         } else {
@@ -352,13 +431,33 @@ export default function Analytics({
         }
     };
 
+    // Account posts are sorted and paginated on the server.
+    const loadAccountPosts = (params: {
+        ap_sort: AccountPostSortKey;
+        ap_dir: SortDir;
+        ap_page: number;
+    }) => {
+        router.get(
+            analyticsRoute.url(),
+            { period, ...params },
+            {
+                only: ['accountPosts'],
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
     const toggleAccountSort = (key: AccountPostSortKey) => {
-        if (accountSort === key) {
-            setAccountDir(accountDir === 'desc' ? 'asc' : 'desc');
-        } else {
-            setAccountSort(key);
-            setAccountDir('desc');
-        }
+        loadAccountPosts({
+            ap_sort: key,
+            ap_dir:
+                accountPosts.sort === key && accountPosts.dir === 'desc'
+                    ? 'asc'
+                    : 'desc',
+            ap_page: 1,
+        });
     };
 
     const sorted = [...posts].sort((a, b) => {
@@ -374,18 +473,8 @@ export default function Analytics({
         return dir === 'desc' ? bv - av : av - bv;
     });
 
-    const sortedAccountPosts = [...accountPosts].sort((a, b) => {
-        const av =
-            accountSort === 'posted_at'
-                ? new Date(a.posted_at).getTime()
-                : (a[accountSort] ?? 0);
-        const bv =
-            accountSort === 'posted_at'
-                ? new Date(b.posted_at).getTime()
-                : (b[accountSort] ?? 0);
-
-        return accountDir === 'desc' ? bv - av : av - bv;
-    });
+    const lastPage = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
+    const pagedPosts = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return (
         <>
@@ -540,7 +629,7 @@ export default function Analytics({
                                             </td>
                                         </tr>
                                     ) : (
-                                        sorted.map((post) => (
+                                        pagedPosts.map((post) => (
                                             <tr
                                                 key={post.id}
                                                 className="border-t border-gray-50 transition-colors hover:bg-gray-50/50"
@@ -675,7 +764,7 @@ export default function Analytics({
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {sorted.map((post) => (
+                        {pagedPosts.map((post) => (
                             <div
                                 key={post.id}
                                 className="rounded-xl border border-gray-200 bg-white p-5"
@@ -742,6 +831,17 @@ export default function Analytics({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {sorted.length > PER_PAGE && (
+                    <div className="mt-2 rounded-xl border border-gray-200 bg-white">
+                        <TablePagination
+                            current={page}
+                            last={lastPage}
+                            total={sorted.length}
+                            onChange={setPage}
+                        />
                     </div>
                 )}
 
@@ -984,7 +1084,7 @@ export default function Analytics({
                     <h2 className="mb-4 text-lg font-semibold text-gray-900">
                         Todos os posts da conta
                     </h2>
-                    {accountPosts.length === 0 ? (
+                    {accountPosts.total === 0 ? (
                         <p className="text-sm text-gray-400">
                             Nenhum post encontrado no período.
                         </p>
@@ -1013,9 +1113,11 @@ export default function Analytics({
                                                             <SortIcon
                                                                 column={key}
                                                                 sort={
-                                                                    accountSort
+                                                                    accountPosts.sort
                                                                 }
-                                                                dir={accountDir}
+                                                                dir={
+                                                                    accountPosts.dir
+                                                                }
                                                             />
                                                         </span>
                                                     </th>
@@ -1027,7 +1129,7 @@ export default function Analytics({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sortedAccountPosts.map((post) => (
+                                        {accountPosts.data.map((post) => (
                                             <tr
                                                 key={post.id}
                                                 className="border-t border-gray-50 transition-colors hover:bg-gray-50/50"
@@ -1148,6 +1250,18 @@ export default function Analytics({
                                     </tbody>
                                 </table>
                             </div>
+                            <TablePagination
+                                current={accountPosts.current_page}
+                                last={accountPosts.last_page}
+                                total={accountPosts.total}
+                                onChange={(p) =>
+                                    loadAccountPosts({
+                                        ap_sort: accountPosts.sort,
+                                        ap_dir: accountPosts.dir,
+                                        ap_page: p,
+                                    })
+                                }
+                            />
                         </div>
                     )}
                 </div>
