@@ -50,6 +50,15 @@ class AccountStatsTest extends TestCase
         $account = $this->createWorkspaceAccount('instagram', 'ig-user-1');
 
         Http::fake([
+            'https://graph.instagram.com/v21.0/media-2/insights?*' => Http::response([
+                'data' => [
+                    ['name' => 'views', 'values' => [['value' => 900]]],
+                    ['name' => 'shares', 'values' => [['value' => 7]]],
+                    ['name' => 'saved', 'values' => [['value' => 4]]],
+                ],
+            ]),
+            'https://graph.instagram.com/v21.0/media-1/insights?*' => Http::response(['error' => ['message' => 'no permission']], 400),
+            '*/insights?*' => Http::response(['data' => []]),
             'https://graph.instagram.com/v21.0/me/media?cursor=abc' => Http::response([
                 'data' => [
                     [
@@ -111,6 +120,9 @@ class AccountStatsTest extends TestCase
         $this->assertSame('reel', $result['posts'][1]['media_type']);
         $this->assertSame('image', $result['posts'][2]['media_type']);
         $this->assertNull($result['posts'][0]['views']);
+        $this->assertSame(900, $result['posts'][1]['views']);
+        $this->assertSame(7, $result['posts'][1]['shares']);
+        $this->assertSame(4, $result['posts'][1]['saves']);
     }
 
     public function test_facebook_fetch_maps_followers_shares_and_types(): void
@@ -118,6 +130,9 @@ class AccountStatsTest extends TestCase
         $account = $this->createWorkspaceAccount('facebook', 'page-1');
 
         Http::fake([
+            'https://graph.facebook.com/v21.0/page-1_100/insights?*' => Http::response([
+                'data' => [['name' => 'post_media_view', 'values' => [['value' => 321]]]],
+            ]),
             'https://graph.facebook.com/v21.0/page-1/posts?*' => Http::response([
                 'data' => [
                     [
@@ -144,6 +159,7 @@ class AccountStatsTest extends TestCase
                     ],
                 ],
             ]),
+            '*/insights?*' => Http::response(['data' => []]),
             'https://graph.facebook.com/v21.0/page-1?*' => Http::response([
                 'followers_count' => 5000,
                 'fan_count' => 4800,
@@ -160,6 +176,8 @@ class AccountStatsTest extends TestCase
         $this->assertSame('reel', $result['posts'][1]['media_type']);
         $this->assertSame(3, $result['posts'][0]['shares']);
         $this->assertSame(0, $result['posts'][1]['shares']);
+        $this->assertSame(321, $result['posts'][0]['views']);
+        $this->assertNull($result['posts'][1]['views']);
     }
 
     public function test_job_stores_one_snapshot_per_day_and_upserts_posts(): void
@@ -167,6 +185,7 @@ class AccountStatsTest extends TestCase
         $account = $this->createWorkspaceAccount('instagram', 'ig-user-1');
 
         Http::fake([
+            '*/insights?*' => Http::response(['data' => []]),
             'https://graph.instagram.com/v21.0/me?*' => Http::response([
                 'followers_count' => 100,
                 'follows_count' => 50,
@@ -203,6 +222,7 @@ class AccountStatsTest extends TestCase
         Http::swap(new HttpFactory);
         Http::preventStrayRequests();
         Http::fake([
+            '*/insights?*' => Http::response(['data' => []]),
             'https://graph.instagram.com/v21.0/me?*' => Http::response([
                 'followers_count' => 120,
                 'follows_count' => 55,

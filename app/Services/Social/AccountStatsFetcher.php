@@ -3,6 +3,8 @@
 namespace App\Services\Social;
 
 use App\Models\SocialAccount;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 class AccountStatsFetcher
@@ -10,6 +12,9 @@ class AccountStatsFetcher
     private const MAX_PAGES = 4;
 
     private const PER_PAGE = 50;
+
+    /** Insights are one call per post, so only the most recent posts get them. */
+    private const INSIGHTS_POSTS = 60;
 
     public function __construct(private readonly TikTokPublisher $tiktokPublisher) {}
 
@@ -40,7 +45,7 @@ class AccountStatsFetcher
             ->throw()
             ->json();
 
-        $posts = $this->fetchInstagramPosts($account, $base);
+        $posts = $this->withInstagramInsights($account, $base, $this->fetchInstagramPosts($account, $base));
 
         return [
             'profile' => [
@@ -134,7 +139,7 @@ class AccountStatsFetcher
             ->throw()
             ->json();
 
-        $posts = $this->fetchFacebookPosts($account, $base, $pageId);
+        $posts = $this->withFacebookViews($account, $base, $this->fetchFacebookPosts($account, $base, $pageId));
 
         return [
             'profile' => [
@@ -223,6 +228,88 @@ class AccountStatsFetcher
                 'saves' => null,
             ];
         }, $items);
+    }
+
+    /**
+     * Views, shares and saves of the most recent Instagram media
+     * (instagram_business_manage_insights). A post whose insights fail keeps
+     * null, never zero, so a missing permission does not look like no views.
+     *
+     * @param  list<array<string, mixed>>  $posts
+     * @return list<array<string, mixed>>
+     */
+    private function withInstagramInsights(SocialAccount $account, string $base, array $posts): array
+    {
+        $ids = array_slice(array_column($posts, 'platform_post_id'), 0, self::INSIGHTS_POSTS);
+        if ($ids === []) {
+            return $posts;
+        }
+
+        $responses = Http::pool(fn (Pool $pool) => array_map(
+            fn (string $id) => $pool->as($id)
+                ->withToken($account->access_token)
+                ->acceptJson()
+                ->get("{$base}/{$id}/insights", ['metric' => 'views,shares,saved']),
+            $ids,
+        ));
+
+        foreach ($posts as $i => $post) {
+            $response = $responses[$post['platform_post_id']] ?? null;
+            if (! $response instanceof Response || ! $response->successful()) {
+                continue;
+            }
+
+            $metrics = collect($response->json('data') ?? [])
+                ->keyBy('name')
+                ->map(fn ($m) => $m['values'][0]['value'] ?? $m['total_value']['value'] ?? null);
+
+            foreach (['views' => 'views', 'shares' => 'shares', 'saves' => 'saved'] as $key => $metric) {
+                if (is_numeric($metrics->get($metric))) {
+                    $posts[$i][$key] = (int) $metrics->get($metric);
+                }
+            }
+        }
+
+        return $posts;
+    }
+
+    /**
+     * Views of the most recent Page posts (read_insights): post_media_view
+     * for posts, total_video_views for videos. Failures keep null.
+     *
+     * @param  list<array<string, mixed>>  $posts
+     * @return list<array<string, mixed>>
+     */
+    private function withFacebookViews(SocialAccount $account, string $base, array $posts): array
+    {
+        $recent = array_slice($posts, 0, self::INSIGHTS_POSTS, true);
+        if ($recent === []) {
+            return $posts;
+        }
+
+        $responses = Http::pool(fn (Pool $pool) => array_map(
+            fn (array $post) => $pool->as($post['platform_post_id'])
+                ->withToken($account->access_token)
+                ->acceptJson()
+                ->get("{$base}/{$post['platform_post_id']}/insights", [
+                    'metric' => in_array($post['media_type'], ['video', 'reel'], true) ? 'post_video_views' : 'post_media_view',
+                ]),
+            $recent,
+        ));
+
+        foreach ($posts as $i => $post) {
+            $response = $responses[$post['platform_post_id']] ?? null;
+            if (! $response instanceof Response || ! $response->successful()) {
+                continue;
+            }
+
+            $views = collect($response->json('data') ?? [])->first()['values'][0]['value'] ?? null;
+            if (is_numeric($views)) {
+                $posts[$i]['views'] = (int) $views;
+            }
+        }
+
+        return $posts;
     }
 
     private function fetchTikTok(SocialAccount $account): array
